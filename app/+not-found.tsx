@@ -1,5 +1,6 @@
-import { View, StyleSheet } from 'react-native';
 import { Link, Stack } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
+import { Typography } from '../constants/Typography';
 
 export default function NotFoundScreen() {
   return (
@@ -26,5 +27,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textDecorationLine: 'underline',
     color: '#fff',
+    fontFamily: Typography.lato.regular,
   },
 });
+

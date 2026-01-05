@@ -3,6 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 
 const { width } = Dimensions.get('window');
 
@@ -47,7 +49,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: Colors.onboarding.background,
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingVertical: 40,
@@ -58,15 +60,15 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 42,
-        fontWeight: '800',
+        fontFamily: Typography.lato.black,
         letterSpacing: -0.5,
-        color: '#000000',
+        color: Colors.onboarding.title,
         marginBottom: 10,
     },
     subtitle: {
         fontSize: 18,
-        color: '#666666',
-        fontWeight: '400',
+        color: Colors.onboarding.subtitle,
+        fontFamily: Typography.lato.regular,
         textAlign: 'center',
         paddingHorizontal: 20,
     },
@@ -86,12 +88,12 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     button: {
-        backgroundColor: '#E60000', // Replicating the red from the image
+        backgroundColor: Colors.onboarding.primary,
         height: 64,
         borderRadius: 32,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#E60000',
+        shadowColor: Colors.onboarding.shadow,
         shadowOffset: {
             width: 0,
             height: 4,
@@ -101,8 +103,9 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     buttonText: {
-        color: '#FFFFFF',
+        color: Colors.onboarding.buttonText,
         fontSize: 18,
-        fontWeight: '700',
+        fontFamily: Typography.lato.bold,
     },
 });
+

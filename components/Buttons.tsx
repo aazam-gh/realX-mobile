@@ -1,4 +1,5 @@
-import { StyleSheet, View, Pressable, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Typography } from '../constants/Typography';
 
 type Props = {
   label: string;
@@ -34,5 +35,7 @@ const styles = StyleSheet.create({
   buttonLabel: {
     color: '#fff',
     fontSize: 16,
+    fontFamily: Typography.lato.bold,
   },
 });
+

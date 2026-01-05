@@ -1,5 +1,6 @@
-import { View, StyleSheet, Text } from 'react-native';
-import { Image } from 'expo-image'; 
+import { StyleSheet, Text, View } from 'react-native';
+import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 
 
 export default function Index() {
@@ -13,11 +14,13 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#25292e',
+    backgroundColor: Colors.dark.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   text: {
-    color: "#fff"
+    color: Colors.dark.text,
+    fontFamily: Typography.lato.regular,
   }
 });
+

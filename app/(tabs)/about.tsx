@@ -1,4 +1,5 @@
-import { Text, View, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Typography } from '../../constants/Typography';
 
 export default function AboutScreen() {
   return (
@@ -17,5 +18,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#fff',
+    fontFamily: Typography.lato.regular,
   },
 });
+

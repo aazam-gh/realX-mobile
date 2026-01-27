@@ -6,6 +6,13 @@ export const Typography = {
         bold: 'Lato_700Bold',
         black: 'Lato_900Black',
     },
+    integral: {
+        bold: 'IntegralBold',
+    },
+    metropolis: {
+        medium: 'MetropolisMedium',
+        semiBold: 'MetropolisSemiBold',
+    }
 };
 
 export default Typography;

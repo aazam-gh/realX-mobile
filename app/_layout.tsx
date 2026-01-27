@@ -11,6 +11,9 @@ export default function RootLayout() {
     Lato_700Bold,
     Lato_300Light,
     Lato_900Black,
+    'IntegralBold': require('../assets/fonts/integralcf-bold.otf'),
+    'MetropolisSemiBold': require('../assets/fonts/metropolis.semi-bold.otf'),
+    'MetropolisMedium': require('../assets/fonts/metropolis.medium.otf'),
   });
 
   useEffect(() => {

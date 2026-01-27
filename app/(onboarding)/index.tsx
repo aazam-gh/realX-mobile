@@ -12,8 +12,8 @@ export default function OnboardingScreen() {
     const router = useRouter();
 
     const handleGetStarted = () => {
-        // Navigate to the tabs layout
-        router.replace('/(tabs)');
+        // Navigate to the email onboarding screen
+        router.push('/(onboarding)/email' as any);
     };
 
     return (
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 42,
-        fontFamily: Typography.lato.black,
+        fontFamily: Typography.integral.bold,
         letterSpacing: -0.5,
         color: Colors.onboarding.title,
         marginBottom: 10,
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 18,
         color: Colors.onboarding.subtitle,
-        fontFamily: Typography.lato.regular,
+        fontFamily: Typography.metropolis.medium,
         textAlign: 'center',
         paddingHorizontal: 20,
     },
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     buttonText: {
         color: Colors.onboarding.buttonText,
         fontSize: 18,
-        fontFamily: Typography.lato.bold,
+        fontFamily: Typography.metropolis.medium,
     },
 });
 

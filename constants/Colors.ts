@@ -28,13 +28,14 @@ export const Colors = {
         buttonText: '#FFFFFF',
     },
     // Specific onboarding colors if they need to be fixed regardless of theme
+    brandGreen: '#18B852',
     onboarding: {
         background: '#FFFFFF',
         title: '#000000',
         subtitle: '#666666',
-        primary: primaryRed,
+        primary: '#18B852',
         buttonText: '#FFFFFF',
-        shadow: primaryRed,
+        shadow: '#18B852',
     }
 };
 

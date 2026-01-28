@@ -27,7 +27,7 @@ export default function OnboardingScreen() {
 
             <View style={styles.imageContainer}>
                 <Image
-                    source={require('../../assets/images/onboarding.png')}
+                    source={require('../../assets/images/onboarding.jpeg')}
                     style={styles.image}
                     resizeMode="contain"
                 />

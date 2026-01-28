@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "516028101860",
+    "project_id": "reelx-backend",
+    "storage_bucket": "reelx-backend.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:516028101860:android:93cd4b63c78f5c05f6e8f1",
+        "android_client_info": {
+          "package_name": "com.alcadeus.reelx"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "516028101860-elc0159mhisi05qdep906vsem0k7ti35.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1TX_NxEJ5bJOczTEBiR3qeIUtxI5tkHM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "516028101860-elc0159mhisi05qdep906vsem0k7ti35.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "516028101860-fsjnnotiooor8gh5j58jnkn9k6klvt5e.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.reelx.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:516028101860:android:9fdea7a104346933f6e8f1",
+        "android_client_info": {
+          "package_name": "com.reelx.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "516028101860-elc0159mhisi05qdep906vsem0k7ti35.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1TX_NxEJ5bJOczTEBiR3qeIUtxI5tkHM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "516028101860-elc0159mhisi05qdep906vsem0k7ti35.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "516028101860-fsjnnotiooor8gh5j58jnkn9k6klvt5e.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.reelx.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

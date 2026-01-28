@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-    //Dimensions,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
@@ -18,20 +17,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
-//const { width } = Dimensions.get('window');
-
-export default function EmailOnboarding() {
+export default function DetailsOnboarding() {
     const router = useRouter();
-    const [email, setEmail] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [dob, setDob] = useState('');
+    const [gender, setGender] = useState<'Male' | 'Female' | null>(null);
 
-    // const handleContinue = () => {
-    //     // For now, just navigate to the phone screen
-    //     router.push('/(onboarding)/phone' as any);
-    // };
+    const handleContinue = () => {
+        // Here we would save the details to Firestore
+        router.replace('/(tabs)');
+    };
 
     const handleBack = () => {
         router.back();
     };
+
+    const isFormValid = firstName.trim() && lastName.trim() && dob.trim() && gender;
 
     return (
         <View style={styles.container}>
@@ -57,33 +59,64 @@ export default function EmailOnboarding() {
                     <View style={styles.card}>
                         <View style={styles.textContainer}>
                             <Text style={styles.titleLine}>
-                                <Text style={styles.greenText}>LOGIN</Text>
-                                <Text style={styles.blackText}> OR </Text>
-                                <Text style={styles.greenText}>CREATE</Text>
+                                <Text style={styles.blackText}>ENTER YOUR</Text>
                             </Text>
                             <Text style={styles.titleLine}>
-                                <Text style={styles.blackText}>AN ACCOUNT</Text>
+                                <Text style={styles.greenText}>DETAILS</Text>
                             </Text>
                         </View>
 
-                        <View style={styles.inputWrapper}>
-                            <View style={styles.singleInputContainer}>
+                        <View style={styles.formContainer}>
+                            <View style={styles.row}>
+                                <View style={[styles.inputContainer, { flex: 1, marginRight: 10 }]}>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="First Name"
+                                        placeholderTextColor="#999"
+                                        value={firstName}
+                                        onChangeText={setFirstName}
+                                    />
+                                </View>
+                                <View style={[styles.inputContainer, { flex: 1 }]}>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Last Name"
+                                        placeholderTextColor="#999"
+                                        value={lastName}
+                                        onChangeText={setLastName}
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.inputContainer}>
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Student Email"
+                                    placeholder="Date of Birth (DD/MM/YYYY)"
                                     placeholderTextColor="#999"
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    value={email}
-                                    onChangeText={setEmail}
+                                    value={dob}
+                                    onChangeText={setDob}
+                                    keyboardType="numbers-and-punctuation"
                                 />
                             </View>
-                        </View>
 
-                        <Text style={styles.infoText}>
-                            Use your university email address to access exclusive student deals and discounts.
-                        </Text>
+                            <View style={styles.genderContainer}>
+                                <Text style={styles.label}>Gender</Text>
+                                <View style={styles.genderOptions}>
+                                    <TouchableOpacity
+                                        style={[styles.genderButton, gender === 'Male' && styles.genderButtonSelected]}
+                                        onPress={() => setGender('Male')}
+                                    >
+                                        <Text style={[styles.genderText, gender === 'Male' && styles.genderTextSelected]}>Male</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.genderButton, gender === 'Female' && styles.genderButtonSelected]}
+                                        onPress={() => setGender('Female')}
+                                    >
+                                        <Text style={[styles.genderText, gender === 'Female' && styles.genderTextSelected]}>Female</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
                     </View>
                 </TouchableWithoutFeedback>
 
@@ -93,18 +126,9 @@ export default function EmailOnboarding() {
                     style={styles.footer}
                 >
                     <TouchableOpacity
-                        style={[styles.button, !email && styles.buttonDisabled]}
-                        onPress={() => {
-                            if (!email.trim().endsWith('.edu.qa')) {
-                                alert('Please enter a valid student email ending in .edu.qa');
-                                return;
-                            }
-                            router.push({
-                                pathname: '/(onboarding)/phone',
-                                params: { email: email.trim() }
-                            } as any);
-                        }}
-                        disabled={!email}
+                        style={[styles.button, !isFormValid && styles.buttonDisabled]}
+                        onPress={handleContinue}
+                        disabled={!isFormValid}
                         activeOpacity={0.8}
                     >
                         <Text style={styles.buttonText}>Continue</Text>
@@ -160,7 +184,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     textContainer: {
-        marginBottom: 40,
+        marginBottom: 30,
         alignItems: 'center',
     },
     titleLine: {
@@ -175,28 +199,63 @@ const styles = StyleSheet.create({
     blackText: {
         color: '#000000',
     },
-    inputWrapper: {
+    formContainer: {
         marginBottom: 20,
     },
-    singleInputContainer: {
+    row: {
+        flexDirection: 'row',
+        marginBottom: 15,
+    },
+    inputContainer: {
         backgroundColor: '#F3F3F3',
         borderRadius: 30,
         height: 60,
         justifyContent: 'center',
         paddingHorizontal: 25,
+        marginBottom: 15,
     },
     input: {
         fontSize: 16,
         fontFamily: Typography.metropolis.medium,
         color: '#000',
     },
-    infoText: {
-        fontSize: 14,
-        color: '#999',
-        textAlign: 'center',
-        lineHeight: 20,
-        paddingHorizontal: 10,
+    genderContainer: {
+        marginTop: 10,
+    },
+    label: {
+        fontSize: 16,
         fontFamily: Typography.metropolis.medium,
+        color: '#666',
+        marginBottom: 10,
+        marginLeft: 10,
+    },
+    genderOptions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    genderButton: {
+        flex: 1,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: '#F3F3F3',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginHorizontal: 5,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    genderButtonSelected: {
+        backgroundColor: 'rgba(52, 168, 83, 0.1)',
+        borderColor: Colors.brandGreen,
+    },
+    genderText: {
+        fontSize: 16,
+        fontFamily: Typography.metropolis.medium,
+        color: '#666',
+    },
+    genderTextSelected: {
+        color: Colors.brandGreen,
+        fontFamily: Typography.metropolis.semiBold,
     },
     footer: {
         paddingBottom: 40,

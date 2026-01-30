@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { FirebaseAuthTypes, getAuth, onAuthStateChanged, signInWithPhoneNumber } from '@react-native-firebase/auth';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
     //Dimensions,
     Image,
     Keyboard,
@@ -15,6 +18,7 @@ import {
     TouchableWithoutFeedback,
     View,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -27,8 +31,24 @@ export default function PhoneOnboarding() {
     const email = params.email as string;
 
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [verificationId, setVerificationId] = useState<string | null>(null);
+    const [confirm, setConfirm] = useState<FirebaseAuthTypes.ConfirmationResult | null>(null);
     const [code, setCode] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    // Handle authentication state changes
+    useEffect(() => {
+        const subscriber = onAuthStateChanged(getAuth(), (user) => {
+            if (user) {
+                console.log('User signed in:', user.uid);
+                // Use replace to prevent stacking and use the standard route path
+                router.replace({
+                    pathname: '/details',
+                    params: { email: email || '', phone: phoneNumber || user.phoneNumber || '' }
+                } as any);
+            }
+        });
+        return subscriber; // unsubscribe on unmount
+    }, [email, phoneNumber, router]);
 
     // If we were using a reCAPTCHA verifier, we would initialize it here
     // import { RecaptchaVerifier } from 'firebase/auth';
@@ -37,52 +57,44 @@ export default function PhoneOnboarding() {
         // Validate phone number: 8 digits
         const cleanNumber = phoneNumber.trim();
         if (cleanNumber.length !== 8) {
-            alert('Phone number must be exactly 8 digits.');
+            Alert.alert('Invalid Number', 'Phone number must be exactly 8 digits.');
             return;
         }
 
+        setLoading(true);
         try {
-            // NOTE: In a real implementation with JS SDK, we need a RecaptchaVerifier.
-            // Since expo-firebase-recaptcha is deprecated, and native firebase is not configured,
-            // we will simulate the flow or attempt to use the underlying auth if possible.
-            // For now, valid logic is placed here.
-
             // Qatar specific: +974 + 8 digit number
             const formattedNumber = `+974${cleanNumber}`;
 
-            // To make Firebase work, I would do:
-            // const confirmation = await signInWithPhoneNumber(auth, formattedNumber, recaptchaVerifier);
-            // setVerificationId(confirmation.verificationId);
-
-            // MOCKING FOR UI FLOW as we lack Recaptcha/Native setup:
             console.log('Sending code to:', formattedNumber);
-            setVerificationId('mock-verification-id');
-            alert('Code sent! (Mock)');
-
+            const confirmation = await signInWithPhoneNumber(getAuth(), formattedNumber);
+            setConfirm(confirmation);
         } catch (error: any) {
             console.error(error);
-            alert(`Error ending code: ${error.message}`);
+            Alert.alert('Error', `Failed to send code: ${error.message}`);
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleVerifyCode = async () => {
-        try {
-            // const credential = PhoneAuthProvider.credential(verificationId!, code);
-            // await signInWithCredential(auth, credential);
-            // console.log("User signed in!");
+        if (!confirm) return;
 
-            // Navigate to details
-            router.push({
-                pathname: '/(onboarding)/details',
-                params: { email: email, phone: phoneNumber }
-            } as any);
+        setLoading(true);
+        try {
+            await confirm.confirm(code);
+            // reset code if it fails, but onAuthStateChanged will handle success
         } catch (error: any) {
-            alert(`Invalid code: ${error.message}`);
+            console.error(error);
+            Alert.alert('Invalid Code', 'The verification code you entered is incorrect. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
+
     const handleContinue = () => {
-        if (!verificationId) {
+        if (!confirm) {
             handleSendCode();
         } else {
             handleVerifyCode();
@@ -90,13 +102,14 @@ export default function PhoneOnboarding() {
     };
 
     const handleBack = () => {
-        if (verificationId) {
-            setVerificationId(null);
+        if (confirm) {
+            setConfirm(null);
             setCode('');
         } else {
             router.back();
         }
     };
+
 
     return (
         <View style={styles.container}>
@@ -131,7 +144,8 @@ export default function PhoneOnboarding() {
                             </Text>
                         </View>
 
-                        {!verificationId ? (
+                        {!confirm ? (
+
                             // Phone Input
                             <View style={styles.inputWrapper}>
                                 <TouchableOpacity style={styles.countryPicker}>
@@ -154,6 +168,7 @@ export default function PhoneOnboarding() {
                                 </View>
                             </View>
                         ) : (
+
                             // OTP Input
                             <View style={styles.inputWrapper}>
                                 <View style={[styles.phoneNumberContainer, { backgroundColor: '#F3F3F3' }]}>
@@ -172,11 +187,12 @@ export default function PhoneOnboarding() {
                         )}
 
                         <Text style={styles.infoText}>
-                            {!verificationId
+                            {!confirm
                                 ? 'We\'ll send you a one-time code via SMS to verify your number.'
                                 : 'Enter the code sent to your mobile number.'}
                         </Text>
-                        {!verificationId && (
+                        {!confirm && (
+
                             <Text style={styles.infoText}>
                                 By clicking &quot;Continue&quot; you agree to our <Text style={styles.boldText}>Terms & Conditions</Text>
                             </Text>
@@ -190,13 +206,18 @@ export default function PhoneOnboarding() {
                     style={styles.footer}
                 >
                     <TouchableOpacity
-                        style={[styles.button, (!phoneNumber && !verificationId) || (verificationId && code.length < 6) ? styles.buttonDisabled : null]}
+                        style={[styles.button, (!phoneNumber && !confirm) || (confirm && code.length < 6) ? styles.buttonDisabled : null]}
                         onPress={handleContinue}
-                        disabled={(!phoneNumber && !verificationId) || (!!verificationId && code.length < 6)}
+                        disabled={((!phoneNumber && !confirm) || (!!confirm && code.length < 6)) || loading}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.buttonText}>{!verificationId ? 'Continue' : 'Verify'}</Text>
+                        {loading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text style={styles.buttonText}>{!confirm ? 'Continue' : 'Verify'}</Text>
+                        )}
                     </TouchableOpacity>
+
                 </KeyboardAvoidingView>
             </View>
         </View>

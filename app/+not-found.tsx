@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textDecorationLine: 'underline',
     color: '#fff',
-    fontFamily: Typography.lato.regular,
+    fontFamily: Typography.metropolis.medium,
   },
 });
 

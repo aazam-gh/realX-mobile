@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: Colors.dark.text,
-    fontFamily: Typography.lato.regular,
+    fontFamily: Typography.metropolis.medium,
   }
 });
 

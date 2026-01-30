@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#fff',
-    fontFamily: Typography.lato.regular,
+    fontFamily: Typography.metropolis.medium,
   },
 });
 

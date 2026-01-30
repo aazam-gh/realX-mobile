@@ -1,21 +1,34 @@
-import { Lato_300Light, Lato_400Regular, Lato_700Bold, Lato_900Black, useFonts } from '@expo-google-fonts/lato';
 import '@react-native-firebase/app';
-import { Stack } from "expo-router";
+import { FirebaseAuthTypes, getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
+import { useFonts } from 'expo-font';
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    Lato_400Regular,
-    Lato_700Bold,
-    Lato_300Light,
-    Lato_900Black,
     'IntegralBold': require('../assets/fonts/integralcf-bold.otf'),
     'MetropolisSemiBold': require('../assets/fonts/metropolis.semi-bold.otf'),
     'MetropolisMedium': require('../assets/fonts/metropolis.medium.otf'),
   });
+
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
+  const router = useRouter();
+  const segments = useSegments();
+
+  // Handle user state changes
+  function onAuthStateChangedHandler(user: FirebaseAuthTypes.User | null) {
+    setUser(user);
+    if (initializing) setInitializing(false);
+  }
+
+  useEffect(() => {
+    const subscriber = onAuthStateChanged(getAuth(), onAuthStateChangedHandler);
+    return subscriber; // unsubscribe on unmount
+  }, []);
 
   useEffect(() => {
     if (loaded || error) {
@@ -23,7 +36,21 @@ export default function RootLayout() {
     }
   }, [loaded, error]);
 
-  if (!loaded && !error) {
+  useEffect(() => {
+    if (initializing || !loaded) return;
+
+    const inAuthGroup = segments[0] === '(onboarding)';
+
+    if (!user && !inAuthGroup) {
+      // Redirect to onboarding if not logged in and not already in onboarding
+      router.replace('/(onboarding)');
+    } else if (user && inAuthGroup) {
+      // Redirect to tabs if logged in and in onboarding
+      router.replace('/(tabs)');
+    }
+  }, [user, initializing, loaded, segments]);
+
+  if (initializing || (!loaded && !error)) {
     return null;
   }
 

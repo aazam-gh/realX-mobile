@@ -9,10 +9,10 @@ export default function TabLayout() {
             screenOptions={{
                 tabBarActiveTintColor: Colors.dark.tint,
                 headerTitleStyle: {
-                    fontFamily: Typography.lato.bold,
+                    fontFamily: Typography.metropolis.semiBold,
                 },
                 tabBarLabelStyle: {
-                    fontFamily: Typography.lato.regular,
+                    fontFamily: Typography.metropolis.medium,
                 },
                 headerStyle: {
                     backgroundColor: Colors.dark.background,

@@ -1,40 +1,49 @@
+import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { withLayoutContext } from 'expo-router';
-import {
-  createNativeBottomTabNavigator,
-  NativeBottomTabNavigationOptions,
-  NativeBottomTabNavigationEventMap,
-} from '@bottom-tabs/react-navigation';
-import { ParamListBase, TabNavigationState } from '@react-navigation/native';
+import { Platform } from 'react-native';
 
-const BottomTabNavigator = createNativeBottomTabNavigator().Navigator;
+const NativeTabsNavigator = createNativeBottomTabNavigator().Navigator;
+const JSTabsNavigator = createBottomTabNavigator().Navigator;
 
-const Tabs = withLayoutContext<
-  NativeBottomTabNavigationOptions,
-  typeof BottomTabNavigator,
-  TabNavigationState<ParamListBase>,
-  NativeBottomTabNavigationEventMap
->(BottomTabNavigator);
-
+const NativeTabs = withLayoutContext(NativeTabsNavigator);
+const JSTabs = withLayoutContext(JSTabsNavigator);
 
 export default function TabLayout() {
+    // Select the navigator based on the platform.
+    // Native tabs for iOS (supporting SF Symbols), JS-based tabs for Android to avoid crash and support Ionicons.
+    const Tabs = Platform.OS === 'ios' ? NativeTabs : JSTabs;
+
     return (
         <Tabs
+            screenOptions={{
+                tabBarActiveTintColor: '#007AFF',
+                tabBarInactiveTintColor: '#8E8E93',
+            }}
         >
             <Tabs.Screen
                 name="index"
                 options={{
                     title: 'Home',
-                    tabBarIcon: () => ({ sfSymbol: "house" }),
-
+                    headerShown: false,
+                    tabBarIcon: (props: any) =>
+                        Platform.OS === 'ios'
+                            ? ({ sfSymbol: 'house' } as any)
+                            : <Ionicons name={props.focused ? 'home' : 'home-outline'} size={24} color={props.color} />,
                 }}
             />
             <Tabs.Screen
                 name="about"
                 options={{
                     title: 'About',
-                    tabBarIcon: () => ({ sfSymbol: "person" }),
-                }} />
+                    headerShown: false,
+                    tabBarIcon: (props: any) =>
+                        Platform.OS === 'ios'
+                            ? ({ sfSymbol: 'person' } as any)
+                            : <Ionicons name={props.focused ? 'person' : 'person-outline'} size={24} color={props.color} />,
+                }}
+            />
         </Tabs>
     );
 }
-

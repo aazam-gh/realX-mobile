@@ -65,6 +65,12 @@ export default function PromoBanner({ banners = defaultBanners }: Props) {
                         key={banner.id}
                         style={[styles.bannerCard, { backgroundColor: banner.backgroundColor }]}
                     >
+
+                        {/* Left Inward Curve */}
+                        <View style={styles.leftCutout} />
+
+                        {/* Right Inward Curve */}
+                        <View style={styles.rightCutout} />
                         {/* Background pattern overlay */}
                         <View style={styles.patternOverlay} />
 
@@ -114,6 +120,8 @@ export default function PromoBanner({ banners = defaultBanners }: Props) {
     );
 }
 
+const CUTOUT_SIZE = 40; // Adjust this to make the "bite" bigger or smaller
+
 const styles = StyleSheet.create({
     container: {
         paddingVertical: 12,
@@ -128,6 +136,28 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         overflow: 'hidden',
         position: 'relative',
+    },
+leftCutout: {
+        position: 'absolute',
+        left: -(CUTOUT_SIZE / 2), // Move half the circle outside the banner
+        top: '50%',
+        marginTop: -(CUTOUT_SIZE / 2), // Center it vertically
+        width: CUTOUT_SIZE,
+        height: CUTOUT_SIZE,
+        borderRadius: CUTOUT_SIZE / 2,
+        backgroundColor: '#FFFFFF', // This must match your screen's background color
+        zIndex: 10,
+    },
+    rightCutout: {
+        position: 'absolute',
+        right: -(CUTOUT_SIZE / 2), // Move half the circle outside the banner
+        top: '50%',
+        marginTop: -(CUTOUT_SIZE / 2), // Center it vertically
+        width: CUTOUT_SIZE,
+        height: CUTOUT_SIZE,
+        borderRadius: CUTOUT_SIZE / 2,
+        backgroundColor: '#FFFFFF', // This must match your screen's background color
+        zIndex: 10,
     },
     patternOverlay: {
         ...StyleSheet.absoluteFillObject,

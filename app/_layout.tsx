@@ -58,6 +58,7 @@ export default function RootLayout() {
     <Stack>
       <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="category" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" options={{ title: "Oops! Not Found" }} />
     </Stack>
   );

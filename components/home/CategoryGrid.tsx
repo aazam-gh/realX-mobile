@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -15,25 +16,35 @@ type Props = {
 };
 
 const defaultCategories: CategoryItem[] = [
-    { id: '1', name: 'Coffee', icon: '☕', backgroundColor: '#E8F5E9' },
-    { id: '2', name: 'Food', icon: '🍕', backgroundColor: '#E3F2FD' },
-    { id: '3', name: 'Grocery', icon: '🛒', backgroundColor: '#FFF3E0' },
-    { id: '4', name: 'Pharma', icon: '💊', backgroundColor: '#E8F5E9' },
-    { id: '5', name: 'Entertainer', icon: '🎮', backgroundColor: '#FCE4EC' },
-    { id: '6', name: 'Books', icon: '📚', backgroundColor: '#E3F2FD' },
-    { id: '7', name: 'Electronics', icon: '🎧', backgroundColor: '#EDE7F6' },
-    { id: '8', name: 'See More', icon: '›', backgroundColor: '#E8F5E9' },
+    { id: 'coffee', name: 'Coffee', icon: '☕', backgroundColor: '#E8F5E9' },
+    { id: 'food', name: 'Food', icon: '🍕', backgroundColor: '#E3F2FD' },
+    { id: 'grocery', name: 'Grocery', icon: '🛒', backgroundColor: '#FFF3E0' },
+    { id: 'pharma', name: 'Pharma', icon: '💊', backgroundColor: '#E8F5E9' },
+    { id: 'entertainer', name: 'Entertainer', icon: '🎮', backgroundColor: '#FCE4EC' },
+    { id: 'books', name: 'Books', icon: '📚', backgroundColor: '#E3F2FD' },
+    { id: 'electronics', name: 'Electronics', icon: '🎧', backgroundColor: '#EDE7F6' },
+    { id: 'see-more', name: 'See More', icon: '›', backgroundColor: '#E8F5E9' },
 ];
 
 export default function CategoryGrid({ categories = defaultCategories, onCategoryPress }: Props) {
+    const router = useRouter();
+
+    const handleCategoryPress = (item: CategoryItem) => {
+        if (onCategoryPress) {
+            onCategoryPress(item);
+        } else if (item.id !== 'see-more') {
+            router.push(`/category/${item.id}`);
+        }
+    };
+
     const renderCategory = ({ item }: { item: CategoryItem }) => (
         <TouchableOpacity
             style={styles.categoryItem}
-            onPress={() => onCategoryPress?.(item)}
+            onPress={() => handleCategoryPress(item)}
             activeOpacity={0.7}
         >
             <View style={[styles.iconContainer, { backgroundColor: item.backgroundColor }]}>
-                {item.id === '8' ? (
+                {item.id === 'see-more' ? (
                     <View style={styles.seeMoreContainer}>
                         <Text style={styles.seeMoreIcon}>{item.icon}</Text>
                     </View>

@@ -6,6 +6,7 @@ import {
   HowItWorksDrawer,
   RecentRedemptions,
   SpendButton,
+  SpendCardDrawer,
   XCard,
   XCardHeader,
 } from '../../components/wallet';
@@ -13,10 +14,18 @@ import {
 export default function WalletScreen() {
   const insets = useSafeAreaInsets();
   const [isHelpDrawerVisible, setIsHelpDrawerVisible] = useState(false);
+  const [isSpendDrawerVisible, setIsSpendDrawerVisible] = useState(false);
+
+  // Placeholder balance - replace with actual data
+  const balance = 26;
+  const currency = 'QAR';
 
   const handleSpendPress = () => {
-    // TODO: Implement spend functionality
-    console.log('Spend card pressed');
+    setIsSpendDrawerVisible(true);
+  };
+
+  const handleSpendDrawerClose = () => {
+    setIsSpendDrawerVisible(false);
   };
 
   const handleHelpPress = () => {
@@ -35,7 +44,7 @@ export default function WalletScreen() {
         showsVerticalScrollIndicator={false}
       >
         <XCardHeader />
-        <XCard earnings={26} currency="QAR" />
+        <XCard earnings={balance} currency={currency} />
         <SpendButton onPress={handleSpendPress} />
         <HelpLink onPress={handleHelpPress} />
         <RecentRedemptions />
@@ -44,6 +53,13 @@ export default function WalletScreen() {
       <HowItWorksDrawer
         visible={isHelpDrawerVisible}
         onClose={handleHelpDrawerClose}
+      />
+
+      <SpendCardDrawer
+        visible={isSpendDrawerVisible}
+        onClose={handleSpendDrawerClose}
+        balance={balance}
+        currency={currency}
       />
     </View>
   );

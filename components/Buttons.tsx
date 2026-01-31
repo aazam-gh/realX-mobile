@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
   buttonLabel: {
     color: '#fff',
     fontSize: 16,
-    fontFamily: Typography.lato.bold,
+    fontFamily: Typography.metropolis.semiBold,
   },
 });
 

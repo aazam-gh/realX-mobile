@@ -1,26 +1,37 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StatusBar, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CategoryGrid, GreetingHeader, PromoBanner, SearchBar, TrendingOffers } from '../../components/home';
 import { Colors } from '../../constants/Colors';
-import { Typography } from '../../constants/Typography';
 
-
-export default function Index() {
+export default function HomeScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Home screen</Text>
-    </View>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+      >
+        <GreetingHeader userName="Rayan" />
+        <SearchBar placeholder="Search for anything..." />
+        <PromoBanner />
+        <CategoryGrid />
+        <TrendingOffers />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: Colors.dark.background,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: Colors.light.background,
   },
-  text: {
-    color: Colors.dark.text,
-    fontFamily: Typography.metropolis.medium,
-  }
+  contentContainer: {
+    paddingBottom: 20,
+  },
 });
-

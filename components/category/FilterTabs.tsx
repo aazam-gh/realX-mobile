@@ -62,6 +62,7 @@ export default function FilterTabs({
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
+        justifyContent: 'center',
         paddingHorizontal: 20,
         paddingVertical: 12,
         gap: 12,

@@ -1,10 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '../../constants/Typography';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const PURPLE = '#7D57FF';
+
+  const handleEditPress = () => {
+    router.push('/edit-profile');
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -31,7 +37,11 @@ export default function ProfileScreen() {
               <Text style={styles.userPhone}>+974 5566 7788</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.editButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.editButton}
+            activeOpacity={0.7}
+            onPress={handleEditPress}
+          >
             <Text style={styles.editButtonText}>Edit</Text>
             <Ionicons name="chevron-forward" size={14} color="#000" />
           </TouchableOpacity>
@@ -76,16 +86,37 @@ export default function ProfileScreen() {
           <MenuItem icon="heart-outline" label="Favourites" />
           <MenuItem icon="language-outline" label="Change Language" />
           <MenuItem icon="logo-whatsapp" label="Contact Us" />
-          <MenuItem icon="document-text-outline" label="Terms and Conditions" />
+          <MenuItem
+            icon="document-text-outline"
+            label="Terms and Conditions"
+            onPress={() => router.push('/terms')}
+          />
+          <MenuItem
+            icon="shield-checkmark-outline"
+            label="Privacy Policy"
+            onPress={() => router.push('/privacy')}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function MenuItem({ icon, label }: { icon: keyof typeof Ionicons.glyphMap; label: string }) {
+function MenuItem({
+  icon,
+  label,
+  onPress
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress?: () => void;
+}) {
   return (
-    <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.menuItem}
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
       <View style={styles.menuItemLeft}>
         <Ionicons name={icon} size={24} color="#000" />
         <Text style={styles.menuItemLabel}>{label}</Text>

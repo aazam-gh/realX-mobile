@@ -1,8 +1,8 @@
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import {
     Dimensions,
     FlatList,
-    Image,
     Modal,
     StyleSheet,
     Text,

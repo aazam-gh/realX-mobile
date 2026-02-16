@@ -1,4 +1,5 @@
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
@@ -40,7 +41,7 @@ export default function BrandGrid() {
                         activeOpacity={0.7}
                     >
                         <View style={styles.imageContainer}>
-                            <Image source={brand.image} style={styles.brandImage} resizeMode="contain" />
+                            <Image source={brand.image} style={styles.brandImage} contentFit="contain" />
                         </View>
                     </TouchableOpacity>
                 ))}

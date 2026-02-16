@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -5,7 +6,7 @@ import { Typography } from '../../constants/Typography';
 type SubCategory = {
     id: string;
     name: string;
-    icon: string;
+    icon: string | any;
 };
 
 type Props = {
@@ -38,6 +39,23 @@ export default function SubCategoryChips({
             >
                 {subCategories.map((subCategory) => {
                     const isSelected = selectedId === subCategory.id;
+                    const isImage = typeof subCategory.icon === 'string' && (subCategory.icon.startsWith('http') || subCategory.icon.startsWith('file'));
+                    // Note: If using 'require', typeof is usually number. If uri string, checking http is good heuristic. 
+                    // Or simply check if it's NOT an emoji? Emojis are strings. URLs are strings.
+                    // Better heuristic: if string includes '/' or is long, treat as image?
+                    // Or explicit prop? 
+                    // Let's assume if it starts with http/https it's an image. If it's a number (require), it's an image.
+
+                    const renderIcon = () => {
+                        if (typeof subCategory.icon === 'number' || (typeof subCategory.icon === 'object' && subCategory.icon !== null)) {
+                            return <Image source={subCategory.icon} style={styles.imageIcon} contentFit="contain" />;
+                        }
+                        if (typeof subCategory.icon === 'string' && (subCategory.icon.startsWith('http') || subCategory.icon.includes('/'))) {
+                            return <Image source={{ uri: subCategory.icon }} style={styles.imageIcon} contentFit="contain" />;
+                        }
+                        return <Text style={styles.icon}>{subCategory.icon}</Text>;
+                    };
+
                     return (
                         <TouchableOpacity
                             key={subCategory.id}
@@ -52,7 +70,7 @@ export default function SubCategoryChips({
                                 styles.iconContainer,
                                 isSelected && styles.iconContainerSelected,
                             ]}>
-                                <Text style={styles.icon}>{subCategory.icon}</Text>
+                                {renderIcon()}
                             </View>
                             <Text style={[
                                 styles.chipText,
@@ -92,6 +110,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 2,
         borderColor: 'transparent',
+        overflow: 'hidden', // Ensure image stays within circle
     },
     iconContainerSelected: {
         borderColor: Colors.brandGreen,
@@ -99,6 +118,10 @@ const styles = StyleSheet.create({
     },
     icon: {
         fontSize: 28,
+    },
+    imageIcon: {
+        width: '70%',
+        height: '70%',
     },
     chipText: {
         fontSize: 12,

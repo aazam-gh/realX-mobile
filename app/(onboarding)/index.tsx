@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -27,7 +28,7 @@ export default function OnboardingScreen() {
                         <Image
                             source={require('../../assets/images/logo.png')}
                             style={styles.logo}
-                            resizeMode="contain"
+                            contentFit="contain"
                         />
                     </View>
 
@@ -42,7 +43,7 @@ export default function OnboardingScreen() {
                         <Image
                             source={require('../../assets/images/onboarding.png')}
                             style={styles.characterImage}
-                            resizeMode="contain"
+                            contentFit="contain"
                         />
                     </View>
 

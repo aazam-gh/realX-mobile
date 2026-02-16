@@ -1,12 +1,16 @@
+import { collection, getDocs, getFirestore, orderBy, query } from '@react-native-firebase/firestore';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
 type CategoryItem = {
     id: string;
     name: string;
-    image: any;
+    image?: string | any;
+    icon?: string;
 };
 
 type Props = {
@@ -14,45 +18,101 @@ type Props = {
     onCategoryPress?: (category: CategoryItem) => void;
 };
 
-const defaultCategories: CategoryItem[] = [
-    { id: 'coffee', name: 'Coffee', image: require('../../assets/images/coffee.png') },
-    { id: 'food', name: 'Food', image: require('../../assets/images/food.png') },
-    { id: 'grocery', name: 'Grocery', image: require('../../assets/images/grocery.png') },
-    { id: 'pharma', name: 'Pharma', image: require('../../assets/images/pharma.png') },
-    { id: 'entertainer', name: 'Entertainer', image: require('../../assets/images/entertainer.png') },
-    { id: 'books', name: 'Books', image: require('../../assets/images/books.png') },
-    { id: 'electronics', name: 'Electronics', image: require('../../assets/images/electronics.png') },
-    { id: 'see-more', name: 'See More', image: require('../../assets/images/see-more.png') },
-];
-
-export default function CategoryGrid({ categories = defaultCategories, onCategoryPress }: Props) {
+export default function CategoryGrid({ categories: propCategories, onCategoryPress }: Props) {
     const router = useRouter();
+    const [fetchedCategories, setFetchedCategories] = useState<CategoryItem[]>([]);
+    const [loading, setLoading] = useState(!propCategories);
+
+    useEffect(() => {
+        if (propCategories) return;
+
+        const fetchCategories = async () => {
+            try {
+                const db = getFirestore();
+                const q = query(
+                    collection(db, 'categories'),
+                    orderBy('order', 'asc')
+                );
+
+                const snapshot = await getDocs(q);
+                const items: CategoryItem[] = snapshot.docs.map((doc: { id: string; data: () => any }) => ({
+                    id: doc.id,
+                    name: doc.data().nameEnglish,
+                    image: doc.data().imageUrl,
+                }));
+
+                // Add "See More" at the end to match original layout if it fits
+                if (items.length > 0) {
+                    items.push({
+                        id: 'see-more',
+                        name: 'See More',
+                        image: require('../../assets/images/see-more.png')
+                    });
+                }
+
+                setFetchedCategories(items);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, [propCategories]);
+
+    const displayCategories = propCategories || fetchedCategories;
 
     const handleCategoryPress = (item: CategoryItem) => {
         if (onCategoryPress) {
             onCategoryPress(item);
         } else if (item.id !== 'see-more') {
-            router.push(`/category/${item.id}`);
+            router.push({
+                pathname: "/category/[id]",
+                params: { id: item.id, name: item.name }
+            });
         }
     };
 
-    const renderCategory = ({ item }: { item: CategoryItem }) => (
-        <TouchableOpacity
-            style={styles.categoryItem}
-            onPress={() => handleCategoryPress(item)}
-            activeOpacity={0.7}
-        >
-            <View style={styles.imageContainer}>
-                <Image source={item.image} style={styles.categoryImage} resizeMode="contain" />
+    const renderCategory = ({ item }: { item: CategoryItem }) => {
+        return (
+            <TouchableOpacity
+                style={styles.categoryItem}
+                onPress={() => handleCategoryPress(item)}
+                activeOpacity={0.7}
+            >
+                <View style={styles.imageContainer}>
+                    {item.image ? (
+                        <Image
+                            source={typeof item.image === 'string' ? { uri: item.image } : item.image}
+                            style={styles.categoryImage}
+                            contentFit="contain"
+                        />
+                    ) : (
+                        <Text style={{ fontSize: 40 }}>{item.icon}</Text>
+                    )}
+                </View>
+                <Text style={styles.categoryName} numberOfLines={1}>{item.name}</Text>
+            </TouchableOpacity>
+        );
+    };
+
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.loaderContainer]}>
+                <ActivityIndicator size="small" color={Colors.light.tint} />
             </View>
-            <Text style={styles.categoryName}>{item.name}</Text>
-        </TouchableOpacity>
-    );
+        );
+    }
+
+    if (displayCategories.length === 0) {
+        return null; // Or some fallback
+    }
 
     return (
         <View style={styles.container}>
             <FlatList
-                data={categories}
+                data={displayCategories}
                 renderItem={renderCategory}
                 keyExtractor={(item) => item.id}
                 numColumns={4}
@@ -88,5 +148,10 @@ const styles = StyleSheet.create({
         fontFamily: Typography.metropolis.medium,
         color: Colors.light.text,
         textAlign: 'center',
+    },
+    loaderContainer: {
+        height: 150,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

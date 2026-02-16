@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
-    Image,
     ScrollView,
     StyleSheet,
     Text,

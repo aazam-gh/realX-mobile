@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
+import { ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
@@ -9,9 +10,10 @@ type Props = {
     onBackPress?: () => void;
 };
 
-export default function CategoryHeader({ title, icon = '🍽️', onBackPress }: Props) {
-    const isEmoji = typeof icon === 'string';
-
+export default function CategoryHeader({ title, icon, onBackPress }: Props) {
+    const imageSource = typeof icon === 'string'
+        ? { uri: icon }
+        : icon;
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -21,11 +23,15 @@ export default function CategoryHeader({ title, icon = '🍽️', onBackPress }:
             >
                 <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
             </TouchableOpacity>
+
             <View style={styles.titleContainer}>
-                {isEmoji ? (
-                    <Text style={styles.icon}>{icon}</Text>
-                ) : (
-                    <Image source={icon} style={styles.imageIcon} resizeMode="contain" />
+                {icon && (
+                    <Image
+                        source={imageSource}
+                        style={styles.imageIcon}
+
+                        contentFit="cover"
+                    />
                 )}
                 <Text style={styles.title}>{title}</Text>
             </View>
@@ -53,16 +59,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
     },
-    icon: {
-        fontSize: 24,
-    },
     title: {
         fontSize: 22,
         fontFamily: Typography.metropolis.semiBold,
         color: Colors.light.text,
     },
     imageIcon: {
-        width: 40,
-        height: 40,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
     },
 });

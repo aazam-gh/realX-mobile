@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const BANNER_WIDTH = screenWidth - 40;
-const BANNER_HEIGHT = 200;
+const BANNER_WIDTH = screenWidth - 48;
+const BANNER_HEIGHT = 192;
 
 type BannerItem = {
     bannerId: string;
@@ -157,26 +157,23 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: 20,
-        gap: 10,
     },
     bannerColumn: {
         width: BANNER_WIDTH,
         height: BANNER_HEIGHT,
-        position: 'relative',
-        justifyContent: 'center',
     },
 
     // --- PILL STYLES ---
     topPill: {
         flex: 1.0,
         borderRadius: 30,
-        backgroundColor: '#F5F5F5',
+
 
     },
     bottomPill: {
         flex: 1.0,
         borderRadius: 30,
-        backgroundColor: '#F5F5F5',
+
     },
     bannerImage: {
         width: '100%',

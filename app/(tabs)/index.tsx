@@ -1,6 +1,6 @@
 import { ScrollView, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CategoryGrid, GreetingHeader, PromoBanner, SearchBar, TrendingOffers } from '../../components/home';
+import { BrandGrid, CategoryGrid, GreetingHeader, PromoBanner, SearchBar, TrendingOffers } from '../../components/home';
 import { Colors } from '../../constants/Colors';
 
 export default function HomeScreen() {
@@ -17,6 +17,7 @@ export default function HomeScreen() {
         <PromoBanner />
         <CategoryGrid />
         <TrendingOffers />
+        <BrandGrid />
       </ScrollView>
     </SafeAreaView>
   );

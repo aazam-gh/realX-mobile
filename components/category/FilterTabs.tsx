@@ -20,7 +20,7 @@ interface FilterTabsProps {
 
 const defaultFilters: FilterOption[] = [
     { id: 'top-rated', label: 'Top Rated', icon: 'flash' },
-    { id: 'nearest', label: 'Nearest Offers', icon: 'location' },
+    { id: 'trending', label: 'Trending', icon: 'flame' },
 ];
 
 export default function FilterTabs({ selectedFilter, onFilterChange, filters = defaultFilters }: FilterTabsProps ) {

@@ -44,8 +44,8 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                 // Add "See More" at the end to match original layout if it fits
                 if (items.length > 0) {
                     items.push({
-                        id: 'see-more',
-                        name: 'See More',
+                        id: 'coming-soon',
+                        name: 'Coming Soon!',
                         image: require('../../assets/images/see-more.png')
                     });
                 }

@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
+import { memo, useMemo } from 'react';
 import { ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -10,10 +11,14 @@ type Props = {
     onBackPress?: () => void;
 };
 
-export default function CategoryHeader({ title, icon, onBackPress }: Props) {
-    const imageSource = typeof icon === 'string'
-        ? { uri: icon }
-        : icon;
+function CategoryHeader({ title, icon, onBackPress }: Props) {
+    const imageSource = useMemo(() => {
+        if (typeof icon === 'string') {
+            return { uri: icon };
+        }
+        return icon;
+    }, [icon]);
+
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -23,6 +28,7 @@ export default function CategoryHeader({ title, icon, onBackPress }: Props) {
             >
                 <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
             </TouchableOpacity>
+
 
             <View style={styles.titleContainer}>
                 {icon && (
@@ -38,6 +44,8 @@ export default function CategoryHeader({ title, icon, onBackPress }: Props) {
         </View>
     );
 }
+
+export default memo(CategoryHeader);
 
 const styles = StyleSheet.create({
     container: {
@@ -70,3 +78,4 @@ const styles = StyleSheet.create({
         borderRadius: 24,
     },
 });
+

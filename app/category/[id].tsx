@@ -1,7 +1,7 @@
-import { collection, doc, getDoc, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore';
+import { collection, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, startAfter, where } from '@react-native-firebase/firestore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ImageSourcePropType, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, ImageSourcePropType, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     BrowseSection,
@@ -13,8 +13,6 @@ import {
 import { SearchBar } from '../../components/home';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-
-
 
 // Category configuration map
 const categoryConfig: Record<string, {
@@ -52,6 +50,81 @@ const defaultConfig = {
     restaurants: [],
 };
 
+interface HeaderContentProps {
+    headerTitle: string;
+    headerIcon: any;
+    handleBackPress: () => void;
+    loading: boolean;
+    hasSubCategories: boolean;
+    selectedFilter: string;
+    handleFilterChange: (id: string) => void;
+    subCategories: any[];
+    selectedSubCategory: string;
+    handleSubCategorySelect: (sub: any) => void;
+    config: any;
+    handleRestaurantPress: (r: any) => void;
+}
+
+const HeaderContent = memo(({
+    headerTitle,
+    headerIcon,
+    handleBackPress,
+    loading,
+    hasSubCategories,
+    selectedFilter,
+    handleFilterChange,
+    subCategories,
+    selectedSubCategory,
+    handleSubCategorySelect,
+    config,
+    handleRestaurantPress,
+}: HeaderContentProps) => (
+    <>
+        <CategoryHeader
+            title={headerTitle}
+            icon={headerIcon}
+            onBackPress={handleBackPress}
+        />
+
+        <SearchBar placeholder={`Search for ${headerTitle.toLowerCase()}...`} />
+
+        {loading ? (
+            <View style={styles.comingSoonContainer}>
+                <Text>Loading...</Text>
+            </View>
+        ) : hasSubCategories ? (
+            <>
+                <FilterTabs
+                    selectedFilter={selectedFilter}
+                    onFilterChange={handleFilterChange}
+                />
+
+                <SubCategoryChips
+                    subCategories={subCategories}
+                    selectedId={selectedSubCategory}
+                    onSelect={handleSubCategorySelect}
+                />
+                <BrowseSection
+                    title={config.browseTitle}
+                    emoji={config.browseEmoji}
+                    restaurants={config.restaurants}
+                    onRestaurantPress={handleRestaurantPress}
+                />
+            </>
+        ) : (
+            <View style={styles.comingSoonContainer}>
+                <View style={styles.comingSoonIconContainer}>
+                    <Text style={styles.comingSoonEmoji}>⏳</Text>
+                </View>
+                <Text style={styles.comingSoonTitle}>{headerTitle} Coming Soon!</Text>
+                <Text style={styles.comingSoonSubtitle}>
+                    We're working hard to bring you the best {headerTitle.toLowerCase()} deals. Stay tuned!
+                </Text>
+            </View>
+        )}
+    </>
+));
+
 export default function CategoryScreen() {
     const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
     const router = useRouter();
@@ -63,6 +136,8 @@ export default function CategoryScreen() {
 
     const [offers, setOffers] = useState<any[]>([]);
     const [loadingOffers, setLoadingOffers] = useState(false);
+    const [lastDoc, setLastDoc] = useState<any>(null);
+    const [isListEnd, setIsListEnd] = useState(false);
 
     // Get category configuration or use default
     const config = categoryConfig[id?.toLowerCase() || ''] || {
@@ -94,139 +169,189 @@ export default function CategoryScreen() {
         fetchCategory();
     }, [id]);
 
-    // Fetch offers if subcategories exist (active category)
+    const fetchOffers = async (isNew = false) => {
+        if (loadingOffers || (isListEnd && !isNew) || !hasSubCategories) return;
+
+        setLoadingOffers(true);
+        try {
+            const db = getFirestore();
+            const offersRef = collection(db, 'offers');
+            const categoryName = categoryData?.nameEnglish || config.title;
+            const PAGE_SIZE = 10;
+
+            let q;
+
+            // Base constraints
+            const baseConstraints: any[] = [where('status', '==', 'active')];
+
+            // Filter logic
+            if (selectedSubCategory !== 'all') {
+                // Filter by subcategory
+                baseConstraints.push(where('categories', 'array-contains', selectedSubCategory));
+            } else {
+                // Filter by main category
+                baseConstraints.push(where('mainCategory', '==', categoryName));
+            }
+
+            // Construct query with pagination
+            if (isNew) {
+                q = query(offersRef, ...baseConstraints, orderBy('createdAt', 'desc') as any, limit(PAGE_SIZE) as any);
+            } else {
+                q = query(offersRef, ...baseConstraints, orderBy('createdAt', 'desc') as any, startAfter(lastDoc) as any, limit(PAGE_SIZE) as any);
+            }
+
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const fetchedOffers = querySnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+
+                if (isNew) {
+                    setOffers(fetchedOffers);
+                } else {
+                    setOffers(prev => [...prev, ...fetchedOffers]);
+                }
+
+                setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]);
+
+                if (querySnapshot.docs.length < PAGE_SIZE) {
+                    setIsListEnd(true);
+                } else {
+                    setIsListEnd(false);
+                }
+            } else {
+                setIsListEnd(true);
+                if (isNew) setOffers([]);
+            }
+        } catch (error) {
+            console.error("Error fetching offers:", error);
+        } finally {
+            setLoadingOffers(false);
+        }
+    };
+
+    // Initial fetch or filter change
     useEffect(() => {
         if (!loading && hasSubCategories) {
-            const fetchOffers = async () => {
-                setLoadingOffers(true);
-                try {
-                    const db = getFirestore();
-                    const offersRef = collection(db, 'offers');
-                    const categoryName = categoryData?.nameEnglish || config.title;
-
-                    // console.log('Fetching offers for:', categoryName);
-                    const q = query(
-                        offersRef,
-                        where('mainCategory', '==', categoryName),
-                        where('status', '==', 'active')
-                    );
-
-                    const querySnapshot = await getDocs(q);
-                    const fetchedOffers = querySnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
-                    // console.log('Fetched offers:', fetchedOffers.length);
-                    setOffers(fetchedOffers);
-                } catch (error) {
-                    console.error("Error fetching offers:", error);
-                } finally {
-                    setLoadingOffers(false);
-                }
-            };
-
-            fetchOffers();
+            // Reset pagination state
+            setLastDoc(null);
+            setIsListEnd(false);
+            fetchOffers(true);
         }
-    }, [loading, hasSubCategories, categoryData, config.title]);
+    }, [selectedSubCategory, loading, hasSubCategories, config.title]);
 
+    const handleLoadMore = () => {
+        if (!loadingOffers && !isListEnd) {
+            fetchOffers(false);
+        }
+    };
 
-
-    const handleBackPress = () => {
+    const handleBackPress = useCallback(() => {
         router.back();
-    };
+    }, [router]);
 
-    const handleFilterChange = (filterId: string) => {
+    const handleFilterChange = useCallback((filterId: string) => {
         setSelectedFilter(filterId);
-    };
+    }, []);
 
-    const handleSubCategorySelect = (subCategory: { id: string; name: string; icon: string }) => {
+    const handleSubCategorySelect = useCallback((subCategory: { id: string; name: string; icon: string }) => {
         setSelectedSubCategory(subCategory.id);
-    };
+    }, []);
 
-    const handleRestaurantPress = (restaurant: { id: string; name: string }) => {
+    const handleRestaurantPress = useCallback((restaurant: { id: string; name: string }) => {
         console.log('Restaurant pressed:', restaurant.name);
-    };
+    }, []);
 
-    const handlePromoPress = (promo: { id: string; title: string }) => {
+    const handlePromoPress = useCallback((promo: { id: string; title: string }) => {
         console.log('Promo pressed:', promo.title);
+    }, []);
+
+    const subCategories = useMemo(() => {
+        return categoryData?.subcategories?.map((sub: any) => ({
+            id: sub.nameEnglish,
+            name: sub.nameEnglish,
+            icon: sub.imageUrl
+        })) || config.subCategories;
+    }, [categoryData, config.subCategories]);
+
+    const headerTitle = categoryData?.nameEnglish || config.title;
+    const headerIcon = categoryData?.imageUrl || config.icon;
+
+    const renderFooter = () => {
+        if (!loadingOffers) return <View style={{ height: 20 }} />;
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={Colors.brandGreen} />
+            </View>
+        );
     };
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
             <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
-            <ScrollView
-                style={styles.container}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.contentContainer}
-            >
-                <CategoryHeader
-                    title={categoryData?.nameEnglish || config.title}
-                    icon={categoryData?.imageUrl || config.icon}
-                    onBackPress={handleBackPress}
-                />
-
-                <SearchBar placeholder={`Search for ${(categoryData?.nameEnglish || config.title).toLowerCase()}...`} />
-
-                {loading ? (
-                    <View style={styles.comingSoonContainer}>
-                        <Text>Loading...</Text>
-                    </View>
-                ) : hasSubCategories ? (
-                    <>
-                        <FilterTabs
+            {!loading && hasSubCategories ? (
+                <FlatList
+                    data={offers}
+                    keyExtractor={(item) => item.id}
+                    numColumns={2}
+                    columnWrapperStyle={styles.offersGrid}
+                    contentContainerStyle={styles.contentContainer}
+                    showsVerticalScrollIndicator={false}
+                    ListHeaderComponent={
+                        <HeaderContent
+                            headerTitle={headerTitle}
+                            headerIcon={headerIcon}
+                            handleBackPress={handleBackPress}
+                            loading={loading}
+                            hasSubCategories={hasSubCategories}
                             selectedFilter={selectedFilter}
-                            onFilterChange={handleFilterChange}
+                            handleFilterChange={handleFilterChange}
+                            subCategories={subCategories}
+                            selectedSubCategory={selectedSubCategory}
+                            handleSubCategorySelect={handleSubCategorySelect}
+                            config={config}
+                            handleRestaurantPress={handleRestaurantPress}
                         />
-
-                        <SubCategoryChips
-                            subCategories={categoryData?.subcategories?.map((sub: any) => ({
-                                id: sub.nameEnglish, // Using name as ID for now or generate one if needed
-                                name: sub.nameEnglish,
-                                icon: sub.imageUrl
-                            })) || config.subCategories}
-                            selectedId={selectedSubCategory}
-                            onSelect={handleSubCategorySelect}
-                        />
-                        <BrowseSection
-                            title={config.browseTitle}
-                            emoji={config.browseEmoji}
-                            restaurants={config.restaurants}
-                            onRestaurantPress={handleRestaurantPress}
-                        />
-                        {/* Display Fetched Offers */}
-                        <View style={styles.offersContainer}>
-                            {loadingOffers ? (
-                                <View style={styles.loadingContainer}>
-                                    <Text>Loading offers...</Text>
-                                </View>
-                            ) : offers.length > 0 ? (
-                                <View style={styles.offersGrid}>
-                                    {offers.map((offer) => (
-                                        <View key={offer.id} style={styles.offerCardWrapper}>
-                                            <RestaurantCard
-                                                id={offer.id}
-                                                name={offer.titleEn || offer.titleAr || 'Untitled Offer'}
-                                                cashbackText={offer.descriptionEn || offer.descriptionAr || 'Special Offer'}
-                                                discountText={`${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ' OFF'}`}
-                                                isTrending={offer.isTrending}
-                                                imageUri={offer.bannerImage}
-                                                onPress={() => handlePromoPress({ id: offer.id, title: offer.titleEn })}
-                                            />
-                                        </View>
-                                    ))}
-                                </View>
-                            ) : null}
+                    }
+                    ListFooterComponent={renderFooter}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    renderItem={({ item }) => (
+                        <View style={styles.offerCardWrapper}>
+                            <RestaurantCard
+                                id={item.id}
+                                name={item.titleEn || item.titleAr || 'Untitled Offer'}
+                                cashbackText={item.descriptionEn || item.descriptionAr || 'Special Offer'}
+                                discountText={`${item.discountValue}${item.discountType === 'percentage' ? '%' : ''} OFF`}
+                                isTrending={item.isTrending}
+                                isTopRated={item.isTopRated}
+                                imageUri={item.bannerImage}
+                                onPress={() => handlePromoPress({ id: item.id, title: item.titleEn })}
+                            />
                         </View>
-                    </>
-                ) : (
-                    <View style={styles.comingSoonContainer}>
-                        <View style={styles.comingSoonIconContainer}>
-                            <Text style={styles.comingSoonEmoji}>⏳</Text>
-                        </View>
-                        <Text style={styles.comingSoonTitle}>{categoryData?.nameEnglish || config.title} Coming Soon!</Text>
-                        <Text style={styles.comingSoonSubtitle}>
-                            We're working hard to bring you the best {(categoryData?.nameEnglish || config.title).toLowerCase()} deals. Stay tuned!
-                        </Text>
-                    </View>
-                )}
-            </ScrollView>
+                    )}
+                />
+            ) : (
+                <ScrollView
+                    style={styles.container}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.contentContainer}
+                >
+                    <HeaderContent
+                        headerTitle={headerTitle}
+                        headerIcon={headerIcon}
+                        handleBackPress={handleBackPress}
+                        loading={loading}
+                        hasSubCategories={hasSubCategories}
+                        selectedFilter={selectedFilter}
+                        handleFilterChange={handleFilterChange}
+                        subCategories={subCategories}
+                        selectedSubCategory={selectedSubCategory}
+                        handleSubCategorySelect={handleSubCategorySelect}
+                        config={config}
+                        handleRestaurantPress={handleRestaurantPress}
+                    />
+                </ScrollView>
+            )}
         </SafeAreaView>
     );
 }
@@ -241,6 +366,10 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.light.background,
     },
     contentContainer: {
+        paddingBottom: 20,
+    },
+    // New FlatList spacing style
+    flatListContent: {
         paddingBottom: 20,
     },
     comingSoonContainer: {
@@ -300,5 +429,6 @@ const styles = StyleSheet.create({
     loadingContainer: {
         padding: 20,
         alignItems: 'center',
+        width: '100%',
     },
 });

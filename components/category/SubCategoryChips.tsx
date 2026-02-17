@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { memo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -25,7 +26,7 @@ const defaultSubCategories: SubCategory[] = [
     { id: 'desserts', name: 'Desserts', icon: '🍰' },
 ];
 
-export default function SubCategoryChips({
+function SubCategoryChips({
     subCategories = defaultSubCategories,
     selectedId = 'all',
     onSelect,
@@ -39,12 +40,6 @@ export default function SubCategoryChips({
             >
                 {subCategories.map((subCategory) => {
                     const isSelected = selectedId === subCategory.id;
-                    const isImage = typeof subCategory.icon === 'string' && (subCategory.icon.startsWith('http') || subCategory.icon.startsWith('file'));
-                    // Note: If using 'require', typeof is usually number. If uri string, checking http is good heuristic. 
-                    // Or simply check if it's NOT an emoji? Emojis are strings. URLs are strings.
-                    // Better heuristic: if string includes '/' or is long, treat as image?
-                    // Or explicit prop? 
-                    // Let's assume if it starts with http/https it's an image. If it's a number (require), it's an image.
 
                     const renderIcon = () => {
                         if (typeof subCategory.icon === 'number' || (typeof subCategory.icon === 'object' && subCategory.icon !== null)) {
@@ -85,6 +80,8 @@ export default function SubCategoryChips({
         </View>
     );
 }
+
+export default memo(SubCategoryChips);
 
 const styles = StyleSheet.create({
     container: {

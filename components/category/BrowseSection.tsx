@@ -53,7 +53,7 @@ const defaultRestaurants: Restaurant[] = [
 export default function BrowseSection({
     title = 'Yallah! browse food',
     emoji = '😋',
-    restaurants = defaultRestaurants,
+    restaurants = [],
     onRestaurantPress,
 }: Props) {
     return (

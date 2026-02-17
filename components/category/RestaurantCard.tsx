@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -10,7 +9,9 @@ type Props = {
     cashbackText?: string;
     discountText?: string;
     isTrending?: boolean;
+    isTopRated?: boolean;
     imageUri?: string;
+    logoUri?: string;
     onPress?: () => void;
 };
 
@@ -19,7 +20,9 @@ export default function RestaurantCard({
     cashbackText = 'Cashbacks',
     discountText = '60% DISCOUNT',
     isTrending = false,
+    isTopRated = false,
     imageUri,
+    logoUri,
     onPress,
 }: Props) {
     return (
@@ -43,32 +46,51 @@ export default function RestaurantCard({
                     </View>
                 )}
 
-                {/* Logo placeholder - only show if no image, or maybe overlay? keeping meaningful default behavior */}
-                {!imageUri && (
-                    <View style={styles.logoContainer}>
-                        <View style={styles.logoPlaceholder}>
+                {/* Logo in bottom corner */}
+                <View style={styles.logoContainer}>
+                    <View style={styles.logoWrapper}>
+                        {logoUri ? (
+                            <Image
+                                source={{ uri: logoUri }}
+                                style={styles.logoImage}
+                                contentFit="cover"
+                            />
+                        ) : (
                             <Text style={styles.logoEmoji}>🏪</Text>
-                        </View>
+                        )}
                     </View>
-                )}
+                </View>
 
-                {/* Trending badge */}
-                {isTrending && (
-                    <View style={styles.trendingBadge}>
-                        <Text style={styles.trendingIcon}>🔥</Text>
-                        <Text style={styles.trendingText}>TRENDING</Text>
-                    </View>
-                )}
+                {/* Badges Container */}
+                <View style={styles.badgesContainer}>
+                    {/* Top Rated Badge (Left) */}
+                    {isTopRated ? (
+                        <View style={styles.topRatedBadge}>
+                            <Text style={styles.trendingIcon}>⭐</Text>
+                            <Text style={[styles.badgeText, styles.topRatedText]}>TOP RATED</Text>
+                        </View>
+                    ) : (
+                        <View />
+                    )}
+
+                    {/* Trending Badge (Right) */}
+                    {isTrending && (
+                        <View style={styles.trendingBadge}>
+                            <Text style={styles.trendingIcon}>⚡</Text>
+                            <Text style={styles.badgeText}>TRENDING</Text>
+                        </View>
+                    )}
+                </View>
             </View>
 
             {/* Content */}
             <View style={styles.content}>
                 <Text style={styles.name} numberOfLines={1}>{name}</Text>
-                <View style={styles.cashbackRow}>
-                    <Ionicons name="location" size={14} color={Colors.brandGreen} />
-                    <Text style={styles.cashbackText}>{cashbackText}</Text>
+
+                {/* Discount Tag */}
+                <View style={styles.discountWrapper}>
+                    <Text style={styles.discountText}>{discountText}</Text>
                 </View>
-                <Text style={styles.discountText}>% {discountText}</Text>
             </View>
         </TouchableOpacity>
     );
@@ -76,7 +98,7 @@ export default function RestaurantCard({
 
 const styles = StyleSheet.create({
     container: {
-        width: 180,
+        width: '100%',
         backgroundColor: '#FFFFFF',
         borderRadius: 16,
         overflow: 'hidden',
@@ -88,7 +110,7 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         width: '100%',
-        height: 120,
+        height: 120, // Keep height or make it variable? 120 is fine for a card.
         position: 'relative',
     },
     image: {
@@ -109,9 +131,10 @@ const styles = StyleSheet.create({
     logoContainer: {
         position: 'absolute',
         left: 10,
-        bottom: 10,
+        bottom: 10, // Logo in the corner
+        zIndex: 2,
     },
-    logoPlaceholder: {
+    logoWrapper: {
         width: 40,
         height: 40,
         borderRadius: 8,
@@ -123,14 +146,26 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.15,
         shadowRadius: 4,
         elevation: 3,
+        overflow: 'hidden',
+    },
+    logoImage: {
+        width: '100%',
+        height: '100%',
     },
     logoEmoji: {
         fontSize: 20,
     },
-    trendingBadge: {
+    badgesContainer: { // Container for badges to handle spacing/positioning if needed
         position: 'absolute',
         top: 10,
-        right: 10,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'space-between', // Distribute badges
+        paddingHorizontal: 10,
+        pointerEvents: 'none', // Allow clicks to pass through if needed
+    },
+    trendingBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: Colors.brandGreen,
@@ -138,16 +173,32 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         borderRadius: 12,
         gap: 4,
+        alignSelf: 'flex-start',
+        marginLeft: 'auto', // Push to right if alone, or use justifyContent
+    },
+    topRatedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFD700', // Gold for top rated
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        gap: 4,
+        alignSelf: 'flex-start',
     },
     trendingIcon: {
         fontSize: 10,
     },
-    trendingText: {
+    badgeText: { // generic text style for badges
         fontSize: 10,
         fontFamily: Typography.metropolis.semiBold,
         color: '#FFFFFF',
         letterSpacing: 0.5,
     },
+    topRatedText: {
+        color: '#000000', // Dark text on Gold
+    },
+
     content: {
         padding: 12,
     },
@@ -167,6 +218,13 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontFamily: Typography.metropolis.medium,
         color: '#666666',
+    },
+    discountWrapper: {
+        backgroundColor: 'rgba(76, 217, 100, 0.1)', // Light green background for discount
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+        alignSelf: 'flex-start',
     },
     discountText: {
         fontSize: 13,

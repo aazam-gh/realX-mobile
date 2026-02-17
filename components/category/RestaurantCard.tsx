@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -18,6 +19,7 @@ export default function RestaurantCard({
     cashbackText = 'Cashbacks',
     discountText = '60% DISCOUNT',
     isTrending = false,
+    imageUri,
     onPress,
 }: Props) {
     return (
@@ -26,18 +28,29 @@ export default function RestaurantCard({
             onPress={onPress}
             activeOpacity={0.9}
         >
-            {/* Image placeholder */}
+            {/* Image placeholder or actual image */}
             <View style={styles.imageContainer}>
-                <View style={styles.imagePlaceholder}>
-                    <Text style={styles.placeholderEmoji}>🍽️</Text>
-                </View>
-
-                {/* Logo placeholder */}
-                <View style={styles.logoContainer}>
-                    <View style={styles.logoPlaceholder}>
-                        <Text style={styles.logoEmoji}>🏪</Text>
+                {imageUri ? (
+                    <Image
+                        source={{ uri: imageUri }}
+                        style={styles.image}
+                        contentFit="cover"
+                        transition={200}
+                    />
+                ) : (
+                    <View style={styles.imagePlaceholder}>
+                        <Text style={styles.placeholderEmoji}>🍽️</Text>
                     </View>
-                </View>
+                )}
+
+                {/* Logo placeholder - only show if no image, or maybe overlay? keeping meaningful default behavior */}
+                {!imageUri && (
+                    <View style={styles.logoContainer}>
+                        <View style={styles.logoPlaceholder}>
+                            <Text style={styles.logoEmoji}>🏪</Text>
+                        </View>
+                    </View>
+                )}
 
                 {/* Trending badge */}
                 {isTrending && (
@@ -77,6 +90,10 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 120,
         position: 'relative',
+    },
+    image: {
+        width: '100%',
+        height: '100%',
     },
     imagePlaceholder: {
         width: '100%',

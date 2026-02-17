@@ -1,4 +1,4 @@
-import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import { collection, doc, getDoc, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ImageSourcePropType, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
@@ -7,7 +7,8 @@ import {
     BrowseSection,
     CategoryHeader,
     FilterTabs,
-    SubCategoryChips,
+    RestaurantCard,
+    SubCategoryChips
 } from '../../components/category';
 import { SearchBar } from '../../components/home';
 import { Colors } from '../../constants/Colors';
@@ -60,11 +61,17 @@ export default function CategoryScreen() {
     const [selectedFilter, setSelectedFilter] = useState('top-rated');
     const [selectedSubCategory, setSelectedSubCategory] = useState('all');
 
+    const [offers, setOffers] = useState<any[]>([]);
+    const [loadingOffers, setLoadingOffers] = useState(false);
+
     // Get category configuration or use default
     const config = categoryConfig[id?.toLowerCase() || ''] || {
         ...defaultConfig,
         title: name || defaultConfig.title,
     };
+
+    // Derived state for subcategories existence
+    const hasSubCategories = (categoryData?.subcategories && categoryData.subcategories.length > 0) || (config.subCategories && config.subCategories.length > 0);
 
     useEffect(() => {
         const fetchCategory = async () => {
@@ -87,7 +94,39 @@ export default function CategoryScreen() {
         fetchCategory();
     }, [id]);
 
-    const hasSubCategories = (categoryData?.subcategories && categoryData.subcategories.length > 0) || (config.subCategories && config.subCategories.length > 0);
+    // Fetch offers if subcategories exist (active category)
+    useEffect(() => {
+        if (!loading && hasSubCategories) {
+            const fetchOffers = async () => {
+                setLoadingOffers(true);
+                try {
+                    const db = getFirestore();
+                    const offersRef = collection(db, 'offers');
+                    const categoryName = categoryData?.nameEnglish || config.title;
+
+                    // console.log('Fetching offers for:', categoryName);
+                    const q = query(
+                        offersRef,
+                        where('mainCategory', '==', categoryName),
+                        where('status', '==', 'active')
+                    );
+
+                    const querySnapshot = await getDocs(q);
+                    const fetchedOffers = querySnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+                    // console.log('Fetched offers:', fetchedOffers.length);
+                    setOffers(fetchedOffers);
+                } catch (error) {
+                    console.error("Error fetching offers:", error);
+                } finally {
+                    setLoadingOffers(false);
+                }
+            };
+
+            fetchOffers();
+        }
+    }, [loading, hasSubCategories, categoryData, config.title]);
+
+
 
     const handleBackPress = () => {
         router.back();
@@ -145,13 +184,36 @@ export default function CategoryScreen() {
                             selectedId={selectedSubCategory}
                             onSelect={handleSubCategorySelect}
                         />
-
                         <BrowseSection
                             title={config.browseTitle}
                             emoji={config.browseEmoji}
                             restaurants={config.restaurants}
                             onRestaurantPress={handleRestaurantPress}
                         />
+                        {/* Display Fetched Offers */}
+                        <View style={styles.offersContainer}>
+                            {loadingOffers ? (
+                                <View style={styles.loadingContainer}>
+                                    <Text>Loading offers...</Text>
+                                </View>
+                            ) : offers.length > 0 ? (
+                                <View style={styles.offersGrid}>
+                                    {offers.map((offer) => (
+                                        <View key={offer.id} style={styles.offerCardWrapper}>
+                                            <RestaurantCard
+                                                id={offer.id}
+                                                name={offer.titleEn || offer.titleAr || 'Untitled Offer'}
+                                                cashbackText={offer.descriptionEn || offer.descriptionAr || 'Special Offer'}
+                                                discountText={`${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ' OFF'}`}
+                                                isTrending={offer.isTrending}
+                                                imageUri={offer.bannerImage}
+                                                onPress={() => handlePromoPress({ id: offer.id, title: offer.titleEn })}
+                                            />
+                                        </View>
+                                    ))}
+                                </View>
+                            ) : null}
+                        </View>
                     </>
                 ) : (
                     <View style={styles.comingSoonContainer}>
@@ -219,5 +281,24 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
         textAlign: 'center',
         lineHeight: 24,
+    },
+    offersContainer: {
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: 16,
+    },
+    offersGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 16,
+        justifyContent: 'space-between',
+    },
+    offerCardWrapper: {
+        width: '47%', // Slightly less than 50% to account for gap/spacing
+        marginBottom: 16,
+    },
+    loadingContainer: {
+        padding: 20,
+        alignItems: 'center',
     },
 });

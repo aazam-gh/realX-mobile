@@ -3,8 +3,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
@@ -14,8 +15,11 @@ export default function RedeemScreen() {
     const [vendor, setVendor] = useState<any>(null);
     const [offer, setOffer] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [step, setStep] = useState<'creator' | 'pin'>('creator');
+    const [creatorCode, setCreatorCode] = useState('');
     const [pin, setPin] = useState('');
     const [amount, setAmount] = useState('80');
+    const pinInputRef = useRef<TextInput>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -46,10 +50,14 @@ export default function RedeemScreen() {
         fetchData();
     }, [id, vendorId]);
 
-    const handleRedeem = () => {
-        // Logic for redemption will go here
-        console.log(`Redeeming with PIN: ${pin}, Amount: ${amount}`);
-        // router.push('/redeem/success');
+    const handleAction = () => {
+        if (step === 'creator') {
+            setStep('pin');
+        } else {
+            // Logic for redemption will go here
+            console.log(`Redeeming with PIN: ${pin}, Amount: ${amount}, Creator: ${creatorCode}`);
+            // router.push('/redeem/success');
+        }
     };
 
     if (loading) {
@@ -79,7 +87,10 @@ export default function RedeemScreen() {
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={() => router.back()}
+                    onPress={() => {
+                        if (step === 'pin') setStep('creator');
+                        else router.back();
+                    }}
                 >
                     <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
@@ -113,42 +124,80 @@ export default function RedeemScreen() {
                     </View>
                 </View>
 
-                {/* Redemption Card */}
-                <View style={styles.redemptionCard}>
-                    <Text style={styles.inputLabel}>Enter Vendor PIN:</Text>
-                    <View style={styles.pinContainer}>
-                        {[1, 2, 3, 4].map((_, index) => (
-                            <View key={index} style={styles.pinBox}>
-                                <Text style={styles.pinText}>*</Text>
-                            </View>
-                        ))}
+                {/* Conditional Cards based on Step */}
+                {step === 'creator' && (
+                    <View style={styles.creatorCard}>
+                        <Text style={styles.inputLabel}>
+                            Have a creator code? <Text style={styles.optionalText}>(Optional)</Text>
+                        </Text>
+                        <View style={styles.creatorInputContainer}>
+                            <TextInput
+                                style={styles.creatorInput}
+                                value={creatorCode}
+                                onChangeText={setCreatorCode}
+                                placeholder="MRBEAST6000"
+                                placeholderTextColor="#CCC"
+                                autoCapitalize="characters"
+                            />
+                        </View>
                     </View>
+                )}
 
-                    <Text style={styles.inputLabel}>Total Paid:</Text>
-                    <View style={styles.amountInputContainer}>
-                        <Text style={styles.currencyPrefix}>QAR</Text>
+                {step === 'pin' && (
+                    <View style={styles.redemptionCard}>
+                        <Text style={styles.inputLabel}>Enter Vendor PIN:</Text>
+                        <TouchableOpacity
+                            activeOpacity={1}
+                            style={styles.pinContainer}
+                            onPress={() => pinInputRef.current?.focus()}
+                        >
+                            {[0, 1, 2, 3].map((index) => (
+                                <View key={index} style={styles.pinBox}>
+                                    <Text style={[styles.pinText, pin.length > index && { color: '#000', marginTop: 0 }]}>
+                                        {pin.length > index ? '●' : '*'}
+                                    </Text>
+                                </View>
+                            ))}
+                        </TouchableOpacity>
+
                         <TextInput
-                            style={styles.amountInput}
-                            value={amount}
-                            onChangeText={setAmount}
+                            ref={pinInputRef}
+                            style={{ position: 'absolute', opacity: 0, height: 0, width: 0 }}
+                            value={pin}
+                            onChangeText={(text) => {
+                                if (text.length <= 4) setPin(text);
+                            }}
                             keyboardType="numeric"
-                            placeholder="0"
-                            placeholderTextColor="#CCC"
                         />
+
+                        <Text style={styles.inputLabel}>Total Paid:</Text>
+                        <View style={styles.amountInputContainer}>
+                            <Text style={styles.currencyPrefix}>QAR</Text>
+                            <TextInput
+                                style={styles.amountInput}
+                                value={amount}
+                                onChangeText={setAmount}
+                                keyboardType="numeric"
+                                placeholder="0"
+                                placeholderTextColor="#CCC"
+                            />
+                        </View>
                     </View>
-                </View>
+                )}
 
                 {/* Spacer to push button to bottom */}
                 <View style={{ flex: 1 }} />
 
-                {/* Redeem Button */}
+                {/* Action Button */}
                 <TouchableOpacity
                     style={styles.redeemButton}
                     activeOpacity={0.9}
-                    onPress={handleRedeem}
+                    onPress={handleAction}
                 >
                     <Ionicons name="flash" size={20} color="#FFF" />
-                    <Text style={styles.redeemButtonText}>REDEEM</Text>
+                    <Text style={styles.redeemButtonText}>
+                        {step === 'creator' ? 'CONTINUE' : 'REDEEM'}
+                    </Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
@@ -328,7 +377,7 @@ const styles = StyleSheet.create({
     amountInput: {
         flex: 1,
         fontSize: 18,
-        color: '#CCC',
+        color: '#000',
         fontFamily: Typography.metropolis.semiBold,
     },
     redeemButton: {
@@ -351,6 +400,34 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontFamily: Typography.integral.bold,
         letterSpacing: 1,
-    }
+    },
+    creatorCard: {
+        backgroundColor: '#F7F7F7',
+        borderRadius: 35,
+        padding: 24,
+        marginTop: 20,
+    },
+    creatorInputContainer: {
+        backgroundColor: '#FFF',
+        borderRadius: 25,
+        height: 55,
+        paddingHorizontal: 20,
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
+    },
+    creatorInput: {
+        fontSize: 18,
+        color: '#000',
+        fontFamily: Typography.metropolis.semiBold,
+    },
+    optionalText: {
+        color: '#888',
+        fontFamily: Typography.metropolis.medium,
+        fontSize: 14,
+    },
 });
 

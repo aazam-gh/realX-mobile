@@ -5,6 +5,8 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -55,17 +57,19 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="category" options={{ headerShown: false }} />
-      <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
-      <Stack.Screen name="terms" options={{ headerShown: false }} />
-      <Stack.Screen name="privacy" options={{ headerShown: false }} />
-      <Stack.Screen name="+not-found" options={{ title: "Oops! Not Found" }} />
-    </Stack>
+    <SafeAreaProvider>
+      <Stack>
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="category" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+        <Stack.Screen name="terms" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" options={{ title: "Oops! Not Found" }} />
+      </Stack>
+    </SafeAreaProvider>
   );
 }
 

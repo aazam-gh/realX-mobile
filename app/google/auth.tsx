@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FirebaseAuthCallback() {
     const router = useRouter();
@@ -21,8 +22,10 @@ export default function FirebaseAuthCallback() {
     }, []);
 
     return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' }}>
-            <ActivityIndicator size="large" color="#34A853" />
-        </View>
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#34A853" />
+            </View>
+        </SafeAreaView>
     );
 }

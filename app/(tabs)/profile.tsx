@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import auth from '@react-native-firebase/auth';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '../../constants/Typography';
 
@@ -11,6 +12,31 @@ export default function ProfileScreen() {
 
   const handleEditPress = () => {
     router.push('/edit-profile');
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Log out',
+      'Are you sure you want to log out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await auth().signOut();
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Error', 'Failed to log out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -97,6 +123,12 @@ export default function ProfileScreen() {
             label="Privacy Policy"
             onPress={() => router.push('/privacy')}
           />
+          <MenuItem
+            icon="log-out-outline"
+            label="Log out"
+            onPress={handleLogout}
+            color="#FF3B30"
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -106,11 +138,13 @@ export default function ProfileScreen() {
 function MenuItem({
   icon,
   label,
-  onPress
+  onPress,
+  color = '#000'
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress?: () => void;
+  color?: string;
 }) {
   return (
     <TouchableOpacity
@@ -119,8 +153,8 @@ function MenuItem({
       onPress={onPress}
     >
       <View style={styles.menuItemLeft}>
-        <Ionicons name={icon} size={24} color="#000" />
-        <Text style={styles.menuItemLabel}>{label}</Text>
+        <Ionicons name={icon} size={24} color={color} />
+        <Text style={[styles.menuItemLabel, { color }]}>{label}</Text>
       </View>
     </TouchableOpacity>
   );

@@ -1,96 +1,111 @@
+import React, { useRef, useEffect } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/Colors';
-import { Typography } from '../../constants/Typography';
+
+// Assuming these exist in your project, otherwise replace with hex strings
+const BRAND_GREEN = '#58B368'; 
+const BG_LIGHT = '#F5F5F5';
 
 type FilterOption = {
     id: string;
     label: string;
-    icon: keyof typeof Ionicons.glyphMap;
+    icon: any;
 };
 
-type Props = {
+interface FilterTabsProps {
     selectedFilter: string;
-    onFilterChange?: (filterId: string) => void;
+    onFilterChange: (filterId: string) => void;
     filters?: FilterOption[];
-};
+}
 
 const defaultFilters: FilterOption[] = [
     { id: 'top-rated', label: 'Top Rated', icon: 'flash' },
-    { id: 'nearest-offers', label: 'Nearest Offers', icon: 'location-outline' },
+    { id: 'nearest', label: 'Nearest Offers', icon: 'location' },
 ];
 
-export default function FilterTabs({
-    selectedFilter,
-    onFilterChange,
-    filters = defaultFilters,
-}: Props) {
+export default function FilterTabs({ selectedFilter, onFilterChange, filters = defaultFilters }: FilterTabsProps ) {
+    const translateX = useRef(new Animated.Value(0)).current;
+    const containerWidth = Dimensions.get('window').width - 40; // Adjust based on your padding
+    const tabWidth = containerWidth / filters.length;
+
+    useEffect(() => {
+        const index = filters.findIndex(f => f.id === selectedFilter);
+        Animated.spring(translateX, {
+            toValue: index * tabWidth,
+            useNativeDriver: true,
+            bounciness: 4,
+        }).start();
+    }, [selectedFilter]);
+
     return (
-        <View style={styles.container}>
-            {filters.map((filter) => {
-                const isSelected = selectedFilter === filter.id;
-                return (
-                    <TouchableOpacity
-                        key={filter.id}
-                        style={[
-                            styles.filterButton,
-                            isSelected ? styles.filterButtonActive : styles.filterButtonInactive,
-                        ]}
-                        onPress={() => onFilterChange?.(filter.id)}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons
-                            name={filter.icon}
-                            size={16}
-                            color={isSelected ? '#FFFFFF' : Colors.light.text}
-                        />
-                        <Text
-                            style={[
-                                styles.filterText,
-                                isSelected ? styles.filterTextActive : styles.filterTextInactive,
-                            ]}
+        <View style={styles.outerContainer}>
+            <View style={styles.container}>
+                {/* Sliding Background */}
+                <Animated.View 
+                    style={[
+                        styles.slider, 
+                        { width: tabWidth, transform: [{ translateX }] }
+                    ]} 
+                />
+
+                {/* Content Overlay */}
+                {filters.map((filter) => {
+                    const isSelected = selectedFilter === filter.id;
+                    return (
+                        <TouchableOpacity
+                            key={filter.id}
+                            style={[styles.filterButton, { width: tabWidth }]}
+                            onPress={() => onFilterChange?.(filter.id)}
+                            activeOpacity={1}
                         >
-                            {filter.label}
-                        </Text>
-                    </TouchableOpacity>
-                );
-            })}
+                            <Ionicons
+                                name={filter.icon}
+                                size={20}
+                                color={isSelected ? '#FFFFFF' : '#000000'}
+                            />
+                            <Text style={[styles.filterText, { color: isSelected ? '#FFFFFF' : '#000000' }]}>
+                                {filter.label}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flexDirection: 'row',
-        justifyContent: 'center',
+    outerContainer: {
         paddingHorizontal: 20,
         paddingVertical: 12,
-        gap: 12,
+    },
+    container: {
+        flexDirection: 'row',
+        backgroundColor: BG_LIGHT,
+        borderRadius: 24, // Pure pill shape
+        position: 'relative',
+        height: 48,
+        alignItems: 'center',
+    },
+    slider: {
+        position: 'absolute',
+        height: '100%',
+        backgroundColor: BRAND_GREEN,
+        borderRadius: 24,
+        // Optional: add a slight border if you want it to look exactly like the image
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
     },
     filterButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 24,
+        justifyContent: 'center',
+        height: '100%',
         gap: 8,
-    },
-    filterButtonActive: {
-        backgroundColor: Colors.brandGreen,
-    },
-    filterButtonInactive: {
-        backgroundColor: '#F5F5F5',
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
+        zIndex: 1, // Ensures text is above the slider
     },
     filterText: {
-        fontSize: 14,
-        fontFamily: Typography.metropolis.semiBold,
-    },
-    filterTextActive: {
-        color: '#FFFFFF',
-    },
-    filterTextInactive: {
-        color: Colors.light.text,
+        fontSize: 16,
+        fontWeight: '600',
     },
 });

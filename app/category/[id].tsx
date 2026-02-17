@@ -253,7 +253,7 @@ export default function CategoryScreen() {
         setSelectedFilter(filterId);
     }, []);
 
-    const handleSubCategorySelect = useCallback((subCategory: { id: string; name: string; icon: string }) => {
+    const handleSubCategorySelect = useCallback((subCategory: { id: string; name: string; icon: any }) => {
         setSelectedSubCategory(subCategory.id);
     }, []);
 
@@ -261,16 +261,25 @@ export default function CategoryScreen() {
         console.log('Restaurant pressed:', restaurant.name);
     }, []);
 
-    const handlePromoPress = useCallback((promo: { id: string; title: string }) => {
-        console.log('Promo pressed:', promo.title);
-    }, []);
+    const handlePromoPress = useCallback((promo: { id: string; title: string; vendorId?: string }) => {
+        if (promo.vendorId) {
+            router.push({ pathname: '/vendor/[id]', params: { id: promo.vendorId } });
+        } else {
+            console.log('Promo pressed but no vendorId:', promo.title);
+        }
+    }, [router]);
 
     const subCategories = useMemo(() => {
-        return categoryData?.subcategories?.map((sub: any) => ({
+        const fetchedSubCategories = categoryData?.subcategories?.map((sub: any) => ({
             id: sub.nameEnglish,
             name: sub.nameEnglish,
             icon: sub.imageUrl
         })) || config.subCategories;
+
+        return [
+            { id: 'all', name: 'All', icon: require('../../assets/images/all.png') },
+            ...fetchedSubCategories
+        ];
     }, [categoryData, config.subCategories]);
 
     const headerTitle = categoryData?.nameEnglish || config.title;
@@ -325,7 +334,7 @@ export default function CategoryScreen() {
                                 isTrending={item.isTrending}
                                 isTopRated={item.isTopRated}
                                 imageUri={item.bannerImage}
-                                onPress={() => handlePromoPress({ id: item.id, title: item.titleEn })}
+                                onPress={() => handlePromoPress({ id: item.id, title: item.titleEn, vendorId: item.vendorId })}
                             />
                         </View>
                     )}
@@ -420,10 +429,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 16,
-        justifyContent: 'space-between',
+        justifyContent: 'space-evenly',
     },
     offerCardWrapper: {
-        width: '47%', // Slightly less than 50% to account for gap/spacing
+        width: '47%',
         marginBottom: 16,
     },
     loadingContainer: {

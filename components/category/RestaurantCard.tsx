@@ -13,6 +13,7 @@ type Props = {
     imageUri?: string;
     logoUri?: string;
     onPress?: () => void;
+    style?: any;
 };
 
 export default function RestaurantCard({
@@ -24,10 +25,11 @@ export default function RestaurantCard({
     imageUri,
     logoUri,
     onPress,
+    style,
 }: Props) {
     return (
         <TouchableOpacity
-            style={styles.container}
+            style={[styles.container, style]}
             onPress={onPress}
             activeOpacity={0.9}
         >
@@ -99,6 +101,7 @@ export default function RestaurantCard({
 const styles = StyleSheet.create({
     container: {
         width: '100%',
+        height: 200, // Fixed height for consistency
         backgroundColor: '#FFFFFF',
         borderRadius: 16,
         overflow: 'hidden',

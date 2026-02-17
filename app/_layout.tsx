@@ -59,6 +59,8 @@ export default function RootLayout() {
       <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="category" options={{ headerShown: false }} />
+      <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
       <Stack.Screen name="terms" options={{ headerShown: false }} />
       <Stack.Screen name="privacy" options={{ headerShown: false }} />

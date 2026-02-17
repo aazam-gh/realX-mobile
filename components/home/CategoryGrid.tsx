@@ -66,7 +66,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     const handleCategoryPress = (item: CategoryItem) => {
         if (onCategoryPress) {
             onCategoryPress(item);
-        } else if (item.id !== 'see-more') {
+        } else if (item.id !== 'coming-soon') {
             router.push({
                 pathname: "/category/[id]",
                 params: { id: item.id, name: item.name }

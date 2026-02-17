@@ -78,6 +78,7 @@ export default function BrowseSection({
                         isTrending={restaurant.isTrending}
                         imageUri={restaurant.imageUri}
                         onPress={() => onRestaurantPress?.(restaurant)}
+                        style={{ width: 170 }}
                     />
                 ))}
             </ScrollView>

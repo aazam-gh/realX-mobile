@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { getAuth } from '@react-native-firebase/auth';
 import { doc, getDoc, getFirestore, serverTimestamp, updateDoc } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
@@ -28,7 +29,8 @@ export default function EditProfileScreen() {
     const [lastName, setLastName] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
-    const [dob, setDob] = useState('');
+    const [dob, setDob] = useState<Date | null>(null);
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -52,7 +54,10 @@ export default function EditProfileScreen() {
                     setLastName(data?.lastName || '');
                     setPhone(data?.phone || '');
                     setEmail(data?.email || user.email || '');
-                    setDob(data?.dob || '');
+                    if (data?.dob) {
+                        const [day, month, year] = data.dob.split('/').map(Number);
+                        setDob(new Date(year, month - 1, day));
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching user data:', error);
@@ -83,7 +88,7 @@ export default function EditProfileScreen() {
                 firstName,
                 lastName,
                 phone,
-                dob,
+                dob: dob ? dob.toLocaleDateString('en-GB') : '',
                 updatedAt: serverTimestamp(),
             });
             Alert.alert('Success', 'Profile updated successfully');
@@ -94,6 +99,18 @@ export default function EditProfileScreen() {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        setShowDatePicker(Platform.OS === 'ios');
+        if (selectedDate) {
+            setDob(selectedDate);
+        }
+    };
+
+    const formatDate = (date: Date | null) => {
+        if (!date) return 'DD/MM/YYYY';
+        return date.toLocaleDateString('en-GB');
     };
 
     return (
@@ -196,16 +213,27 @@ export default function EditProfileScreen() {
                                 {/* Date of Birth Field */}
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.label}>Date of Birth</Text>
-                                    <View style={styles.inputWrapper}>
-                                        <TextInput
-                                            style={styles.input}
-                                            value={dob}
-                                            onChangeText={setDob}
-                                            placeholder="DD/MM/YYYY"
-                                        />
+                                    <TouchableOpacity
+                                        style={styles.inputWrapper}
+                                        onPress={() => setShowDatePicker(true)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={[styles.input, !dob && { color: '#999' }]}>
+                                            {formatDate(dob)}
+                                        </Text>
                                         <Ionicons name="calendar-outline" size={24} color="#000" />
-                                    </View>
+                                    </TouchableOpacity>
                                 </View>
+
+                                {showDatePicker && (
+                                    <DateTimePicker
+                                        value={dob || new Date(2026, 0, 1)}
+                                        mode="date"
+                                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                        onChange={onDateChange}
+                                        maximumDate={new Date()}
+                                    />
+                                )}
                             </>
                         )}
                     </View>

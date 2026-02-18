@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { getAuth } from '@react-native-firebase/auth';
 import { doc, getFirestore, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -25,7 +26,8 @@ export default function DetailsOnboarding() {
     const params = useLocalSearchParams<{ email?: string; role?: string }>();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [dob, setDob] = useState('');
+    const [dob, setDob] = useState<Date | null>(null);
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [gender, setGender] = useState<'Male' | 'Female' | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -43,7 +45,7 @@ export default function DetailsOnboarding() {
             const studentData = {
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
-                dob: dob.trim(),
+                dob: dob ? dob.toLocaleDateString('en-GB') : '', // Format: DD/MM/YYYY
                 gender,
                 email: params.email || user.email,
                 role: params.role || 'student',
@@ -69,7 +71,19 @@ export default function DetailsOnboarding() {
         router.back();
     };
 
-    const isFormValid = firstName.trim() && lastName.trim() && dob.trim() && gender && !isLoading;
+    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        setShowDatePicker(Platform.OS === 'ios');
+        if (selectedDate) {
+            setDob(selectedDate);
+        }
+    };
+
+    const formatDate = (date: Date | null) => {
+        if (!date) return 'Date of Birth (DD/MM/YYYY)';
+        return date.toLocaleDateString('en-GB');
+    };
+
+    const isFormValid = firstName.trim() && lastName.trim() && dob && gender && !isLoading;
 
     return (
         <View style={styles.container}>
@@ -126,17 +140,26 @@ export default function DetailsOnboarding() {
                                 </View>
                             </View>
 
-                            <View style={styles.inputContainer}>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Date of Birth (DD/MM/YYYY)"
-                                    placeholderTextColor="#999"
-                                    value={dob}
-                                    onChangeText={setDob}
-                                    keyboardType="numbers-and-punctuation"
-                                    editable={!isLoading}
+                            <TouchableOpacity
+                                style={styles.inputContainer}
+                                onPress={() => setShowDatePicker(true)}
+                                disabled={isLoading}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.input, !dob && { color: '#999' }]}>
+                                    {formatDate(dob)}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    value={dob || new Date(2026, 0, 1)}
+                                    mode="date"
+                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                    onChange={onDateChange}
+                                    maximumDate={new Date()}
                                 />
-                            </View>
+                            )}
 
                             <View style={styles.genderContainer}>
                                 <Text style={styles.label}>Gender</Text>

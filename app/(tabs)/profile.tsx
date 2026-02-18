@@ -4,7 +4,7 @@ import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore'
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '../../constants/Typography';
 
@@ -112,20 +112,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Verification Alert */}
-        <View style={styles.verificationBanner}>
-          <View style={styles.infoIconContainer}>
-            <View style={styles.infoCircle}>
-              <Ionicons name="information-outline" size={24} color="#000" />
-            </View>
-          </View>
-          <View style={styles.verificationTextContainer}>
-            <Text style={styles.verificationTitle}>Verification pending</Text>
-            <Text style={styles.verificationSubtitle}>
-              Your account is still awaiting verification.
-            </Text>
-          </View>
-        </View>
+
 
         {/* Savings Tracker Section */}
         <View style={styles.sectionHeader}>
@@ -150,7 +137,11 @@ export default function ProfileScreen() {
           <MenuItem icon="time-outline" label="Redemption History" />
           <MenuItem icon="heart-outline" label="Favourites" />
           <MenuItem icon="language-outline" label="Change Language" />
-          <MenuItem icon="logo-whatsapp" label="Contact Us" />
+          <MenuItem
+            icon="mail-outline"
+            label="Contact Us"
+            onPress={() => Linking.openURL('mailto:info@realx.qa')}
+          />
           <MenuItem
             icon="document-text-outline"
             label="Terms and Conditions"
@@ -270,41 +261,7 @@ const styles = StyleSheet.create({
     color: '#000',
     marginRight: 4,
   },
-  verificationBanner: {
-    flexDirection: 'row',
-    padding: 24,
-    borderRadius: 32,
-    backgroundColor: '#F5F5F5',
-    marginBottom: 32,
-    alignItems: 'center',
-  },
-  infoIconContainer: {
-    marginRight: 16,
-  },
-  infoCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  verificationTextContainer: {
-    flex: 1,
-  },
-  verificationTitle: {
-    fontSize: 18,
-    fontFamily: Typography.metropolis.semiBold,
-    color: '#000',
-  },
-  verificationSubtitle: {
-    fontSize: 14,
-    fontFamily: Typography.metropolis.medium,
-    color: '#000',
-    marginTop: 6,
-    lineHeight: 20,
-  },
+
   sectionHeader: {
     marginBottom: 16,
   },

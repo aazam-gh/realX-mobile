@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
+import { doc, getFirestore, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
@@ -34,7 +34,8 @@ export default function DetailsOnboarding() {
 
         setIsLoading(true);
         try {
-            const user = auth().currentUser;
+            const authInstance = getAuth();
+            const user = authInstance.currentUser;
             if (!user) {
                 throw new Error('No authenticated user found');
             }
@@ -46,15 +47,13 @@ export default function DetailsOnboarding() {
                 gender,
                 email: params.email || user.email,
                 role: params.role || 'student',
-                createdAt: firestore.FieldValue.serverTimestamp(),
-                updatedAt: firestore.FieldValue.serverTimestamp(),
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
                 uid: user.uid,
             };
 
-            await firestore()
-                .collection('students')
-                .doc(user.uid)
-                .set(studentData);
+            const db = getFirestore();
+            await setDoc(doc(db, 'students', user.uid), studentData);
 
             console.log('Student details saved successfully!');
             router.replace('/(tabs)');

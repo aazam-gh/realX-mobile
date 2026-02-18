@@ -8,7 +8,7 @@ const AUTH_EMAIL_KEY = 'auth_email_for_sign_in';
  */
 export const actionCodeSettings = {
     // This URL will be used as a fallback and should be whitelisted in Firebase Console.
-    url: 'https://reelx.app/finishSignUp',
+    url: 'https://reelx-backend.firebaseapp.com',
     handleCodeInApp: true,
     iOS: {
         bundleId: 'com.reelx.app',

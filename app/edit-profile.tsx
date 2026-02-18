@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
+import { doc, getDoc, getFirestore, serverTimestamp, updateDoc } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -33,7 +33,8 @@ export default function EditProfileScreen() {
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        const user = auth().currentUser;
+        const authInstance = getAuth();
+        const user = authInstance.currentUser;
         if (!user) {
             router.replace('/(onboarding)');
             return;
@@ -41,9 +42,12 @@ export default function EditProfileScreen() {
 
         const fetchUserData = async () => {
             try {
-                const doc = await firestore().collection('students').doc(user.uid).get();
-                if (doc.exists()) {
-                    const data = doc.data();
+                const db = getFirestore();
+                const studentDocRef = doc(db, 'students', user.uid);
+                const docSnap = await getDoc(studentDocRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
                     setFirstName(data?.firstName || '');
                     setLastName(data?.lastName || '');
                     setPhone(data?.phone || '');
@@ -66,17 +70,21 @@ export default function EditProfileScreen() {
     };
 
     const handleSave = async () => {
-        const user = auth().currentUser;
+        const authInstance = getAuth();
+        const user = authInstance.currentUser;
         if (!user) return;
 
         setIsSaving(true);
         try {
-            await firestore().collection('students').doc(user.uid).update({
+            const db = getFirestore();
+            const studentDocRef = doc(db, 'students', user.uid);
+
+            await updateDoc(studentDocRef, {
                 firstName,
                 lastName,
                 phone,
                 dob,
-                updatedAt: firestore.FieldValue.serverTimestamp(),
+                updatedAt: serverTimestamp(),
             });
             Alert.alert('Success', 'Profile updated successfully');
             router.back();

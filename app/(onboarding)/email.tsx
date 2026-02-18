@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { fetchSignInMethodsForEmail, getAuth, sendSignInLinkToEmail, signInWithEmailAndPassword } from '@react-native-firebase/auth';
+import { fetchSignInMethodsForEmail, getAuth, isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailAndPassword, signInWithEmailLink } from '@react-native-firebase/auth';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useRef, useState } from 'react';
@@ -31,6 +31,7 @@ export default function EmailOnboarding() {
     const [isNewUser, setIsNewUser] = useState(mode === 'signup');
     const [isLoading, setIsLoading] = useState(false);
     const [isLinkSent, setIsLinkSent] = useState(false);
+    const [manualLink, setManualLink] = useState('');
     const inputRef = useRef<TextInput>(null);
 
     const handleBack = () => {
@@ -71,7 +72,7 @@ export default function EmailOnboarding() {
 
             if (!exists) {
                 // For new users, we'll use email link authentication to verify their email
-                const { actionCodeSettings, saveAuthEmail } = require('../utils/auth');
+                const { actionCodeSettings, saveAuthEmail } = require('../../utils/auth');
 
                 await sendSignInLinkToEmail(getAuthInstance, trimmedEmail, actionCodeSettings);
                 await saveAuthEmail(trimmedEmail);
@@ -123,9 +124,42 @@ export default function EmailOnboarding() {
         }
     };
 
+    const handleManualLinkVerify = async () => {
+        if (!manualLink.trim()) return;
+
+        setIsLoading(true);
+        try {
+            const authInstance = getAuth();
+            if (await isSignInWithEmailLink(authInstance, manualLink)) {
+                const { getAuthEmail, clearAuthEmail } = require('../../utils/auth');
+                const storedEmail = await getAuthEmail();
+
+                if (storedEmail) {
+                    await signInWithEmailLink(authInstance, storedEmail, manualLink);
+                    await clearAuthEmail();
+                    console.log('Successfully signed in manually!');
+                    router.replace('/(tabs)');
+                } else {
+                    Alert.alert('Error', 'No email found in storage. Please try starting again.');
+                }
+            } else {
+                Alert.alert('Invalid Link', 'The link you pasted is not a valid sign-in link.');
+            }
+        } catch (err: any) {
+            console.error(err);
+            Alert.alert('Error', err.message || 'Failed to verify link.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleContinue = async () => {
         if (isLinkSent) {
-            // Maybe handle manual re-send or just wait
+            if (manualLink) {
+                await handleManualLinkVerify();
+            } else {
+                // Resend logic could go here
+            }
             return;
         }
 
@@ -210,8 +244,19 @@ export default function EmailOnboarding() {
 
                         <View style={styles.inputWrapper}>
                             {isLinkSent ? (
-                                <View style={{ alignItems: 'center', marginVertical: 20 }}>
-                                    <Ionicons name="mail-outline" size={80} color={Colors.brandGreen} />
+                                <View style={{ alignItems: 'center', marginVertical: 10 }}>
+                                    <Ionicons name="mail-outline" size={60} color={Colors.brandGreen} />
+                                    <View style={[styles.singleInputContainer, { marginTop: 20, width: '100%' }]}>
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="Paste the link from your email here"
+                                            placeholderTextColor="#999"
+                                            value={manualLink}
+                                            onChangeText={setManualLink}
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                        />
+                                    </View>
                                 </View>
                             ) : (
                                 <>
@@ -273,23 +318,30 @@ export default function EmailOnboarding() {
                     <TouchableOpacity
                         style={[
                             styles.button,
-                            ((!isEmailSubmitted && !email && mode !== 'login') ||
-                                (mode === 'login' && (!email || password.length < 6)) ||
-                                (isEmailSubmitted && password.length < 6) ||
-                                isLoading) && styles.buttonDisabled
+                            (isLoading ||
+                                (!isLinkSent && (
+                                    (!isEmailSubmitted && !email && mode !== 'login') ||
+                                    (mode === 'login' && (!email || password.length < 6)) ||
+                                    (isEmailSubmitted && !isNewUser && password.length < 6)
+                                ))
+                            ) && styles.buttonDisabled
                         ]}
                         onPress={handleContinue}
-                        disabled={(!isEmailSubmitted && !email && mode !== 'login') ||
-                            (mode === 'login' && (!email || password.length < 6)) ||
-                            (isEmailSubmitted && password.length < 6) ||
-                            isLoading}
+                        disabled={
+                            isLoading ||
+                            (!isLinkSent && (
+                                (!isEmailSubmitted && !email && mode !== 'login') ||
+                                (mode === 'login' && (!email || password.length < 6)) ||
+                                (isEmailSubmitted && !isNewUser && password.length < 6)
+                            ))
+                        }
                         activeOpacity={0.8}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="white" />
                         ) : (
                             <Text style={styles.buttonText}>
-                                {isLinkSent ? 'Resend Email' : (mode === 'login' ? 'Sign In' : (isEmailSubmitted ? (isNewUser ? 'Create Account' : 'Sign In') : 'Continue'))}
+                                {isLinkSent ? (manualLink ? 'Verify Link' : 'Resend Email') : (mode === 'login' ? 'Sign In' : (isEmailSubmitted ? (isNewUser ? 'Create Account' : 'Sign In') : 'Continue'))}
                             </Text>
                         )}
                     </TouchableOpacity>

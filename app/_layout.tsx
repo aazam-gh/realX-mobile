@@ -1,6 +1,6 @@
 import '@react-native-firebase/app';
-import { FirebaseAuthTypes, getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import { getAuth, isSignInWithEmailLink, onAuthStateChanged, signInWithEmailLink, type FirebaseAuthTypes } from '@react-native-firebase/auth';
+import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 
 import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { clearAuthEmail, getAuthEmail } from './utils/auth';
+import { clearAuthEmail, getAuthEmail } from '../utils/auth';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,11 +31,11 @@ export default function RootLayout() {
       if (!url) return;
 
       const authInstance = getAuth();
-      if (await authInstance.isSignInWithEmailLink(url)) {
+      if (await isSignInWithEmailLink(authInstance, url)) {
         try {
           const email = await getAuthEmail();
           if (email) {
-            await authInstance.signInWithEmailLink(email, url);
+            await signInWithEmailLink(authInstance, email, url);
             await clearAuthEmail();
             console.log('Successfully signed in with email link!');
           } else {
@@ -73,15 +73,15 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (user) {
-      const unsubscribe = firestore()
-        .collection('students')
-        .doc(user.uid)
-        .onSnapshot(doc => {
-          setHasProfile(doc.exists);
-        }, error => {
-          console.error('Error fetching student profile:', error);
-          setHasProfile(false);
-        });
+      const db = getFirestore();
+      const studentDocRef = doc(db, 'students', user.uid);
+
+      const unsubscribe = onSnapshot(studentDocRef, docSnap => {
+        setHasProfile(docSnap.exists());
+      }, error => {
+        console.error('Error fetching student profile:', error);
+        setHasProfile(false);
+      });
       return () => unsubscribe();
     } else {
       setHasProfile(null);

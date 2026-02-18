@@ -1,13 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import auth from '@react-native-firebase/auth';
+import { getAuth, signOut } from '@react-native-firebase/auth';
+import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '../../constants/Typography';
-
-import firestore from '@react-native-firebase/firestore';
-import React, { useEffect, useState } from 'react';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -21,17 +20,18 @@ export default function ProfileScreen() {
   } | null>(null);
 
   useEffect(() => {
-    const user = auth().currentUser;
+    const authInstance = getAuth();
+    const user = authInstance.currentUser;
     if (!user) return;
 
-    const unsubscribe = firestore()
-      .collection('students')
-      .doc(user.uid)
-      .onSnapshot((doc) => {
-        if (doc.exists()) {
-          setUserData(doc.data() as any);
-        }
-      });
+    const db = getFirestore();
+    const studentDocRef = doc(db, 'students', user.uid);
+
+    const unsubscribe = onSnapshot(studentDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setUserData(docSnap.data() as any);
+      }
+    });
 
     return () => unsubscribe();
   }, []);
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await auth().signOut();
+              await signOut(getAuth());
             } catch (error) {
               console.error('Logout error:', error);
               Alert.alert('Error', 'Failed to log out. Please try again.');
@@ -82,9 +82,9 @@ export default function ProfileScreen() {
         <View style={styles.profileCard}>
           <View style={styles.profileInfo}>
             <View style={styles.avatar}>
-              {userData?.photoURL || auth().currentUser?.photoURL ? (
+              {userData?.photoURL || getAuth().currentUser?.photoURL ? (
                 <Image
-                  source={{ uri: userData?.photoURL || auth().currentUser?.photoURL || undefined }}
+                  source={{ uri: userData?.photoURL || getAuth().currentUser?.photoURL || undefined }}
                   style={styles.avatar}
                 />
               ) : (
@@ -98,7 +98,7 @@ export default function ProfileScreen() {
                 {userData ? `${userData.firstName} ${userData.lastName}` : 'Loading...'}
               </Text>
               <Text style={styles.userPhone}>
-                {userData?.phone || userData?.email || auth().currentUser?.email || ''}
+                {userData?.phone || userData?.email || getAuth().currentUser?.email || ''}
               </Text>
             </View>
           </View>

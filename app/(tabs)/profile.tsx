@@ -6,9 +6,35 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '../../constants/Typography';
 
+import firestore from '@react-native-firebase/firestore';
+import React, { useEffect, useState } from 'react';
+
 export default function ProfileScreen() {
   const router = useRouter();
   const PURPLE = '#7D57FF';
+  const [userData, setUserData] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    photoURL?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const user = auth().currentUser;
+    if (!user) return;
+
+    const unsubscribe = firestore()
+      .collection('students')
+      .doc(user.uid)
+      .onSnapshot((doc) => {
+        if (doc.exists()) {
+          setUserData(doc.data() as any);
+        }
+      });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleEditPress = () => {
     router.push('/edit-profile');
@@ -55,13 +81,25 @@ export default function ProfileScreen() {
         {/* Profile Info Card */}
         <View style={styles.profileCard}>
           <View style={styles.profileInfo}>
-            <Image
-              source={{ uri: 'https://i.pravatar.cc/150?u=ahmed' }} // Placeholder for user avatar
-              style={styles.avatar}
-            />
+            <View style={styles.avatar}>
+              {userData?.photoURL || auth().currentUser?.photoURL ? (
+                <Image
+                  source={{ uri: userData?.photoURL || auth().currentUser?.photoURL || undefined }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F5F5' }]}>
+                  <Ionicons name="person" size={32} color="#CCC" />
+                </View>
+              )}
+            </View>
             <View style={styles.nameContainer}>
-              <Text style={styles.userName}>Ahmed Almalki</Text>
-              <Text style={styles.userPhone}>+974 5566 7788</Text>
+              <Text style={styles.userName}>
+                {userData ? `${userData.firstName} ${userData.lastName}` : 'Loading...'}
+              </Text>
+              <Text style={styles.userPhone}>
+                {userData?.phone || userData?.email || auth().currentUser?.email || ''}
+              </Text>
             </View>
           </View>
           <TouchableOpacity

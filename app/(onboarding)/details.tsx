@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
+    Alert,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
@@ -19,21 +22,55 @@ import { Typography } from '../../constants/Typography';
 
 export default function DetailsOnboarding() {
     const router = useRouter();
+    const params = useLocalSearchParams<{ email?: string; role?: string }>();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [dob, setDob] = useState('');
     const [gender, setGender] = useState<'Male' | 'Female' | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleContinue = () => {
-        // Here we would save the details to Firestore
-        router.replace('/(tabs)');
+    const handleContinue = async () => {
+        if (!isFormValid || isLoading) return;
+
+        setIsLoading(true);
+        try {
+            const user = auth().currentUser;
+            if (!user) {
+                throw new Error('No authenticated user found');
+            }
+
+            const studentData = {
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                dob: dob.trim(),
+                gender,
+                email: params.email || user.email,
+                role: params.role || 'student',
+                createdAt: firestore.FieldValue.serverTimestamp(),
+                updatedAt: firestore.FieldValue.serverTimestamp(),
+                uid: user.uid,
+            };
+
+            await firestore()
+                .collection('students')
+                .doc(user.uid)
+                .set(studentData);
+
+            console.log('Student details saved successfully!');
+            router.replace('/(tabs)');
+        } catch (error: any) {
+            console.error('Error saving student details:', error);
+            Alert.alert('Error', error.message || 'Failed to save details. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleBack = () => {
         router.back();
     };
 
-    const isFormValid = firstName.trim() && lastName.trim() && dob.trim() && gender;
+    const isFormValid = firstName.trim() && lastName.trim() && dob.trim() && gender && !isLoading;
 
     return (
         <View style={styles.container}>
@@ -75,6 +112,7 @@ export default function DetailsOnboarding() {
                                         placeholderTextColor="#999"
                                         value={firstName}
                                         onChangeText={setFirstName}
+                                        editable={!isLoading}
                                     />
                                 </View>
                                 <View style={[styles.inputContainer, { flex: 1 }]}>
@@ -84,6 +122,7 @@ export default function DetailsOnboarding() {
                                         placeholderTextColor="#999"
                                         value={lastName}
                                         onChangeText={setLastName}
+                                        editable={!isLoading}
                                     />
                                 </View>
                             </View>
@@ -96,6 +135,7 @@ export default function DetailsOnboarding() {
                                     value={dob}
                                     onChangeText={setDob}
                                     keyboardType="numbers-and-punctuation"
+                                    editable={!isLoading}
                                 />
                             </View>
 
@@ -105,12 +145,14 @@ export default function DetailsOnboarding() {
                                     <TouchableOpacity
                                         style={[styles.genderButton, gender === 'Male' && styles.genderButtonSelected]}
                                         onPress={() => setGender('Male')}
+                                        disabled={isLoading}
                                     >
                                         <Text style={[styles.genderText, gender === 'Male' && styles.genderTextSelected]}>Male</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={[styles.genderButton, gender === 'Female' && styles.genderButtonSelected]}
                                         onPress={() => setGender('Female')}
+                                        disabled={isLoading}
                                     >
                                         <Text style={[styles.genderText, gender === 'Female' && styles.genderTextSelected]}>Female</Text>
                                     </TouchableOpacity>
@@ -131,7 +173,7 @@ export default function DetailsOnboarding() {
                         disabled={!isFormValid}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.buttonText}>Continue</Text>
+                        <Text style={styles.buttonText}>{isLoading ? 'Saving...' : 'Continue'}</Text>
                     </TouchableOpacity>
                 </KeyboardAvoidingView>
             </View>

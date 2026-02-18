@@ -1,11 +1,14 @@
 import '@react-native-firebase/app';
 import { FirebaseAuthTypes, getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 
+import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { clearAuthEmail, getAuthEmail } from './utils/auth';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -18,8 +21,44 @@ export default function RootLayout() {
 
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
+  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const router = useRouter();
   const segments = useSegments();
+
+  // Handle Firebase Email Link Authentication
+  useEffect(() => {
+    const handleDeepLink = async (url: string | null) => {
+      if (!url) return;
+
+      const authInstance = getAuth();
+      if (await authInstance.isSignInWithEmailLink(url)) {
+        try {
+          const email = await getAuthEmail();
+          if (email) {
+            await authInstance.signInWithEmailLink(email, url);
+            await clearAuthEmail();
+            console.log('Successfully signed in with email link!');
+          } else {
+            // If email is missing, we might need to prompt the user for it
+            // but for now we log it.
+            console.warn('Email link detected but no email found in storage.');
+          }
+        } catch (err) {
+          console.error('Error signing in with email link:', err);
+        }
+      }
+    };
+
+    // Check if the app was opened via a link
+    Linking.getInitialURL().then(handleDeepLink);
+
+    // Subscribe to incoming links while the app is open
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleDeepLink(url);
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   // Handle user state changes
   function onAuthStateChangedHandler(user: FirebaseAuthTypes.User | null) {
@@ -33,6 +72,23 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    if (user) {
+      const unsubscribe = firestore()
+        .collection('students')
+        .doc(user.uid)
+        .onSnapshot(doc => {
+          setHasProfile(doc.exists);
+        }, error => {
+          console.error('Error fetching student profile:', error);
+          setHasProfile(false);
+        });
+      return () => unsubscribe();
+    } else {
+      setHasProfile(null);
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (loaded || error) {
       SplashScreen.hideAsync();
     }
@@ -41,16 +97,22 @@ export default function RootLayout() {
   useEffect(() => {
     if (initializing || !loaded) return;
 
+    // Wait for profile check if user is logged in
+    if (user && hasProfile === null) return;
+
     const inAuthGroup = segments[0] === '(onboarding)';
 
     if (!user && !inAuthGroup) {
       // Redirect to onboarding if not logged in and not already in onboarding
       router.replace('/(onboarding)');
-    } else if (user && inAuthGroup) {
-      // Redirect to tabs if logged in and in onboarding
+    } else if (user && hasProfile && inAuthGroup) {
+      // Redirect to tabs if logged in and HAS a profile but still in onboarding
       router.replace('/(tabs)');
+    } else if (user && !hasProfile && !inAuthGroup) {
+      // Redirect back to onboarding details if logged in but NO profile and not in onboarding
+      router.replace('/(onboarding)/details');
     }
-  }, [user, initializing, loaded, segments]);
+  }, [user, initializing, loaded, segments, hasProfile]);
 
   if (initializing || (!loaded && !error)) {
     return null;

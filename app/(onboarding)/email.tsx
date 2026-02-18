@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail, getAuth, signInWithEmailAndPassword } from '@react-native-firebase/auth';
-import { useRouter } from 'expo-router';
+import { fetchSignInMethodsForEmail, getAuth, sendSignInLinkToEmail, signInWithEmailAndPassword } from '@react-native-firebase/auth';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useRef, useState } from 'react';
 import {
@@ -22,15 +22,22 @@ import { Typography } from '../../constants/Typography';
 
 export default function EmailOnboarding() {
     const router = useRouter();
+    const params = useLocalSearchParams<{ role?: string; mode?: string }>();
+    const { role, mode } = params;
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isEmailSubmitted, setIsEmailSubmitted] = useState(false);
-    const [isNewUser, setIsNewUser] = useState(true);
+    const [isNewUser, setIsNewUser] = useState(mode === 'signup');
     const [isLoading, setIsLoading] = useState(false);
+    const [isLinkSent, setIsLinkSent] = useState(false);
     const inputRef = useRef<TextInput>(null);
 
     const handleBack = () => {
-        if (isEmailSubmitted) {
+        if (isLinkSent) {
+            setIsLinkSent(false);
+            setIsEmailSubmitted(false);
+        } else if (isEmailSubmitted) {
             setIsEmailSubmitted(false);
             setPassword('');
         } else {
@@ -41,6 +48,8 @@ export default function EmailOnboarding() {
     const handleCheckEmail = async () => {
         const trimmedEmail = email.trim().toLowerCase();
 
+        // TEMPORARY: Disabled for testing
+        /*
         if (!trimmedEmail.endsWith('.edu.qa')) {
             Alert.alert(
                 'Invalid Email',
@@ -48,15 +57,31 @@ export default function EmailOnboarding() {
             );
             return;
         }
+        */
 
         setIsLoading(true);
 
         try {
             // Check if email is already in use
-            const methods = await fetchSignInMethodsForEmail(getAuth(), trimmedEmail);
+            const getAuthInstance = getAuth();
+            const methods = await fetchSignInMethodsForEmail(getAuthInstance, trimmedEmail);
             const exists = methods.length > 0;
+
             setIsNewUser(!exists);
-            setIsEmailSubmitted(true);
+
+            if (!exists) {
+                // For new users, we'll use email link authentication to verify their email
+                const { actionCodeSettings, saveAuthEmail } = require('../utils/auth');
+
+                await sendSignInLinkToEmail(getAuthInstance, trimmedEmail, actionCodeSettings);
+                await saveAuthEmail(trimmedEmail);
+
+                setIsLinkSent(true);
+                setIsEmailSubmitted(true);
+            } else {
+                // For existing users, proceed to password entry
+                setIsEmailSubmitted(true);
+            }
         } catch (err: any) {
             console.error(err);
             Alert.alert('Error', err.message || 'An error occurred. Please try again.');
@@ -75,25 +100,11 @@ export default function EmailOnboarding() {
         const trimmedEmail = email.trim().toLowerCase();
 
         try {
-            if (isNewUser) {
-                // Register new user
-                await createUserWithEmailAndPassword(getAuth(), trimmedEmail, password);
-                console.log('User account created & signed in!');
-                // Navigation will be handled by onAuthStateChanged in _layout.tsx, 
-                // but we can also push to details if it's a new account
-                router.push({
-                    pathname: '/(onboarding)/details',
-                    params: { email: trimmedEmail }
-                } as any);
-            } else {
-                // Sign in existing user
-                await signInWithEmailAndPassword(getAuth(), trimmedEmail, password);
-                console.log('User signed in!');
-                // If it's a login, we might go straight to (tabs), 
-                // but usually onboarding checks if profile exists.
-                // For now, let's assume login goes to tabs
-                router.replace('/(tabs)');
-            }
+            // This now only handles existing users signing in with password
+            // or new users if we decide to keep password flow (but link is better for verification)
+            await signInWithEmailAndPassword(getAuth(), trimmedEmail, password);
+            console.log('User signed in!');
+            router.replace('/(tabs)');
         } catch (error: any) {
             console.error(error);
             if (error.code === 'auth/email-already-in-use') {
@@ -113,7 +124,14 @@ export default function EmailOnboarding() {
     };
 
     const handleContinue = async () => {
-        if (!isEmailSubmitted) {
+        if (isLinkSent) {
+            // Maybe handle manual re-send or just wait
+            return;
+        }
+
+        if (mode === 'login') {
+            await handleAuthenticate();
+        } else if (!isEmailSubmitted) {
             await handleCheckEmail();
         } else {
             await handleAuthenticate();
@@ -143,60 +161,106 @@ export default function EmailOnboarding() {
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View style={styles.card}>
                         <View style={styles.textContainer}>
-                            <Text style={styles.titleLine}>
-                                <Text style={styles.greenText}>{isEmailSubmitted ? (isNewUser ? 'CREATE' : 'WELCOME') : 'LOGIN'}</Text>
-                                <Text style={styles.blackText}> {isEmailSubmitted ? (isNewUser ? 'A' : 'BACK') : 'OR'} </Text>
-                                <Text style={styles.greenText}>{isEmailSubmitted ? (isNewUser ? 'PASSWORD' : '') : 'CREATE'}</Text>
-                            </Text>
-                            {(!isEmailSubmitted || (isEmailSubmitted && isNewUser)) && (
-                                <Text style={styles.titleLine}>
-                                    <Text style={styles.blackText}>{isEmailSubmitted ? 'FOR YOUR ACCOUNT' : 'AN ACCOUNT'}</Text>
-                                </Text>
+                            {isLinkSent ? (
+                                <>
+                                    <Text style={styles.titleLine}>
+                                        <Text style={styles.greenText}>CHECK YOUR</Text>
+                                    </Text>
+                                    <Text style={styles.titleLine}>
+                                        <Text style={styles.blackText}>EMAIL</Text>
+                                    </Text>
+                                </>
+                            ) : (
+                                !isEmailSubmitted ? (
+                                    mode === 'signup' ? (
+                                        <>
+                                            <Text style={styles.titleLine}>
+                                                <Text style={styles.greenText}>CREATE YOUR</Text>
+                                            </Text>
+                                            <Text style={styles.titleLine}>
+                                                <Text style={styles.blackText}>{(role === 'creator' ? 'CREATOR' : 'STUDENT')} ACCOUNT</Text>
+                                            </Text>
+                                        </>
+                                    ) : (
+                                        <Text style={styles.titleLine}>
+                                            <Text style={styles.greenText}>LOGIN</Text>
+                                        </Text>
+                                    )
+                                ) : (
+                                    isNewUser ? (
+                                        <>
+                                            <Text style={styles.titleLine}>
+                                                <Text style={styles.greenText}>CREATE</Text>
+                                                <Text style={styles.blackText}> A </Text>
+                                                <Text style={styles.greenText}>PASSWORD</Text>
+                                            </Text>
+                                            <Text style={styles.titleLine}>
+                                                <Text style={styles.blackText}>FOR YOUR ACCOUNT</Text>
+                                            </Text>
+                                        </>
+                                    ) : (
+                                        <Text style={styles.titleLine}>
+                                            <Text style={styles.greenText}>WELCOME</Text>
+                                            <Text style={styles.blackText}> BACK</Text>
+                                        </Text>
+                                    )
+                                )
                             )}
                         </View>
 
                         <View style={styles.inputWrapper}>
-                            {!isEmailSubmitted ? (
-                                <TouchableOpacity
-                                    style={styles.singleInputContainer}
-                                    activeOpacity={1}
-                                    onPress={() => inputRef.current?.focus()}
-                                >
-                                    <TextInput
-                                        ref={inputRef}
-                                        style={styles.input}
-                                        placeholder="Student Email"
-                                        placeholderTextColor="#999"
-                                        keyboardType="email-address"
-                                        autoCapitalize="none"
-                                        autoCorrect={false}
-                                        value={email}
-                                        onChangeText={setEmail}
-                                        editable={!isLoading}
-                                    />
-                                </TouchableOpacity>
-                            ) : (
-                                <View style={styles.singleInputContainer}>
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="Password"
-                                        placeholderTextColor="#999"
-                                        secureTextEntry
-                                        value={password}
-                                        onChangeText={setPassword}
-                                        autoFocus
-                                        editable={!isLoading}
-                                    />
+                            {isLinkSent ? (
+                                <View style={{ alignItems: 'center', marginVertical: 20 }}>
+                                    <Ionicons name="mail-outline" size={80} color={Colors.brandGreen} />
                                 </View>
+                            ) : (
+                                <>
+                                    {(mode === 'login' || !isEmailSubmitted) && (
+                                        <View style={[styles.singleInputContainer, mode === 'login' && { marginBottom: 15 }]}>
+                                            <TextInput
+                                                ref={inputRef}
+                                                style={styles.input}
+                                                placeholder="Student Email"
+                                                placeholderTextColor="#999"
+                                                keyboardType="email-address"
+                                                autoCapitalize="none"
+                                                autoCorrect={false}
+                                                value={email}
+                                                onChangeText={setEmail}
+                                                editable={!isLoading}
+                                                autoFocus={mode === 'login'}
+                                            />
+                                        </View>
+                                    )}
+
+                                    {(mode === 'login' || (isEmailSubmitted && !isNewUser)) && (
+                                        <View style={styles.singleInputContainer}>
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="Password"
+                                                placeholderTextColor="#999"
+                                                secureTextEntry
+                                                value={password}
+                                                onChangeText={setPassword}
+                                                autoFocus={mode !== 'login'}
+                                                editable={!isLoading}
+                                            />
+                                        </View>
+                                    )}
+                                </>
                             )}
                         </View>
 
                         <Text style={styles.infoText}>
-                            {isEmailSubmitted
-                                ? (isNewUser
-                                    ? 'Choose a strong password with at least 6 characters.'
-                                    : 'Enter your password to sign in.')
-                                : 'Use your university email address to access exclusive student deals and discounts.'}
+                            {isLinkSent
+                                ? `We've sent a magic link to ${email}. Click the link in your email to verify your account.`
+                                : (mode === 'login'
+                                    ? 'Enter your email and password to sign in to your account.'
+                                    : (isEmailSubmitted
+                                        ? (isNewUser
+                                            ? 'Choose a strong password with at least 6 characters.'
+                                            : 'Enter your password to sign in.')
+                                        : 'Use your university email address to access exclusive student deals and discounts.'))}
                         </Text>
                     </View>
                 </TouchableWithoutFeedback>
@@ -209,17 +273,23 @@ export default function EmailOnboarding() {
                     <TouchableOpacity
                         style={[
                             styles.button,
-                            ((!isEmailSubmitted && !email) || (isEmailSubmitted && password.length < 6) || isLoading) && styles.buttonDisabled
+                            ((!isEmailSubmitted && !email && mode !== 'login') ||
+                                (mode === 'login' && (!email || password.length < 6)) ||
+                                (isEmailSubmitted && password.length < 6) ||
+                                isLoading) && styles.buttonDisabled
                         ]}
                         onPress={handleContinue}
-                        disabled={(!isEmailSubmitted && !email) || (isEmailSubmitted && password.length < 6) || isLoading}
+                        disabled={(!isEmailSubmitted && !email && mode !== 'login') ||
+                            (mode === 'login' && (!email || password.length < 6)) ||
+                            (isEmailSubmitted && password.length < 6) ||
+                            isLoading}
                         activeOpacity={0.8}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="white" />
                         ) : (
                             <Text style={styles.buttonText}>
-                                {isEmailSubmitted ? (isNewUser ? 'Create Account' : 'Sign In') : 'Continue'}
+                                {isLinkSent ? 'Resend Email' : (mode === 'login' ? 'Sign In' : (isEmailSubmitted ? (isNewUser ? 'Create Account' : 'Sign In') : 'Continue'))}
                             </Text>
                         )}
                     </TouchableOpacity>

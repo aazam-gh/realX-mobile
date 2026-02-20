@@ -60,6 +60,7 @@ export default function OnboardingScreen() {
                                 source={require('../../assets/images/onboarding.png')}
                                 style={styles.characterImage}
                                 contentFit="contain"
+                                contentPosition="left"
                             />
                         </View>
 
@@ -200,11 +201,12 @@ const styles = StyleSheet.create({
         width: width,
         justifyContent: 'center',
         alignItems: 'flex-start',
+        alignSelf: 'flex-start',
         marginLeft: -24, // Negate content padding to hit edge
         marginTop: -20,
     },
     characterImage: {
-        width: width - 117,
+        width: width * 0.85,
         height: height * 0.45,
     },
     footer: {

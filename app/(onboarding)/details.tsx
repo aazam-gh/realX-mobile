@@ -93,10 +93,18 @@ export default function DetailsOnboarding() {
             <View style={styles.headerBackground}>
                 <SafeAreaView edges={['top']} style={styles.headerContent}>
                     <View style={styles.topButtons}>
-                        <TouchableOpacity onPress={handleBack} style={styles.iconButton}>
+                        <TouchableOpacity
+                            onPress={handleBack}
+                            style={[styles.iconButton, { opacity: 0 }]}
+                            disabled={true}
+                        >
                             <Ionicons name="arrow-back" size={24} color="black" />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.replace('/')} style={styles.iconButton}>
+                        <TouchableOpacity
+                            onPress={() => router.replace('/')}
+                            style={[styles.iconButton, { opacity: 0 }]}
+                            disabled={true}
+                        >
                             <Ionicons name="close" size={24} color="black" />
                         </TouchableOpacity>
                     </View>

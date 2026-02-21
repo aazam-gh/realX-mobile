@@ -7,7 +7,6 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    //Dimensions,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
@@ -22,8 +21,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-
-// const { width } = Dimensions.get('window');
 
 export default function PhoneOnboarding() {
     const router = useRouter();
@@ -42,16 +39,13 @@ export default function PhoneOnboarding() {
                 console.log('User signed in:', user.uid);
                 // Use replace to prevent stacking and use the standard route path
                 router.replace({
-                    pathname: '/details',
+                    pathname: '/(onboarding)/details',
                     params: { email: email || '', phone: phoneNumber || user.phoneNumber || '' }
                 } as any);
             }
         });
         return subscriber; // unsubscribe on unmount
     }, [email, phoneNumber, router]);
-
-    // If we were using a reCAPTCHA verifier, we would initialize it here
-    // import { RecaptchaVerifier } from 'firebase/auth';
 
     const handleSendCode = async () => {
         // Validate phone number: 8 digits
@@ -83,7 +77,6 @@ export default function PhoneOnboarding() {
         setLoading(true);
         try {
             await confirm.confirm(code);
-            // reset code if it fails, but onAuthStateChanged will handle success
         } catch (error: any) {
             console.error(error);
             Alert.alert('Invalid Code', 'The verification code you entered is incorrect. Please try again.');
@@ -91,7 +84,6 @@ export default function PhoneOnboarding() {
             setLoading(false);
         }
     };
-
 
     const handleContinue = () => {
         if (!confirm) {
@@ -109,7 +101,6 @@ export default function PhoneOnboarding() {
             router.back();
         }
     };
-
 
     return (
         <View style={styles.container}>
@@ -145,8 +136,6 @@ export default function PhoneOnboarding() {
                         </View>
 
                         {!confirm ? (
-
-                            // Phone Input
                             <View style={styles.inputWrapper}>
                                 <TouchableOpacity style={styles.countryPicker}>
                                     <Image
@@ -168,8 +157,6 @@ export default function PhoneOnboarding() {
                                 </View>
                             </View>
                         ) : (
-
-                            // OTP Input
                             <View style={styles.inputWrapper}>
                                 <View style={[styles.phoneNumberContainer, { backgroundColor: '#F3F3F3' }]}>
                                     <TextInput
@@ -192,9 +179,8 @@ export default function PhoneOnboarding() {
                                 : 'Enter the code sent to your mobile number.'}
                         </Text>
                         {!confirm && (
-
                             <Text style={styles.infoText}>
-                                By clicking &quot;Continue&quot; you agree to our <Text style={styles.boldText}>Terms & Conditions</Text>
+                                By clicking "Continue" you agree to our <Text style={styles.boldText}>Terms & Conditions</Text>
                             </Text>
                         )}
                     </View>
@@ -217,7 +203,6 @@ export default function PhoneOnboarding() {
                             <Text style={styles.buttonText}>{!confirm ? 'Continue' : 'Verify'}</Text>
                         )}
                     </TouchableOpacity>
-
                 </KeyboardAvoidingView>
             </View>
         </View>

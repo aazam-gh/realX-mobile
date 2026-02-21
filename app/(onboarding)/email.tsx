@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { fetchSignInMethodsForEmail, getAuth, isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailAndPassword, signInWithEmailLink } from '@react-native-firebase/auth';
+import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -33,6 +34,42 @@ export default function EmailOnboarding() {
     const [isLinkSent, setIsLinkSent] = useState(false);
     const [manualLink, setManualLink] = useState('');
     const inputRef = useRef<TextInput>(null);
+    const url = Linking.useURL();
+
+    useEffect(() => {
+        const verifyAutomaticLink = async (incomingUrl: string) => {
+            const authInstance = getAuth();
+            if (await isSignInWithEmailLink(authInstance, incomingUrl)) {
+                setIsLoading(true);
+                try {
+                    const { getAuthEmail, clearAuthEmail } = require('../../utils/auth');
+                    const storedEmail = await getAuthEmail();
+
+                    if (storedEmail) {
+                        await signInWithEmailLink(authInstance, storedEmail, incomingUrl);
+                        await clearAuthEmail();
+                        console.log('Successfully signed in automatically!');
+                        if (isNewUser) {
+                            router.replace('/(onboarding)/details');
+                        } else {
+                            router.replace('/(tabs)');
+                        }
+                    } else {
+                        Alert.alert('Error', 'No email found in storage. Please try starting again.');
+                    }
+                } catch (err: any) {
+                    console.error(err);
+                    Alert.alert('Verification Failed', err.message || 'Failed to verify link.');
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        if (url && isLinkSent) {
+            verifyAutomaticLink(url);
+        }
+    }, [url, isLinkSent, isNewUser, router]);
 
     const handleBack = () => {
         if (isLinkSent) {
@@ -105,7 +142,11 @@ export default function EmailOnboarding() {
             // or new users if we decide to keep password flow (but link is better for verification)
             await signInWithEmailAndPassword(getAuth(), trimmedEmail, password);
             console.log('User signed in!');
-            router.replace('/(tabs)');
+            if (isNewUser) {
+                router.replace('/(onboarding)/details');
+            } else {
+                router.replace('/(tabs)');
+            }
         } catch (error: any) {
             console.error(error);
             if (error.code === 'auth/email-already-in-use') {
@@ -138,7 +179,11 @@ export default function EmailOnboarding() {
                     await signInWithEmailLink(authInstance, storedEmail, manualLink);
                     await clearAuthEmail();
                     console.log('Successfully signed in manually!');
-                    router.replace('/(tabs)');
+                    if (isNewUser) {
+                        router.replace('/(onboarding)/details');
+                    } else {
+                        router.replace('/(tabs)');
+                    }
                 } else {
                     Alert.alert('Error', 'No email found in storage. Please try starting again.');
                 }

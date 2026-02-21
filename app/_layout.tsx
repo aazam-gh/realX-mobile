@@ -39,8 +39,6 @@ export default function RootLayout() {
             await clearAuthEmail();
             console.log('Successfully signed in with email link!');
           } else {
-            // If email is missing, we might need to prompt the user for it
-            // but for now we log it.
             console.warn('Email link detected but no email found in storage.');
           }
         } catch (err) {
@@ -49,10 +47,8 @@ export default function RootLayout() {
       }
     };
 
-    // Check if the app was opened via a link
     Linking.getInitialURL().then(handleDeepLink);
 
-    // Subscribe to incoming links while the app is open
     const subscription = Linking.addEventListener('url', ({ url }) => {
       handleDeepLink(url);
     });
@@ -60,7 +56,6 @@ export default function RootLayout() {
     return () => subscription.remove();
   }, []);
 
-  // Handle user state changes
   function onAuthStateChangedHandler(user: FirebaseAuthTypes.User | null) {
     setUser(user);
     if (initializing) setInitializing(false);
@@ -68,7 +63,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     const subscriber = onAuthStateChanged(getAuth(), onAuthStateChangedHandler);
-    return subscriber; // unsubscribe on unmount
+    return subscriber;
   }, []);
 
   useEffect(() => {
@@ -89,32 +84,37 @@ export default function RootLayout() {
   }, [user]);
 
   useEffect(() => {
-    if (loaded || error) {
+    if ((loaded || error) && !initializing && (user === null || hasProfile !== null)) {
       SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [loaded, error, initializing, user, hasProfile]);
 
   useEffect(() => {
     if (initializing || !loaded) return;
 
-    // Wait for profile check if user is logged in
     if (user && hasProfile === null) return;
 
-    const inAuthGroup = segments[0] === '(onboarding)';
+    const inAuthGroup = segments.indexOf('(onboarding)') !== -1;
 
-    if (!user && !inAuthGroup) {
-      // Redirect to onboarding if not logged in and not already in onboarding
-      router.replace('/(onboarding)');
-    } else if (user && hasProfile && inAuthGroup) {
-      // Redirect to tabs if logged in and HAS a profile but still in onboarding
-      router.replace('/(tabs)');
-    } else if (user && !hasProfile && !inAuthGroup) {
-      // Redirect back to onboarding details if logged in but NO profile and not in onboarding
-      router.replace('/(onboarding)/details');
+    if (!user) {
+      if (!inAuthGroup) {
+        router.replace('/(onboarding)');
+      }
+    } else {
+      if (hasProfile === true) {
+        if (inAuthGroup) {
+          router.replace('/(tabs)');
+        }
+      } else if (hasProfile === false) {
+        const currentPath = segments.join('/');
+        if (!currentPath.includes('details')) {
+          router.replace('/(onboarding)/details');
+        }
+      }
     }
   }, [user, initializing, loaded, segments, hasProfile]);
 
-  if (initializing || (!loaded && !error)) {
+  if (!loaded && !error) {
     return null;
   }
 
@@ -134,4 +134,3 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
-

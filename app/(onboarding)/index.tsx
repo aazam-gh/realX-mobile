@@ -26,10 +26,7 @@ export default function OnboardingScreen() {
     };
 
     const handleLogin = () => {
-        router.push({
-            pathname: '/(onboarding)/email',
-            params: { mode: 'login' }
-        } as any);
+        router.push('/(onboarding)/login' as any);
     };
 
     return (

@@ -40,12 +40,12 @@ export default function PhoneOnboarding() {
                 // Use replace to prevent stacking and use the standard route path
                 router.replace({
                     pathname: '/(onboarding)/details',
-                    params: { email: email || '', phone: phoneNumber || user.phoneNumber || '' }
+                    params: { email: email || '', phone: user.phoneNumber || '' }
                 } as any);
             }
         });
         return subscriber; // unsubscribe on unmount
-    }, [email, phoneNumber, router]);
+    }, [email, router]);
 
     const handleSendCode = async () => {
         // Validate phone number: 8 digits

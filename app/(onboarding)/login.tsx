@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth, isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink } from '@react-native-firebase/auth';
 import * as Linking from 'expo-linking';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -22,13 +22,10 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { actionCodeSettings, clearAuthEmail, getAuthEmail, saveAuthEmail } from '../../utils/auth';
 
-export default function EmailOnboarding() {
+export default function LoginScreen() {
     const router = useRouter();
-    const params = useLocalSearchParams<{ role?: string; mode?: string }>();
-    const { role, mode } = params;
 
     const [email, setEmail] = useState('');
-    const [isNewUser, setIsNewUser] = useState(mode === 'signup');
     const [isLoading, setIsLoading] = useState(false);
     const [isLinkSent, setIsLinkSent] = useState(false);
     const [manualLink, setManualLink] = useState('');
@@ -47,11 +44,7 @@ export default function EmailOnboarding() {
                         await signInWithEmailLink(authInstance, storedEmail, incomingUrl);
                         await clearAuthEmail();
                         console.log('Successfully signed in automatically!');
-                        if (isNewUser) {
-                            router.replace('/(onboarding)/details');
-                        } else {
-                            router.replace('/(tabs)');
-                        }
+                        router.replace('/(tabs)');
                     } else {
                         Alert.alert('Error', 'No email found in storage. Please try starting again.');
                     }
@@ -67,7 +60,7 @@ export default function EmailOnboarding() {
         if (url && isLinkSent) {
             verifyAutomaticLink(url);
         }
-    }, [url, isLinkSent, isNewUser, router]);
+    }, [url, isLinkSent, router]);
 
     const handleBack = () => {
         if (isLinkSent) {
@@ -77,18 +70,22 @@ export default function EmailOnboarding() {
         }
     };
 
-    const handleSendMagicLink = async () => {
+    const handleSendMagicLink = async (trimmedEmail: string) => {
+        const getAuthInstance = getAuth();
+        await sendSignInLinkToEmail(getAuthInstance, trimmedEmail, actionCodeSettings);
+        await saveAuthEmail(trimmedEmail);
+
+        setIsLinkSent(true);
+    };
+
+    const handleLogin = async () => {
         const trimmedEmail = email.trim().toLowerCase();
         if (!trimmedEmail) return;
 
         setIsLoading(true);
 
         try {
-            const getAuthInstance = getAuth();
-            await sendSignInLinkToEmail(getAuthInstance, trimmedEmail, actionCodeSettings);
-            await saveAuthEmail(trimmedEmail);
-
-            setIsLinkSent(true);
+            await handleSendMagicLink(trimmedEmail);
         } catch (err: any) {
             console.error(err);
             Alert.alert('Error', err.message || 'An error occurred. Please try again.');
@@ -110,11 +107,7 @@ export default function EmailOnboarding() {
                     await signInWithEmailLink(authInstance, storedEmail, manualLink);
                     await clearAuthEmail();
                     console.log('Successfully signed in manually!');
-                    if (isNewUser) {
-                        router.replace('/(onboarding)/details');
-                    } else {
-                        router.replace('/(tabs)');
-                    }
+                    router.replace('/(tabs)');
                 } else {
                     Alert.alert('Error', 'No email found in storage. Please try starting again.');
                 }
@@ -134,23 +127,26 @@ export default function EmailOnboarding() {
             if (manualLink) {
                 await handleManualLinkVerify();
             } else {
-                // Resend logic
-                await handleSendMagicLink();
-                Alert.alert('Email Sent', 'A new link has been sent to your email.');
+                setIsLoading(true);
+                try {
+                    await handleSendMagicLink(email.trim().toLowerCase());
+                    Alert.alert('Email Sent', 'A new link has been sent to your email.');
+                } catch (err: any) {
+                    Alert.alert('Error', err.message || 'Failed to resend email.');
+                } finally {
+                    setIsLoading(false);
+                }
             }
             return;
         }
 
-        await handleSendMagicLink();
+        await handleLogin();
     };
-
-
 
     return (
         <View style={styles.container}>
             <StatusBar style="light" />
 
-            {/* Header / Background Section */}
             <View style={styles.headerBackground}>
                 <SafeAreaView edges={['top']} style={styles.headerContent}>
                     <View style={styles.topButtons}>
@@ -164,7 +160,6 @@ export default function EmailOnboarding() {
                 </SafeAreaView>
             </View>
 
-            {/* Main Content Card */}
             <View style={styles.cardContainer}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View style={styles.card}>
@@ -179,16 +174,10 @@ export default function EmailOnboarding() {
                                     </Text>
                                 </>
                             ) : (
-                                <>
-                                    <Text style={styles.titleLine}>
-                                        <Text style={styles.greenText}>CREATE YOUR</Text>
-                                    </Text>
-                                    <Text style={styles.titleLine}>
-                                        <Text style={styles.blackText}>{(role === 'creator' ? 'CREATOR' : 'STUDENT')} ACCOUNT</Text>
-                                    </Text>
-                                </>
+                                <Text style={styles.titleLine}>
+                                    <Text style={styles.greenText}>LOGIN</Text>
+                                </Text>
                             )}
-
                         </View>
 
                         <View style={styles.inputWrapper}>
@@ -208,7 +197,7 @@ export default function EmailOnboarding() {
                                     </View>
                                 </View>
                             ) : (
-                                <View style={[styles.singleInputContainer, { marginBottom: 15 }]}>
+                                <View style={[styles.singleInputContainer]}>
                                     <TextInput
                                         ref={inputRef}
                                         style={styles.input}
@@ -228,11 +217,9 @@ export default function EmailOnboarding() {
 
                         <Text style={styles.infoText}>
                             {isLinkSent
-                                ? `We've sent a magic link to ${email}. Click the link in your email to verify your account.`
-                                : 'Use your university email address to access exclusive student deals and discounts.'}
+                                ? `We've sent a magic link to ${email}. Click the link in your email to login.`
+                                : 'Enter your email to receive a secure login link.'}
                         </Text>
-
-
                     </View>
                 </TouchableWithoutFeedback>
 
@@ -254,11 +241,9 @@ export default function EmailOnboarding() {
                             <ActivityIndicator color="white" />
                         ) : (
                             <Text style={styles.buttonText}>
-                                {isLinkSent ? (manualLink ? 'Verify Link' : 'Resend Email') : 'Continue'}
+                                {isLinkSent ? (manualLink ? 'Verify Link' : 'Resend Email') : 'Login'}
                             </Text>
                         )}
-
-
                     </TouchableOpacity>
                 </KeyboardAvoidingView>
             </View>

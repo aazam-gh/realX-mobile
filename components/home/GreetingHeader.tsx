@@ -1,26 +1,38 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { useTheme } from '../../context/ThemeContext';
+import { ThemedText } from '../ThemedText';
 
 type Props = {
     userName: string;
 };
 
 export default function GreetingHeader({ userName }: Props) {
+    const { colorScheme, toggleTheme, theme: activeColors } = useTheme();
+    const isDark = colorScheme === 'dark';
+
+
     return (
         <View style={styles.container}>
             <View style={styles.textContainer}>
-                <Text style={styles.greeting}>
-                    Hey <Text style={styles.userName}>{userName}</Text>,
-                </Text>
-                <Text style={styles.subtitle}>Ready to save?</Text>
+                <ThemedText style={styles.greeting}>
+                    Hey <ThemedText style={styles.userName}>{userName}</ThemedText>,
+                </ThemedText>
+                <ThemedText style={styles.subtitle}>Ready to save?</ThemedText>
             </View>
-            <View style={styles.avatarContainer}>
-                {/* Placeholder for mascot avatar */}
-                <View style={styles.avatarPlaceholder}>
-                    <Text style={styles.avatarEmoji}>🙂</Text>
+            <TouchableOpacity
+                style={styles.avatarContainer}
+                onPress={toggleTheme}
+                activeOpacity={0.8}
+            >
+                <View style={[styles.avatarPlaceholder, { backgroundColor: isDark ? '#333' : '#F0F0F0' }]}>
+                    <Image
+                        source={require('../../assets/images/user.png')}
+                        style={styles.avatarImage}
+                    />
                 </View>
-            </View>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -40,7 +52,6 @@ const styles = StyleSheet.create({
     greeting: {
         fontSize: 28,
         fontFamily: Typography.metropolis.semiBold,
-        color: Colors.light.text,
     },
     userName: {
         color: Colors.brandGreen,
@@ -49,7 +60,6 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 28,
         fontFamily: Typography.metropolis.semiBold,
-        color: Colors.light.text,
     },
     avatarContainer: {
         width: 60,
@@ -59,13 +69,15 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: '#F0F0F0',
         borderWidth: 2,
         borderColor: Colors.brandGreen,
         justifyContent: 'center',
         alignItems: 'center',
+        overflow: 'hidden',
     },
-    avatarEmoji: {
-        fontSize: 30,
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
     },
 });

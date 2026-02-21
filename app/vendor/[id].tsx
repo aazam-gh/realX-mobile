@@ -4,14 +4,18 @@ import { collection, doc, getDoc, getDocs, getFirestore, query, where } from '@r
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText } from '../../components/ThemedText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function VendorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
+    const { theme, colorScheme } = useTheme();
+    const isDark = colorScheme === 'dark';
     const [vendor, setVendor] = useState<any>(null);
     const [offers, setOffers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -61,15 +65,15 @@ export default function VendorScreen() {
 
     if (!vendor) {
         return (
-            <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>Vendor not found</Text>
+            <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
+                <ThemedText style={styles.errorText}>Vendor not found</ThemedText>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor="transparent" translucent />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {/* Header Image Section */}
@@ -112,16 +116,16 @@ export default function VendorScreen() {
 
                     {/* Chips on cover image */}
                     <View style={styles.coverChipsContainer}>
-                        <View style={styles.cashbackChip}>
+                        <View style={[styles.cashbackChip, { backgroundColor: isDark ? '#1A1D1F' : '#FFFFFF' }]}>
                             <View style={styles.cashbackIconBg}>
-                                <Text style={styles.cashbackIcon}>$</Text>
+                                <ThemedText style={styles.cashbackIcon}>$</ThemedText>
                             </View>
-                            <Text style={styles.cashbackText}>CASHBACKS</Text>
+                            <ThemedText style={styles.cashbackText}>CASHBACKS</ThemedText>
                         </View>
 
                         <View style={styles.trendingChip}>
                             <Ionicons name="flash" size={12} color="#FFF" />
-                            <Text style={styles.trendingText}>TRENDING</Text>
+                            <ThemedText style={styles.trendingText}>TRENDING</ThemedText>
                         </View>
                     </View>
 
@@ -129,14 +133,14 @@ export default function VendorScreen() {
                 </View>
 
                 {/* Vendor Details */}
-                <View style={styles.detailsContainer}>
+                <View style={[styles.detailsContainer, { backgroundColor: theme.background }]}>
                     <View style={styles.vendorHeaderRow}>
-                        <Text style={styles.vendorName}>{vendor.name}</Text>
+                        <ThemedText style={styles.vendorName}>{vendor.name}</ThemedText>
 
                         {/* Right side chips */}
                         <View style={styles.rightChips}>
-                            <View style={styles.infoChip}>
-                                <Text style={styles.infoChipText}>(ibo)</Text>
+                            <View style={[styles.infoChip, { backgroundColor: isDark ? '#1A1D1F' : '#F0F0F0' }]}>
+                                <ThemedText style={styles.infoChipText}>(ibo)</ThemedText>
                             </View>
                         </View>
                     </View>
@@ -144,13 +148,13 @@ export default function VendorScreen() {
                     <View style={styles.metaRow}>
                         <View style={styles.ratingContainer}>
                             <Ionicons name="star" size={16} color="#FFD700" />
-                            <Text style={styles.ratingText}>5.0</Text>
+                            <ThemedText style={styles.ratingText}>5.0</ThemedText>
                         </View>
 
                         {vendor.category && vendor.category.length > 0 && (
-                            <View style={styles.categoryChip}>
-                                <Text style={styles.categoryEmoji}>☕</Text>
-                                <Text style={styles.categoryText}>{vendor.category[0]}</Text>
+                            <View style={[styles.categoryChip, { backgroundColor: isDark ? '#1A1D1F' : '#F5F5F5' }]}>
+                                <ThemedText style={styles.categoryEmoji}>☕</ThemedText>
+                                <ThemedText style={styles.categoryText}>{vendor.category[0]}</ThemedText>
                             </View>
                         )}
                     </View>
@@ -158,19 +162,19 @@ export default function VendorScreen() {
                     {/* Offers List */}
                     <View style={styles.offersList}>
                         {offers.map((offer) => (
-                            <View key={offer.id} style={styles.offerCard}>
+                            <View key={offer.id} style={[styles.offerCard, { backgroundColor: isDark ? '#1A1D1F' : '#F9F9F9' }]}>
                                 <View style={styles.offerContent}>
-                                    <Text style={styles.offerTitle}>
-                                        FLAT <Text style={styles.greenText}>
+                                    <ThemedText style={styles.offerTitle}>
+                                        FLAT <ThemedText style={styles.greenText}>
                                             {offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}
-                                        </Text> OFF
-                                    </Text>
-                                    <Text style={styles.offerSubtitle}>In-store</Text>
+                                        </ThemedText> OFF
+                                    </ThemedText>
+                                    <ThemedText type="subtitle" style={styles.offerSubtitle}>In-store</ThemedText>
 
                                     <View style={styles.offerActions}>
-                                        <TouchableOpacity style={styles.viewTcButton}>
-                                            <Ionicons name="information-circle-outline" size={18} color="#999" />
-                                            <Text style={styles.viewTcText}>View T&C</Text>
+                                        <TouchableOpacity style={[styles.viewTcButton, { backgroundColor: isDark ? '#25292e' : '#FFF' }]}>
+                                            <Ionicons name="information-circle-outline" size={18} color={theme.subtitle} />
+                                            <ThemedText type="subtitle" style={styles.viewTcText}>View T&C</ThemedText>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
@@ -178,7 +182,7 @@ export default function VendorScreen() {
                                             onPress={() => router.push(`/redeem/${offer.id}?vendorId=${id}`)}
                                         >
                                             <Ionicons name="flash" size={16} color="#FFF" style={{ marginRight: 4 }} />
-                                            <Text style={styles.redeemText}>REDEEM</Text>
+                                            <ThemedText style={styles.redeemText}>REDEEM</ThemedText>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -208,7 +212,6 @@ const styles = StyleSheet.create({
     },
     errorText: {
         fontSize: 16,
-        color: '#666',
         fontFamily: Typography.metropolis.medium,
     },
     scrollContent: {
@@ -330,7 +333,6 @@ const styles = StyleSheet.create({
     vendorName: {
         fontSize: 24,
         fontFamily: Typography.metropolis.semiBold,
-        color: Colors.light.text,
     },
     rightChips: {
         flexDirection: 'row',
@@ -344,7 +346,6 @@ const styles = StyleSheet.create({
     },
     infoChipText: {
         fontSize: 12,
-        color: '#333',
         fontFamily: Typography.metropolis.medium,
     },
     metaRow: {
@@ -361,7 +362,6 @@ const styles = StyleSheet.create({
     ratingText: {
         fontSize: 14,
         fontFamily: Typography.metropolis.semiBold,
-        color: Colors.light.text,
     },
     categoryChip: {
         flexDirection: 'row',
@@ -377,7 +377,6 @@ const styles = StyleSheet.create({
     },
     categoryText: {
         fontSize: 12,
-        color: '#666',
         fontFamily: Typography.metropolis.medium,
     },
     offersList: {
@@ -396,7 +395,6 @@ const styles = StyleSheet.create({
     offerTitle: {
         fontSize: 24,
         fontFamily: Typography.integral.bold,
-        color: '#000',
         letterSpacing: -0.5,
     },
     greenText: {
@@ -404,7 +402,6 @@ const styles = StyleSheet.create({
     },
     offerSubtitle: {
         fontSize: 14,
-        color: '#888',
         fontFamily: Typography.metropolis.medium,
         marginBottom: 8,
     },
@@ -431,7 +428,6 @@ const styles = StyleSheet.create({
     },
     viewTcText: {
         fontSize: 14,
-        color: '#888',
         fontFamily: Typography.metropolis.medium,
     },
     redeemButton: {

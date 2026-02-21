@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 
 import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from '../context/ThemeContext';
 import { clearAuthEmail, getAuthEmail } from '../utils/auth';
 
 SplashScreen.preventAutoHideAsync();
@@ -94,21 +95,21 @@ export default function RootLayout() {
 
     if (user && hasProfile === null) return;
 
-    const inAuthGroup = segments.indexOf('(onboarding)') !== -1;
+    const inAuthGroup = (segments as string[]).indexOf('(onboarding)') !== -1;
 
     if (!user) {
       if (!inAuthGroup) {
-        router.replace('/(onboarding)');
+        router.replace('/(onboarding)' as any);
       }
     } else {
       if (hasProfile === true) {
         if (inAuthGroup) {
-          router.replace('/(tabs)');
+          router.replace('/(tabs)' as any);
         }
       } else if (hasProfile === false) {
         const currentPath = segments.join('/');
         if (!currentPath.includes('details')) {
-          router.replace('/(onboarding)/details');
+          router.replace('/(onboarding)/details' as any);
         }
       }
     }
@@ -119,18 +120,20 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <Stack>
-        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="category" options={{ headerShown: false }} />
-        <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
-        <Stack.Screen name="terms" options={{ headerShown: false }} />
-        <Stack.Screen name="privacy" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" options={{ title: "Oops! Not Found" }} />
-      </Stack>
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <Stack>
+          <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="category" options={{ headerShown: false }} />
+          <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+          <Stack.Screen name="terms" options={{ headerShown: false }} />
+          <Stack.Screen name="privacy" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" options={{ title: "Oops! Not Found" }} />
+        </Stack>
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }

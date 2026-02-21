@@ -3,15 +3,19 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText } from '../../components/ThemedText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
     const router = useRouter();
+    const { theme, colorScheme } = useTheme();
+    const isDark = colorScheme === 'dark';
     const [step, setStep] = useState(0);
 
     const handleGetStarted = () => {
@@ -30,7 +34,7 @@ export default function OnboardingScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar style="light" />
 
             <SafeAreaView style={styles.safeArea}>
@@ -47,8 +51,8 @@ export default function OnboardingScreen() {
 
                         {/* Headline */}
                         <View style={styles.headlineContainer}>
-                            <Text style={styles.headlineBroke}>BROKE?</Text>
-                            <Text style={styles.headlineNotAnymore}>NOT ANYMORE.</Text>
+                            <ThemedText style={[styles.headlineBroke, { color: theme.text }]}>BROKE?</ThemedText>
+                            <ThemedText style={[styles.headlineNotAnymore, { color: theme.text }]}>NOT ANYMORE.</ThemedText>
                         </View>
 
                         {/* Character Graphic */}
@@ -63,16 +67,16 @@ export default function OnboardingScreen() {
 
                         {/* Footer */}
                         <View style={styles.footer}>
-                            <Text style={styles.subtext}>
+                            <ThemedText style={[styles.subtext, { color: theme.text }]}>
                                 Student-only deals + cashback that actually hits different.
-                            </Text>
+                            </ThemedText>
 
                             <TouchableOpacity
                                 style={styles.button}
                                 onPress={handleGetStarted}
                                 activeOpacity={0.9}
                             >
-                                <Text style={styles.buttonText}>GET STARTED</Text>
+                                <ThemedText style={styles.buttonText}>GET STARTED</ThemedText>
                                 <View style={styles.arrowCircle}>
                                     <Ionicons name="arrow-forward" size={24} color="white" />
                                 </View>
@@ -105,10 +109,10 @@ export default function OnboardingScreen() {
                                     />
                                 </View>
                                 <View style={styles.roleTextContainer}>
-                                    <Text style={styles.roleTitle}>JOIN AS STUDENT</Text>
-                                    <Text style={styles.roleDescription}>
+                                    <ThemedText style={styles.roleTitle}>JOIN AS STUDENT</ThemedText>
+                                    <ThemedText style={styles.roleDescription}>
                                         Get exclusive discounts on 50+ brands + 1% cashback on every purchase
-                                    </Text>
+                                    </ThemedText>
                                 </View>
                                 <Ionicons name="chevron-forward" size={32} color="#CCCCCC" />
                             </TouchableOpacity>
@@ -126,10 +130,10 @@ export default function OnboardingScreen() {
                                     />
                                 </View>
                                 <View style={styles.roleTextContainer}>
-                                    <Text style={styles.roleTitle}>JOIN AS CREATOR</Text>
-                                    <Text style={styles.roleDescription}>
+                                    <ThemedText style={styles.roleTitle}>JOIN AS CREATOR</ThemedText>
+                                    <ThemedText style={styles.roleDescription}>
                                         Share your personal code and earn double cashback when others use it
-                                    </Text>
+                                    </ThemedText>
                                 </View>
                                 <Ionicons name="chevron-forward" size={32} color="#CCCCCC" />
                             </TouchableOpacity>
@@ -137,13 +141,13 @@ export default function OnboardingScreen() {
 
                         {/* Login Pill */}
                         <TouchableOpacity
-                            style={styles.loginPill}
+                            style={[styles.loginPill, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)' }]}
                             activeOpacity={0.8}
                             onPress={handleLogin}
                         >
-                            <Text style={styles.loginText}>
-                                Already have an account? <Text style={styles.loginBold}>Login</Text>
-                            </Text>
+                            <ThemedText style={styles.loginText}>
+                                Already have an account? <ThemedText style={styles.loginBold}>Login</ThemedText>
+                            </ThemedText>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -155,7 +159,6 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#18B852', // Colors.brandGreen
     },
     safeArea: {
         flex: 1,
@@ -268,7 +271,6 @@ const styles = StyleSheet.create({
         gap: 16,
     },
     roleCard: {
-        backgroundColor: '#FFFFFF',
         borderRadius: 45,
         padding: 10,
         flexDirection: 'row',
@@ -298,13 +300,11 @@ const styles = StyleSheet.create({
     roleTitle: {
         fontFamily: Typography.integral.bold,
         fontSize: 18,
-        color: '#000000',
         marginBottom: 2,
     },
     roleDescription: {
         fontFamily: Typography.metropolis.medium,
         fontSize: 10,
-        color: '#333333',
         lineHeight: 14,
     },
     loginPill: {

@@ -11,19 +11,21 @@ import {
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
-    Text,
     TextInput,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText } from '../../components/ThemedText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { useTheme } from '../../context/ThemeContext';
 import { actionCodeSettings, clearAuthEmail, getAuthEmail, saveAuthEmail } from '../../utils/auth';
 
 export default function LoginScreen() {
     const router = useRouter();
+    const { theme } = useTheme();
 
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -144,7 +146,7 @@ export default function LoginScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.primary }]}>
             <StatusBar style="light" />
 
             <View style={styles.headerBackground}>
@@ -160,23 +162,23 @@ export default function LoginScreen() {
                 </SafeAreaView>
             </View>
 
-            <View style={styles.cardContainer}>
+            <View style={[styles.cardContainer, { backgroundColor: theme.background }]}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View style={styles.card}>
                         <View style={styles.textContainer}>
                             {isLinkSent ? (
                                 <>
-                                    <Text style={styles.titleLine}>
-                                        <Text style={styles.greenText}>CHECK YOUR</Text>
-                                    </Text>
-                                    <Text style={styles.titleLine}>
-                                        <Text style={styles.blackText}>EMAIL</Text>
-                                    </Text>
+                                    <ThemedText style={styles.titleLine}>
+                                        <ThemedText style={styles.greenText}>CHECK YOUR</ThemedText>
+                                    </ThemedText>
+                                    <ThemedText style={styles.titleLine}>
+                                        <ThemedText style={styles.blackText}>EMAIL</ThemedText>
+                                    </ThemedText>
                                 </>
                             ) : (
-                                <Text style={styles.titleLine}>
-                                    <Text style={styles.greenText}>LOGIN</Text>
-                                </Text>
+                                <ThemedText style={styles.titleLine}>
+                                    <ThemedText style={styles.greenText}>LOGIN</ThemedText>
+                                </ThemedText>
                             )}
                         </View>
 
@@ -184,11 +186,11 @@ export default function LoginScreen() {
                             {isLinkSent ? (
                                 <View style={{ alignItems: 'center', marginVertical: 10 }}>
                                     <Ionicons name="mail-outline" size={60} color={Colors.brandGreen} />
-                                    <View style={[styles.singleInputContainer, { marginTop: 20, width: '100%' }]}>
+                                    <View style={[styles.singleInputContainer, { backgroundColor: isLinkSent ? (theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F') : (theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F') }]}>
                                         <TextInput
-                                            style={styles.input}
+                                            style={[styles.input, { color: theme.text }]}
                                             placeholder="Paste the link from your email here"
-                                            placeholderTextColor="#999"
+                                            placeholderTextColor={theme.subtitle}
                                             value={manualLink}
                                             onChangeText={setManualLink}
                                             autoCapitalize="none"
@@ -197,12 +199,12 @@ export default function LoginScreen() {
                                     </View>
                                 </View>
                             ) : (
-                                <View style={[styles.singleInputContainer]}>
+                                <View style={[styles.singleInputContainer, { backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }]}>
                                     <TextInput
                                         ref={inputRef}
-                                        style={styles.input}
+                                        style={[styles.input, { color: theme.text }]}
                                         placeholder="Student Email"
-                                        placeholderTextColor="#999"
+                                        placeholderTextColor={theme.subtitle}
                                         keyboardType="email-address"
                                         autoCapitalize="none"
                                         autoCorrect={false}
@@ -215,11 +217,11 @@ export default function LoginScreen() {
                             )}
                         </View>
 
-                        <Text style={styles.infoText}>
+                        <ThemedText type="subtitle" style={styles.infoText}>
                             {isLinkSent
                                 ? `We've sent a magic link to ${email}. Click the link in your email to login.`
                                 : 'Enter your email to receive a secure login link.'}
-                        </Text>
+                        </ThemedText>
                     </View>
                 </TouchableWithoutFeedback>
 
@@ -240,9 +242,9 @@ export default function LoginScreen() {
                         {isLoading ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text style={styles.buttonText}>
+                            <ThemedText style={styles.buttonText}>
                                 {isLinkSent ? (manualLink ? 'Verify Link' : 'Resend Email') : 'Login'}
-                            </Text>
+                            </ThemedText>
                         )}
                     </TouchableOpacity>
                 </KeyboardAvoidingView>
@@ -309,7 +311,6 @@ const styles = StyleSheet.create({
         color: Colors.brandGreen,
     },
     blackText: {
-        color: '#000000',
     },
     inputWrapper: {
         marginBottom: 20,
@@ -324,7 +325,6 @@ const styles = StyleSheet.create({
     input: {
         fontSize: 16,
         fontFamily: Typography.metropolis.medium,
-        color: '#000',
     },
     infoText: {
         fontSize: 14,

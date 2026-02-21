@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { ThemedText } from '../ThemedText';
 
 type BrandItem = {
     id: string;
@@ -24,10 +25,10 @@ export default function BrandGrid() {
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
-                <Text style={styles.headerTitle}>
-                    <Text style={styles.shopByText}>SHOP BY </Text>
-                    <Text style={styles.brandText}>BRAND</Text>
-                </Text>
+                <ThemedText style={styles.headerTitle}>
+                    <ThemedText style={styles.shopByText}>SHOP BY </ThemedText>
+                    <ThemedText style={styles.brandText}>BRAND</ThemedText>
+                </ThemedText>
             </View>
             <ScrollView
                 horizontal
@@ -63,7 +64,6 @@ const styles = StyleSheet.create({
     },
     shopByText: {
         fontFamily: Typography.metropolis.semiBold,
-        color: Colors.light.text,
         letterSpacing: 1,
     },
     brandText: {

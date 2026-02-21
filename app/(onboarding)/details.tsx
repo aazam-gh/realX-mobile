@@ -11,18 +11,20 @@ import {
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
-    Text,
     TextInput,
     TouchableOpacity,
     TouchableWithoutFeedback,
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText } from '../../components/ThemedText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function DetailsOnboarding() {
     const router = useRouter();
+    const { theme } = useTheme();
     const params = useLocalSearchParams<{ email?: string; role?: string }>();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -86,7 +88,7 @@ export default function DetailsOnboarding() {
     const isFormValid = firstName.trim() && lastName.trim() && dob && gender && !isLoading;
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.primary }]}>
             <StatusBar style="light" />
 
             {/* Header / Background Section */}
@@ -112,35 +114,35 @@ export default function DetailsOnboarding() {
             </View>
 
             {/* Main Content Card */}
-            <View style={styles.cardContainer}>
+            <View style={[styles.cardContainer, { backgroundColor: theme.background }]}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View style={styles.card}>
                         <View style={styles.textContainer}>
-                            <Text style={styles.titleLine}>
-                                <Text style={styles.blackText}>ENTER YOUR</Text>
-                            </Text>
-                            <Text style={styles.titleLine}>
-                                <Text style={styles.greenText}>DETAILS</Text>
-                            </Text>
+                            <ThemedText style={styles.titleLine}>
+                                <ThemedText style={styles.blackText}>ENTER YOUR</ThemedText>
+                            </ThemedText>
+                            <ThemedText style={styles.titleLine}>
+                                <ThemedText style={styles.greenText}>DETAILS</ThemedText>
+                            </ThemedText>
                         </View>
 
                         <View style={styles.formContainer}>
                             <View style={styles.row}>
-                                <View style={[styles.inputContainer, { flex: 1, marginRight: 10 }]}>
+                                <View style={[styles.inputContainer, { flex: 1, marginRight: 10, backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }]}>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { color: theme.text }]}
                                         placeholder="First Name"
-                                        placeholderTextColor="#999"
+                                        placeholderTextColor={theme.subtitle}
                                         value={firstName}
                                         onChangeText={setFirstName}
                                         editable={!isLoading}
                                     />
                                 </View>
-                                <View style={[styles.inputContainer, { flex: 1 }]}>
+                                <View style={[styles.inputContainer, { flex: 1, backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }]}>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { color: theme.text }]}
                                         placeholder="Last Name"
-                                        placeholderTextColor="#999"
+                                        placeholderTextColor={theme.subtitle}
                                         value={lastName}
                                         onChangeText={setLastName}
                                         editable={!isLoading}
@@ -149,14 +151,14 @@ export default function DetailsOnboarding() {
                             </View>
 
                             <TouchableOpacity
-                                style={styles.inputContainer}
+                                style={[styles.inputContainer, { backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }]}
                                 onPress={() => setShowDatePicker(true)}
                                 disabled={isLoading}
                                 activeOpacity={0.7}
                             >
-                                <Text style={[styles.input, !dob && { color: '#999' }]}>
+                                <ThemedText style={[styles.input, !dob && { color: theme.subtitle }]}>
                                     {formatDate(dob)}
-                                </Text>
+                                </ThemedText>
                             </TouchableOpacity>
 
                             {showDatePicker && (
@@ -170,21 +172,21 @@ export default function DetailsOnboarding() {
                             )}
 
                             <View style={styles.genderContainer}>
-                                <Text style={styles.label}>Gender</Text>
+                                <ThemedText type="subtitle" style={styles.label}>Gender</ThemedText>
                                 <View style={styles.genderOptions}>
                                     <TouchableOpacity
-                                        style={[styles.genderButton, gender === 'Male' && styles.genderButtonSelected]}
+                                        style={[styles.genderButton, { backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }, gender === 'Male' && styles.genderButtonSelected]}
                                         onPress={() => setGender('Male')}
                                         disabled={isLoading}
                                     >
-                                        <Text style={[styles.genderText, gender === 'Male' && styles.genderTextSelected]}>Male</Text>
+                                        <ThemedText style={[styles.genderText, gender === 'Male' && styles.genderTextSelected]}>Male</ThemedText>
                                     </TouchableOpacity>
                                     <TouchableOpacity
-                                        style={[styles.genderButton, gender === 'Female' && styles.genderButtonSelected]}
+                                        style={[styles.genderButton, { backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }, gender === 'Female' && styles.genderButtonSelected]}
                                         onPress={() => setGender('Female')}
                                         disabled={isLoading}
                                     >
-                                        <Text style={[styles.genderText, gender === 'Female' && styles.genderTextSelected]}>Female</Text>
+                                        <ThemedText style={[styles.genderText, gender === 'Female' && styles.genderTextSelected]}>Female</ThemedText>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -203,7 +205,7 @@ export default function DetailsOnboarding() {
                         disabled={!isFormValid}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.buttonText}>{isLoading ? 'Saving...' : 'Continue'}</Text>
+                        <ThemedText style={styles.buttonText}>{isLoading ? 'Saving...' : 'Continue'}</ThemedText>
                     </TouchableOpacity>
                 </KeyboardAvoidingView>
             </View>
@@ -269,7 +271,6 @@ const styles = StyleSheet.create({
         color: Colors.brandGreen,
     },
     blackText: {
-        color: '#000000',
     },
     formContainer: {
         marginBottom: 20,
@@ -289,7 +290,6 @@ const styles = StyleSheet.create({
     input: {
         fontSize: 16,
         fontFamily: Typography.metropolis.medium,
-        color: '#000',
     },
     genderContainer: {
         marginTop: 10,
@@ -297,7 +297,6 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 16,
         fontFamily: Typography.metropolis.medium,
-        color: '#666',
         marginBottom: 10,
         marginLeft: 10,
     },
@@ -323,7 +322,6 @@ const styles = StyleSheet.create({
     genderText: {
         fontSize: 16,
         fontFamily: Typography.metropolis.medium,
-        color: '#666',
     },
     genderTextSelected: {
         color: Colors.brandGreen,

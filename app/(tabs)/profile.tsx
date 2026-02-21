@@ -4,12 +4,15 @@ import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore'
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText } from '../../components/ThemedText';
 import { Typography } from '../../constants/Typography';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const PURPLE = '#7D57FF';
   const [userData, setUserData] = useState<{
     firstName?: string;
@@ -66,16 +69,16 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerText}>
-            Manage your <Text style={styles.purpleText}>profile</Text>
-          </Text>
+          <ThemedText style={styles.headerText}>
+            Manage your <ThemedText style={styles.purpleText}>profile</ThemedText>
+          </ThemedText>
         </View>
 
         {/* Profile Info Card */}
@@ -94,21 +97,21 @@ export default function ProfileScreen() {
               )}
             </View>
             <View style={styles.nameContainer}>
-              <Text style={styles.userName}>
+              <ThemedText style={styles.userName}>
                 {userData ? `${userData.firstName} ${userData.lastName}` : 'Loading...'}
-              </Text>
-              <Text style={styles.userPhone}>
+              </ThemedText>
+              <ThemedText type="subtitle" style={styles.userPhone}>
                 {userData?.phone || userData?.email || getAuth().currentUser?.email || ''}
-              </Text>
+              </ThemedText>
             </View>
           </View>
           <TouchableOpacity
-            style={styles.editButton}
+            style={[styles.editButton, { borderColor: theme.subtitle + '40' }]}
             activeOpacity={0.7}
             onPress={handleEditPress}
           >
-            <Text style={styles.editButtonText}>Edit</Text>
-            <Ionicons name="chevron-forward" size={14} color="#000" />
+            <ThemedText style={styles.editButtonText}>Edit</ThemedText>
+            <Ionicons name="chevron-forward" size={14} color={theme.text} />
           </TouchableOpacity>
         </View>
 
@@ -116,19 +119,19 @@ export default function ProfileScreen() {
 
         {/* Savings Tracker Section */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Savings Tracker</Text>
+          <ThemedText style={styles.sectionTitle}>Savings Tracker</ThemedText>
         </View>
 
-        <View style={styles.savingsCard}>
+        <View style={[styles.savingsCard, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]}>
           <View style={styles.savingsInfo}>
-            <Text style={styles.savingsLabel}>All time you've saved</Text>
-            <Text style={styles.savingsAmount}>
-              <Text style={styles.purpleAmount}>20</Text> QAR
-            </Text>
+            <ThemedText type="subtitle" style={styles.savingsLabel}>All time you've saved</ThemedText>
+            <ThemedText style={styles.savingsAmount}>
+              <ThemedText style={styles.purpleAmount}>20</ThemedText> QAR
+            </ThemedText>
           </View>
-          <TouchableOpacity style={styles.moreButton} activeOpacity={0.7}>
-            <Text style={styles.moreButtonText}>More</Text>
-            <Ionicons name="chevron-forward" size={14} color="#000" />
+          <TouchableOpacity style={[styles.moreButton, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]} activeOpacity={0.7}>
+            <ThemedText style={styles.moreButtonText}>More</ThemedText>
+            <Ionicons name="chevron-forward" size={14} color={theme.text} />
           </TouchableOpacity>
         </View>
 
@@ -168,22 +171,25 @@ function MenuItem({
   icon,
   label,
   onPress,
-  color = '#000'
+  color
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress?: () => void;
   color?: string;
 }) {
+  const { theme } = useTheme();
+  const iconColor = color || theme.text;
+
   return (
     <TouchableOpacity
-      style={styles.menuItem}
+      style={[styles.menuItem, { backgroundColor: theme.background === '#FFFFFF' ? '#F5F5F5' : '#1A1D1F' }]}
       activeOpacity={0.7}
       onPress={onPress}
     >
       <View style={styles.menuItemLeft}>
-        <Ionicons name={icon} size={24} color={color} />
-        <Text style={[styles.menuItemLabel, { color }]}>{label}</Text>
+        <Ionicons name={icon} size={24} color={iconColor} />
+        <ThemedText style={[styles.menuItemLabel, { color: iconColor }]}>{label}</ThemedText>
       </View>
     </TouchableOpacity>
   );
@@ -205,7 +211,6 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 32,
     fontFamily: Typography.metropolis.semiBold,
-    color: '#000',
     lineHeight: 40,
   },
   purpleText: {
@@ -238,12 +243,10 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 18,
     fontFamily: Typography.metropolis.semiBold,
-    color: '#000',
   },
   userPhone: {
     fontSize: 14,
     fontFamily: Typography.metropolis.medium,
-    color: '#999',
     marginTop: 4,
   },
   editButton: {
@@ -258,7 +261,6 @@ const styles = StyleSheet.create({
   editButtonText: {
     fontSize: 14,
     fontFamily: Typography.metropolis.medium,
-    color: '#000',
     marginRight: 4,
   },
 
@@ -268,7 +270,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 24,
     fontFamily: Typography.metropolis.semiBold,
-    color: '#000',
   },
   savingsCard: {
     flexDirection: 'row',
@@ -287,13 +288,11 @@ const styles = StyleSheet.create({
   savingsLabel: {
     fontSize: 14,
     fontFamily: Typography.metropolis.medium,
-    color: '#999',
     marginBottom: 8,
   },
   savingsAmount: {
     fontSize: 32,
     fontFamily: Typography.metropolis.semiBold,
-    color: '#000',
   },
   purpleAmount: {
     color: '#7D57FF',
@@ -311,7 +310,6 @@ const styles = StyleSheet.create({
   moreButtonText: {
     fontSize: 14,
     fontFamily: Typography.metropolis.medium,
-    color: '#000',
     marginRight: 4,
   },
   menuContainer: {
@@ -333,6 +331,5 @@ const styles = StyleSheet.create({
   menuItemLabel: {
     fontSize: 18,
     fontFamily: Typography.metropolis.semiBold,
-    color: '#000',
   },
 });

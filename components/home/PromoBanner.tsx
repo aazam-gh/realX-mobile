@@ -1,7 +1,8 @@
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, View } from 'react-native';
+import { ThemedText } from '../ThemedText';
 
 const { width: screenWidth } = Dimensions.get('window');
 const BANNER_WIDTH = screenWidth - 48;
@@ -71,7 +72,7 @@ export default function PromoBanner() {
     if (banners.length === 0) {
         return (
             <View style={[styles.container, styles.loaderContainer]}>
-                <Text style={{ color: '#888' }}>No banners available</Text>
+                <ThemedText type="subtitle">No banners available</ThemedText>
             </View>
         );
     }
@@ -103,7 +104,7 @@ export default function PromoBanner() {
                             </View>
                         ) : (
                             <View style={[styles.topPill, styles.placeholder]}>
-                                <Text style={styles.placeholderText}>No mobile image</Text>
+                                <ThemedText style={styles.placeholderText}>No mobile image</ThemedText>
                             </View>
                         )}
 
@@ -119,7 +120,7 @@ export default function PromoBanner() {
                             </View>
                         ) : (
                             <View style={[styles.bottomPill, styles.placeholder]}>
-                                <Text style={styles.placeholderText}>No desktop image</Text>
+                                <ThemedText style={styles.placeholderText}>No desktop image</ThemedText>
                             </View>
                         )}
 
@@ -187,7 +188,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#E0E0E0',
     },
     placeholderText: {
-        color: '#888',
         fontSize: 12,
         fontWeight: 'bold',
     },

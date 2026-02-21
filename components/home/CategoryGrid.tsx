@@ -2,9 +2,10 @@ import { collection, getDocs, getFirestore, orderBy, query } from '@react-native
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { ThemedText } from '../ThemedText';
 
 type CategoryItem = {
     id: string;
@@ -89,10 +90,10 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                             contentFit="contain"
                         />
                     ) : (
-                        <Text style={{ fontSize: 40 }}>{item.icon}</Text>
+                        <ThemedText style={{ fontSize: 40 }}>{item.icon}</ThemedText>
                     )}
                 </View>
-                <Text style={styles.categoryName} numberOfLines={1}>{item.name}</Text>
+                <ThemedText style={styles.categoryName} numberOfLines={1}>{item.name}</ThemedText>
             </TouchableOpacity>
         );
     };
@@ -146,7 +147,6 @@ const styles = StyleSheet.create({
     categoryName: {
         fontSize: 12,
         fontFamily: Typography.metropolis.medium,
-        color: Colors.light.text,
         textAlign: 'center',
     },
     loaderContainer: {

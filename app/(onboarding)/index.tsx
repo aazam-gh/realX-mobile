@@ -3,20 +3,16 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedText } from '../../components/ThemedText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import { useTheme } from '../../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
     const router = useRouter();
-    const { theme, colorScheme } = useTheme();
-    const isDark = colorScheme === 'dark';
-    const [step, setStep] = useState(0);
+    const [step, setStep] = useState(1); // Set to 1 to show the screen in the screenshot directly, or as starting point
 
     const handleGetStarted = () => {
         setStep(1);
@@ -34,7 +30,7 @@ export default function OnboardingScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.container, { backgroundColor: Colors.brandGreen }]}>
             <StatusBar style="light" />
 
             <SafeAreaView style={styles.safeArea}>
@@ -51,8 +47,8 @@ export default function OnboardingScreen() {
 
                         {/* Headline */}
                         <View style={styles.headlineContainer}>
-                            <ThemedText style={[styles.headlineBroke, { color: theme.text }]}>BROKE?</ThemedText>
-                            <ThemedText style={[styles.headlineNotAnymore, { color: theme.text }]}>NOT ANYMORE.</ThemedText>
+                            <Text style={styles.headlineBroke}>BROKE?</Text>
+                            <Text style={styles.headlineNotAnymore}>NOT ANYMORE.</Text>
                         </View>
 
                         {/* Character Graphic */}
@@ -67,16 +63,16 @@ export default function OnboardingScreen() {
 
                         {/* Footer */}
                         <View style={styles.footer}>
-                            <ThemedText style={[styles.subtext, { color: theme.text }]}>
+                            <Text style={styles.subtext}>
                                 Student-only deals + cashback that actually hits different.
-                            </ThemedText>
+                            </Text>
 
                             <TouchableOpacity
                                 style={styles.button}
                                 onPress={handleGetStarted}
                                 activeOpacity={0.9}
                             >
-                                <ThemedText style={styles.buttonText}>GET STARTED</ThemedText>
+                                <Text style={styles.buttonText}>GET STARTED</Text>
                                 <View style={styles.arrowCircle}>
                                     <Ionicons name="arrow-forward" size={24} color="white" />
                                 </View>
@@ -86,7 +82,7 @@ export default function OnboardingScreen() {
                 ) : (
                     <View style={styles.roleSelectionContent}>
                         {/* Logo */}
-                        <View style={styles.logoContainer}>
+                        <View style={styles.roleLogoContainer}>
                             <Image
                                 source={require('../../assets/images/logo.png')}
                                 style={styles.roleLogo}
@@ -95,7 +91,7 @@ export default function OnboardingScreen() {
                         </View>
 
                         {/* Role Cards */}
-                        <View style={styles.cardsContainer}>
+                        <View style={styles.cardsWrapper}>
                             <TouchableOpacity
                                 style={styles.roleCard}
                                 activeOpacity={0.9}
@@ -109,12 +105,12 @@ export default function OnboardingScreen() {
                                     />
                                 </View>
                                 <View style={styles.roleTextContainer}>
-                                    <ThemedText style={styles.roleTitle}>JOIN AS STUDENT</ThemedText>
-                                    <ThemedText style={styles.roleDescription}>
+                                    <Text style={styles.roleTitle}>JOIN AS STUDENT</Text>
+                                    <Text style={styles.roleDescription}>
                                         Get exclusive discounts on 50+ brands + 1% cashback on every purchase
-                                    </ThemedText>
+                                    </Text>
                                 </View>
-                                <Ionicons name="chevron-forward" size={32} color="#CCCCCC" />
+                                <Ionicons name="chevron-forward-outline" size={32} color="#AAAAAA" />
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -130,24 +126,24 @@ export default function OnboardingScreen() {
                                     />
                                 </View>
                                 <View style={styles.roleTextContainer}>
-                                    <ThemedText style={styles.roleTitle}>JOIN AS CREATOR</ThemedText>
-                                    <ThemedText style={styles.roleDescription}>
+                                    <Text style={styles.roleTitle}>JOIN AS CREATOR</Text>
+                                    <Text style={styles.roleDescription}>
                                         Share your personal code and earn double cashback when others use it
-                                    </ThemedText>
+                                    </Text>
                                 </View>
-                                <Ionicons name="chevron-forward" size={32} color="#CCCCCC" />
+                                <Ionicons name="chevron-forward-outline" size={32} color="#AAAAAA" />
                             </TouchableOpacity>
                         </View>
 
                         {/* Login Pill */}
                         <TouchableOpacity
-                            style={[styles.loginPill, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)' }]}
+                            style={styles.loginPill}
                             activeOpacity={0.8}
                             onPress={handleLogin}
                         >
-                            <ThemedText style={styles.loginText}>
-                                Already have an account? <ThemedText style={styles.loginBold}>Login</ThemedText>
-                            </ThemedText>
+                            <Text style={styles.loginText}>
+                                Already have an account? <Text style={styles.loginBold}>Login</Text>
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -244,13 +240,13 @@ const styles = StyleSheet.create({
     buttonText: {
         fontFamily: Typography.integral.bold,
         fontSize: 18,
-        color: Colors.brandGreen,
+        color: '#18B852',
     },
     arrowCircle: {
         width: 54,
         height: 54,
         borderRadius: 27,
-        backgroundColor: Colors.brandGreen,
+        backgroundColor: '#18B852',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -258,70 +254,76 @@ const styles = StyleSheet.create({
     roleSelectionContent: {
         flex: 1,
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 40,
+        justifyContent: 'center', // Center content vertically as in screenshot
+        paddingHorizontal: 16,
     },
-    roleLogo: {
-        height: 60,
-        width: 180,
+    roleLogoContainer: {
         marginBottom: 60,
     },
-    cardsContainer: {
+    roleLogo: {
+        height: 80,
+        width: 240,
+    },
+    cardsWrapper: {
         width: '100%',
         gap: 16,
     },
     roleCard: {
-        borderRadius: 45,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 55,
         padding: 10,
         flexDirection: 'row',
         alignItems: 'center',
+        // Shadow
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 4,
+        shadowRadius: 15,
+        elevation: 6,
     },
     roleImageCircle: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 100,
+        height: 100,
+        borderRadius: 50,
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
     },
     roleImage: {
-        width: '75%',
-        height: '75%',
+        width: '80%',
+        height: '80%',
     },
     roleTextContainer: {
         flex: 1,
-        marginLeft: 12,
+        marginLeft: 15,
     },
     roleTitle: {
         fontFamily: Typography.integral.bold,
-        fontSize: 18,
-        marginBottom: 2,
+        fontSize: 22,
+        color: '#000000',
+        marginBottom: 4,
     },
     roleDescription: {
         fontFamily: Typography.metropolis.medium,
-        fontSize: 10,
-        lineHeight: 14,
+        fontSize: 12,
+        color: '#000000',
+        lineHeight: 16,
+        paddingRight: 10,
     },
     loginPill: {
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingVertical: 14,
-        paddingHorizontal: 28,
-        borderRadius: 30,
+        paddingVertical: 15,
+        paddingHorizontal: 35,
+        borderRadius: 100,
         marginTop: 50,
     },
     loginText: {
         color: '#FFFFFF',
         fontFamily: Typography.metropolis.medium,
-        fontSize: 14,
+        fontSize: 16,
     },
     loginBold: {
         fontFamily: Typography.metropolis.semiBold,
-        textDecorationLine: 'none',
     },
 });
 

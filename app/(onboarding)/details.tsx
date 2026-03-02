@@ -11,20 +11,18 @@ import {
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
+    Text,
     TextInput,
     TouchableOpacity,
     TouchableWithoutFeedback,
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedText } from '../../components/ThemedText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import { useTheme } from '../../context/ThemeContext';
 
 export default function DetailsOnboarding() {
     const router = useRouter();
-    const { theme } = useTheme();
     const params = useLocalSearchParams<{ email?: string; role?: string }>();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -88,7 +86,7 @@ export default function DetailsOnboarding() {
     const isFormValid = firstName.trim() && lastName.trim() && dob && gender && !isLoading;
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.primary }]}>
+        <View style={[styles.container, { backgroundColor: Colors.brandGreen }]}>
             <StatusBar style="light" />
 
             {/* Header / Background Section */}
@@ -114,35 +112,35 @@ export default function DetailsOnboarding() {
             </View>
 
             {/* Main Content Card */}
-            <View style={[styles.cardContainer, { backgroundColor: theme.background }]}>
+            <View style={[styles.cardContainer, { backgroundColor: '#FFFFFF' }]}>
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View style={styles.card}>
                         <View style={styles.textContainer}>
-                            <ThemedText style={styles.titleLine}>
-                                <ThemedText style={styles.blackText}>ENTER YOUR</ThemedText>
-                            </ThemedText>
-                            <ThemedText style={styles.titleLine}>
-                                <ThemedText style={styles.greenText}>DETAILS</ThemedText>
-                            </ThemedText>
+                            <Text style={styles.titleLine}>
+                                <Text style={styles.blackText}>ENTER YOUR</Text>
+                            </Text>
+                            <Text style={styles.titleLine}>
+                                <Text style={styles.greenText}>DETAILS</Text>
+                            </Text>
                         </View>
 
                         <View style={styles.formContainer}>
                             <View style={styles.row}>
-                                <View style={[styles.inputContainer, { flex: 1, marginRight: 10, backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }]}>
+                                <View style={[styles.inputContainer, { flex: 1, marginRight: 10, backgroundColor: '#F3F3F3' }]}>
                                     <TextInput
-                                        style={[styles.input, { color: theme.text }]}
+                                        style={[styles.input, { color: '#000000' }]}
                                         placeholder="First Name"
-                                        placeholderTextColor={theme.subtitle}
+                                        placeholderTextColor="#999999"
                                         value={firstName}
                                         onChangeText={setFirstName}
                                         editable={!isLoading}
                                     />
                                 </View>
-                                <View style={[styles.inputContainer, { flex: 1, backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }]}>
+                                <View style={[styles.inputContainer, { flex: 1, backgroundColor: '#F3F3F3' }]}>
                                     <TextInput
-                                        style={[styles.input, { color: theme.text }]}
+                                        style={[styles.input, { color: '#000000' }]}
                                         placeholder="Last Name"
-                                        placeholderTextColor={theme.subtitle}
+                                        placeholderTextColor="#999999"
                                         value={lastName}
                                         onChangeText={setLastName}
                                         editable={!isLoading}
@@ -151,14 +149,14 @@ export default function DetailsOnboarding() {
                             </View>
 
                             <TouchableOpacity
-                                style={[styles.inputContainer, { backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }]}
+                                style={[styles.inputContainer, { backgroundColor: '#F3F3F3' }]}
                                 onPress={() => setShowDatePicker(true)}
                                 disabled={isLoading}
                                 activeOpacity={0.7}
                             >
-                                <ThemedText style={[styles.input, !dob && { color: theme.subtitle }]}>
+                                <Text style={[styles.input, !dob && { color: '#999999' }]}>
                                     {formatDate(dob)}
-                                </ThemedText>
+                                </Text>
                             </TouchableOpacity>
 
                             {showDatePicker && (
@@ -172,21 +170,21 @@ export default function DetailsOnboarding() {
                             )}
 
                             <View style={styles.genderContainer}>
-                                <ThemedText type="subtitle" style={styles.label}>Gender</ThemedText>
+                                <Text style={styles.label}>Gender</Text>
                                 <View style={styles.genderOptions}>
                                     <TouchableOpacity
-                                        style={[styles.genderButton, { backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }, gender === 'Male' && styles.genderButtonSelected]}
+                                        style={[styles.genderButton, { backgroundColor: '#F3F3F3' }, gender === 'Male' && styles.genderButtonSelected]}
                                         onPress={() => setGender('Male')}
                                         disabled={isLoading}
                                     >
-                                        <ThemedText style={[styles.genderText, gender === 'Male' && styles.genderTextSelected]}>Male</ThemedText>
+                                        <Text style={[styles.genderText, gender === 'Male' && styles.genderTextSelected]}>Male</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
-                                        style={[styles.genderButton, { backgroundColor: theme.background === '#FFFFFF' ? '#F3F3F3' : '#1A1D1F' }, gender === 'Female' && styles.genderButtonSelected]}
+                                        style={[styles.genderButton, { backgroundColor: '#F3F3F3' }, gender === 'Female' && styles.genderButtonSelected]}
                                         onPress={() => setGender('Female')}
                                         disabled={isLoading}
                                     >
-                                        <ThemedText style={[styles.genderText, gender === 'Female' && styles.genderTextSelected]}>Female</ThemedText>
+                                        <Text style={[styles.genderText, gender === 'Female' && styles.genderTextSelected]}>Female</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -205,7 +203,7 @@ export default function DetailsOnboarding() {
                         disabled={!isFormValid}
                         activeOpacity={0.8}
                     >
-                        <ThemedText style={styles.buttonText}>{isLoading ? 'Saving...' : 'Continue'}</ThemedText>
+                        <Text style={styles.buttonText}>{isLoading ? 'Saving...' : 'Continue'}</Text>
                     </TouchableOpacity>
                 </KeyboardAvoidingView>
             </View>

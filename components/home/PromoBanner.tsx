@@ -35,18 +35,12 @@ export default function PromoBanner() {
 
                 if (cmsSnap.exists()) {
                     const data = cmsSnap.data();
-                    if (data && data.banners) {
-                        const activeBanners = data.banners.filter((b: any) => b.isActive);
-                        setBanners(activeBanners);
-                    } else {
-                        setBanners([]);
-                    }
-                } else {
-                    setBanners([]);
+                    const activeBanners = (data?.banners || [])
+                        .filter((b: any) => b.isActive) as BannerItem[];
+                    setBanners(activeBanners);
                 }
             } catch (error) {
                 console.error('Error fetching banners:', error);
-                setBanners([]);
             } finally {
                 setLoading(false);
             }
@@ -80,10 +74,8 @@ export default function PromoBanner() {
     return (
         <View style={styles.container}>
             <ScrollView
-            style={styles.scrollContent}
                 ref={scrollViewRef}
                 horizontal
-                pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 snapToInterval={BANNER_WIDTH + 10}
                 decelerationRate="fast"
@@ -92,30 +84,28 @@ export default function PromoBanner() {
                 scrollEventThrottle={16}
             >
                 {banners.map((banner) => (
-
                     <View key={banner.bannerId} style={styles.bannerColumn}>
-                    <View style={styles.topPill}>
-                        <Image
-                        source={{ uri: banner.images.mobile }}
-                        style={styles.topImage}
-                        contentFit="cover"
-                        accessibilityLabel={banner.altText || 'Banner Image'}
-                        />
-                    </View>
+                        <View style={styles.topPill}>
+                            <Image
+                                source={{ uri: banner.images.mobile }}
+                                style={styles.topImage}
+                                contentFit="cover"
+                                accessibilityLabel={banner.altText || 'Banner Image'}
+                            />
+                        </View>
 
-                    <View style={styles.bottomPill}>
-                        <Image
-                        source={{ uri: banner.images.mobile }}
-                        style={styles.bottomImage}
-                        contentFit="cover"
-                        accessibilityLabel={banner.altText || 'Banner Image'}
-                        />
-                    </View>
+                        <View style={styles.bottomPill}>
+                            <Image
+                                source={{ uri: banner.images.mobile }}
+                                style={styles.bottomImage}
+                                contentFit="cover"
+                                accessibilityLabel={banner.altText || 'Banner Image'}
+                            />
+                        </View>
                     </View>
                 ))}
             </ScrollView>
 
-            {/* Pagination dots */}
             <View style={styles.paginationContainer}>
                 {banners.map((_, index) => (
                     <View
@@ -141,36 +131,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     scrollContent: {
-        paddingHorizontal: 10,
-        gap: 10
+        paddingHorizontal: 24, // Center item by using (screenWidth - BANNER_WIDTH) / 2
+        gap: 10,
     },
-
-    // --- Placeholder styles ---
-    placeholder: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#E0E0E0',
-    },
-    placeholderText: {
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-
-    // --- CUTOUTS ---
-    leftCutout: {
-        position: 'absolute',
-        top: '50%',
-        backgroundColor: '#FFFFFF',
-        zIndex: 10,
-    },
-    rightCutout: {
-        position: 'absolute',
-        top: '50%',
-        backgroundColor: '#FFFFFF',
-        zIndex: 10,
-    },
-
-    // --- PAGINATION ---
     paginationContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
@@ -188,32 +151,27 @@ const styles = StyleSheet.create({
         backgroundColor: '#333333',
         width: 96,
     },
-
     bannerColumn: {
-  width: BANNER_WIDTH,
-  height: BANNER_HEIGHT,
-},
-
-topPill: {
-  flex: 1,
-  borderRadius: 30,
-  overflow: 'hidden',
-},
-
-bottomPill: {
-  flex: 1,
-  borderRadius: 30,
-  overflow: 'hidden',
-},
-
-topImage: {
-  width: '100%',
-  height: '200%',
-},
-
-bottomImage: {
-  width: '100%',
-  height: '200%',
-  transform: [{ translateY: '-50%' }],
-},
+        width: BANNER_WIDTH,
+        height: BANNER_HEIGHT,
+    },
+    topPill: {
+        flex: 1,
+        borderRadius: 30,
+        overflow: 'hidden',
+    },
+    bottomPill: {
+        flex: 1,
+        borderRadius: 30,
+        overflow: 'hidden',
+    },
+    topImage: {
+        width: '100%',
+        height: '200%',
+    },
+    bottomImage: {
+        width: '100%',
+        height: '200%',
+        transform: [{ translateY: '-50%' }],
+    },
 });

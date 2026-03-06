@@ -131,7 +131,7 @@ export default function CategoryScreen() {
 
     const [categoryData, setCategoryData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [selectedFilter, setSelectedFilter] = useState('top-rated');
+    const [selectedFilter, setSelectedFilter] = useState('');
     const [selectedSubCategory, setSelectedSubCategory] = useState('all');
 
     const [offers, setOffers] = useState<any[]>([]);
@@ -193,6 +193,13 @@ export default function CategoryScreen() {
                 baseConstraints.push(where('mainCategory', '==', categoryName));
             }
 
+            // Top-rated / Trending logic
+            if (selectedFilter === 'trending') {
+                baseConstraints.push(where('isTrending', '==', true));
+            } else if (selectedFilter === 'top-rated') {
+                baseConstraints.push(where('isTopRated', '==', true));
+            }
+
             // Construct query with pagination
             if (isNew) {
                 q = query(offersRef, ...baseConstraints, orderBy('createdAt', 'desc') as any, limit(PAGE_SIZE) as any);
@@ -237,7 +244,7 @@ export default function CategoryScreen() {
             setIsListEnd(false);
             fetchOffers(true);
         }
-    }, [selectedSubCategory, loading, hasSubCategories, config.title]);
+    }, [selectedSubCategory, selectedFilter, loading, hasSubCategories, config.title]);
 
     const handleLoadMore = () => {
         if (!loadingOffers && !isListEnd) {
@@ -250,7 +257,7 @@ export default function CategoryScreen() {
     }, [router]);
 
     const handleFilterChange = useCallback((filterId: string) => {
-        setSelectedFilter(filterId);
+        setSelectedFilter(prev => prev === filterId ? '' : filterId);
     }, []);
 
     const handleSubCategorySelect = useCallback((subCategory: { id: string; name: string; icon: any }) => {
@@ -429,7 +436,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 16,
-        justifyContent: 'space-evenly',
+        justifyContent: 'flex-start',
+        paddingHorizontal: 20,
     },
     offerCardWrapper: {
         width: '47%',

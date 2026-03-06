@@ -1,9 +1,9 @@
-import React, { useRef, useEffect } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // Assuming these exist in your project, otherwise replace with hex strings
-const BRAND_GREEN = '#58B368'; 
+const BRAND_GREEN = '#58B368';
 const BG_LIGHT = '#F5F5F5';
 
 type FilterOption = {
@@ -23,29 +23,50 @@ const defaultFilters: FilterOption[] = [
     { id: 'trending', label: 'Trending', icon: 'flame' },
 ];
 
-export default function FilterTabs({ selectedFilter, onFilterChange, filters = defaultFilters }: FilterTabsProps ) {
-    const translateX = useRef(new Animated.Value(0)).current;
+export default function FilterTabs({ selectedFilter, onFilterChange, filters = defaultFilters }: FilterTabsProps) {
     const containerWidth = Dimensions.get('window').width - 40; // Adjust based on your padding
     const tabWidth = containerWidth / filters.length;
 
+    // Initial position based on selectedFilter
+    const initialIndex = filters.findIndex(f => f.id === selectedFilter);
+    const translateX = useRef(new Animated.Value(initialIndex !== -1 ? initialIndex * tabWidth : 0)).current;
+    const opacity = useRef(new Animated.Value(selectedFilter ? 1 : 0)).current;
+
     useEffect(() => {
         const index = filters.findIndex(f => f.id === selectedFilter);
-        Animated.spring(translateX, {
-            toValue: index * tabWidth,
-            useNativeDriver: true,
-            bounciness: 4,
-        }).start();
-    }, [selectedFilter]);
+        const hasSelection = index !== -1;
+
+        if (hasSelection) {
+            Animated.parallel([
+                Animated.spring(translateX, {
+                    toValue: index * tabWidth,
+                    useNativeDriver: true,
+                    bounciness: 4,
+                }),
+                Animated.timing(opacity, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                })
+            ]).start();
+        } else {
+            Animated.timing(opacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [selectedFilter, filters, tabWidth]);
 
     return (
         <View style={styles.outerContainer}>
             <View style={styles.container}>
                 {/* Sliding Background */}
-                <Animated.View 
+                <Animated.View
                     style={[
-                        styles.slider, 
-                        { width: tabWidth, transform: [{ translateX }] }
-                    ]} 
+                        styles.slider,
+                        { width: tabWidth, transform: [{ translateX }], opacity }
+                    ]}
                 />
 
                 {/* Content Overlay */}

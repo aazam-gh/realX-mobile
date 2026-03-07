@@ -63,11 +63,12 @@ const styles = StyleSheet.create({
         fontSize: 20,
     },
     shopByText: {
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.integral.bold,
+        color: Colors.light.text,
         letterSpacing: 1,
     },
     brandText: {
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.integral.bold,
         color: Colors.brandGreen,
         fontStyle: 'italic',
         letterSpacing: 1,

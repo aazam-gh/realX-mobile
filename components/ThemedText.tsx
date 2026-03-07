@@ -1,4 +1,5 @@
 import { Text, type TextProps } from 'react-native';
+import { Typography } from '../constants/Typography';
 import { useTheme } from '../context/ThemeContext';
 
 export type ThemedTextProps = TextProps & {
@@ -12,5 +13,5 @@ export function ThemedText({ style, type = 'default', ...rest }: ThemedTextProps
         type === 'primary' ? theme.primary :
             theme.text;
 
-    return <Text style={[{ color: textColor }, style]} {...rest} />;
+    return <Text style={[{ color: textColor, fontFamily: Typography.metropolis.medium }, style]} {...rest} />;
 }

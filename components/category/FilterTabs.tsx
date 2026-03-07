@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useEffect, useRef } from 'react';
 import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Typography } from '../../constants/Typography';
 
 // Assuming these exist in your project, otherwise replace with hex strings
 const BRAND_GREEN = '#58B368';
@@ -127,6 +128,6 @@ const styles = StyleSheet.create({
     },
     filterText: {
         fontSize: 16,
-        fontWeight: '600',
+        fontFamily: Typography.metropolis.semiBold,
     },
 });

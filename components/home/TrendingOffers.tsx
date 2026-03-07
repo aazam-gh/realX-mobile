@@ -73,12 +73,12 @@ const styles = StyleSheet.create({
         fontSize: 20,
     },
     trendingText: {
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.integral.bold,
         color: Colors.light.text,
         letterSpacing: 1,
     },
     offersText: {
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.integral.bold,
         color: Colors.brandGreen,
         fontStyle: 'italic',
         letterSpacing: 1,
@@ -113,11 +113,11 @@ const styles = StyleSheet.create({
     },
     offerTitle: {
         fontSize: 14,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.integral.bold,
         marginBottom: 2,
     },
     offerSubtitle: {
         fontSize: 12,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.integral.bold,
     },
 });

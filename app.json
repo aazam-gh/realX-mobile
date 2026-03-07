@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "reelx",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -16,9 +15,6 @@
       "bundleIdentifier": "com.reelx.app",
       "googleServicesFile": "./GoogleService-Info.plist",
       "associatedDomains": [
-        "applinks:reelx-backend.firebaseapp.com",
-        "applinks:reelx-backend.web.app",
-        "applinks:reelx.app",
         "applinks:reelx-backend.firebaseapp.com",
         "applinks:reelx-backend.web.app",
         "applinks:reelx.app"
@@ -57,7 +53,6 @@
           ]
         }
       ],
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -110,7 +105,9 @@
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       "@react-native-community/datetimepicker",
-      "expo-asset"
+      "expo-asset",
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

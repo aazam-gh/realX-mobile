@@ -7,13 +7,13 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
+import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-  const PURPLE = '#7D57FF';
   const [userData, setUserData] = useState<{
     firstName?: string;
     lastName?: string;
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <ThemedText style={styles.headerText}>
-            Manage your <ThemedText style={styles.purpleText}>profile</ThemedText>
+            Manage your <ThemedText style={styles.greenText}>profile</ThemedText>
           </ThemedText>
         </View>
 
@@ -119,13 +119,9 @@ export default function ProfileScreen() {
           <View style={styles.savingsInfo}>
             <ThemedText type="subtitle" style={styles.savingsLabel}>Your cashback balance</ThemedText>
             <ThemedText style={styles.savingsAmount}>
-              <ThemedText style={styles.purpleAmount}>{userData?.cashback ?? 0}</ThemedText> QAR
+              <ThemedText style={styles.greenAmount}>{userData?.cashback ?? 0}</ThemedText> QAR
             </ThemedText>
           </View>
-          <TouchableOpacity style={[styles.moreButton, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]} activeOpacity={0.7}>
-            <ThemedText style={styles.moreButtonText}>More</ThemedText>
-            <Ionicons name="chevron-forward" size={14} color={theme.text} />
-          </TouchableOpacity>
         </View>
 
         {/* Creator Code Section */}
@@ -139,7 +135,7 @@ export default function ProfileScreen() {
               <View style={styles.savingsInfo}>
                 <ThemedText type="subtitle" style={styles.savingsLabel}>Your Creator Code</ThemedText>
                 <ThemedText style={styles.savingsAmount}>
-                  <ThemedText style={styles.purpleAmount}>{userData.creatorCode}</ThemedText>
+                  <ThemedText style={styles.greenAmount}>{userData.creatorCode}</ThemedText>
                 </ThemedText>
               </View>
             </View>
@@ -149,7 +145,6 @@ export default function ProfileScreen() {
         {/* Menu Items */}
         <View style={styles.menuContainer}>
           <MenuItem icon="time-outline" label="Redemption History" />
-          <MenuItem icon="heart-outline" label="Favourites" />
           <MenuItem icon="language-outline" label="Change Language" />
           <MenuItem
             icon="mail-outline"
@@ -224,8 +219,8 @@ const styles = StyleSheet.create({
     fontFamily: Typography.metropolis.semiBold,
     lineHeight: 40,
   },
-  purpleText: {
-    color: '#7D57FF',
+  greenText: {
+    color: Colors.brandGreen,
   },
   profileCard: {
     flexDirection: 'row',
@@ -291,23 +286,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontFamily: Typography.metropolis.semiBold,
   },
-  purpleAmount: {
-    color: '#7D57FF',
-  },
-  moreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    backgroundColor: '#F9F9F9',
-  },
-  moreButtonText: {
-    fontSize: 14,
-    fontFamily: Typography.metropolis.medium,
-    marginRight: 4,
+  greenAmount: {
+    color: Colors.brandGreen,
   },
   menuContainer: {
     gap: 12,

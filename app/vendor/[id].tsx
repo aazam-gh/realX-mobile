@@ -1,6 +1,7 @@
 
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { collection, doc, getDoc, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore';
+import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -199,6 +200,7 @@ export default function VendorScreen() {
                     style={styles.modalOverlay}
                     onPress={() => setSelectedOfferForTC(null)}
                 >
+                    <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme="dark" tintColor="rgba(0,0,0,0.3)" />
                     <Pressable
                         style={[
                             styles.drawerContainer,
@@ -451,7 +453,7 @@ const styles = StyleSheet.create({
     // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'transparent',
         justifyContent: 'flex-end',
     },
     drawerContainer: {

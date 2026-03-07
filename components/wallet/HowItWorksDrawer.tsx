@@ -1,3 +1,4 @@
+import { GlassView } from 'expo-glass-effect';
 import {
     Dimensions,
     Modal,
@@ -54,6 +55,7 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
             onRequestClose={onClose}
         >
             <Pressable style={styles.overlay} onPress={onClose}>
+                <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme="dark" tintColor="rgba(0,0,0,0.3)" />
                 <Pressable
                     style={[
                         styles.drawerContainer,
@@ -103,7 +105,7 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'transparent',
         justifyContent: 'flex-end',
     },
     drawerContainer: {

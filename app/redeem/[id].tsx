@@ -163,18 +163,11 @@ export default function RedeemScreen() {
                             {/* Offer Card */}
                             <View style={styles.offerCardWrapper}>
                                 <View style={styles.offerCard}>
-                                    {/* View T&C */}
-                                    <TouchableOpacity style={styles.tcButton}>
-                                        <Ionicons name="information-circle-outline" size={18} color="#888" />
-                                        <Text style={styles.tcText}>View T&C</Text>
-                                    </TouchableOpacity>
-
                                     <Text style={styles.offerTitle}>
                                         FLAT <Text style={styles.greenText}>
                                             {offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}
                                         </Text> OFF
                                     </Text>
-                                    <Text style={styles.offerSubtitle}>In-store</Text>
                                 </View>
 
                                 {/* Logo Overlay */}
@@ -197,10 +190,11 @@ export default function RedeemScreen() {
                                         <TextInput
                                             style={styles.creatorInput}
                                             value={creatorCode}
-                                            onChangeText={setCreatorCode}
-                                            placeholder="MRBEAST6000"
+                                            onChangeText={(text) => setCreatorCode(text.toUpperCase())}
+                                            placeholder="REELX1"
                                             placeholderTextColor="#CCC"
                                             autoCapitalize="characters"
+                                            maxLength={6}
                                             returnKeyType="next"
                                             onSubmitEditing={handleAction}
                                             autoCorrect={false}

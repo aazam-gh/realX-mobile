@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -97,7 +98,7 @@ export default function OnboardingScreen() {
                                 activeOpacity={0.9}
                                 onPress={() => handleSelectRole('student')}
                             >
-                                <View style={[styles.roleImageCircle, { backgroundColor: '#18B852' }]}>
+                                <View style={[styles.roleImageCircle]}>
                                     <Image
                                         source={require('../../assets/images/join-student.png')}
                                         style={styles.roleImage}
@@ -118,7 +119,7 @@ export default function OnboardingScreen() {
                                 activeOpacity={0.9}
                                 onPress={() => handleSelectRole('creator')}
                             >
-                                <View style={[styles.roleImageCircle, { backgroundColor: '#000000' }]}>
+                                <View style={[styles.roleImageCircle]}>
                                     <Image
                                         source={require('../../assets/images/join-creator.png')}
                                         style={styles.roleImage}
@@ -137,13 +138,18 @@ export default function OnboardingScreen() {
 
                         {/* Login Pill */}
                         <TouchableOpacity
-                            style={styles.loginPill}
                             activeOpacity={0.8}
                             onPress={handleLogin}
                         >
-                            <Text style={styles.loginText}>
-                                Already have an account? <Text style={styles.loginBold}>Login</Text>
-                            </Text>
+                            <GlassView
+                                style={styles.loginPill}
+                                glassEffectStyle="regular"
+                                colorScheme="light"
+                            >
+                                <Text style={styles.loginText}>
+                                    Already have an account? <Text style={styles.loginBold}>Login</Text>
+                                </Text>
+                            </GlassView>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -270,8 +276,9 @@ const styles = StyleSheet.create({
     },
     roleCard: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 50,
-        padding: 10,
+        borderRadius: 45,
+        paddingRight: 8,
+        paddingVertical: 8,
         flexDirection: 'row',
         alignItems: 'center',
         // Shadow
@@ -284,7 +291,6 @@ const styles = StyleSheet.create({
     roleImageCircle: {
         width: 100,
         height: 100,
-        borderRadius: 50,
     },
     roleImage: {
         width: '100%',
@@ -292,13 +298,13 @@ const styles = StyleSheet.create({
     },
     roleTextContainer: {
         flex: 1,
-        marginLeft: 15,
+        marginLeft: 4,
     },
     roleTitle: {
         fontFamily: Typography.integral.bold,
-        fontSize: 22,
+        fontSize: 20,
         color: '#000000',
-        marginBottom: 4,
+        marginBottom: 8,
     },
     roleDescription: {
         fontFamily: Typography.metropolis.medium,
@@ -308,11 +314,12 @@ const styles = StyleSheet.create({
         paddingRight: 10,
     },
     loginPill: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
         paddingVertical: 15,
         paddingHorizontal: 35,
         borderRadius: 100,
         marginTop: 50,
+        overflow: 'hidden',
     },
     loginText: {
         color: '#FFFFFF',

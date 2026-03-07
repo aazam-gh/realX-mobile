@@ -24,6 +24,7 @@ export default function PromoBanner() {
     const [banners, setBanners] = useState<BannerItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
 
     useEffect(() => {
@@ -49,10 +50,30 @@ export default function PromoBanner() {
         fetchBanners();
     }, []);
 
+    useEffect(() => {
+        if (banners.length <= 1 || isDragging) return;
+
+        const timer = setTimeout(() => {
+            const nextIndex = (activeIndex + 1) % banners.length;
+            scrollViewRef.current?.scrollTo({
+                x: nextIndex * (BANNER_WIDTH + 10),
+                animated: true,
+            });
+            setActiveIndex(nextIndex);
+        }, 4000);
+
+        return () => clearTimeout(timer);
+    }, [activeIndex, banners.length, isDragging]);
+
     const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const contentOffsetX = event.nativeEvent.contentOffset.x;
-        const index = Math.round(contentOffsetX / (BANNER_WIDTH + 10));
-        setActiveIndex(index);
+        const index = Math.max(
+            0,
+            Math.min(banners.length - 1, Math.round(contentOffsetX / (BANNER_WIDTH + 10)))
+        );
+        if (index !== activeIndex) {
+            setActiveIndex(index);
+        }
     };
 
     if (loading) {
@@ -81,6 +102,8 @@ export default function PromoBanner() {
                 decelerationRate="fast"
                 contentContainerStyle={styles.scrollContent}
                 onScroll={handleScroll}
+                onScrollBeginDrag={() => setIsDragging(true)}
+                onScrollEndDrag={() => setIsDragging(false)}
                 scrollEventThrottle={16}
             >
                 {banners.map((banner) => (

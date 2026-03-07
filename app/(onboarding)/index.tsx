@@ -12,7 +12,7 @@ const { width, height } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
     const router = useRouter();
-    const [step, setStep] = useState(1); // Set to 1 to show the screen in the screenshot directly, or as starting point
+    const [step, setStep] = useState(0); // Set to 1 to show the screen in the screenshot directly, or as starting point
 
     const handleGetStarted = () => {
         setStep(1);
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     },
     roleCard: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 55,
+        borderRadius: 50,
         padding: 10,
         flexDirection: 'row',
         alignItems: 'center',
@@ -285,13 +285,10 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
     },
     roleImage: {
-        width: '80%',
-        height: '80%',
+        width: '100%',
+        height: '100%',
     },
     roleTextContainer: {
         flex: 1,

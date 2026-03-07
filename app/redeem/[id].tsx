@@ -1,27 +1,56 @@
-
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    ActivityIndicator,
+    Alert,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
+// Types for better type safety
+interface VendorData {
+    profilePicture?: string;
+    name?: string;
+    [key: string]: any;
+}
+
+interface OfferData {
+    discountValue?: string | number;
+    discountType?: string;
+    [key: string]: any;
+}
+
 export default function RedeemScreen() {
     const { id, vendorId } = useLocalSearchParams<{ id: string; vendorId: string }>();
     const router = useRouter();
-    const [vendor, setVendor] = useState<any>(null);
-    const [offer, setOffer] = useState<any>(null);
+    const [vendor, setVendor] = useState<VendorData | null>(null);
+    const [offer, setOffer] = useState<OfferData | null>(null);
     const [loading, setLoading] = useState(true);
     const [step, setStep] = useState<'creator' | 'pin'>('creator');
     const [creatorCode, setCreatorCode] = useState('');
     const [pin, setPin] = useState('');
     const [amount, setAmount] = useState('80');
+
     const pinInputRef = useRef<TextInput>(null);
+    const amountInputRef = useRef<TextInput>(null);
 
     useEffect(() => {
+        let isMounted = true;
+
         const fetchData = async () => {
             if (!id || !vendorId) return;
             try {
@@ -30,34 +59,55 @@ export default function RedeemScreen() {
                 // Fetch Vendor
                 const vendorRef = doc(db, 'vendors', vendorId);
                 const vendorSnap = await getDoc(vendorRef);
-                if (vendorSnap.exists()) {
-                    setVendor(vendorSnap.data());
+                if (vendorSnap.exists() && isMounted) {
+                    setVendor(vendorSnap.data() as VendorData);
                 }
 
                 // Fetch Offer
                 const offerRef = doc(db, 'offers', id);
                 const offerSnap = await getDoc(offerRef);
-                if (offerSnap.exists()) {
-                    setOffer(offerSnap.data());
+                if (offerSnap.exists() && isMounted) {
+                    setOffer(offerSnap.data() as OfferData);
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
 
         fetchData();
+
+        return () => {
+            isMounted = false;
+        };
     }, [id, vendorId]);
 
     const handleAction = () => {
         if (step === 'creator') {
             setStep('pin');
+            // Slight delay to allow render before focus
+            setTimeout(() => {
+                pinInputRef.current?.focus();
+            }, 300);
         } else {
+            Keyboard.dismiss();
+
+            if (pin.length !== 4) {
+                Alert.alert('Hold on', 'Please enter a 4-digit PIN');
+                return;
+            }
+            if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+                Alert.alert('Hold on', 'Please enter a valid amount');
+                return;
+            }
+
             // Logic for redemption will go here
             console.log(`Redeeming with PIN: ${pin}, Amount: ${amount}, Creator: ${creatorCode}`);
 
             if (creatorCode) {
+                Alert.alert('Success', 'Redemption successful');
+            } else {
                 Alert.alert('Success', 'Redemption successful');
             }
             // router.push('/redeem/success');
@@ -86,124 +136,154 @@ export default function RedeemScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
-
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => {
-                        if (step === 'pin') setStep('creator');
-                        else router.back();
-                    }}
-                >
-                    <Ionicons name="arrow-back" size={24} color="#000" />
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.content}>
-                {/* Offer Card */}
-                <View style={styles.offerCardWrapper}>
-                    <View style={styles.offerCard}>
-                        {/* View T&C */}
-                        <TouchableOpacity style={styles.tcButton}>
-                            <Ionicons name="information-circle-outline" size={18} color="#888" />
-                            <Text style={styles.tcText}>View T&C</Text>
-                        </TouchableOpacity>
-
-                        <Text style={styles.offerTitle}>
-                            FLAT <Text style={styles.greenText}>
-                                {offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}
-                            </Text> OFF
-                        </Text>
-                        <Text style={styles.offerSubtitle}>In-store</Text>
-                    </View>
-
-                    {/* Logo Overlay */}
-                    <View style={styles.logoContainer}>
-                        <Image
-                            source={{ uri: vendor.profilePicture }}
-                            style={styles.logoImage}
-                            contentFit="contain"
-                        />
-                    </View>
-                </View>
-
-                {/* Conditional Cards based on Step */}
-                {step === 'creator' && (
-                    <View style={styles.creatorCard}>
-                        <Text style={styles.inputLabel}>
-                            Have a creator code? <Text style={styles.optionalText}>(Optional)</Text>
-                        </Text>
-                        <View style={styles.creatorInputContainer}>
-                            <TextInput
-                                style={styles.creatorInput}
-                                value={creatorCode}
-                                onChangeText={setCreatorCode}
-                                placeholder="MRBEAST6000"
-                                placeholderTextColor="#CCC"
-                                autoCapitalize="characters"
-                            />
+            <KeyboardAvoidingView
+                style={styles.keyboardAware}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={styles.innerContainer}>
+                        {/* Header */}
+                        <View style={styles.header}>
+                            <TouchableOpacity
+                                style={styles.backButton}
+                                onPress={() => {
+                                    if (step === 'pin') {
+                                        setStep('creator');
+                                        Keyboard.dismiss();
+                                    } else {
+                                        router.back();
+                                    }
+                                }}
+                            >
+                                <Ionicons name="arrow-back" size={24} color="#000" />
+                            </TouchableOpacity>
                         </View>
-                    </View>
-                )}
 
-                {step === 'pin' && (
-                    <View style={styles.redemptionCard}>
-                        <Text style={styles.inputLabel}>Enter Vendor PIN:</Text>
-                        <TouchableOpacity
-                            activeOpacity={1}
-                            style={styles.pinContainer}
-                            onPress={() => pinInputRef.current?.focus()}
-                        >
-                            {[0, 1, 2, 3].map((index) => (
-                                <View key={index} style={styles.pinBox}>
-                                    <Text style={[styles.pinText, pin.length > index && { color: '#000', marginTop: 0 }]}>
-                                        {pin.length > index ? '●' : '*'}
+                        <View style={styles.content}>
+                            {/* Offer Card */}
+                            <View style={styles.offerCardWrapper}>
+                                <View style={styles.offerCard}>
+                                    {/* View T&C */}
+                                    <TouchableOpacity style={styles.tcButton}>
+                                        <Ionicons name="information-circle-outline" size={18} color="#888" />
+                                        <Text style={styles.tcText}>View T&C</Text>
+                                    </TouchableOpacity>
+
+                                    <Text style={styles.offerTitle}>
+                                        FLAT <Text style={styles.greenText}>
+                                            {offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}
+                                        </Text> OFF
                                     </Text>
+                                    <Text style={styles.offerSubtitle}>In-store</Text>
                                 </View>
-                            ))}
-                        </TouchableOpacity>
 
-                        <TextInput
-                            ref={pinInputRef}
-                            style={{ position: 'absolute', opacity: 0, height: 0, width: 0 }}
-                            value={pin}
-                            onChangeText={(text) => {
-                                if (text.length <= 4) setPin(text);
-                            }}
-                            keyboardType="numeric"
-                        />
+                                {/* Logo Overlay */}
+                                <View style={styles.logoContainer}>
+                                    <Image
+                                        source={{ uri: vendor.profilePicture }}
+                                        style={styles.logoImage}
+                                        contentFit="contain"
+                                    />
+                                </View>
+                            </View>
 
-                        <Text style={styles.inputLabel}>Total Paid:</Text>
-                        <View style={styles.amountInputContainer}>
-                            <Text style={styles.currencyPrefix}>QAR</Text>
-                            <TextInput
-                                style={styles.amountInput}
-                                value={amount}
-                                onChangeText={setAmount}
-                                keyboardType="numeric"
-                                placeholder="0"
-                                placeholderTextColor="#CCC"
-                            />
+                            {/* Conditional Cards based on Step */}
+                            {step === 'creator' && (
+                                <View style={styles.creatorCard}>
+                                    <Text style={styles.inputLabel}>
+                                        Have a creator code? <Text style={styles.optionalText}>(Optional)</Text>
+                                    </Text>
+                                    <View style={styles.creatorInputContainer}>
+                                        <TextInput
+                                            style={styles.creatorInput}
+                                            value={creatorCode}
+                                            onChangeText={setCreatorCode}
+                                            placeholder="MRBEAST6000"
+                                            placeholderTextColor="#CCC"
+                                            autoCapitalize="characters"
+                                            returnKeyType="next"
+                                            onSubmitEditing={handleAction}
+                                            autoCorrect={false}
+                                        />
+                                    </View>
+                                </View>
+                            )}
+
+                            {step === 'pin' && (
+                                <View style={styles.redemptionCard}>
+                                    <Text style={styles.inputLabel}>Enter Vendor PIN:</Text>
+                                    <View style={styles.pinContainer}>
+                                        <TouchableOpacity
+                                            activeOpacity={1}
+                                            style={styles.pinVisualContainer}
+                                            onPress={() => pinInputRef.current?.focus()}
+                                        >
+                                            {[0, 1, 2, 3].map((index) => (
+                                                <View key={index} style={[styles.pinBox, pin.length === index && styles.pinBoxActive]}>
+                                                    <Text style={[styles.pinText, pin.length > index && { color: '#000', marginTop: 0 }]}>
+                                                        {pin.length > index ? '●' : '*'}
+                                                    </Text>
+                                                </View>
+                                            ))}
+                                        </TouchableOpacity>
+
+                                        <TextInput
+                                            ref={pinInputRef}
+                                            style={styles.hiddenPinInput}
+                                            value={pin}
+                                            onChangeText={(text) => {
+                                                const numericText = text.replace(/[^0-9]/g, '');
+                                                if (numericText.length <= 4) {
+                                                    setPin(numericText);
+                                                }
+                                                // Auto-advance to amount if 4 digits entered
+                                                if (numericText.length === 4) {
+                                                    amountInputRef.current?.focus();
+                                                }
+                                            }}
+                                            keyboardType="number-pad"
+                                            maxLength={4}
+                                            returnKeyType="done"
+                                            onSubmitEditing={() => amountInputRef.current?.focus()}
+                                        />
+                                    </View>
+
+                                    <Text style={styles.inputLabel}>Total Paid:</Text>
+                                    <View style={styles.amountInputContainer}>
+                                        <Text style={styles.currencyPrefix}>QAR</Text>
+                                        <TextInput
+                                            ref={amountInputRef}
+                                            style={styles.amountInput}
+                                            value={amount}
+                                            onChangeText={setAmount}
+                                            keyboardType="decimal-pad"
+                                            placeholder="0"
+                                            placeholderTextColor="#CCC"
+                                            returnKeyType="done"
+                                            onSubmitEditing={handleAction}
+                                        />
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Spacer to push button to bottom */}
+                            <View style={{ flex: 1, minHeight: 20 }} />
+
+                            {/* Action Button */}
+                            <TouchableOpacity
+                                style={styles.redeemButton}
+                                activeOpacity={0.9}
+                                onPress={handleAction}
+                            >
+                                <Ionicons name="flash" size={20} color="#FFF" />
+                                <Text style={styles.redeemButtonText}>
+                                    {step === 'creator' ? 'CONTINUE' : 'REDEEM'}
+                                </Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
-                )}
-
-                {/* Spacer to push button to bottom */}
-                <View style={{ flex: 1 }} />
-
-                {/* Action Button */}
-                <TouchableOpacity
-                    style={styles.redeemButton}
-                    activeOpacity={0.9}
-                    onPress={handleAction}
-                >
-                    <Ionicons name="flash" size={20} color="#FFF" />
-                    <Text style={styles.redeemButtonText}>
-                        {step === 'creator' ? 'CONTINUE' : 'REDEEM'}
-                    </Text>
-                </TouchableOpacity>
-            </View>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
@@ -212,6 +292,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#FFFFFF',
+    },
+    keyboardAware: {
+        flex: 1,
+    },
+    innerContainer: {
+        flex: 1,
     },
     loadingContainer: {
         flex: 1,
@@ -336,9 +422,12 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     pinContainer: {
+        marginBottom: 24,
+        position: 'relative',
+    },
+    pinVisualContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 24,
     },
     pinBox: {
         width: 65,
@@ -352,12 +441,24 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 5,
         elevation: 2,
+        borderWidth: 2,
+        borderColor: 'transparent',
+    },
+    pinBoxActive: {
+        borderColor: Colors.brandGreen,
     },
     pinText: {
         fontSize: 30,
         color: '#E0E0E0',
         fontFamily: Typography.metropolis.medium,
         marginTop: 10,
+    },
+    hiddenPinInput: {
+        position: 'absolute',
+        opacity: 0,
+        height: '100%',
+        width: '100%',
+        zIndex: -1,
     },
     amountInputContainer: {
         flexDirection: 'row',
@@ -434,4 +535,3 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
 });
-

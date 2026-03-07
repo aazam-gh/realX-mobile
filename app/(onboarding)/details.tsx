@@ -11,6 +11,7 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -82,7 +83,9 @@ export default function DetailsOnboarding() {
     };
 
     const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        setShowDatePicker(Platform.OS === 'ios');
+        if (Platform.OS === 'android') {
+            setShowDatePicker(false);
+        }
         if (selectedDate) {
             setDob(selectedDate);
         }
@@ -123,99 +126,120 @@ export default function DetailsOnboarding() {
 
             {/* Main Content Card */}
             <View style={[styles.cardContainer, { backgroundColor: '#FFFFFF' }]}>
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <View style={styles.card}>
-                        <View style={styles.textContainer}>
-                            <Text style={styles.titleLine}>
-                                <Text style={styles.blackText}>ENTER YOUR</Text>
-                            </Text>
-                            <Text style={styles.titleLine}>
-                                <Text style={styles.greenText}>DETAILS</Text>
-                            </Text>
-                        </View>
-
-                        <View style={styles.formContainer}>
-                            <View style={styles.row}>
-                                <View style={[styles.inputContainer, { flex: 1, marginRight: 10, backgroundColor: '#F3F3F3' }]}>
-                                    <TextInput
-                                        style={[styles.input, { color: '#000000' }]}
-                                        placeholder="First Name"
-                                        placeholderTextColor="#999999"
-                                        value={firstName}
-                                        onChangeText={setFirstName}
-                                        editable={!isLoading}
-                                    />
-                                </View>
-                                <View style={[styles.inputContainer, { flex: 1, backgroundColor: '#F3F3F3' }]}>
-                                    <TextInput
-                                        style={[styles.input, { color: '#000000' }]}
-                                        placeholder="Last Name"
-                                        placeholderTextColor="#999999"
-                                        value={lastName}
-                                        onChangeText={setLastName}
-                                        editable={!isLoading}
-                                    />
-                                </View>
-                            </View>
-
-                            <TouchableOpacity
-                                style={[styles.inputContainer, { backgroundColor: '#F3F3F3' }]}
-                                onPress={() => setShowDatePicker(true)}
-                                disabled={isLoading}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={[styles.input, !dob && { color: '#999999' }]}>
-                                    {formatDate(dob)}
-                                </Text>
-                            </TouchableOpacity>
-
-                            {showDatePicker && (
-                                <DateTimePicker
-                                    value={dob || new Date(2026, 0, 1)}
-                                    mode="date"
-                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                                    onChange={onDateChange}
-                                    maximumDate={new Date()}
-                                />
-                            )}
-
-                            <View style={styles.genderContainer}>
-                                <Text style={styles.label}>Gender</Text>
-                                <View style={styles.genderOptions}>
-                                    <TouchableOpacity
-                                        style={[styles.genderButton, { backgroundColor: '#F3F3F3' }, gender === 'Male' && styles.genderButtonSelected]}
-                                        onPress={() => setGender('Male')}
-                                        disabled={isLoading}
-                                    >
-                                        <Text style={[styles.genderText, gender === 'Male' && styles.genderTextSelected]}>Male</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[styles.genderButton, { backgroundColor: '#F3F3F3' }, gender === 'Female' && styles.genderButtonSelected]}
-                                        onPress={() => setGender('Female')}
-                                        disabled={isLoading}
-                                    >
-                                        <Text style={[styles.genderText, gender === 'Female' && styles.genderTextSelected]}>Female</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </View>
-                    </View>
-                </TouchableWithoutFeedback>
-
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    keyboardVerticalOffset={20}
-                    style={styles.footer}
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ flexGrow: 1 }}
+                    keyboardShouldPersistTaps="handled"
                 >
-                    <TouchableOpacity
-                        style={[styles.button, !isFormValid && styles.buttonDisabled]}
-                        onPress={handleContinue}
-                        disabled={!isFormValid}
-                        activeOpacity={0.8}
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                        <View style={styles.card}>
+                            <View style={styles.textContainer}>
+                                <Text style={styles.titleLine}>
+                                    <Text style={styles.blackText}>ENTER YOUR</Text>
+                                </Text>
+                                <Text style={styles.titleLine}>
+                                    <Text style={styles.greenText}>DETAILS</Text>
+                                </Text>
+                            </View>
+
+                            <View style={styles.formContainer}>
+                                <View style={styles.row}>
+                                    <View style={[styles.inputContainer, { flex: 1, marginRight: 10, backgroundColor: '#F3F3F3' }]}>
+                                        <TextInput
+                                            style={[styles.input, { color: '#000000' }]}
+                                            placeholder="First Name"
+                                            placeholderTextColor="#999999"
+                                            value={firstName}
+                                            onChangeText={setFirstName}
+                                            editable={!isLoading}
+                                        />
+                                    </View>
+                                    <View style={[styles.inputContainer, { flex: 1, backgroundColor: '#F3F3F3' }]}>
+                                        <TextInput
+                                            style={[styles.input, { color: '#000000' }]}
+                                            placeholder="Last Name"
+                                            placeholderTextColor="#999999"
+                                            value={lastName}
+                                            onChangeText={setLastName}
+                                            editable={!isLoading}
+                                        />
+                                    </View>
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[styles.inputContainer, { backgroundColor: '#F3F3F3' }]}
+                                    onPress={() => {
+                                        Keyboard.dismiss();
+                                        setShowDatePicker(true);
+                                    }}
+                                    disabled={isLoading}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[styles.input, !dob && { color: '#999999' }]}>
+                                        {formatDate(dob)}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                {showDatePicker && (
+                                    <View style={Platform.OS === 'ios' ? styles.iosPickerContainer : null}>
+                                        {Platform.OS === 'ios' && (
+                                            <View style={styles.pickerHeader}>
+                                                <TouchableOpacity
+                                                    onPress={() => setShowDatePicker(false)}
+                                                    style={styles.doneButtonStyle}
+                                                >
+                                                    <Text style={styles.doneButtonText}>Done</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
+                                        <DateTimePicker
+                                            value={dob || new Date(2000, 0, 1)}
+                                            mode="date"
+                                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                            onChange={onDateChange}
+                                            maximumDate={new Date()}
+                                        />
+                                    </View>
+                                )}
+
+                                <View style={styles.genderContainer}>
+                                    <Text style={styles.label}>Gender</Text>
+                                    <View style={styles.genderOptions}>
+                                        <TouchableOpacity
+                                            style={[styles.genderButton, { backgroundColor: '#F3F3F3' }, gender === 'Male' && styles.genderButtonSelected]}
+                                            onPress={() => setGender('Male')}
+                                            disabled={isLoading}
+                                        >
+                                            <Text style={[styles.genderText, gender === 'Male' && styles.genderTextSelected]}>Male</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.genderButton, { backgroundColor: '#F3F3F3' }, gender === 'Female' && styles.genderButtonSelected]}
+                                            onPress={() => setGender('Female')}
+                                            disabled={isLoading}
+                                        >
+                                            <Text style={[styles.genderText, gender === 'Female' && styles.genderTextSelected]}>Female</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+                    </TouchableWithoutFeedback>
+
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        keyboardVerticalOffset={20}
+                        style={styles.footer}
                     >
-                        <Text style={styles.buttonText}>{isLoading ? 'Saving...' : 'Continue'}</Text>
-                    </TouchableOpacity>
-                </KeyboardAvoidingView>
+                        <TouchableOpacity
+                            style={[styles.button, !isFormValid && styles.buttonDisabled]}
+                            onPress={handleContinue}
+                            disabled={!isFormValid}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.buttonText}>{isLoading ? 'Saving...' : 'Continue'}</Text>
+                        </TouchableOpacity>
+                    </KeyboardAvoidingView>
+                </ScrollView>
             </View>
         </View>
     );
@@ -353,5 +377,26 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 18,
         fontFamily: Typography.metropolis.medium,
+    },
+    iosPickerContainer: {
+        backgroundColor: '#F3F3F3',
+        borderRadius: 20,
+        marginBottom: 15,
+        overflow: 'hidden',
+    },
+    pickerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        paddingHorizontal: 15,
+        paddingTop: 10,
+        backgroundColor: '#F3F3F3',
+    },
+    doneButtonStyle: {
+        padding: 5,
+    },
+    doneButtonText: {
+        color: Colors.brandGreen,
+        fontFamily: Typography.metropolis.semiBold,
+        fontSize: 16,
     },
 });

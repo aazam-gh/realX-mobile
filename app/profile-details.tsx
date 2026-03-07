@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { getAuth } from '@react-native-firebase/auth';
-import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { deleteUser, getAuth, updateProfile } from '@react-native-firebase/auth';
+import { doc, getDoc, getFirestore, updateDoc } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -17,19 +18,25 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
+
 
 export default function ProfileDetailsScreen() {
     const router = useRouter();
-    const PURPLE = '#7D57FF';
+    const BRAND_GREEN = Colors.brandGreen;
 
     // Form states
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [dob, setDob] = useState<Date | null>(null);
+    const [gender, setGender] = useState<'Male' | 'Female' | null>(null);
+    const [photoURL, setPhotoURL] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     useEffect(() => {
         const authInstance = getAuth();
@@ -49,11 +56,18 @@ export default function ProfileDetailsScreen() {
                     const data = docSnap.data();
                     setFirstName(data?.firstName || '');
                     setLastName(data?.lastName || '');
-                    setPhone(data?.phone || '');
                     setEmail(data?.email || user.email || '');
+                    setGender(data?.gender || null);
+                    setPhotoURL(data?.photoURL || user.photoURL || null);
                     if (data?.dob) {
-                        const [day, month, year] = data.dob.split('/').map(Number);
-                        setDob(new Date(year, month - 1, day));
+                        // Support both YYYY-MM-DD and DD/MM/YYYY
+                        if (data.dob.includes('-')) {
+                            const [year, month, day] = data.dob.split('-').map(Number);
+                            setDob(new Date(year, month - 1, day));
+                        } else {
+                            const [day, month, year] = data.dob.split('/').map(Number);
+                            setDob(new Date(year, month - 1, day));
+                        }
                     }
                 }
             } catch (error) {
@@ -77,6 +91,97 @@ export default function ProfileDetailsScreen() {
         return date.toLocaleDateString('en-GB');
     };
 
+    const handleToggleEdit = () => {
+        if (isEditing) {
+            handleSave();
+        } else {
+            setIsEditing(true);
+        }
+    };
+
+    const handleSave = async () => {
+        const authInstance = getAuth();
+        const user = authInstance.currentUser;
+        if (!user) return;
+
+        setIsSaving(true);
+        try {
+            const db = getFirestore();
+            const studentDocRef = doc(db, 'students', user.uid);
+
+            const updatedData = {
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                dob: dob ? dob.toISOString().split('T')[0] : '',
+                gender,
+                updatedAt: new Date(),
+            };
+
+            await updateDoc(studentDocRef, updatedData);
+
+            // Also update Auth profile display name
+            await updateProfile(user, {
+                displayName: `${firstName.trim()} ${lastName.trim()}`
+            });
+
+            setIsEditing(false);
+            Alert.alert('Success', 'Profile updated successfully');
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            Alert.alert('Error', 'Failed to update profile');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeleteAccount = () => {
+        Alert.alert(
+            'Delete Account',
+            'Are you sure you want to delete your account? This action cannot be undone.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const authInstance = getAuth();
+                        const user = authInstance.currentUser;
+                        if (!user) return;
+
+                        setIsLoading(true);
+                        try {
+                            // Delete from Firestore
+                            const db = getFirestore();
+                            // Note: We might want to use a Cloud Function for this to ensure consistency
+                            // but for now we delete the student doc
+                            // await deleteDoc(doc(db, 'students', user.uid)); 
+
+                            // Delete Auth account
+                            await deleteUser(user);
+                            router.replace('/(onboarding)');
+                        } catch (error: any) {
+                            console.error('Error deleting account:', error);
+                            if (error.code === 'auth/requires-recent-login') {
+                                Alert.alert('Error', 'Please log out and log back in to perform this action.');
+                            } else {
+                                Alert.alert('Error', 'Failed to delete account');
+                            }
+                        } finally {
+                            setIsLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        setShowDatePicker(Platform.OS === 'ios');
+        if (selectedDate) {
+            setDob(selectedDate);
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
@@ -84,6 +189,11 @@ export default function ProfileDetailsScreen() {
                     <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Profile Details</Text>
+                <TouchableOpacity onPress={handleToggleEdit} style={styles.editButton}>
+                    <Text style={[styles.editButtonText, isEditing && { color: BRAND_GREEN }]}>
+                        {isEditing ? 'Save' : 'Edit'}
+                    </Text>
+                </TouchableOpacity>
             </View>
 
             <KeyboardAvoidingView
@@ -97,24 +207,29 @@ export default function ProfileDetailsScreen() {
                     {/* Profile Image Section */}
                     <View style={styles.avatarContainer}>
                         <View style={styles.avatarMain}>
-                            <Ionicons name="person" size={80} color="#E0E0E0" />
+                            {photoURL ? (
+                                <Image source={{ uri: photoURL }} style={styles.avatarMain} />
+                            ) : (
+                                <Ionicons name="person" size={80} color="#E0E0E0" />
+                            )}
                         </View>
                     </View>
 
                     {/* Form Fields */}
                     <View style={styles.form}>
-                        {isLoading ? (
-                            <ActivityIndicator size="large" color={PURPLE} style={{ marginTop: 20 }} />
+                        {isLoading || isSaving ? (
+                            <ActivityIndicator size="large" color={BRAND_GREEN} style={{ marginTop: 20 }} />
                         ) : (
                             <>
                                 {/* First Name Field */}
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.label}>First Name</Text>
-                                    <View style={[styles.inputWrapper, styles.disabledInput]}>
+                                    <View style={[styles.inputWrapper, !isEditing && styles.disabledInput]}>
                                         <TextInput
-                                            style={[styles.input, styles.disabledText]}
+                                            style={[styles.input, !isEditing && styles.disabledText]}
                                             value={firstName}
-                                            editable={false}
+                                            onChangeText={setFirstName}
+                                            editable={isEditing}
                                             placeholder="First name"
                                         />
                                     </View>
@@ -123,36 +238,14 @@ export default function ProfileDetailsScreen() {
                                 {/* Last Name Field */}
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.label}>Last Name</Text>
-                                    <View style={[styles.inputWrapper, styles.disabledInput]}>
+                                    <View style={[styles.inputWrapper, !isEditing && styles.disabledInput]}>
                                         <TextInput
-                                            style={[styles.input, styles.disabledText]}
+                                            style={[styles.input, !isEditing && styles.disabledText]}
                                             value={lastName}
-                                            editable={false}
+                                            onChangeText={setLastName}
+                                            editable={isEditing}
                                             placeholder="Last name"
                                         />
-                                    </View>
-                                </View>
-
-                                {/* Phone Field */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>Phone</Text>
-                                    <View style={styles.phoneRow}>
-                                        <View style={[styles.countrySelector, styles.disabledInput]}>
-                                            <Image
-                                                source={{ uri: 'https://flagcdn.com/w40/qa.png' }}
-                                                style={styles.flag}
-                                            />
-                                            <Text style={styles.countryCode}>+974</Text>
-                                        </View>
-                                        <View style={[styles.phoneInputWrapper, styles.disabledInput]}>
-                                            <TextInput
-                                                style={[styles.input, styles.disabledText]}
-                                                value={phone}
-                                                editable={false}
-                                                keyboardType="phone-pad"
-                                                placeholder="Phone number"
-                                            />
-                                        </View>
                                     </View>
                                 </View>
 
@@ -172,10 +265,53 @@ export default function ProfileDetailsScreen() {
                                 {/* Date of Birth Field */}
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.label}>Date of Birth</Text>
-                                    <View style={[styles.inputWrapper, styles.disabledInput]}>
-                                        <Text style={[styles.input, styles.disabledText, !dob && { color: '#999' }]}>
+                                    <TouchableOpacity
+                                        style={[styles.inputWrapper, !isEditing && styles.disabledInput]}
+                                        onPress={() => isEditing && setShowDatePicker(true)}
+                                        disabled={!isEditing}
+                                    >
+                                        <Text style={[styles.input, !isEditing && styles.disabledText, !dob && { color: '#999' }]}>
                                             {formatDate(dob)}
                                         </Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {showDatePicker && (
+                                    <DateTimePicker
+                                        value={dob || new Date(2000, 0, 1)}
+                                        mode="date"
+                                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                        onChange={onDateChange}
+                                        maximumDate={new Date()}
+                                    />
+                                )}
+
+                                {/* Gender Field */}
+                                <View style={styles.inputGroup}>
+                                    <Text style={styles.label}>Gender</Text>
+                                    <View style={styles.genderOptions}>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.genderButton,
+                                                gender === 'Male' && styles.genderButtonSelected,
+                                                !isEditing && styles.disabledGenderButton
+                                            ]}
+                                            onPress={() => isEditing && setGender('Male')}
+                                            disabled={!isEditing}
+                                        >
+                                            <Text style={[styles.genderText, gender === 'Male' && styles.genderTextSelected]}>Male</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.genderButton,
+                                                gender === 'Female' && styles.genderButtonSelected,
+                                                !isEditing && styles.disabledGenderButton
+                                            ]}
+                                            onPress={() => isEditing && setGender('Female')}
+                                            disabled={!isEditing}
+                                        >
+                                            <Text style={[styles.genderText, gender === 'Female' && styles.genderTextSelected]}>Female</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
                             </>
@@ -185,7 +321,7 @@ export default function ProfileDetailsScreen() {
                     {/* Action Buttons */}
                     <View style={styles.actions}>
 
-                        <TouchableOpacity style={styles.deleteButton}>
+                        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
                             <Text style={styles.deleteButtonText}>Delete Account</Text>
                         </TouchableOpacity>
                     </View>
@@ -218,6 +354,16 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 24,
+        fontFamily: Typography.metropolis.semiBold,
+        color: '#000',
+        flex: 1,
+        textAlign: 'center',
+    },
+    editButton: {
+        paddingHorizontal: 10,
+    },
+    editButtonText: {
+        fontSize: 18,
         fontFamily: Typography.metropolis.semiBold,
         color: '#000',
     },
@@ -295,43 +441,37 @@ const styles = StyleSheet.create({
     disabledText: {
         color: '#999',
     },
-    phoneRow: {
+    genderOptions: {
         flexDirection: 'row',
         gap: 12,
     },
-    countrySelector: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    genderButton: {
+        flex: 1,
+        height: 50,
+        borderRadius: 25,
         backgroundColor: '#F9F9F9',
-        borderRadius: 24,
-        paddingHorizontal: 15,
-        height: 56,
         borderWidth: 1,
         borderColor: '#F0F0F0',
-        gap: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    flag: {
-        width: 24,
-        height: 18,
-        borderRadius: 2,
+    genderButtonSelected: {
+        backgroundColor: 'rgba(24, 184, 82, 0.1)',
+        borderColor: '#18B852',
     },
-    countryCode: {
+    disabledGenderButton: {
+        backgroundColor: '#F3F3F3',
+    },
+    genderText: {
         fontSize: 16,
         fontFamily: Typography.metropolis.medium,
-        color: '#999',
+        color: '#000',
     },
-    phoneInputWrapper: {
-        flex: 1,
-        backgroundColor: '#F9F9F9',
-        borderRadius: 24,
-        paddingHorizontal: 20,
-        height: 56,
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
+    genderTextSelected: {
+        color: '#18B852',
+        fontFamily: Typography.metropolis.semiBold,
     },
-    chevron: {
-        marginRight: 2,
-    },
+
     actions: {
         marginTop: 40,
         gap: 20,

@@ -18,7 +18,6 @@ export default function ProfileScreen() {
     firstName?: string;
     lastName?: string;
     email?: string;
-    phone?: string;
     photoURL?: string;
     role?: string;
     creatorCode?: string;
@@ -249,11 +248,6 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 18,
     fontFamily: Typography.metropolis.semiBold,
-  },
-  userPhone: {
-    fontSize: 14,
-    fontFamily: Typography.metropolis.medium,
-    marginTop: 4,
   },
 
   sectionHeader: {

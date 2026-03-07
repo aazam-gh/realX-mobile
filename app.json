@@ -21,7 +21,8 @@
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "appleTeamId": "2396PCT42P"
     },
     "android": {
       "package": "com.reelx.app",

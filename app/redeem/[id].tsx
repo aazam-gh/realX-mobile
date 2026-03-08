@@ -1,7 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
-import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -11,7 +10,6 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
-    ScrollView,
     StatusBar,
     StyleSheet,
     Text,
@@ -49,25 +47,9 @@ export default function RedeemScreen() {
     const [creatorCode, setCreatorCode] = useState('');
     const [pin, setPin] = useState('');
     const [amount, setAmount] = useState('');
-    const [focusedField, setFocusedField] = useState<'pin' | 'amount' | null>(null);
 
     const pinInputRef = useRef<TextInput>(null);
     const amountInputRef = useRef<TextInput>(null);
-
-    // Derived values for UX
-    const amountNum = parseFloat(amount) || 0;
-    let discountAmt = 0;
-    if (offer) {
-        const discValue = Number(offer.discountValue) || 0;
-        if (offer.discountType === 'percentage' || String(offer.discountValue).includes('%')) {
-            discountAmt = (amountNum * discValue) / 100;
-        } else {
-            discountAmt = discValue;
-        }
-    }
-    discountAmt = Math.min(discountAmt, amountNum);
-    const remainingAmt = amountNum - discountAmt;
-    const isFormValid = pin.length === 4 && amountNum > 0;
 
     useEffect(() => {
         let isMounted = true;
@@ -117,7 +99,6 @@ export default function RedeemScreen() {
                 pinInputRef.current?.focus();
             }, 300);
         } else {
-            if (!isFormValid) return;
             Keyboard.dismiss();
 
             if (pin.length !== 4) {
@@ -241,137 +222,118 @@ export default function RedeemScreen() {
                         </View>
 
                         <View style={styles.content}>
-                            <ScrollView
-                                style={styles.scrollContent}
-                                contentContainerStyle={styles.scrollContentContainer}
-                                showsVerticalScrollIndicator={false}
-                                keyboardDismissMode="on-drag"
-                                keyboardShouldPersistTaps="handled"
-                            >
-                                {/* Offer Card */}
-                                <View style={styles.offerCardWrapper}>
-                                    <View style={styles.offerCard}>
-                                        <Text style={styles.offerTitle}>
-                                            FLAT <Text style={styles.greenText}>
-                                                {offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}
-                                            </Text> OFF
-                                        </Text>
-                                    </View>
+                            {/* Offer Card */}
+                            <View style={styles.offerCardWrapper}>
+                                <View style={styles.offerCard}>
+                                    <Text style={styles.offerTitle}>
+                                        FLAT <Text style={styles.greenText}>
+                                            {offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}
+                                        </Text> OFF
+                                    </Text>
+                                </View>
 
-                                    {/* Logo Overlay */}
-                                    <View style={styles.logoContainer}>
-                                        <Image
-                                            source={{ uri: vendor.profilePicture }}
-                                            style={styles.logoImage}
-                                            contentFit="contain"
+                                {/* Logo Overlay */}
+                                <View style={styles.logoContainer}>
+                                    <Image
+                                        source={{ uri: vendor.profilePicture }}
+                                        style={styles.logoImage}
+                                        contentFit="contain"
+                                    />
+                                </View>
+                            </View>
+
+                            {/* Conditional Cards based on Step */}
+                            {step === 'creator' && (
+                                <View style={styles.creatorCard}>
+                                    <Text style={styles.inputLabel}>
+                                        Have a creator code? <Text style={styles.optionalText}>(Optional)</Text>
+                                    </Text>
+                                    <View style={styles.creatorInputContainer}>
+                                        <TextInput
+                                            style={styles.creatorInput}
+                                            value={creatorCode}
+                                            onChangeText={(text) => setCreatorCode(text.toUpperCase())}
+                                            placeholder="REELX1"
+                                            placeholderTextColor="#CCC"
+                                            autoCapitalize="characters"
+                                            maxLength={6}
+                                            returnKeyType="next"
+                                            onSubmitEditing={handleAction}
+                                            autoCorrect={false}
                                         />
                                     </View>
                                 </View>
+                            )}
 
-                                {/* Conditional Cards based on Step */}
-                                {step === 'creator' && (
-                                    <View style={styles.creatorCard}>
-                                        <Text style={styles.inputLabel}>
-                                            Have a creator code? <Text style={styles.optionalText}>(Optional)</Text>
-                                        </Text>
-                                        <View style={[
-                                            styles.creatorInputContainer,
-                                            focusedField === 'pin' && styles.inputContainerFocused // reusing focus style if needed
-                                        ]}>
-                                            <TextInput
-                                                style={styles.creatorInput}
-                                                value={creatorCode}
-                                                onChangeText={(text) => setCreatorCode(text.toUpperCase())}
-                                                placeholder="REELX1"
-                                                placeholderTextColor="#CCC"
-                                                autoCapitalize="characters"
-                                                maxLength={6}
-                                                returnKeyType="next"
-                                                onSubmitEditing={handleAction}
-                                                autoCorrect={false}
-                                                autoFocus={true}
-                                            />
-                                        </View>
+                            {step === 'pin' && (
+                                <View style={styles.redemptionCard}>
+                                    <Text style={styles.inputLabel}>Enter Vendor PIN:</Text>
+                                    <View style={styles.pinContainer}>
+                                        <TouchableOpacity
+                                            activeOpacity={1}
+                                            style={styles.pinVisualContainer}
+                                            onPress={() => pinInputRef.current?.focus()}
+                                        >
+                                            {[0, 1, 2, 3].map((index) => (
+                                                <View key={index} style={[styles.pinBox, pin.length === index && styles.pinBoxActive]}>
+                                                    <Text style={[styles.pinText, pin.length > index && { color: '#000', marginTop: 0 }]}>
+                                                        {pin.length > index ? '●' : '*'}
+                                                    </Text>
+                                                </View>
+                                            ))}
+                                        </TouchableOpacity>
+
+                                        <TextInput
+                                            ref={pinInputRef}
+                                            style={styles.hiddenPinInput}
+                                            value={pin}
+                                            onChangeText={(text) => {
+                                                const numericText = text.replace(/[^0-9]/g, '');
+                                                if (numericText.length <= 4) {
+                                                    setPin(numericText);
+                                                }
+                                                // Auto-advance to amount if 4 digits entered
+                                                if (numericText.length === 4) {
+                                                    amountInputRef.current?.focus();
+                                                }
+                                            }}
+                                            keyboardType="number-pad"
+                                            maxLength={4}
+                                            returnKeyType="done"
+                                            onSubmitEditing={() => amountInputRef.current?.focus()}
+                                        />
                                     </View>
-                                )}
 
-                                {step === 'pin' && (
-                                    <View style={styles.redemptionCard}>
-                                        <Text style={styles.inputLabel}>Enter Vendor PIN:</Text>
-                                        <View style={styles.pinContainer}>
-                                            <TouchableOpacity
-                                                activeOpacity={1}
-                                                style={styles.pinVisualContainer}
-                                                onPress={() => pinInputRef.current?.focus()}
-                                            >
-                                                {[0, 1, 2, 3].map((index) => (
-                                                    <View key={index} style={[
-                                                        styles.pinBox,
-                                                        pin.length === index && styles.pinBoxActive,
-                                                        focusedField === 'pin' && pin.length === index && styles.pinBoxFocused
-                                                    ]}>
-                                                        <Text style={[styles.pinText, pin.length > index && { color: '#000', marginTop: 0 }]}>
-                                                            {pin.length > index ? '●' : '*'}
-                                                        </Text>
-                                                    </View>
-                                                ))}
-                                            </TouchableOpacity>
+                                    <Text style={styles.inputLabel}>Total Bill:</Text>
+                                    <View style={styles.amountInputContainer}>
+                                        <Text style={styles.currencyPrefix}>QAR</Text>
+                                        <TextInput
+                                            ref={amountInputRef}
+                                            style={styles.amountInput}
+                                            value={amount}
+                                            onChangeText={setAmount}
+                                            keyboardType="decimal-pad"
+                                            placeholder="0"
+                                            placeholderTextColor="#CCC"
+                                            returnKeyType="done"
+                                            onSubmitEditing={handleAction}
+                                        />
+                                    </View>
 
-                                            <TextInput
-                                                ref={pinInputRef}
-                                                style={styles.hiddenPinInput}
-                                                value={pin}
-                                                onFocus={() => setFocusedField('pin')}
-                                                onBlur={() => setFocusedField(null)}
-                                                onChangeText={(text) => {
-                                                    const numericText = text.replace(/[^0-9]/g, '');
-                                                    if (numericText.length <= 4) {
-                                                        setPin(numericText);
-                                                        if (numericText.length > 0) {
-                                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                        }
-                                                    }
-                                                    // Auto-advance to amount if 4 digits entered
-                                                    if (numericText.length === 4) {
-                                                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                                        amountInputRef.current?.focus();
-                                                    }
-                                                }}
-                                                keyboardType="number-pad"
-                                                maxLength={4}
-                                                returnKeyType="next"
-                                                onSubmitEditing={() => amountInputRef.current?.focus()}
-                                                autoFocus={step === 'pin'}
-                                            />
-                                        </View>
+                                    {parseFloat(amount) > 0 && (() => {
+                                        const amountNum = parseFloat(amount) || 0;
+                                        let discountAmt = 0;
+                                        if (offer) {
+                                            if (offer.discountType === 'percentage' || String(offer.discountValue).includes('%')) {
+                                                discountAmt = (amountNum * Number(offer.discountValue)) / 100;
+                                            } else {
+                                                discountAmt = Number(offer.discountValue);
+                                            }
+                                        }
+                                        discountAmt = Math.min(discountAmt, amountNum);
+                                        const remainingAmt = amountNum - discountAmt;
 
-                                        <Text style={styles.inputLabel}>Total Bill:</Text>
-                                        <View style={[
-                                            styles.amountInputContainer,
-                                            focusedField === 'amount' && styles.inputContainerFocused
-                                        ]}>
-                                            <Text style={styles.currencyPrefix}>QAR</Text>
-                                            <TextInput
-                                                ref={amountInputRef}
-                                                style={styles.amountInput}
-                                                value={amount}
-                                                onFocus={() => setFocusedField('amount')}
-                                                onBlur={() => setFocusedField(null)}
-                                                onChangeText={(text) => {
-                                                    setAmount(text);
-                                                    if (text.length > 0) {
-                                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                    }
-                                                }}
-                                                keyboardType="decimal-pad"
-                                                placeholder="0"
-                                                placeholderTextColor="#CCC"
-                                                returnKeyType="go"
-                                                onSubmitEditing={handleAction}
-                                            />
-                                        </View>
-
-                                        {amountNum > 0 && (
+                                        return (
                                             <View style={styles.breakdownContainer}>
                                                 <View style={styles.breakdownRow}>
                                                     <Text style={styles.breakdownLabel}>Total Bill</Text>
@@ -393,20 +355,20 @@ export default function RedeemScreen() {
                                                     </Text>
                                                 </View>
                                             </View>
-                                        )}
-                                    </View>
-                                )}
-                            </ScrollView>
+                                        );
+                                    })()}
+                                </View>
+                            )}
+
+                            {/* Spacer to push button to bottom */}
+                            <View style={{ flex: 1, minHeight: 20 }} />
 
                             {/* Action Button */}
                             <TouchableOpacity
-                                style={[
-                                    styles.redeemButton,
-                                    (!isFormValid && step === 'pin') && styles.redeemButtonDisabled
-                                ]}
+                                style={styles.redeemButton}
                                 activeOpacity={0.9}
                                 onPress={handleAction}
-                                disabled={isSubmitting || (!isFormValid && step === 'pin')}
+                                disabled={isSubmitting}
                             >
                                 {isSubmitting ? (
                                     <ActivityIndicator color="#FFF" />
@@ -414,8 +376,7 @@ export default function RedeemScreen() {
                                     <>
                                         <Ionicons name="flash" size={20} color="#FFF" />
                                         <Text style={styles.redeemButtonText}>
-                                            {step === 'creator' ? 'CONTINUE' :
-                                                amountNum > 0 ? `REDEEM QAR ${remainingAmt.toFixed(0)}` : 'REDEEM'}
+                                            {step === 'creator' ? 'CONTINUE' : 'REDEEM'}
                                         </Text>
                                     </>
                                 )}
@@ -482,15 +443,8 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 10,
-        paddingBottom: 20,
-    },
-    scrollContent: {
-        flex: 1,
-    },
-    scrollContentContainer: {
-        paddingTop: 30,
-        paddingBottom: 20,
+        paddingTop: 40,
+        paddingBottom: 30,
     },
     offerCardWrapper: {
         position: 'relative',
@@ -626,28 +580,11 @@ const styles = StyleSheet.create({
         fontFamily: Typography.metropolis.semiBold,
         marginRight: 10,
     },
-    inputContainerFocused: {
-        borderColor: Colors.brandGreen,
-        borderWidth: 1.5,
-        shadowColor: Colors.brandGreen,
-        shadowOpacity: 0.1,
-    },
-    pinBoxFocused: {
-        shadowColor: Colors.brandGreen,
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-    },
     amountInput: {
         flex: 1,
         fontSize: 18,
         color: '#000',
         fontFamily: Typography.metropolis.semiBold,
-    },
-    redeemButtonDisabled: {
-        backgroundColor: '#CCC',
-        shadowColor: '#CCC',
-        shadowOpacity: 0.1,
     },
     breakdownContainer: {
         marginTop: 20,

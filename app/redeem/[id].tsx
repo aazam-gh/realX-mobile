@@ -112,7 +112,7 @@ export default function RedeemScreen() {
 
             try {
                 setIsSubmitting(true);
-                const functions = getFunctions();
+                const functions = getFunctions(undefined, 'me-central1');
                 const redeemOffer = httpsCallable(functions, 'redeemOffer');
 
                 const amountNum = parseFloat(amount) || 0;

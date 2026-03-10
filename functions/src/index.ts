@@ -29,7 +29,7 @@ interface RedeemOfferData {
 
 initializeApp();
 
-setGlobalOptions({ maxInstances: 10 });
+setGlobalOptions({ maxInstances: 10, region: 'me-central1' });
 
 const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 

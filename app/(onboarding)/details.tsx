@@ -63,7 +63,7 @@ export default function DetailsOnboarding() {
             await setDoc(doc(db, 'students', user.uid), studentData);
 
             if (role === 'creator') {
-                const functions = getFunctions();
+                const functions = getFunctions(undefined, 'me-central1');
                 const assignCode = httpsCallable(functions, 'assignCreatorCode');
                 await assignCode();
             }

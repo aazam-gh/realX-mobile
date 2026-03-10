@@ -62,7 +62,7 @@ export default function GiftCardCheckout({
 
         setIsRedeeming(true);
         try {
-            const functions = getFunctions();
+            const functions = getFunctions(undefined, 'me-central1');
             const redeemGiftCard = httpsCallable(functions, 'redeemGiftCard');
 
             const result = await redeemGiftCard({

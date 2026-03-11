@@ -6,14 +6,20 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+
 import { ThemedText } from '../../components/ThemedText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useTheme } from '../../context/ThemeContext';
+import i18n, { setStoredLanguage } from '../../src/localization/i18n';
+import { applyRTL } from '../../src/localization/rtl';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { t } = useTranslation();
+
   const [userData, setUserData] = useState<{
     firstName?: string;
     lastName?: string;
@@ -41,25 +47,51 @@ export default function ProfileScreen() {
     return () => unsubscribe();
   }, []);
 
+  const changeLanguage = async (language: 'en' | 'ar') => {
+    try {
+      await i18n.changeLanguage(language);
+      await setStoredLanguage(language);
+
+      const directionChanged = applyRTL(language);
+
+      if (directionChanged) {
+        Alert.alert(t('restart_required'), t('restart_message'));
+      }
+    } catch (error) {
+      console.error('Language change error:', error);
+    }
+  };
+
+  const handleChangeLanguage = () => {
+    Alert.alert(
+      t('select_language'),
+      '',
+      [
+        { text: t('english'), onPress: () => void changeLanguage('en') },
+        { text: t('arabic'), onPress: () => void changeLanguage('ar') },
+        { text: t('cancel'), style: 'cancel' }
+      ]
+    );
+  };
 
   const handleLogout = () => {
     Alert.alert(
-      'Log out',
-      'Are you sure you want to log out?',
+      t('logout_title'),
+      t('logout_message'),
       [
         {
-          text: 'Cancel',
+          text: t('cancel'),
           style: 'cancel',
         },
         {
-          text: 'Log out',
+          text: t('log_out'),
           style: 'destructive',
           onPress: async () => {
             try {
               await signOut(getAuth());
             } catch (error) {
               console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to log out. Please try again.');
+              Alert.alert(t('error'), t('logout_failed'));
             }
           },
         },
@@ -73,14 +105,12 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header */}
         <View style={styles.header}>
           <ThemedText style={styles.headerText}>
-            Manage your <ThemedText style={styles.greenText}>profile</ThemedText>
+            {t('manage_your')} <ThemedText style={styles.greenText}>{t('profile')}</ThemedText>
           </ThemedText>
         </View>
 
-        {/* Profile Info Card */}
         <TouchableOpacity
           style={styles.profileCard}
           activeOpacity={0.7}
@@ -101,38 +131,34 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.nameContainer}>
               <ThemedText style={styles.userName}>
-                {userData ? `${userData.firstName} ${userData.lastName}` : 'Loading...'}
+                {userData ? `${userData.firstName} ${userData.lastName}` : t('loading')}
               </ThemedText>
             </View>
           </View>
         </TouchableOpacity>
 
-
-
-        {/* Savings Tracker Section */}
         <View style={styles.sectionHeader}>
-          <ThemedText style={styles.sectionTitle}>Savings Tracker</ThemedText>
+          <ThemedText style={styles.sectionTitle}>{t('savings_tracker')}</ThemedText>
         </View>
 
         <View style={[styles.savingsCard, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]}>
           <View style={styles.savingsInfo}>
-            <ThemedText type="subtitle" style={styles.savingsLabel}>Your cashback balance</ThemedText>
+            <ThemedText type="subtitle" style={styles.savingsLabel}>{t('your_cashback_balance')}</ThemedText>
             <ThemedText style={styles.savingsAmount}>
               <ThemedText style={styles.greenAmount}>{userData?.cashback ?? 0}</ThemedText> QAR
             </ThemedText>
           </View>
         </View>
 
-        {/* Creator Code Section */}
         {userData?.role === 'creator' && userData?.creatorCode && (
           <>
             <View style={styles.sectionHeader}>
-              <ThemedText style={styles.sectionTitle}>Creator Code</ThemedText>
+              <ThemedText style={styles.sectionTitle}>{t('creator_code')}</ThemedText>
             </View>
 
             <View style={[styles.savingsCard, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]}>
               <View style={styles.savingsInfo}>
-                <ThemedText type="subtitle" style={styles.savingsLabel}>Your Creator Code</ThemedText>
+                <ThemedText type="subtitle" style={styles.savingsLabel}>{t('your_creator_code')}</ThemedText>
                 <ThemedText style={styles.savingsAmount}>
                   <ThemedText style={styles.greenAmount}>{userData.creatorCode}</ThemedText>
                 </ThemedText>
@@ -141,28 +167,27 @@ export default function ProfileScreen() {
           </>
         )}
 
-        {/* Menu Items */}
         <View style={styles.menuContainer}>
-          <MenuItem icon="time-outline" label="Redemption History" />
-          <MenuItem icon="language-outline" label="Change Language" />
+          <MenuItem icon="time-outline" label={t('redemption_history')} />
+          <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} />
           <MenuItem
             icon="mail-outline"
-            label="Contact Us"
+            label={t('contact_us')}
             onPress={() => Linking.openURL('mailto:info@realx.qa')}
           />
           <MenuItem
             icon="document-text-outline"
-            label="Terms and Conditions"
+            label={t('terms_and_conditions')}
             onPress={() => router.push('/terms')}
           />
           <MenuItem
             icon="shield-checkmark-outline"
-            label="Privacy Policy"
+            label={t('privacy_policy')}
             onPress={() => router.push('/privacy')}
           />
           <MenuItem
             icon="log-out-outline"
-            label="Log out"
+            label={t('log_out')}
             onPress={handleLogout}
             color="#FF3B30"
           />
@@ -249,7 +274,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: Typography.metropolis.semiBold,
   },
-
   sectionHeader: {
     marginBottom: 16,
   },

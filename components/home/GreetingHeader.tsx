@@ -1,4 +1,4 @@
-import { Image, StyleSheet, TouchableOpacity, View , Text} from 'react-native';
+import { Image, StyleSheet, TouchableOpacity, View , Text, ImageBackground} from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
@@ -8,7 +8,11 @@ type Props = {
 
 export default function GreetingHeader({ userName }: Props) {
     return (
-        <View style={styles.container}>
+        <ImageBackground 
+            source={require('../../assets/images/header-bg.png')}
+            style={styles.container}
+            resizeMode="cover"
+        >
             <View style={styles.textContainer}>
                 <Text style={styles.greeting}>
                     Hey <Text style={styles.userName}>{userName}</Text>,
@@ -26,7 +30,7 @@ export default function GreetingHeader({ userName }: Props) {
                     />
                 </View>
             </TouchableOpacity>
-        </View>
+        </ImageBackground>
     );
 }
 

@@ -1,7 +1,7 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, TextInput, View , Text} from 'react-native';
+import { StyleSheet, TextInput, View, ImageBackground } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type Props = {
     placeholder?: string;
@@ -10,9 +10,12 @@ type Props = {
 };
 
 export default function SearchBar({ placeholder = 'Search for anything...', value, onChangeText }: Props) {
-
     return (
-        <View style={styles.container}>
+        <ImageBackground 
+            source={require('../../assets/images/header-bg.png')}
+            style={styles.container}
+            resizeMode="cover"
+        >
             <View style={styles.searchContainer}>
                 <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.icon} />
                 <TextInput
@@ -23,7 +26,7 @@ export default function SearchBar({ placeholder = 'Search for anything...', valu
                     onChangeText={onChangeText}
                 />
             </View>
-        </View>
+        </ImageBackground>
     );
 }
 

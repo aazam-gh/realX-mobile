@@ -107,65 +107,68 @@ export default function ProfileScreen() {
       >
         <View style={styles.header}>
           <ThemedText style={styles.headerText}>
-            {t('manage_your')} <ThemedText style={styles.greenText}>{t('profile')}</ThemedText>
+            PROFILE
           </ThemedText>
         </View>
 
         <TouchableOpacity
-          style={styles.profileCard}
+          style={styles.topPill}
           activeOpacity={0.7}
           onPress={() => router.push('/profile-details')}
         >
-          <View style={styles.profileInfo}>
-            <View style={styles.avatar}>
+          <View style={styles.profileTopRow}>
+            <View style={styles.avatarContainer}>
               {userData?.photoURL || getAuth().currentUser?.photoURL ? (
                 <Image
                   source={{ uri: userData?.photoURL || getAuth().currentUser?.photoURL || undefined }}
                   style={styles.avatar}
                 />
               ) : (
-                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F5F5' }]}>
-                  <Ionicons name="person" size={32} color="#CCC" />
+                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F0F0' }]}>
+                  <Ionicons name="person" size={32} color="#AAA" />
                 </View>
               )}
             </View>
-            <View style={styles.nameContainer}>
-              <ThemedText style={styles.userName}>
-                {userData ? `${userData.firstName} ${userData.lastName}` : t('loading')}
-              </ThemedText>
+            <View style={styles.badge}>
+              <ThemedText style={styles.badgeText}>ROOKIE</ThemedText>
             </View>
           </View>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={styles.bottomPill}
+          activeOpacity={0.7}
+          onPress={() => router.push('/profile-details')}
+        >
+          <View style={styles.profileBottomRow}>
+            <View style={styles.userInfo}>
+              <ThemedText style={styles.userName}>
+                {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
+              </ThemedText>
+            </View>
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => router.push('/profile-details')}
+            >
+              <Ionicons name="create-outline" size={16} color="#8E8E93" />
+              <ThemedText style={styles.editButtonText}>EDIT PROFILE</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+
         <View style={styles.sectionHeader}>
-          <ThemedText style={styles.sectionTitle}>{t('savings_tracker')}</ThemedText>
+          <ThemedText style={styles.sectionTitle}>SAVINGS TRACKER 🔥</ThemedText>
         </View>
 
-        <View style={[styles.savingsCard, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]}>
-          <View style={styles.savingsInfo}>
-            <ThemedText type="subtitle" style={styles.savingsLabel}>{t('your_cashback_balance')}</ThemedText>
-            <ThemedText style={styles.savingsAmount}>
-              <ThemedText style={styles.greenAmount}>{userData?.cashback ?? 0}</ThemedText> QAR
+        <View style={styles.savingsCard}>
+          <ThemedText style={styles.savingsLabel}>All time you've saved</ThemedText>
+          <View style={styles.savingsAmountContainer}>
+            <ThemedText style={styles.savingsAmountGreen}>
+              {(userData?.cashback ?? 23.12).toFixed(2)}
             </ThemedText>
+            <ThemedText style={styles.savingsCurrency}> QAR</ThemedText>
           </View>
         </View>
-
-        {userData?.role === 'creator' && userData?.creatorCode && (
-          <>
-            <View style={styles.sectionHeader}>
-              <ThemedText style={styles.sectionTitle}>{t('creator_code')}</ThemedText>
-            </View>
-
-            <View style={[styles.savingsCard, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]}>
-              <View style={styles.savingsInfo}>
-                <ThemedText type="subtitle" style={styles.savingsLabel}>{t('your_creator_code')}</ThemedText>
-                <ThemedText style={styles.savingsAmount}>
-                  <ThemedText style={styles.greenAmount}>{userData.creatorCode}</ThemedText>
-                </ThemedText>
-              </View>
-            </View>
-          </>
-        )}
 
         <View style={styles.menuContainer}>
           <MenuItem icon="time-outline" label={t('redemption_history')} />
@@ -209,17 +212,16 @@ function MenuItem({
   color?: string;
 }) {
   const { theme } = useTheme();
-  const iconColor = color || theme.text;
-
+  
   return (
     <TouchableOpacity
-      style={[styles.menuItem, { backgroundColor: theme.background === '#FFFFFF' ? '#F5F5F5' : '#1A1D1F' }]}
+      style={[styles.menuItem, { backgroundColor: '#F5F5F7' }]}
       activeOpacity={0.7}
       onPress={onPress}
     >
       <View style={styles.menuItemLeft}>
-        <Ionicons name={icon} size={24} color={iconColor} />
-        <ThemedText style={[styles.menuItemLabel, { color: iconColor }]}>{label}</ThemedText>
+        <Ionicons name={icon} size={24} color="#000" />
+        <ThemedText style={styles.menuItemLabel}>{label}</ThemedText>
       </View>
     </TouchableOpacity>
   );
@@ -231,81 +233,121 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 24,
+    paddingTop: 8,
     paddingBottom: 100,
   },
   header: {
-    marginBottom: 32,
-  },
-  headerText: {
-    fontSize: 32,
-    fontFamily: Typography.metropolis.semiBold,
-    lineHeight: 40,
-  },
-  greenText: {
-    color: Colors.brandGreen,
-  },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 32,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    marginBottom: 20,
-    backgroundColor: '#FFF',
-  },
-  profileInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#F5F5F5',
-  },
-  nameContainer: {
-    marginLeft: 16,
-  },
-  userName: {
-    fontSize: 18,
-    fontFamily: Typography.metropolis.semiBold,
-  },
-  sectionHeader: {
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontFamily: Typography.metropolis.semiBold,
+  headerText: {
+    fontSize: 28,
+    fontFamily: Typography.integral.bold,
+    letterSpacing: 0.5,
   },
-  savingsCard: {
+  topPill: {
+    backgroundColor: '#F5F5F7',
+    borderRadius: 30,
+    padding: 8,
+
+  },
+  bottomPill: {
+    backgroundColor: '#F5F5F7',
+    borderRadius: 30,
+    paddingVertical: 24,
+    paddingHorizontal: 8,
+    marginBottom: 16,
+  },
+  profileTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 50,
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  badge: {
+    backgroundColor: '#1AD04F',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 30,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: Typography.integral.bold,
+  },
+  profileBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 20,
+    fontFamily: Typography.metropolis.semiBold,
+    paddingLeft: 4,
+  },
+
+  editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 24,
-    borderRadius: 32,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    marginBottom: 20,
-    backgroundColor: '#FFF',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    gap: 6,
   },
-  savingsInfo: {
-    flex: 1,
+  editButtonText: {
+    fontSize: 10,
+    fontFamily: Typography.integral.bold,
+    color: '#8E8E93',
+  },
+  sectionHeader: {
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontFamily: Typography.integral.bold,
+    textTransform: 'uppercase',
+  },
+  savingsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 32,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#F0F0F2',
   },
   savingsLabel: {
     fontSize: 14,
     fontFamily: Typography.metropolis.medium,
-    marginBottom: 8,
+    color: '#000',
+    marginBottom: 12,
   },
-  savingsAmount: {
+  savingsAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  savingsAmountGreen: {
     fontSize: 32,
-    fontFamily: Typography.metropolis.semiBold,
+    fontFamily: Typography.integral.bold,
+    color: '#1AD04F',
+    marginRight: 8,
   },
-  greenAmount: {
-    color: Colors.brandGreen,
+  savingsCurrency: {
+    fontSize: 28,
+    fontFamily: Typography.integral.bold,
+    color: '#000',
   },
   menuContainer: {
     gap: 12,
@@ -313,10 +355,8 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
-    paddingVertical: 20,
+    padding: 20,
     borderRadius: 24,
-    backgroundColor: '#F5F5F5',
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -324,7 +364,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   menuItemLabel: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: Typography.metropolis.semiBold,
+    color: '#000',
   },
 });

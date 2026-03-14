@@ -36,6 +36,7 @@ const categoryConfig: Record<string, {
         cashbackText?: string;
         discountText?: string;
         isTrending?: boolean;
+        logoUri?: string;
     }[];
 }> = {};
 
@@ -347,6 +348,7 @@ export default function CategoryScreen() {
                                 isTrending={item.isTrending}
                                 isTopRated={item.isTopRated}
                                 imageUri={item.bannerImage}
+                                logoUri={item.vendorProfilePicture}
                                 onPress={() => handlePromoPress({ id: item.id, title: item.titleEn, vendorId: item.vendorId })}
                             />
                         </View>

@@ -51,7 +51,22 @@ export default function RestaurantCard({
       contentFit="cover"
     />
   </View>
+    {/* Logo */}
+  <View style={styles.logoContainer}>
+    <View style={styles.logoWrapper}>
+      {logoUri ? (
+        <Image
+          source={{ uri: logoUri }}
+          style={styles.logoImage}
+          contentFit="cover"
+        />
+      ) : (
+        <ThemedText style={styles.logoEmoji}>🏪</ThemedText>
+      )}
+    </View>
+  </View>
             </View>
+
 
             {/* Content */}
             <View style={styles.content}>

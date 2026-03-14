@@ -1,6 +1,7 @@
 import { getAuth } from '@react-native-firebase/auth';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -18,8 +19,10 @@ import { useTheme } from '../../context/ThemeContext';
 
 export default function HomeScreen() {
   const [userName, setUserName] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
   const { theme, colorScheme } = useTheme();
   const { t } = useTranslation();
+  const router = useRouter();
   const isDark = colorScheme === 'dark';
 
   useEffect(() => {
@@ -40,6 +43,12 @@ export default function HomeScreen() {
     return () => unsubscribe();
   }, []);
 
+  const handleSearch = useCallback(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    router.push({ pathname: '/search', params: { q: trimmed } });
+  }, [searchQuery, router]);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
       <StatusBar
@@ -52,7 +61,12 @@ export default function HomeScreen() {
         contentContainerStyle={styles.contentContainer}
       >
         <GreetingHeader userName={userName || t('user')} />
-        <SearchBar placeholder={t('search_placeholder')} />
+        <SearchBar
+          placeholder={t('search_placeholder')}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onSubmit={handleSearch}
+        />
         <PromoBanner />
         <CategoryGrid />
         <TrendingOffers />

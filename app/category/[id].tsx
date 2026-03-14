@@ -133,7 +133,7 @@ export default function CategoryScreen() {
 
     const [categoryData, setCategoryData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [selectedFilter, setSelectedFilter] = useState('');
+    const [selectedFilter, setSelectedFilter] = useState('all');
     const [selectedSubCategory, setSelectedSubCategory] = useState('all');
 
     const [offers, setOffers] = useState<any[]>([]);
@@ -198,8 +198,6 @@ export default function CategoryScreen() {
             // Top-rated / Trending logic
             if (selectedFilter === 'trending') {
                 baseConstraints.push(where('isTrending', '==', true));
-            } else if (selectedFilter === 'top-rated') {
-                baseConstraints.push(where('isTopRated', '==', true));
             }
 
             // Construct query with pagination
@@ -259,7 +257,7 @@ export default function CategoryScreen() {
     }, [router]);
 
     const handleFilterChange = useCallback((filterId: string) => {
-        setSelectedFilter(prev => prev === filterId ? '' : filterId);
+        setSelectedFilter(filterId);
     }, []);
 
     const handleSubCategorySelect = useCallback((subCategory: { id: string; name: string; icon: any }) => {

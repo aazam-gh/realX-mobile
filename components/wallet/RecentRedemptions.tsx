@@ -2,7 +2,7 @@ import { getAuth } from '@react-native-firebase/auth';
 import { collection, getFirestore, onSnapshot, query, where } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
 import { useEffect, useState } from 'react';
-import { I18nManager, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -12,8 +12,8 @@ const LOGO_COLORS = ['#3D5A80', '#C41E3A', '#8B4513', '#2A9D8F', '#E76F51', '#E9
 
 export default function RecentRedemptions() {
     const [redemptions, setRedemptions] = useState<RedemptionData[]>([]);
-    const { t } = useTranslation();
-    const isRTL = I18nManager.isRTL;
+    const { t, i18n } = useTranslation();
+    const isRTL = i18n.language === 'ar';
 
     useEffect(() => {
         const auth = getAuth();

@@ -3,6 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { withLayoutContext } from 'expo-router';
 import { Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const NativeTabsNavigator = createNativeBottomTabNavigator().Navigator;
 const JSTabsNavigator = createBottomTabNavigator().Navigator;
@@ -11,8 +12,7 @@ const NativeTabs = withLayoutContext(NativeTabsNavigator);
 const JSTabs = withLayoutContext(JSTabsNavigator);
 
 export default function TabLayout() {
-    // Select the navigator based on the platform.
-    // Native tabs for iOS (supporting SF Symbols), JS-based tabs for Android to avoid crash and support Ionicons.
+    const { t } = useTranslation();
     const Tabs = Platform.OS === 'ios' ? NativeTabs : JSTabs;
 
     return (
@@ -25,7 +25,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Home',
+                    title: t('home'),
                     headerShown: false,
                     tabBarIcon: (props: any) =>
                         Platform.OS === 'ios'
@@ -36,7 +36,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="wallet"
                 options={{
-                    title: 'Wallet',
+                    title: t('wallet'),
                     headerShown: false,
                     tabBarIcon: (props: any) =>
                         Platform.OS === 'ios'
@@ -47,7 +47,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
-                    title: 'Profile',
+                    title: t('profile'),
                     headerShown: false,
                     tabBarIcon: (props: any) =>
                         Platform.OS === 'ios'

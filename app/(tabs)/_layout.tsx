@@ -2,7 +2,7 @@ import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { withLayoutContext } from 'expo-router';
-import { Platform } from 'react-native';
+import { I18nManager, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 const NativeTabsNavigator = createNativeBottomTabNavigator().Navigator;
@@ -12,14 +12,9 @@ const NativeTabs = withLayoutContext(NativeTabsNavigator);
 const JSTabs = withLayoutContext(JSTabsNavigator);
 
 export default function TabLayout() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const Tabs = Platform.OS === 'ios' ? NativeTabs : JSTabs;
-    
-    // In RTL (Arabic), React Native mirrors the layout (Right-to-Left).
-    // To ensure "Home, Wallet, Profile" is displayed Left-to-Right in Arabic,
-    // we reverse the array of screens so they render [Profile, Wallet, Home] Right-to-Left,
-    // effectively appearing Left-to-Right as Home, Wallet, Profile.
-    const isArabic = i18n.language === 'ar';
+    const isRTL = I18nManager.isRTL;
 
     const screens = [
         <Tabs.Screen
@@ -67,7 +62,7 @@ export default function TabLayout() {
                 tabBarInactiveTintColor: '#8E8E93',
             }}
         >
-            {isArabic ? [...screens].reverse() : screens}
+            {isRTL ? [...screens].reverse() : screens}
         </Tabs>
     );
 }

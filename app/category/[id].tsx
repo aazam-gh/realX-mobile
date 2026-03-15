@@ -1,8 +1,9 @@
-import { collection, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, startAfter, where } from '@react-native-firebase/firestore';
+﻿import { collection, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, startAfter, where } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ImageSourcePropType, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, I18nManager, ImageSourcePropType, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     BrowseSection,
@@ -15,7 +16,6 @@ import { SearchBar } from '../../components/home';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
-// Category configuration map
 const categoryConfig: Record<string, {
     title: string;
     icon: string | ImageSourcePropType;
@@ -39,17 +39,57 @@ const categoryConfig: Record<string, {
     }[];
 }> = {};
 
-
-// Default config for unknown categories
 const defaultConfig = {
     title: 'Category',
     icon: '📦',
     subCategories: [],
     promos: [],
     browseTitle: 'Browse items',
-    browseEmoji: '🔍',
+    browseEmoji: '🔎',
     restaurants: [],
 };
+
+const CATEGORY_TRANSLATIONS: Record<string, { en: string; ar: string }> = {
+    books: { en: 'Books', ar: 'كتب' },
+    coffee: { en: 'Coffee', ar: 'قهوة' },
+    electronics: { en: 'Electronics', ar: 'إلكترونيات' },
+    entertainment: { en: 'Entertainment', ar: 'ترفيه' },
+    food: { en: 'Food', ar: 'طعام' },
+    pharmacy: { en: 'Pharmacy', ar: 'صيدلية' },
+    grocery: { en: 'Grocery', ar: 'بقالة' },
+};
+
+function normalizeCategoryKey(value?: string) {
+    return (value || '')
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '')
+        .replace(/[^a-z]/g, '');
+}
+
+function getMappedCategory(language: string, englishName?: string, arabicName?: string, id?: string) {
+    const keyFromEnglish = normalizeCategoryKey(englishName);
+    const keyFromId = normalizeCategoryKey(id);
+    const mapped = CATEGORY_TRANSLATIONS[keyFromEnglish] || CATEGORY_TRANSLATIONS[keyFromId];
+
+    if (language === 'ar') {
+        return arabicName || mapped?.ar || englishName || 'الفئة';
+    }
+
+    return englishName || mapped?.en || arabicName || 'Category';
+}
+
+function getLocalizedValue(
+    language: string,
+    englishValue?: string,
+    arabicValue?: string,
+    fallback?: string
+) {
+    if (language === 'ar') {
+        return arabicValue || englishValue || fallback || '';
+    }
+    return englishValue || arabicValue || fallback || '';
+}
 
 interface HeaderContentProps {
     headerTitle: string;
@@ -64,6 +104,8 @@ interface HeaderContentProps {
     handleSubCategorySelect: (sub: any) => void;
     config: any;
     handleRestaurantPress: (r: any) => void;
+    language: string;
+    isRTL: boolean;
 }
 
 const HeaderContent = memo(({
@@ -79,6 +121,8 @@ const HeaderContent = memo(({
     handleSubCategorySelect,
     config,
     handleRestaurantPress,
+    language,
+    isRTL,
 }: HeaderContentProps) => (
     <>
         <CategoryHeader
@@ -87,11 +131,11 @@ const HeaderContent = memo(({
             onBackPress={handleBackPress}
         />
 
-        <SearchBar placeholder={`Search for ${headerTitle.toLowerCase()}...`} />
+        <SearchBar placeholder={language === 'ar' ? `ابحث عن ${headerTitle}...` : `Search for ${headerTitle.toLowerCase()}...`} />
 
         {loading ? (
             <View style={styles.comingSoonContainer}>
-                <Text>Loading...</Text>
+                <Text style={{ writingDirection: isRTL ? 'rtl' : 'ltr' }}>Loading...</Text>
             </View>
         ) : hasSubCategories ? (
             <>
@@ -117,9 +161,23 @@ const HeaderContent = memo(({
                 <View style={styles.comingSoonIconContainer}>
                     <Text style={styles.comingSoonEmoji}>⏳</Text>
                 </View>
-                <Text style={styles.comingSoonTitle}>{headerTitle} Coming Soon!</Text>
-                <Text style={styles.comingSoonSubtitle}>
-                    We're working hard to bring you the best {headerTitle.toLowerCase()} deals. Stay tuned!
+                <Text
+                    style={[
+                        styles.comingSoonTitle,
+                        { writingDirection: isRTL ? 'rtl' : 'ltr' }
+                    ]}
+                >
+                    {language === 'ar' ? `${headerTitle} قريبًا!` : `${headerTitle} Coming Soon!`}
+                </Text>
+                <Text
+                    style={[
+                        styles.comingSoonSubtitle,
+                        { writingDirection: isRTL ? 'rtl' : 'ltr' }
+                    ]}
+                >
+                    {language === 'ar'
+                        ? `نعمل بجد لنقدم لك أفضل عروض ${headerTitle}. ترقب ذلك!`
+                        : `We're working hard to bring you the best ${headerTitle.toLowerCase()} deals. Stay tuned!`}
                 </Text>
             </View>
         )}
@@ -129,6 +187,10 @@ const HeaderContent = memo(({
 export default function CategoryScreen() {
     const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
     const router = useRouter();
+    const { i18n } = useTranslation();
+
+    const language = i18n.language;
+    const isRTL = language === 'ar' || I18nManager.isRTL;
 
     const [categoryData, setCategoryData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -140,14 +202,14 @@ export default function CategoryScreen() {
     const [lastDoc, setLastDoc] = useState<any>(null);
     const [isListEnd, setIsListEnd] = useState(false);
 
-    // Get category configuration or use default
     const config = categoryConfig[id?.toLowerCase() || ''] || {
         ...defaultConfig,
         title: name || defaultConfig.title,
     };
 
-    // Derived state for subcategories existence
-    const hasSubCategories = (categoryData?.subcategories && categoryData.subcategories.length > 0) || (config.subCategories && config.subCategories.length > 0);
+    const hasSubCategories =
+        (categoryData?.subcategories && categoryData.subcategories.length > 0) ||
+        (config.subCategories && config.subCategories.length > 0);
 
     useEffect(() => {
         const fetchCategory = async () => {
@@ -161,13 +223,13 @@ export default function CategoryScreen() {
                     setCategoryData(docSnap.data());
                 }
             } catch (error) {
-                console.error("Error fetching category:", error);
+                console.error('Error fetching category:', error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchCategory();
+        void fetchCategory();
     }, [id]);
 
     const fetchOffers = async (isNew = false) => {
@@ -181,27 +243,20 @@ export default function CategoryScreen() {
             const PAGE_SIZE = 10;
 
             let q;
-
-            // Base constraints
             const baseConstraints: any[] = [where('status', '==', 'active')];
 
-            // Filter logic
             if (selectedSubCategory !== 'all') {
-                // Filter by subcategory
                 baseConstraints.push(where('categories', 'array-contains', selectedSubCategory));
             } else {
-                // Filter by main category
                 baseConstraints.push(where('mainCategory', '==', categoryName));
             }
 
-            // Top-rated / Trending logic
             if (selectedFilter === 'trending') {
                 baseConstraints.push(where('isTrending', '==', true));
             } else if (selectedFilter === 'top-rated') {
                 baseConstraints.push(where('isTopRated', '==', true));
             }
 
-            // Construct query with pagination
             if (isNew) {
                 q = query(offersRef, ...baseConstraints, orderBy('createdAt', 'desc') as any, limit(PAGE_SIZE) as any);
             } else {
@@ -231,25 +286,23 @@ export default function CategoryScreen() {
                 if (isNew) setOffers([]);
             }
         } catch (error) {
-            console.error("Error fetching offers:", error);
+            console.error('Error fetching offers:', error);
         } finally {
             setLoadingOffers(false);
         }
     };
 
-    // Initial fetch or filter change
     useEffect(() => {
         if (!loading && hasSubCategories) {
-            // Reset pagination state
             setLastDoc(null);
             setIsListEnd(false);
-            fetchOffers(true);
+            void fetchOffers(true);
         }
     }, [selectedSubCategory, selectedFilter, loading, hasSubCategories, config.title]);
 
     const handleLoadMore = () => {
         if (!loadingOffers && !isListEnd) {
-            fetchOffers(false);
+            void fetchOffers(false);
         }
     };
 
@@ -280,17 +333,23 @@ export default function CategoryScreen() {
     const subCategories = useMemo(() => {
         const fetchedSubCategories = categoryData?.subcategories?.map((sub: any) => ({
             id: sub.nameEnglish,
-            name: sub.nameEnglish,
+            name: getLocalizedValue(language, sub.nameEnglish, sub.nameArabic, sub.nameEnglish),
             icon: sub.imageUrl
         })) || config.subCategories;
 
         return [
-            { id: 'all', name: 'All', icon: require('../../assets/images/all.png') },
+            { id: 'all', name: language === 'ar' ? 'الكل' : 'All', icon: require('../../assets/images/all.png') },
             ...fetchedSubCategories
         ];
-    }, [categoryData, config.subCategories]);
+    }, [categoryData, config.subCategories, language]);
 
-    const headerTitle = categoryData?.nameEnglish || config.title;
+    const headerTitle = getMappedCategory(
+        language,
+        categoryData?.nameEnglish || config.title,
+        categoryData?.nameArabic,
+        typeof id === 'string' ? id : undefined
+    );
+
     const headerIcon = categoryData?.imageUrl || config.icon;
 
     const renderFooter = () => {
@@ -326,23 +385,27 @@ export default function CategoryScreen() {
                             handleSubCategorySelect={handleSubCategorySelect}
                             config={config}
                             handleRestaurantPress={handleRestaurantPress}
+                            language={language}
+                            isRTL={isRTL}
                         />
                     }
                     ListFooterComponent={renderFooter}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
                     renderItem={({ item, index }) => (
-                        <View style={[
-                            styles.offerCardWrapper,
-                            {
-                                paddingLeft: index % 2 === 0 ? 20 : 8,
-                                paddingRight: index % 2 === 0 ? 8 : 20
-                            }
-                        ]}>
+                        <View
+                            style={[
+                                styles.offerCardWrapper,
+                                {
+                                    paddingLeft: index % 2 === 0 ? 20 : 8,
+                                    paddingRight: index % 2 === 0 ? 8 : 20
+                                }
+                            ]}
+                        >
                             <RestaurantCard
                                 id={item.id}
-                                name={item.titleEn || item.titleAr || 'Untitled Offer'}
-                                cashbackText={item.descriptionEn || item.descriptionAr || 'Special Offer'}
+                                name={getLocalizedValue(language, item.titleEn, item.titleAr, 'Untitled Offer')}
+                                cashbackText={getLocalizedValue(language, item.descriptionEn, item.descriptionAr, 'Special Offer')}
                                 discountText={`${item.discountValue}${item.discountType === 'percentage' ? '%' : ''} OFF`}
                                 isTrending={item.isTrending}
                                 isTopRated={item.isTopRated}
@@ -371,6 +434,8 @@ export default function CategoryScreen() {
                         handleSubCategorySelect={handleSubCategorySelect}
                         config={config}
                         handleRestaurantPress={handleRestaurantPress}
+                        language={language}
+                        isRTL={isRTL}
                     />
                 </ScrollView>
             )}
@@ -390,7 +455,6 @@ const styles = StyleSheet.create({
     contentContainer: {
         paddingBottom: 20,
     },
-    // New FlashList spacing style
     flatListContent: {
         paddingBottom: 20,
     },
@@ -409,7 +473,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 24,
-        // Shadow for premium look
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.1,

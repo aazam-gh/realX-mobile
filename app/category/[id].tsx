@@ -47,8 +47,8 @@ const defaultConfig = {
     icon: '📦',
     subCategories: [],
     promos: [],
-    browseTitle: 'Browse items',
-    browseEmoji: '🔍',
+    browseTitle: 'Yallah! Browse',
+    browseEmoji: '🍔',
     restaurants: [],
 };
 
@@ -382,6 +382,7 @@ export default function CategoryScreen() {
                                 isTopRated={item.isTopRated}
                                 imageUri={item.bannerImage}
                                 logoUri={item.vendorProfilePicture}
+                                xcardEnabled={item.xcardEnabled}
                                 onPress={() => handlePromoPress({ id: item.id, title: item.titleEn, vendorId: item.vendorId })}
                             />
                         </View>

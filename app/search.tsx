@@ -146,6 +146,7 @@ export default function SearchScreen() {
                     isTopRated={item.isTopRated}
                     imageUri={item.bannerImage}
                     logoUri={item.vendorProfilePicture}
+                    xcardEnabled={item.xcardEnabled}
                     onPress={() => handleOfferPress(item)}
                 />
             </View>

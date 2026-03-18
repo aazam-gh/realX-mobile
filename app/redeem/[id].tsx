@@ -1,5 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { getAuth } from '@react-native-firebase/auth';
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -9,6 +11,7 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
+    ScrollView,
     StatusBar,
     StyleSheet,
     Text,
@@ -25,12 +28,15 @@ import { Typography } from '../../constants/Typography';
 interface VendorData {
     profilePicture?: string;
     name?: string;
+    xcard?: boolean;
+    pin?: string;
     [key: string]: any;
 }
 
 interface OfferData {
     discountValue?: string | number;
     discountType?: string;
+    vendorId?: string;
     [key: string]: any;
 }
 
@@ -40,10 +46,14 @@ export default function RedeemScreen() {
     const [vendor, setVendor] = useState<VendorData | null>(null);
     const [offer, setOffer] = useState<OfferData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [step, setStep] = useState<'creator' | 'pin'>('creator');
+    const [isRedeeming, setIsRedeeming] = useState(false);
+    const [resolvedVendorId, setResolvedVendorId] = useState<string>('');
+
+    // Step: 'creator' only shown for xcard vendors, otherwise start at 'pin'
+    const [step, setStep] = useState<'creator' | 'pin'>('pin');
     const [creatorCode, setCreatorCode] = useState('');
     const [pin, setPin] = useState('');
-    const [amount, setAmount] = useState('80');
+    const [amount, setAmount] = useState('');
 
     const pinInputRef = useRef<TextInput>(null);
     const amountInputRef = useRef<TextInput>(null);
@@ -59,13 +69,13 @@ export default function RedeemScreen() {
                 // Fetch Offer first to get vendorId if not provided
                 const offerRef = doc(db, 'offers', id);
                 const offerSnap = await getDoc(offerRef);
-                
+
                 let currentVendorId = vendorId;
 
                 if (offerSnap.exists() && isMounted) {
                     const offerData = offerSnap.data() as OfferData;
                     setOffer(offerData);
-                    
+
                     // If vendorId was not provided, use the one from the offer document
                     if (!currentVendorId && offerData.vendorId) {
                         currentVendorId = offerData.vendorId;
@@ -73,11 +83,19 @@ export default function RedeemScreen() {
                 }
 
                 if (currentVendorId) {
+                    setResolvedVendorId(currentVendorId);
+
                     // Fetch Vendor
                     const vendorRef = doc(db, 'vendors', currentVendorId);
                     const vendorSnap = await getDoc(vendorRef);
                     if (vendorSnap.exists() && isMounted) {
-                        setVendor(vendorSnap.data() as VendorData);
+                        const vendorData = vendorSnap.data() as VendorData;
+                        setVendor(vendorData);
+
+                        // If vendor has xcard enabled, start with creator code step
+                        if (vendorData.xcard === true) {
+                            setStep('creator');
+                        }
                     }
                 }
             } catch (error) {
@@ -94,10 +112,78 @@ export default function RedeemScreen() {
         };
     }, [id, vendorId]);
 
+    // Discount calculation
+    const totalAmount = parseFloat(amount) || 0;
+    const discountValue = Number(offer?.discountValue) || 0;
+    const discountType = offer?.discountType || 'percentage';
+
+    let discountAmount = 0;
+    if (discountType === 'percentage') {
+        discountAmount = totalAmount * (discountValue / 100);
+    } else {
+        discountAmount = Math.min(discountValue, totalAmount);
+    }
+    const finalAmount = Math.max(0, totalAmount - discountAmount);
+
+    const canRedeem = pin.length === 4 && totalAmount > 0;
+
+    const handleRedeem = async () => {
+        if (!canRedeem) return;
+
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) {
+            Alert.alert('Error', 'You must be logged in to redeem.');
+            return;
+        }
+
+        setIsRedeeming(true);
+        try {
+            const functions = getFunctions(undefined, 'me-central1');
+            const redeemOffer = httpsCallable(functions, 'redeemOffer');
+
+            const result = await redeemOffer({
+                offerId: id,
+                vendorId: resolvedVendorId,
+                vendorName: vendor?.name || '',
+                totalAmount,
+                pin,
+                creatorCode: creatorCode ? creatorCode.trim() : undefined,
+                discountValue,
+                discountType,
+            });
+
+            const data = result.data as any;
+
+            let message = `You saved QAR ${data.discountAmount?.toFixed(2) || discountAmount.toFixed(2)}!`;
+            if (data.cashbackAmount > 0) {
+                message += `\nCashback earned: QAR ${data.cashbackAmount.toFixed(2)}`;
+            }
+
+            Alert.alert(
+                'Redemption Successful! 🎉',
+                message,
+                [
+                    {
+                        text: 'Done',
+                        onPress: () => router.back(),
+                    },
+                ]
+            );
+        } catch (error: any) {
+            console.error('Offer redemption error:', error);
+            Alert.alert(
+                'Redemption Failed',
+                error.message || 'Something went wrong. Please try again.'
+            );
+        } finally {
+            setIsRedeeming(false);
+        }
+    };
+
     const handleAction = () => {
         if (step === 'creator') {
             setStep('pin');
-            // Slight delay to allow render before focus
             setTimeout(() => {
                 pinInputRef.current?.focus();
             }, 300);
@@ -113,15 +199,7 @@ export default function RedeemScreen() {
                 return;
             }
 
-            // Logic for redemption will go here
-            console.log(`Redeeming with PIN: ${pin}, Amount: ${amount}, Creator: ${creatorCode}`);
-
-            if (creatorCode) {
-                Alert.alert('Success', 'Redemption successful');
-            } else {
-                Alert.alert('Success', 'Redemption successful');
-            }
-            // router.push('/redeem/success');
+            handleRedeem();
         }
     };
 
@@ -158,7 +236,7 @@ export default function RedeemScreen() {
                             <TouchableOpacity
                                 style={styles.backButton}
                                 onPress={() => {
-                                    if (step === 'pin') {
+                                    if (step === 'pin' && vendor.xcard === true) {
                                         setStep('creator');
                                         Keyboard.dismiss();
                                     } else {
@@ -170,7 +248,12 @@ export default function RedeemScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.content}>
+                        <ScrollView
+                            style={{ flex: 1 }}
+                            contentContainerStyle={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                        >
                             {/* Offer Card */}
                             <View style={styles.offerCardWrapper}>
                                 <View style={styles.offerCard}>
@@ -191,7 +274,7 @@ export default function RedeemScreen() {
                                 </View>
                             </View>
 
-                            {/* Conditional Cards based on Step */}
+                            {/* Creator Code Step (xcard vendors only) */}
                             {step === 'creator' && (
                                 <View style={styles.creatorCard}>
                                     <Text style={styles.inputLabel}>
@@ -214,6 +297,7 @@ export default function RedeemScreen() {
                                 </View>
                             )}
 
+                            {/* PIN + Amount Step */}
                             {step === 'pin' && (
                                 <View style={styles.redemptionCard}>
                                     <Text style={styles.inputLabel}>Enter Vendor PIN:</Text>
@@ -241,7 +325,6 @@ export default function RedeemScreen() {
                                                 if (numericText.length <= 4) {
                                                     setPin(numericText);
                                                 }
-                                                // Auto-advance to amount if 4 digits entered
                                                 if (numericText.length === 4) {
                                                     amountInputRef.current?.focus();
                                                 }
@@ -253,7 +336,7 @@ export default function RedeemScreen() {
                                         />
                                     </View>
 
-                                    <Text style={styles.inputLabel}>Total Paid:</Text>
+                                    <Text style={styles.inputLabel}>Total Bill:</Text>
                                     <View style={styles.amountInputContainer}>
                                         <Text style={styles.currencyPrefix}>QAR</Text>
                                         <TextInput
@@ -268,6 +351,43 @@ export default function RedeemScreen() {
                                             onSubmitEditing={handleAction}
                                         />
                                     </View>
+
+                                    {/* Breakdown */}
+                                    {totalAmount > 0 && (
+                                        <View style={styles.breakdownContainer}>
+                                            <View style={styles.breakdownRow}>
+                                                <Text style={styles.breakdownLabel}>Total Bill</Text>
+                                                <Text style={styles.breakdownValue}>
+                                                    QAR {totalAmount.toFixed(2)}
+                                                </Text>
+                                            </View>
+                                            <View style={styles.breakdownRow}>
+                                                <Text style={styles.breakdownLabelGreen}>
+                                                    Discount ({offer.discountValue}{discountType === 'percentage' ? '%' : ''})
+                                                </Text>
+                                                <Text style={styles.breakdownValueGreen}>
+                                                    − QAR {discountAmount.toFixed(2)}
+                                                </Text>
+                                            </View>
+                                            <View style={styles.breakdownDivider} />
+                                            <View style={styles.breakdownRow}>
+                                                <Text style={styles.breakdownLabelBold}>Amount After Discount</Text>
+                                                <Text style={styles.breakdownValueBold}>
+                                                    QAR {finalAmount.toFixed(2)}
+                                                </Text>
+                                            </View>
+                                            {vendor.xcard === true && (
+                                                <View style={styles.breakdownRow}>
+                                                    <Text style={styles.cashbackLabel}>
+                                                        💰 Cashback (1%)
+                                                    </Text>
+                                                    <Text style={styles.cashbackValue}>
+                                                        + QAR {(finalAmount * 0.01).toFixed(2)}
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                    )}
                                 </View>
                             )}
 
@@ -276,16 +396,26 @@ export default function RedeemScreen() {
 
                             {/* Action Button */}
                             <TouchableOpacity
-                                style={styles.redeemButton}
+                                style={[
+                                    styles.redeemButton,
+                                    step === 'pin' && !canRedeem && styles.redeemButtonDisabled,
+                                ]}
                                 activeOpacity={0.9}
                                 onPress={handleAction}
+                                disabled={(step === 'pin' && !canRedeem) || isRedeeming}
                             >
-                                <Ionicons name="flash" size={20} color="#FFF" />
-                                <Text style={styles.redeemButtonText}>
-                                    {step === 'creator' ? 'CONTINUE' : 'REDEEM'}
-                                </Text>
+                                {isRedeeming ? (
+                                    <ActivityIndicator size="small" color="#FFF" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="flash" size={20} color="#FFF" />
+                                        <Text style={styles.redeemButtonText}>
+                                            {step === 'creator' ? 'CONTINUE' : 'REDEEM'}
+                                        </Text>
+                                    </>
+                                )}
                             </TouchableOpacity>
-                        </View>
+                        </ScrollView>
                     </View>
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
@@ -344,11 +474,11 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
-    content: {
-        flex: 1,
+    scrollContent: {
+        flexGrow: 1,
         paddingHorizontal: 24,
-        paddingTop: 40,
-        paddingBottom: 30,
+        paddingTop: 10,
+        paddingBottom: 40,
     },
     offerCardWrapper: {
         position: 'relative',
@@ -363,19 +493,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    tcButton: {
-        position: 'absolute',
-        top: 20,
-        right: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    tcText: {
-        fontSize: 14,
-        color: '#888',
-        fontFamily: Typography.metropolis.semiBold,
     },
     logoContainer: {
         position: 'absolute',
@@ -407,12 +524,6 @@ const styles = StyleSheet.create({
     },
     greenText: {
         color: Colors.brandGreen,
-    },
-    offerSubtitle: {
-        fontSize: 16,
-        color: '#888',
-        fontFamily: Typography.metropolis.medium,
-        marginTop: 4,
     },
     redemptionCard: {
         backgroundColor: '#F7F7F7',
@@ -490,6 +601,63 @@ const styles = StyleSheet.create({
         color: '#000',
         fontFamily: Typography.metropolis.semiBold,
     },
+    breakdownContainer: {
+        marginTop: 20,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 20,
+    },
+    breakdownRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+    breakdownLabel: {
+        fontSize: 14,
+        color: '#666',
+        fontFamily: Typography.metropolis.medium,
+    },
+    breakdownValue: {
+        fontSize: 14,
+        color: '#666',
+        fontFamily: Typography.metropolis.semiBold,
+    },
+    breakdownLabelGreen: {
+        fontSize: 14,
+        color: Colors.brandGreen,
+        fontFamily: Typography.metropolis.medium,
+    },
+    breakdownValueGreen: {
+        fontSize: 14,
+        color: Colors.brandGreen,
+        fontFamily: Typography.metropolis.semiBold,
+    },
+    breakdownDivider: {
+        height: 1,
+        backgroundColor: '#F0F0F0',
+        marginVertical: 4,
+    },
+    breakdownLabelBold: {
+        fontSize: 16,
+        color: '#000',
+        fontFamily: Typography.metropolis.semiBold,
+    },
+    breakdownValueBold: {
+        fontSize: 18,
+        color: '#000',
+        fontFamily: Typography.integral.bold,
+    },
+    cashbackLabel: {
+        fontSize: 13,
+        color: '#FF9800',
+        fontFamily: Typography.metropolis.medium,
+    },
+    cashbackValue: {
+        fontSize: 13,
+        color: '#FF9800',
+        fontFamily: Typography.metropolis.semiBold,
+    },
     redeemButton: {
         backgroundColor: Colors.brandGreen,
         borderRadius: 35,
@@ -504,6 +672,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 12,
         elevation: 8,
+    },
+    redeemButtonDisabled: {
+        opacity: 0.5,
     },
     redeemButtonText: {
         color: '#FFF',

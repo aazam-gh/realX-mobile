@@ -15,7 +15,6 @@ export default function SearchBar({ placeholder = 'Search for anything...', valu
     const { theme } = useTheme();
 
     return (
-        <View style={styles.container}>
             <View style={styles.searchContainer}>
                 <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.icon} />
                 <TextInput
@@ -28,15 +27,10 @@ export default function SearchBar({ placeholder = 'Search for anything...', valu
                     onSubmitEditing={onSubmit}
                 />
             </View>
-        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-    },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -46,6 +40,8 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         borderWidth: 1,
         borderColor: '#E0E0E0',
+        marginHorizontal:20,
+        marginVertical:12
     },
     icon: {
         marginRight: 10,

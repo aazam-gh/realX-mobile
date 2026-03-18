@@ -15,6 +15,7 @@ type Props = {
     logoUri?: string;
     onPress?: () => void;
     style?: any;
+    xcardEnabled?: boolean;
 };
 
 export default function RestaurantCard({
@@ -27,6 +28,7 @@ export default function RestaurantCard({
     logoUri,
     onPress,
     style,
+    xcardEnabled = false,
 }: Props) {
     return (
         <TouchableOpacity
@@ -65,6 +67,17 @@ export default function RestaurantCard({
       )}
     </View>
   </View>
+
+  {/* Cashback Badge */}
+  {xcardEnabled && (
+    <View style={styles.xcardBadge}>
+      <Image
+        source={require('../../assets/images/cashback.png')}
+        style={styles.xcardIcon}
+        contentFit="contain"
+      />
+    </View>
+  )}
             </View>
 
 
@@ -238,5 +251,26 @@ bottomImage: {
   width: '100%',
   height: '200%',
   transform: [{ translateY: '-50%' }],
+},
+xcardBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 10,
+},
+xcardIcon: {
+    width: 20,
+    height: 20,
 },
 });

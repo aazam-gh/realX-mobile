@@ -11,6 +11,7 @@ type Restaurant = {
     isTrending?: boolean;
     imageUri?: string;
     logoUri?: string;
+    xcardEnabled?: boolean;
 };
 
 type Props = {
@@ -34,6 +35,7 @@ const defaultRestaurants: Restaurant[] = [
         cashbackText: 'Cashbacks',
         discountText: '60% DISCOUNT',
         isTrending: true,
+        xcardEnabled: true,
     },
     {
         id: '3',
@@ -79,6 +81,7 @@ export default function BrowseSection({
                         isTrending={restaurant.isTrending}
                         imageUri={restaurant.imageUri}
                         logoUri={restaurant.logoUri}
+                        xcardEnabled={restaurant.xcardEnabled}
                         onPress={() => onRestaurantPress?.(restaurant)}
                         style={{ width: 170 }}
                     />
@@ -94,7 +97,6 @@ const styles = StyleSheet.create({
     },
     headerContainer: {
         paddingHorizontal: 20,
-        marginBottom: 16,
     },
     headerTitle: {
         fontSize: 20,

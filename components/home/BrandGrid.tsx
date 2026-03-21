@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { I18nManager, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { ThemedText } from '../ThemedText';
@@ -22,18 +23,25 @@ const defaultBrands: BrandItem[] = [
 ];
 
 export default function BrandGrid() {
+    const { t, i18n } = useTranslation();
+    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
-                <ThemedText style={styles.headerTitle}>
-                    <ThemedText style={styles.shopByText}>SHOP BY </ThemedText>
-                    <ThemedText style={styles.brandText}>BRAND</ThemedText>
+                <ThemedText style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    <ThemedText style={styles.shopByText}>{t('shop_by_word')} </ThemedText>
+                    <ThemedText style={styles.brandText}>{t('brand_word')}</ThemedText>
                 </ThemedText>
             </View>
+
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    { flexDirection: isRTL ? 'row-reverse' : 'row' }
+                ]}
             >
                 {defaultBrands.map((brand) => (
                     <TouchableOpacity

@@ -2,7 +2,8 @@ import { collection, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, 
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ImageSourcePropType, Keyboard, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ImageSourcePropType, Keyboard, ScrollView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     BrowseSection,
@@ -14,6 +15,33 @@ import {
 import { SearchBar } from '../../components/home';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+
+const BACKGROUND_ICONS = [
+    { name: 'laptop-outline' as const, top: '2%', left: '75%', size: 28, color: '#8E8E93', rotation: '15deg' },
+    { name: 'watch-outline' as const, top: '1%', left: '90%', size: 32, color: '#8E8E93', rotation: '-20deg' },
+    { name: 'pizza-outline' as const, top: '8%', left: '25%', size: 22, color: '#8E8E93', rotation: '-30deg' },
+    { name: 'fast-food-outline' as const, top: '1%', left: '45%', size: 32, color: '#8E8E93', rotation: '10deg' },
+    { name: 'cafe-outline' as const, top: '22%', left: '60%', size: 24, color: '#53C268', rotation: '-15deg' },
+    { name: 'beaker-outline' as const, top: '22%', left: '72%', size: 28, color: '#53C268', rotation: '25deg' },
+    { name: 'ice-cream-outline' as const, top: '25%', left: '20%', size: 22, color: '#8E8E93', rotation: '15deg' },
+    { name: 'football-outline' as const, top: '28%', left: '38%', size: 26, color: '#8E8E93', rotation: '-25deg' },
+    { name: 'storefront-outline' as const, top: '35%', left: '5%', size: 36, color: '#53C268', rotation: '-10deg' },
+    { name: 'car-outline' as const, top: '35%', left: '85%', size: 32, color: '#8E8E93', rotation: '25deg' },
+    { name: 'medkit-outline' as const, top: '42%', left: '15%', size: 30, color: '#53C268', rotation: '-15deg' },
+    { name: 'bicycle-outline' as const, top: '48%', left: '85%', size: 26, color: '#8E8E93', rotation: '45deg' },
+    { name: 'laptop-outline' as const, top: '55%', left: '5%', size: 28, color: '#53C268', rotation: '10deg' },
+    { name: 'bus-outline' as const, top: '65%', left: '92%', size: 32, color: '#8E8E93', rotation: '-15deg' },
+    { name: 'fast-food-outline' as const, top: '72%', left: '35%', size: 32, color: '#8E8E93', rotation: '-20deg' },
+    { name: 'egg-outline' as const, top: '70%', left: '80%', size: 28, color: '#8E8E93', rotation: '45deg' },
+    { name: 'nutrition-outline' as const, top: '78%', left: '50%', size: 24, color: '#8E8E93', rotation: '15deg' },
+    { name: 'ice-cream-outline' as const, top: '80%', left: '88%', size: 40, color: '#8E8E93', rotation: '30deg' },
+    { name: 'laptop-outline' as const, top: '85%', left: '8%', size: 36, color: '#8E8E93', rotation: '-15deg' },
+    { name: 'watch-outline' as const, top: '90%', left: '28%', size: 32, color: '#8E8E93', rotation: '10deg' },
+    { name: 'pizza-outline' as const, top: '88%', left: '60%', size: 24, color: '#53C268', rotation: '-45deg' },
+    { name: 'restaurant-outline' as const, top: '92%', left: '65%', size: 30, color: '#53C268', rotation: '20deg' },
+    { name: 'cafe-outline' as const, top: '95%', left: '75%', size: 28, color: '#53C268', rotation: '-15deg' },
+    { name: 'ice-cream-outline' as const, top: '95%', left: '55%', size: 26, color: '#53C268', rotation: '10deg' },
+];
 
 // Category configuration map
 const categoryConfig: Record<string, {
@@ -126,12 +154,33 @@ const HeaderContent = memo(({
             </>
         ) : (
             <View style={styles.comingSoonContainer}>
-                <View style={styles.comingSoonIconContainer}>
-                    <Text style={styles.comingSoonEmoji}>⏳</Text>
+                <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                    {BACKGROUND_ICONS.map((icon, i) => (
+                        <Ionicons
+                            key={i}
+                            name={icon.name}
+                            size={icon.size}
+                            color={icon.color}
+                            style={{
+                                position: 'absolute',
+                                top: icon.top as any,
+                                left: icon.left as any,
+                                transform: [{ rotate: icon.rotation }],
+                                opacity: 0.3,
+                            }}
+                        />
+                    ))}
                 </View>
-                <Text style={styles.comingSoonTitle}>{headerTitle} Coming Soon!</Text>
+                <Image 
+                    source={require('../../assets/images/comingsoon.png')} 
+                    style={styles.comingSoonImage} 
+                    resizeMode="contain"
+                />
+                <Text style={styles.comingSoonTitle}>
+                    Coming <Text style={styles.comingSoonTitleGreen}>Soon</Text> 🚀
+                </Text>
                 <Text style={styles.comingSoonSubtitle}>
-                    We're working hard to bring you the best {headerTitle.toLowerCase()} deals. Stay tuned!
+                    We're preparing student{'\n'}discounts for this category.
                 </Text>
             </View>
         )}
@@ -438,32 +487,27 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 40,
-        paddingVertical: 80,
+        paddingVertical: 100,
+        position: 'relative',
+        overflow: 'hidden',
     },
-    comingSoonIconContainer: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: Colors.light.background,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 24,
-        // Shadow for premium look
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-        elevation: 5,
-    },
-    comingSoonEmoji: {
-        fontSize: 60,
+    comingSoonImage: {
+        width: 200,
+        height: 200,
+        marginBottom: 20,
+        zIndex: 10,
     },
     comingSoonTitle: {
-        fontSize: 24,
+        fontSize: 28,
         fontFamily: Typography.metropolis.semiBold,
-        color: Colors.light.text,
+        color: '#000000',
         textAlign: 'center',
         marginBottom: 12,
+        zIndex: 10,
+    },
+    comingSoonTitleGreen: {
+        color: '#53C268',
+        fontStyle: 'italic',
     },
     comingSoonSubtitle: {
         fontSize: 16,
@@ -471,6 +515,7 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
         textAlign: 'center',
         lineHeight: 24,
+        zIndex: 10,
     },
     offersContainer: {
         flex: 1,

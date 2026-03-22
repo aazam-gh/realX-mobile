@@ -333,8 +333,7 @@ const styles = StyleSheet.create({
   savingsLabel: {
     fontSize: 14,
     fontFamily: Typography.metropolis.medium,
-    color: '#000',
-    marginBottom: 12,
+    color: '#000'
   },
   savingsAmountContainer: {
     flexDirection: 'row',

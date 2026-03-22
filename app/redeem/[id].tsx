@@ -23,6 +23,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../../components/PhonkText';
 
 // Types for better type safety
 interface VendorData {
@@ -257,11 +258,11 @@ export default function RedeemScreen() {
                             {/* Offer Card */}
                             <View style={styles.offerCardWrapper}>
                                 <View style={styles.offerCard}>
-                                    <Text style={styles.offerTitle}>
+                                    <PhonkText style={styles.offerTitle}>
                                         FLAT <Text style={styles.greenText}>
                                             {offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}
                                         </Text> OFF
-                                    </Text>
+                                    </PhonkText>
                                 </View>
 
                                 {/* Logo Overlay */}
@@ -372,9 +373,9 @@ export default function RedeemScreen() {
                                             <View style={styles.breakdownDivider} />
                                             <View style={styles.breakdownRow}>
                                                 <Text style={styles.breakdownLabelBold}>Amount after Discount</Text>
-                                                <Text style={styles.breakdownValueBold}>
+                                                <PhonkText style={styles.breakdownValueBold}>
                                                     QAR {finalAmount.toFixed(2)}
-                                                </Text>
+                                                </PhonkText>
                                             </View>
                                             {vendor.xcard === true && (
                                                 <View style={styles.breakdownRow}>
@@ -409,9 +410,9 @@ export default function RedeemScreen() {
                                 ) : (
                                     <>
                                         <Ionicons name="flash" size={20} color="#FFF" />
-                                        <Text style={styles.redeemButtonText}>
+                                        <PhonkText style={styles.redeemButtonText}>
                                             {step === 'creator' ? 'CONTINUE' : 'REDEEM'}
-                                        </Text>
+                                        </PhonkText>
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -448,12 +449,12 @@ const styles = StyleSheet.create({
     errorText: {
         fontSize: 16,
         color: '#666',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         marginBottom: 10,
     },
     backLink: {
         color: Colors.brandGreen,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     header: {
         flexDirection: 'row',
@@ -518,7 +519,6 @@ const styles = StyleSheet.create({
     },
     offerTitle: {
         fontSize: 32,
-        fontFamily: Typography.integral.bold,
         color: '#000',
         textAlign: 'center',
     },
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
     inputLabel: {
         fontSize: 16,
         color: '#444',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         marginBottom: 12,
     },
     pinContainer: {
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
     pinText: {
         fontSize: 30,
         color: '#E0E0E0',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         marginTop: 10,
     },
     hiddenPinInput: {
@@ -592,14 +592,14 @@ const styles = StyleSheet.create({
     currencyPrefix: {
         fontSize: 16,
         color: '#AAA',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         marginRight: 10,
     },
     amountInput: {
         flex: 1,
         fontSize: 18,
         color: '#000',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     breakdownContainer: {
         marginTop: 20,
@@ -616,22 +616,22 @@ const styles = StyleSheet.create({
     breakdownLabel: {
         fontSize: 14,
         color: '#666',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     breakdownValue: {
         fontSize: 14,
         color: '#666',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     breakdownLabelGreen: {
         fontSize: 14,
         color: Colors.brandGreen,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     breakdownValueGreen: {
         fontSize: 14,
         color: Colors.brandGreen,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     breakdownDivider: {
         height: 1,
@@ -641,22 +641,21 @@ const styles = StyleSheet.create({
     breakdownLabelBold: {
         fontSize: 16,
         color: '#000',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     breakdownValueBold: {
         fontSize: 16,
         color: '#000',
-        fontFamily: Typography.integral.bold,
     },
     cashbackLabel: {
         fontSize: 13,
         color: '#FF9800',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     cashbackValue: {
         fontSize: 13,
         color: '#FF9800',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     redeemButton: {
         backgroundColor: Colors.brandGreen,
@@ -679,7 +678,6 @@ const styles = StyleSheet.create({
     redeemButtonText: {
         color: '#FFF',
         fontSize: 22,
-        fontFamily: Typography.integral.bold,
         letterSpacing: 1,
     },
     creatorCard: {
@@ -703,11 +701,11 @@ const styles = StyleSheet.create({
     creatorInput: {
         fontSize: 18,
         color: '#000',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     optionalText: {
         color: '#888',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         fontSize: 14,
     },
 });

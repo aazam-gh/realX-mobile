@@ -62,7 +62,7 @@ export default function RestaurantCard({
           contentFit="cover"
         />
       ) : (
-        <Text style={[{ color: '#000', fontFamily: Typography.metropolis.medium }, styles.logoEmoji]}>🏪</Text>
+        <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.logoEmoji]}>🏪</Text>
       )}
     </View>
   </View>
@@ -82,11 +82,11 @@ export default function RestaurantCard({
 
             {/* Content */}
             <View style={styles.content}>
-                <Text style={[{ color: '#000', fontFamily: Typography.metropolis.medium }, styles.name]} numberOfLines={1}>{name}</Text>
+                <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.name]} numberOfLines={1}>{name}</Text>
 
                 {/* Discount Tag */}
                 <View style={styles.discountWrapper}>
-                    <Text style={[{ color: Colors.brandGreen, fontFamily: Typography.metropolis.medium }, styles.discountText]}>{discountText}</Text>
+                    <Text style={[{ color: Colors.brandGreen, fontFamily: Typography.poppins.medium }, styles.discountText]}>{discountText}</Text>
                 </View>
             </View>
         </TouchableOpacity>
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     },
     badgeText: { // generic text style for badges
         fontSize: 10,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: '#FFFFFF',
         letterSpacing: 0.5,
     },
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     },
     name: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         marginBottom: 4,
     },
     cashbackRow: {
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     },
     cashbackText: {
         fontSize: 12,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#666666',
     },
     discountWrapper: {
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     },
     discountText: {
         fontSize: 13,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: Colors.brandGreen,
     },
 

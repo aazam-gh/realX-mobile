@@ -9,6 +9,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StatusBar, StyleSheet,
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../../components/PhonkText';
 
 export default function VendorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -85,7 +86,7 @@ export default function VendorScreen() {
     if (!vendor) {
         return (
                 <View style={[styles.errorContainer, { backgroundColor: Colors.light.background }]}>
-                <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.errorText]}>Vendor not found</Text>
+                <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.errorText]}>Vendor not found</Text>
             </View>
         );
     }
@@ -145,14 +146,14 @@ export default function VendorScreen() {
                                 contentFit="contain"
                             />
                         ) : (
-                            <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.vendorName]}>{vendor.name}</Text>
+                            <PhonkText style={[{ color: Colors.light.text }, styles.vendorName]}>{vendor.name}</PhonkText>
                         )}
                     </View>
 
                     <View style={styles.metaRow}>
                         <View style={styles.ratingContainer}>
                             <Ionicons name="star" size={16} color="#FFD700" />
-                            <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.ratingText]}>5.0</Text>
+                            <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.ratingText]}>5.0</Text>
                         </View>
 
                     </View>
@@ -164,20 +165,20 @@ export default function VendorScreen() {
                                 {/* Top Info Pill */}
                                 <View style={[styles.offerInfoContainer, { backgroundColor: '#F5F5F5' }]}>
                                     <View style={styles.offerContent}>
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.offerTitle]}>
+                                        <PhonkText style={[{ color: Colors.light.text }, styles.offerTitle]}>
                                             {offer.discountType === 'percentage' ? (
                                                 <>
-                                                    FLAT <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.greenText]}>{offer.discountValue}%</Text> OFF
+                                                    FLAT <Text style={[{ color: Colors.light.text }, styles.greenText]}>{offer.discountValue}%</Text> OFF
                                                 </>
                                             ) : offer.discountType === 'buy_one_get_one' || offer.titleEn?.toLowerCase().includes('buy') ? (
-                                                <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.offerTitle]}>
-                                                    BUY <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.greenText]}>1</Text> GET <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.greenText]}>1</Text>
-                                                </Text>
+                                                <PhonkText style={[{ color: Colors.light.text }, styles.offerTitle]}>
+                                                    BUY <Text style={[{ color: Colors.light.text }, styles.greenText]}>1</Text> GET <Text style={[{ color: Colors.light.text }, styles.greenText]}>1</Text>
+                                                </PhonkText>
                                             ) : (
                                                 <>{offer.titleEn || offer.titleAr}</>
                                             )}
-                                        </Text>
-                                        <Text style={[{ color: Colors.light.tabIconDefault, fontFamily: Typography.metropolis.medium }, styles.offerSubtitle]}>In-store</Text>
+                                        </PhonkText>
+                                        <Text style={[{ color: Colors.light.tabIconDefault, fontFamily: Typography.poppins.medium }, styles.offerSubtitle]}>In-store</Text>
                                     </View>
                                 </View>
                                 {/* Bottom Button Pills */}
@@ -187,7 +188,7 @@ export default function VendorScreen() {
                                         onPress={() => setSelectedOfferForTC(offer)}
                                     >
                                         <Ionicons name="alert-circle-outline" size={22} color="#8E8E93" />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.pillButtonTextSmall]}>View T&C</Text>
+                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>View T&C</Text>
                                     </TouchableOpacity>
 
                                     <TouchableOpacity
@@ -195,7 +196,7 @@ export default function VendorScreen() {
                                         onPress={() => router.push(`/redeem/${offer.id}?vendorId=${id}`)}
                                     >
                                         <Ionicons name="flash" size={18} color="#FFF" />
-                                        <Text style={[{ color: '#FFF', fontFamily: Typography.metropolis.medium }, styles.pillButtonTextSmall]}>REDEEM</Text>
+                                        <Text style={[{ color: '#FFF', fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>REDEEM</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -233,7 +234,7 @@ export default function VendorScreen() {
 
                         <View style={styles.modalContent}>
                             <View style={styles.modalHeader}>
-                                <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.modalTitleText]}>TERMS & CONDITIONS</Text>
+                                <PhonkText style={[{ color: Colors.light.text }, styles.modalTitleText]}>TERMS & CONDITIONS</PhonkText>
                                 <TouchableOpacity
                                     onPress={() => setSelectedOfferForTC(null)}
                                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -247,7 +248,7 @@ export default function VendorScreen() {
                                 style={styles.modalBody}
                                 contentContainerStyle={styles.modalBodyContent}
                             >
-                                <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.descriptionText]}>
+                                <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.descriptionText]}>
                                     {selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || 'No specific terms provided for this offer.'}
                                 </Text>
 
@@ -255,11 +256,11 @@ export default function VendorScreen() {
                                 <View style={styles.commonTerms}>
                                     <View style={styles.termRow}>
                                         <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.termText]}>Valid for in-store purchases only</Text>
+                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.termText]}>Valid for in-store purchases only</Text>
                                     </View>
                                     <View style={styles.termRow}>
                                         <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.termText]}>Cannot be combined with other offers</Text>
+                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.termText]}>Cannot be combined with other offers</Text>
                                     </View>
                                 </View>
                             </ScrollView>
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
     },
     errorText: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     scrollContent: {
         paddingBottom: 40,
@@ -354,7 +355,6 @@ const styles = StyleSheet.create({
     },
     vendorName: {
         fontSize: 26,
-        fontFamily: Typography.integral.bold,
         color: '#000',
         textTransform: 'uppercase',
         letterSpacing: 0.5,
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     },
     ratingText: {
         fontSize: 14,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     categoryChip: {
         flexDirection: 'row',
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     },
     categoryText: {
         fontSize: 12,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     offersList: {
         marginTop: 24,
@@ -416,17 +416,15 @@ const styles = StyleSheet.create({
     },
     offerTitle: {
         fontSize: 28,
-        fontFamily: Typography.integral.bold,
         letterSpacing: -0.5,
         textTransform: 'uppercase',
     },
     greenText: {
         color: Colors.brandGreen,
-        fontFamily: Typography.integral.bold,
     },
     offerSubtitle: {
         fontSize: 15,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#8E8E93',
     },
     offerActionsRow: {
@@ -457,7 +455,7 @@ const styles = StyleSheet.create({
     },
     pillButtonTextSmall: {
         fontSize: 14,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
@@ -492,7 +490,6 @@ const styles = StyleSheet.create({
     },
     modalTitleText: {
         fontSize: 20,
-        fontFamily: Typography.integral.bold,
         letterSpacing: 0.5,
     },
     modalBody: {
@@ -503,7 +500,7 @@ const styles = StyleSheet.create({
     },
     descriptionText: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         lineHeight: 24,
         color: '#8E8E93',
     },
@@ -521,7 +518,7 @@ const styles = StyleSheet.create({
     },
     termText: {
         fontSize: 14,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#666',
     },
 });

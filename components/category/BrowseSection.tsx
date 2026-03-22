@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 20,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: Colors.light.text,
     },
     emoji: {

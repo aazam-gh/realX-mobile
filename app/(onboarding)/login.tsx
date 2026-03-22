@@ -20,6 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../../components/PhonkText';
 import { actionCodeSettings, clearAuthEmail, getAuthEmail, saveAuthEmail } from '../../utils/auth';
 
 export default function LoginScreen() {
@@ -165,17 +166,17 @@ export default function LoginScreen() {
                         <View style={styles.textContainer}>
                             {isLinkSent ? (
                                 <>
-                                    <Text style={styles.titleLine}>
+                                    <PhonkText style={styles.titleLine}>
                                         <Text style={styles.greenText}>CHECK YOUR</Text>
-                                    </Text>
-                                    <Text style={styles.titleLine}>
+                                    </PhonkText>
+                                    <PhonkText style={styles.titleLine}>
                                         <Text style={styles.blackText}>EMAIL</Text>
-                                    </Text>
+                                    </PhonkText>
                                 </>
                             ) : (
-                                <Text style={styles.titleLine}>
+                                <PhonkText style={styles.titleLine}>
                                     <Text style={styles.greenText}>LOGIN</Text>
-                                </Text>
+                                </PhonkText>
                             )}
                         </View>
 
@@ -300,7 +301,6 @@ const styles = StyleSheet.create({
     },
     titleLine: {
         fontSize: 32,
-        fontFamily: Typography.integral.bold,
         textAlign: 'center',
         lineHeight: 38,
     },
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     },
     input: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     infoText: {
         fontSize: 14,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 20,
         paddingHorizontal: 10,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     footer: {
         paddingBottom: 40,
@@ -348,6 +348,6 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#FFFFFF',
         fontSize: 18,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
 });

@@ -80,9 +80,8 @@
         "expo-font",
         {
           "fonts": [
-            "./assets/fonts/integralcf-bold.otf",
-            "./assets/fonts/metropolis.semi-bold.otf",
-            "./assets/fonts/metropolis.medium.otf"
+            "./assets/fonts/phonk.otf",
+            "./assets/fonts/poppins.ttf"
           ]
         }
       ],

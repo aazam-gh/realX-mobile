@@ -20,6 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../../components/PhonkText';
 import { actionCodeSettings, clearAuthEmail, getAuthEmail, saveAuthEmail } from '../../utils/auth';
 
 export default function EmailOnboarding() {
@@ -198,12 +199,12 @@ export default function EmailOnboarding() {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.card}>
             <View style={styles.textContainer}>
-              <Text style={styles.titleLine}>
+              <PhonkText style={styles.titleLine}>
                 <Text style={styles.greenText}>CREATE YOUR</Text>
-              </Text>
-              <Text style={styles.titleLine}>
+              </PhonkText>
+              <PhonkText style={styles.titleLine}>
                 <Text style={styles.blackText}>{role === 'creator' ? 'CREATOR' : 'STUDENT'} ACCOUNT</Text>
-              </Text>
+              </PhonkText>
             </View>
 
             <View style={styles.inputWrapper}>
@@ -287,15 +288,15 @@ const styles = StyleSheet.create({
   cardContainer: { flex: 1, backgroundColor: 'white', borderTopLeftRadius: 50, borderTopRightRadius: 50, marginTop: -80, paddingHorizontal: 30, paddingTop: 40 },
   card: { flex: 1 },
   textContainer: { marginBottom: 40, alignItems: 'center' },
-  titleLine: { fontSize: 32, fontFamily: Typography.integral.bold, textAlign: 'center', lineHeight: 38 },
+  titleLine: { fontSize: 32, textAlign: 'center', lineHeight: 38 },
   greenText: { color: Colors.brandGreen },
   blackText: { color: '#000000' },
   inputWrapper: { marginBottom: 20 },
   singleInputContainer: { backgroundColor: '#F3F3F3', borderRadius: 30, height: 60, justifyContent: 'center', paddingHorizontal: 25 },
-  input: { fontSize: 16, fontFamily: Typography.metropolis.medium, color: '#000' },
-  infoText: { fontSize: 14, color: '#999', textAlign: 'center', lineHeight: 20, paddingHorizontal: 10, fontFamily: Typography.metropolis.medium },
+  input: { fontSize: 16, fontFamily: Typography.poppins.medium, color: '#000' },
+  infoText: { fontSize: 14, color: '#999', textAlign: 'center', lineHeight: 20, paddingHorizontal: 10, fontFamily: Typography.poppins.medium },
   footer: { paddingBottom: 40 },
   button: { backgroundColor: Colors.brandGreen, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#FFFFFF', fontSize: 18, fontFamily: Typography.metropolis.medium },
+  buttonText: { color: '#FFFFFF', fontSize: 18, fontFamily: Typography.poppins.medium },
 });

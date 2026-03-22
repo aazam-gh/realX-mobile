@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
     },
     comingSoonTitle: {
         fontSize: 28,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: '#000000',
         textAlign: 'center',
         marginBottom: 12,
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
     },
     comingSoonSubtitle: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#8E8E93',
         textAlign: 'center',
         lineHeight: 24,

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../PhonkText';
 
 type BrandItem = {
     id: string;
@@ -67,8 +68,8 @@ export default function BrandGrid() {
         <View style={styles.container}>
             <View style={styles.headerContainer}>
                 <Text style={styles.headerTitle}>
-                    <Text style={styles.shopByText}>SHOP BY </Text>
-                    <Text style={styles.brandText}>BRAND</Text>
+                    <PhonkText style={styles.shopByText}>SHOP BY </PhonkText>
+                    <PhonkText style={styles.brandText}>BRAND</PhonkText>
                 </Text>
             </View>
             <ScrollView
@@ -108,12 +109,10 @@ const styles = StyleSheet.create({
         fontSize: 20,
     },
     shopByText: {
-        fontFamily: Typography.integral.bold,
         color: Colors.light.text,
         letterSpacing: 1,
     },
     brandText: {
-        fontFamily: Typography.integral.bold,
         color: Colors.brandGreen,
         fontStyle: 'italic',
         letterSpacing: 1,

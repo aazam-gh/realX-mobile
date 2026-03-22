@@ -22,9 +22,8 @@ void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    IntegralBold: require('../assets/fonts/integralcf-bold.otf'),
-    MetropolisSemiBold: require('../assets/fonts/metropolis.semi-bold.otf'),
-    MetropolisMedium: require('../assets/fonts/metropolis.medium.otf'),
+    Phonk: require('../assets/fonts/phonk.otf'),
+    Poppins: require('../assets/fonts/poppins.ttf'),
   });
 
   const [i18nReady, setI18nReady] = useState(false);

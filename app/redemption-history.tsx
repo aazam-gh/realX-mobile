@@ -19,6 +19,7 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
+import PhonkText from '../components/PhonkText';
 
 /*
   UI Format based on design specs:
@@ -151,16 +152,16 @@ export default function RedemptionHistoryScreen() {
                 )}
               </View>
               <View style={styles.vendorTextContainer}>
-                <Text style={styles.vendorName} numberOfLines={1}>
+                <PhonkText style={styles.vendorName} numberOfLines={1}>
                   {item.vendorName || 'VENDOR'}
-                </Text>
+                </PhonkText>
                 <Text style={styles.savingsText}>Estimated savings: {savings.toFixed(0)} QAR</Text>
               </View>
             </View>
 
             <View style={styles.paidInfo}>
               <Text style={styles.paidLabel}>Total Paid</Text>
-              <Text style={styles.paidAmount}>{paid.toFixed(0)} QAR</Text>
+              <PhonkText style={styles.paidAmount}>{paid.toFixed(0)} QAR</PhonkText>
             </View>
           </View>
 
@@ -244,7 +245,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontFamily: Typography.metropolis.medium,
+    fontFamily: Typography.poppins.medium,
     color: '#000',
   },
   loadingContainer: {
@@ -277,28 +278,25 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 50,
     height: 50,
-    borderRadius: 12,
-    backgroundColor: '#1E2a38',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   logo: {
-    width: 30,
-    height: 30,
+    width: 50,
+    height: 50,
   },
   vendorTextContainer: {
     flex: 1,
   },
   vendorName: {
     fontSize: 18,
-    fontFamily: Typography.integral.bold,
     color: '#000',
     marginBottom: 4,
   },
   savingsText: {
     fontSize: 12,
-    fontFamily: Typography.metropolis.medium,
+    fontFamily: Typography.poppins.medium,
     color: '#888',
   },
   paidInfo: {
@@ -306,13 +304,12 @@ const styles = StyleSheet.create({
   },
   paidLabel: {
     fontSize: 12,
-    fontFamily: Typography.metropolis.medium,
+    fontFamily: Typography.poppins.medium,
     color: '#000',
     marginBottom: 4,
   },
   paidAmount: {
     fontSize: 16,
-    fontFamily: Typography.integral.bold,
     color: '#000',
   },
   divider: {
@@ -331,13 +328,13 @@ const styles = StyleSheet.create({
   },
   offerLabel: {
     fontSize: 12,
-    fontFamily: Typography.metropolis.medium,
+    fontFamily: Typography.poppins.medium,
     color: '#000',
     marginBottom: 4,
   },
   offerValue: {
     fontSize: 14,
-    fontFamily: Typography.metropolis.semiBold,
+    fontFamily: Typography.poppins.semiBold,
     color: '#000',
   },
   redeemButton: {
@@ -349,11 +346,11 @@ const styles = StyleSheet.create({
   redeemButtonText: {
     color: '#FFF',
     fontSize: 14,
-    fontFamily: Typography.metropolis.semiBold,
+    fontFamily: Typography.poppins.semiBold,
   },
   dateText: {
     fontSize: 12,
-    fontFamily: Typography.metropolis.medium,
+    fontFamily: Typography.poppins.medium,
     color: '#888',
     marginLeft: 8,
   },
@@ -363,7 +360,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    fontFamily: Typography.metropolis.medium,
+    fontFamily: Typography.poppins.medium,
     color: '#888',
   },
 });

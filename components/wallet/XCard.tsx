@@ -1,5 +1,6 @@
 import { Dimensions, ImageBackground, StyleSheet, Text, View } from 'react-native';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../PhonkText';
 
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth - 40;
@@ -39,7 +40,7 @@ export default function XCard({ earnings = 0, currency = 'QAR', creatorCode }: P
                     {creatorCode && (
                         <View style={styles.creatorCodeContainer}>
                             <Text style={styles.creatorCodeLabel}>CREATOR CODE</Text>
-                            <Text style={styles.creatorCodeText}>{creatorCode}</Text>
+                            <PhonkText style={styles.creatorCodeText}>{creatorCode}</PhonkText>
                         </View>
                     )}
                 </View>
@@ -72,7 +73,7 @@ const styles = StyleSheet.create({
     },
     earningsLabel: {
         fontSize: 14,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: 'rgba(255, 255, 255, 0.8)',
         marginBottom: 4,
     },
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     },
     earningsAmount: {
         fontSize: 32,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: '#FFFFFF',
     },
     creatorCodeContainer: {
@@ -91,13 +92,12 @@ const styles = StyleSheet.create({
     },
     creatorCodeLabel: {
         fontSize: 10,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: 'rgba(255, 255, 255, 0.6)',
         letterSpacing: 1,
     },
     creatorCodeText: {
         fontSize: 18,
-        fontFamily: Typography.integral.bold,
         color: '#FFFFFF',
     },
     coinEmoji: {

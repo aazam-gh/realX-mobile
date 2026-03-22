@@ -90,10 +90,10 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                             contentFit="contain"
                         />
                     ) : (
-                        <Text style={[{ color: '#000', fontFamily: Typography.metropolis.medium }, { fontSize: 40 }]}>{item.icon}</Text>
+                        <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, { fontSize: 40 }]}>{item.icon}</Text>
                     )}
                 </View>
-                <Text style={[{ color: '#000', fontFamily: Typography.metropolis.medium }, styles.categoryName]} numberOfLines={1}>{item.name}</Text>
+                <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.categoryName]} numberOfLines={1}>{item.name}</Text>
             </TouchableOpacity>
         );
     };
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     },
     categoryName: {
         fontSize: 12,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         textAlign: 'center',
     },
     loaderContainer: {

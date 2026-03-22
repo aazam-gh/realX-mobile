@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../PhonkText';
 
 type Brand = {
     id: string;
@@ -111,8 +112,8 @@ export default function GiftCardCheckout({
                     <Ionicons name="arrow-back" size={24} color="#000000" />
                 </TouchableOpacity>
                 <View style={styles.logoContainer}>
-                    <Text style={styles.logoX}>X</Text>
-                    <Text style={styles.logoCard}>CARD</Text>
+                    <PhonkText style={styles.logoX}>X</PhonkText>
+                    <PhonkText style={styles.logoCard}>CARD</PhonkText>
                 </View>
                 <View style={styles.headerSpacer} />
             </View>
@@ -130,11 +131,11 @@ export default function GiftCardCheckout({
                             <Text style={styles.tcText}>View T&C</Text>
                         </TouchableOpacity>
 
-                        <Text style={styles.offerTitle}>
+                        <PhonkText style={styles.offerTitle}>
                             {selectedAmount}
                             <Text style={styles.greenText}>{currency}</Text>
-                        </Text>
-                        <Text style={styles.offerSubtitleLabel}>Gift Card</Text>
+                        </PhonkText>
+                        <PhonkText style={styles.offerSubtitleLabel}>Gift Card</PhonkText>
                         <Text style={styles.offerSubtitle}>In-store</Text>
                     </View>
 
@@ -212,9 +213,9 @@ export default function GiftCardCheckout({
                             <View style={styles.breakdownDivider} />
                             <View style={styles.breakdownRow}>
                                 <Text style={styles.breakdownLabelBold}>Remaining Amount</Text>
-                                <Text style={styles.breakdownValueBold}>
+                                <PhonkText style={styles.breakdownValueBold}>
                                     {currency} {remainingAmount.toFixed(2)}
-                                </Text>
+                                </PhonkText>
                             </View>
                         </View>
                     )}
@@ -235,7 +236,7 @@ export default function GiftCardCheckout({
                     ) : (
                         <>
                             <Ionicons name="flash" size={20} color="#FFF" />
-                            <Text style={styles.redeemButtonText}>REDEEM</Text>
+                            <PhonkText style={styles.redeemButtonText}>REDEEM</PhonkText>
                         </>
                     )}
                 </TouchableOpacity>
@@ -270,12 +271,10 @@ const styles = StyleSheet.create({
     },
     logoX: {
         fontSize: 24,
-        fontFamily: Typography.integral.bold,
         color: Colors.brandGreen,
     },
     logoCard: {
         fontSize: 24,
-        fontFamily: Typography.integral.bold,
         color: '#000000',
     },
     headerSpacer: {
@@ -310,12 +309,11 @@ const styles = StyleSheet.create({
     tcText: {
         fontSize: 14,
         color: '#888',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     offerTitle: {
         fontSize: 32,
-        fontFamily: Typography.integral.bold,
-        color: '#000',
+        color: '#00',
         textAlign: 'center',
     },
     greenText: {
@@ -323,14 +321,13 @@ const styles = StyleSheet.create({
     },
     offerSubtitleLabel: {
         fontSize: 28,
-        fontFamily: Typography.integral.bold,
         color: Colors.brandGreen,
         marginTop: 2,
     },
     offerSubtitle: {
         fontSize: 16,
         color: '#888',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         marginTop: 4,
     },
     brandLogoOverlay: {
@@ -365,7 +362,7 @@ const styles = StyleSheet.create({
     },
     brandLogoPlaceholder: {
         fontSize: 40,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: '#FFFFFF',
     },
     redemptionCard: {
@@ -377,7 +374,7 @@ const styles = StyleSheet.create({
     inputLabel: {
         fontSize: 16,
         color: '#444',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         marginBottom: 12,
     },
     pinContainer: {
@@ -401,7 +398,7 @@ const styles = StyleSheet.create({
     pinText: {
         fontSize: 30,
         color: '#E0E0E0',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         marginTop: 10,
     },
     amountInputContainer: {
@@ -420,14 +417,14 @@ const styles = StyleSheet.create({
     currencyPrefix: {
         fontSize: 16,
         color: '#AAA',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         marginRight: 10,
     },
     amountInput: {
         flex: 1,
         fontSize: 18,
         color: '#000',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     breakdownContainer: {
         marginTop: 20,
@@ -444,22 +441,22 @@ const styles = StyleSheet.create({
     breakdownLabel: {
         fontSize: 14,
         color: '#666',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     breakdownValue: {
         fontSize: 14,
         color: '#666',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     breakdownLabelGreen: {
         fontSize: 14,
         color: Colors.brandGreen,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     breakdownValueGreen: {
         fontSize: 14,
         color: Colors.brandGreen,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     breakdownDivider: {
         height: 1,
@@ -469,12 +466,11 @@ const styles = StyleSheet.create({
     breakdownLabelBold: {
         fontSize: 16,
         color: '#000',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     breakdownValueBold: {
         fontSize: 18,
         color: '#000',
-        fontFamily: Typography.integral.bold,
     },
     redeemButton: {
         backgroundColor: Colors.brandGreen,
@@ -497,7 +493,6 @@ const styles = StyleSheet.create({
     redeemButtonText: {
         color: '#FFF',
         fontSize: 22,
-        fontFamily: Typography.integral.bold,
         letterSpacing: 1,
     },
 });

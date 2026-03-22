@@ -10,10 +10,10 @@ export default function GreetingHeader({ userName }: Props) {
     return (
         <View style={styles.container}>
             <View style={styles.textContainer}>
-                <Text style={[{ color: '#000', fontFamily: Typography.metropolis.medium }, styles.greeting]}>
-                    Hey <Text style={[{ color: Colors.brandGreen, fontFamily: Typography.metropolis.medium }, styles.userName]}>{userName}</Text>,
+                <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.greeting]}>
+                    Hey <Text style={[{ color: Colors.brandGreen, fontFamily: Typography.poppins.medium }, styles.userName]}>{userName}</Text>,
                 </Text>
-                <Text style={[{ color: '#000', fontFamily: Typography.metropolis.medium }, styles.subtitle]}>Ready to save?</Text>
+                <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.subtitle]}>Ready to save?</Text>
             </View>
             <TouchableOpacity
                 style={styles.avatarContainer}
@@ -44,15 +44,15 @@ const styles = StyleSheet.create({
     },
     greeting: {
         fontSize: 28,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     userName: {
         color: Colors.brandGreen,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     subtitle: {
         fontSize: 28,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     avatarContainer: {
         width: 60,

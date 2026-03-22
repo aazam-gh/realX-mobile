@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 20,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: Colors.light.text,
         paddingHorizontal: 20,
         marginBottom: 16,
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 14,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#999999',
         paddingHorizontal: 20,
         paddingTop: 10,

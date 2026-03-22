@@ -20,6 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
+import PhonkText from '../components/PhonkText';
 
 export default function ProfileDetailsScreen() {
     const router = useRouter();
@@ -193,11 +194,11 @@ export default function ProfileDetailsScreen() {
                 <TouchableOpacity onPress={handleBack} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>PROFILE DETAILS</Text>
+                <PhonkText style={styles.headerTitle}>PROFILE DETAILS</PhonkText>
                 <TouchableOpacity onPress={handleToggleEdit} style={styles.editButton}>
-                    <Text style={[styles.editButtonText, isEditing && { color: BRAND_GREEN }]}>
+                    <PhonkText style={[styles.editButtonText, isEditing && { color: BRAND_GREEN }]}>
                         {isEditing ? 'SAVE' : 'EDIT'}
-                    </Text>
+                    </PhonkText>
                 </TouchableOpacity>
             </View>
 
@@ -228,7 +229,7 @@ export default function ProfileDetailsScreen() {
                             <>
                                 {/* First Name Field */}
                                 <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>FIRST NAME</Text>
+                                    <PhonkText style={styles.label}>FIRST NAME</PhonkText>
                                     <View style={[styles.inputWrapper, !isEditing && styles.disabledInput]}>
                                         <TextInput
                                             style={[styles.input, !isEditing && styles.disabledText, { color: Colors.light.text }]}
@@ -243,7 +244,7 @@ export default function ProfileDetailsScreen() {
 
                                 {/* Last Name Field */}
                                 <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>LAST NAME</Text>
+                                    <PhonkText style={styles.label}>LAST NAME</PhonkText>
                                     <View style={[styles.inputWrapper, !isEditing && styles.disabledInput]}>
                                         <TextInput
                                             style={[styles.input, !isEditing && styles.disabledText, { color: Colors.light.text }]}
@@ -258,7 +259,7 @@ export default function ProfileDetailsScreen() {
 
                                 {/* Email Field */}
                                 <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>EMAIL ADDRESS</Text>
+                                    <PhonkText style={styles.label}>EMAIL ADDRESS</PhonkText>
                                     <View style={[styles.inputWrapper, styles.disabledInput]}>
                                         <TextInput
                                             style={[styles.input, styles.disabledText, { color: Colors.light.text }]}
@@ -272,7 +273,7 @@ export default function ProfileDetailsScreen() {
 
                                 {/* Date of Birth Field */}
                                 <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>DATE OF BIRTH</Text>
+                                    <PhonkText style={styles.label}>DATE OF BIRTH</PhonkText>
                                     <TouchableOpacity
                                         style={[styles.inputWrapper, !isEditing && styles.disabledInput]}
                                         onPress={() => isEditing && setShowDatePicker(true)}
@@ -306,7 +307,7 @@ export default function ProfileDetailsScreen() {
                         >
                             <View style={styles.deleteContent}>
                                 <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                                <Text style={styles.deleteAccountText}>DELETE ACCOUNT</Text>
+                                <PhonkText style={styles.deleteAccountText}>DELETE ACCOUNT</PhonkText>
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -337,7 +338,6 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 20,
-        fontFamily: Typography.integral.bold,
         flex: 1,
         textAlign: 'center',
         letterSpacing: 0.5,
@@ -347,7 +347,6 @@ const styles = StyleSheet.create({
     },
     editButtonText: {
         fontSize: 14,
-        fontFamily: Typography.integral.bold,
     },
     scrollContent: {
         paddingHorizontal: 24,
@@ -380,7 +379,6 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 12,
-        fontFamily: Typography.integral.bold,
         color: '#8E8E93',
         paddingLeft: 4,
     },
@@ -395,7 +393,7 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 16,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     disabledInput: {
         opacity: 0.8,
@@ -421,7 +419,6 @@ const styles = StyleSheet.create({
     },
     deleteAccountText: {
         fontSize: 14,
-        fontFamily: Typography.integral.bold,
         color: '#FF3B30',
     },
 });

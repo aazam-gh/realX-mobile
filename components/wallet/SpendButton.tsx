@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: '#FFFFFF',
         letterSpacing: 1,
     },

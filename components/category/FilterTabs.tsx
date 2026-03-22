@@ -128,6 +128,6 @@ const styles = StyleSheet.create({
     },
     filterText: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
 });

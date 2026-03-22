@@ -197,11 +197,11 @@ export default function SearchScreen() {
                 </View>
             ) : filteredOffers.length === 0 ? (
                 <View style={styles.centeredContainer}>
-                    <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.emptyEmoji]}>🔍</Text>
-                    <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.emptyTitle]}>
+                    <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.emptyEmoji]}>🔍</Text>
+                    <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.emptyTitle]}>
                         {searchQuery.trim() ? 'No offers found' : 'Search for offers'}
                     </Text>
-                    <Text style={[{ color: Colors.light.tabIconDefault, fontFamily: Typography.metropolis.medium }, styles.emptySubtitle]}>
+                    <Text style={[{ color: Colors.light.tabIconDefault, fontFamily: Typography.poppins.medium }, styles.emptySubtitle]}>
                         {searchQuery.trim()
                             ? `We couldn't find any offers matching "${searchQuery.trim()}"`
                             : 'Type a keyword to find deals and discounts'}
@@ -219,7 +219,7 @@ export default function SearchScreen() {
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={renderFooter}
                     ListHeaderComponent={
-                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.resultCount]}>
+                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.resultCount]}>
                             {filteredOffers.length} {filteredOffers.length === 1 ? 'result' : 'results'}
                         </Text>
                     }
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 15,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         padding: 0,
     },
     centeredContainer: {
@@ -282,19 +282,19 @@ const styles = StyleSheet.create({
     },
     emptyTitle: {
         fontSize: 20,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         textAlign: 'center',
         marginBottom: 8,
     },
     emptySubtitle: {
         fontSize: 15,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         textAlign: 'center',
         lineHeight: 22,
     },
     resultCount: {
         fontSize: 14,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#8E8E93',
         paddingHorizontal: 20,
         paddingTop: 8,

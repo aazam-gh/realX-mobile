@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         padding: 0,
     },
 });

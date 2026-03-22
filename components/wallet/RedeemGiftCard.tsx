@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../PhonkText';
 import GiftCardCheckout from './GiftCardCheckout';
 
 type Brand = {
@@ -64,8 +65,8 @@ export default function RedeemGiftCard({
                     <Ionicons name="arrow-back" size={24} color="#000000" />
                 </TouchableOpacity>
                 <View style={styles.logoContainer}>
-                    <Text style={styles.logoX}>X</Text>
-                    <Text style={styles.logoCard}>CARD</Text>
+                    <PhonkText style={styles.logoX}>X</PhonkText>
+                    <PhonkText style={styles.logoCard}>CARD</PhonkText>
                 </View>
                 <View style={styles.headerSpacer} />
             </View>
@@ -93,14 +94,14 @@ export default function RedeemGiftCard({
                     <Text style={styles.brandName}>{brand.name}</Text>
 
                     <View style={styles.generateGiftCardWrapper}>
-                        <Text style={styles.generateText}>GENERATE</Text>
-                        <Text style={styles.giftCardText}>GIFT CARD</Text>
+                        <PhonkText style={styles.generateText}>GENERATE</PhonkText>
+                        <PhonkText style={styles.giftCardText}>GIFT CARD</PhonkText>
                     </View>
 
                     <View style={styles.selectedAmountContainer}>
-                        <Text style={styles.selectedAmountText}>
+                        <PhonkText style={styles.selectedAmountText}>
                             {currency} {selectedAmount}
-                        </Text>
+                        </PhonkText>
                     </View>
                 </View>
 
@@ -118,12 +119,12 @@ export default function RedeemGiftCard({
                                 ]}
                                 onPress={() => setSelectedAmount(amount)}
                             >
-                                <Text style={[
+                                <PhonkText style={[
                                     styles.amountOptionText,
                                     selectedAmount === amount && styles.amountOptionTextSelected,
                                 ]}>
                                     {currency} {amount}
-                                </Text>
+                                </PhonkText>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -147,7 +148,7 @@ export default function RedeemGiftCard({
                     disabled={selectedAmount > maxLimit}
                 >
                     <Ionicons name="flash" size={20} color="#FFFFFF" style={styles.redeemIcon} />
-                    <Text style={styles.redeemButtonText}>REDEEM</Text>
+                    <PhonkText style={styles.redeemButtonText}>REDEEM</PhonkText>
                 </TouchableOpacity>
 
                 {/* T&C */}
@@ -186,12 +187,10 @@ const styles = StyleSheet.create({
     },
     logoX: {
         fontSize: 24,
-        fontFamily: Typography.integral.bold,
         color: Colors.brandGreen,
     },
     logoCard: {
         fontSize: 24,
-        fontFamily: Typography.integral.bold,
         color: '#000000',
     },
     headerSpacer: {
@@ -215,7 +214,7 @@ const styles = StyleSheet.create({
         left: 30,
         fontSize: 14,
         color: '#999999',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     logoWrapper: {
         marginTop: -70, // Offset to make logo pop out
@@ -242,12 +241,12 @@ const styles = StyleSheet.create({
     },
     brandLogoPlaceholder: {
         fontSize: 40,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: '#FFFFFF',
     },
     brandName: {
         fontSize: 18,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#000000',
         marginTop: 16,
     },
@@ -257,13 +256,11 @@ const styles = StyleSheet.create({
     },
     generateText: {
         fontSize: 28,
-        fontFamily: Typography.integral.bold,
         color: '#000000',
         lineHeight: 32,
     },
     giftCardText: {
         fontSize: 28,
-        fontFamily: Typography.integral.bold,
         color: Colors.brandGreen,
         lineHeight: 32,
     },
@@ -278,7 +275,6 @@ const styles = StyleSheet.create({
     },
     selectedAmountText: {
         fontSize: 24,
-        fontFamily: Typography.integral.bold,
         color: '#000000',
     },
     selectionSection: {
@@ -310,7 +306,6 @@ const styles = StyleSheet.create({
     },
     amountOptionText: {
         fontSize: 15,
-        fontFamily: Typography.integral.bold,
         color: '#666666',
     },
     amountOptionTextSelected: {
@@ -340,7 +335,7 @@ const styles = StyleSheet.create({
     insufficientText: {
         flex: 1,
         fontSize: 13,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#E53935',
     },
     redeemIcon: {
@@ -348,7 +343,6 @@ const styles = StyleSheet.create({
     },
     redeemButtonText: {
         fontSize: 18,
-        fontFamily: Typography.integral.bold,
         color: '#FFFFFF',
     },
     tcButton: {
@@ -360,7 +354,7 @@ const styles = StyleSheet.create({
     },
     tcButtonText: {
         fontSize: 13,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#999999',
         marginLeft: 6,
     },

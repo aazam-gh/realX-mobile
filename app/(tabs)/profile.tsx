@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../../components/PhonkText';
 import i18n, { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
 
@@ -103,9 +104,9 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.header}>
-          <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.headerText]}>
+          <PhonkText style={[{ color: Colors.light.text }, styles.headerText]}>
             PROFILE
-          </Text>
+          </PhonkText>
         </View>
 
         <TouchableOpacity
@@ -127,7 +128,7 @@ export default function ProfileScreen() {
               )}
             </View>
             <View style={styles.badge}>
-              <Text style={[{ color: '#FFFFFF', fontFamily: Typography.metropolis.medium }, styles.badgeText]}>ROOKIE</Text>
+              <PhonkText style={[{ color: '#FFFFFF' }, styles.badgeText]}>ROOKIE</PhonkText>
             </View>
           </View>
         </TouchableOpacity>
@@ -139,7 +140,7 @@ export default function ProfileScreen() {
         >
           <View style={styles.profileBottomRow}>
             <View style={styles.userInfo}>
-              <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.userName]}>
+              <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.userName]}>
                 {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
               </Text>
             </View>
@@ -148,22 +149,22 @@ export default function ProfileScreen() {
               onPress={() => router.push('/profile-details')}
             >
               <Ionicons name="create-outline" size={16} color="#8E8E93" />
-              <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.editButtonText]}>EDIT PROFILE</Text>
+              <PhonkText style={[{ color: Colors.light.text }, styles.editButtonText]}>EDIT PROFILE</PhonkText>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
 
         <View style={styles.sectionHeader}>
-          <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.sectionTitle]}>SAVINGS TRACKER 🔥</Text>
+          <PhonkText style={[{ color: Colors.light.text }, styles.sectionTitle]}>SAVINGS TRACKER 🔥</PhonkText>
         </View>
 
         <View style={styles.savingsCard}>
-          <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.savingsLabel]}>All time you've saved</Text>
+          <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.savingsLabel]}>All time you've saved</Text>
           <View style={styles.savingsAmountContainer}>
-            <Text style={[{ color: '#1AD04F', fontFamily: Typography.metropolis.medium }, styles.savingsAmountGreen]}>
+            <PhonkText style={[{ color: '#1AD04F' }, styles.savingsAmountGreen]}>
               {(userData?.savings ?? 23.12).toFixed(2)}
-            </Text>
-            <Text style={[{ color: Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.savingsCurrency]}> QAR</Text>
+            </PhonkText>
+            <PhonkText style={[{ color: Colors.light.text }, styles.savingsCurrency]}> QAR</PhonkText>
           </View>
         </View>
 
@@ -192,7 +193,7 @@ export default function ProfileScreen() {
           >
             <View style={styles.logoutContent}>
               <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
-              <Text style={styles.logoutText}>{t('log_out').toUpperCase()}</Text>
+              <PhonkText style={styles.logoutText}>{t('log_out').toUpperCase()}</PhonkText>
             </View>
           </TouchableOpacity>
         </View>
@@ -223,7 +224,7 @@ function MenuItem({
     >
       <View style={styles.menuItemLeft}>
         <Ionicons name={icon} size={24} color={color || "#000"} />
-        <Text style={[{ color: color || Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.menuItemLabel]}>{label}</Text>
+        <Text style={[{ color: color || Colors.light.text, fontFamily: Typography.poppins.medium }, styles.menuItemLabel]}>{label}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -244,7 +245,6 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 28,
-    fontFamily: Typography.integral.bold,
     letterSpacing: 0.5,
   },
   topPill: {
@@ -284,7 +284,6 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontFamily: Typography.integral.bold,
   },
   profileBottomRow: {
     flexDirection: 'row',
@@ -296,7 +295,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 20,
-    fontFamily: Typography.metropolis.semiBold,
+    fontFamily: Typography.poppins.semiBold,
     paddingLeft: 4,
   },
 
@@ -311,7 +310,6 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     fontSize: 10,
-    fontFamily: Typography.integral.bold,
     color: '#8E8E93',
   },
   sectionHeader: {
@@ -319,7 +317,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontFamily: Typography.integral.bold,
     textTransform: 'uppercase',
   },
   savingsCard: {
@@ -332,7 +329,7 @@ const styles = StyleSheet.create({
   },
   savingsLabel: {
     fontSize: 14,
-    fontFamily: Typography.metropolis.medium,
+    fontFamily: Typography.poppins.medium,
     color: '#000'
   },
   savingsAmountContainer: {
@@ -341,13 +338,11 @@ const styles = StyleSheet.create({
   },
   savingsAmountGreen: {
     fontSize: 32,
-    fontFamily: Typography.integral.bold,
     color: '#1AD04F',
     marginRight: 8,
   },
   savingsCurrency: {
     fontSize: 28,
-    fontFamily: Typography.integral.bold,
     color: '#000',
   },
   menuContainer: {
@@ -366,7 +361,7 @@ const styles = StyleSheet.create({
   },
   menuItemLabel: {
     fontSize: 16,
-    fontFamily: Typography.metropolis.semiBold,
+    fontFamily: Typography.poppins.semiBold,
     color: '#000',
   },
   logoutPill: {
@@ -384,7 +379,6 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 14,
-    fontFamily: Typography.integral.bold,
     color: '#FF3B30',
   },
 });

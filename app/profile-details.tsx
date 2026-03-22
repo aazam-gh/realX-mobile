@@ -30,7 +30,6 @@ export default function ProfileDetailsScreen() {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [dob, setDob] = useState<Date | null>(null);
-    const [gender, setGender] = useState<'Male' | 'Female' | null>(null);
     const [photoURL, setPhotoURL] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -56,7 +55,6 @@ export default function ProfileDetailsScreen() {
                     setFirstName(data?.firstName || '');
                     setLastName(data?.lastName || '');
                     setEmail(data?.email || user.email || '');
-                    setGender(data?.gender || null);
                     setPhotoURL(data?.photoURL || user.photoURL || null);
                     if (data?.dob) {
                         try {
@@ -114,7 +112,6 @@ export default function ProfileDetailsScreen() {
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
                 dob: dob ? dob.toISOString().split('T')[0] : '',
-                gender,
                 updatedAt: new Date(),
             };
 
@@ -296,18 +293,6 @@ export default function ProfileDetailsScreen() {
                                         maximumDate={new Date()}
                                     />
                                 )}
-
-                                {/* Gender Field - Only show the user's gender */}
-                                {gender && (
-                                    <View style={styles.inputGroup}>
-                                        <Text style={styles.label}>GENDER</Text>
-                                        <View style={styles.genderContainer}>
-                                            <View style={styles.genderBadge}>
-                                                <Text style={styles.genderBadgeText}>{gender.toUpperCase()}</Text>
-                                            </View>
-                                        </View>
-                                    </View>
-                                )}
                             </>
                         )}
                     </View>
@@ -418,24 +403,8 @@ const styles = StyleSheet.create({
     disabledText: {
         color: '#8E8E93',
     },
-    genderContainer: {
-        flexDirection: 'row',
-    },
-    genderBadge: {
-        backgroundColor: '#F5F5F7',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
-    },
-    genderBadgeText: {
-        fontSize: 14,
-        fontFamily: Typography.integral.bold,
-        color: '#000',
-    },
     actions: {
-        marginTop: 48,
+        marginTop: 24,
     },
     deleteAccountPill: {
         backgroundColor: '#FFF1F0',

@@ -4,9 +4,9 @@ import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore'
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
 
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -143,7 +143,7 @@ export default function ProfileScreen() {
                 {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
               </Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.editButton}
               onPress={() => router.push('/profile-details')}
             >
@@ -185,12 +185,16 @@ export default function ProfileScreen() {
             label={t('privacy_policy')}
             onPress={() => router.push('/privacy')}
           />
-          <MenuItem
-            icon="log-out-outline"
-            label={t('log_out')}
+          <TouchableOpacity
+            style={styles.logoutPill}
             onPress={handleLogout}
-            color="#FF3B30"
-          />
+            activeOpacity={0.7}
+          >
+            <View style={styles.logoutContent}>
+              <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
+              <Text style={styles.logoutText}>{t('log_out').toUpperCase()}</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -201,22 +205,24 @@ function MenuItem({
   icon,
   label,
   onPress,
-  color
+  color,
+  bgColor
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress?: () => void;
   color?: string;
+  bgColor?: string;
 }) {
-  
+
   return (
     <TouchableOpacity
-      style={[styles.menuItem, { backgroundColor: '#F5F5F7' }]}
+      style={[styles.menuItem, { backgroundColor: bgColor || '#F5F5F7' }]}
       activeOpacity={0.7}
       onPress={onPress}
     >
       <View style={styles.menuItemLeft}>
-        <Ionicons name={icon} size={24} color="#000" />
+        <Ionicons name={icon} size={24} color={color || "#000"} />
         <Text style={[{ color: color || Colors.light.text, fontFamily: Typography.metropolis.medium }, styles.menuItemLabel]}>{label}</Text>
       </View>
     </TouchableOpacity>
@@ -363,5 +369,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Typography.metropolis.semiBold,
     color: '#000',
+  },
+  logoutPill: {
+    backgroundColor: '#FFF1F0',
+    borderRadius: 30,
+    paddingVertical: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFD5D2',
+  },
+  logoutContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logoutText: {
+    fontSize: 14,
+    fontFamily: Typography.integral.bold,
+    color: '#FF3B30',
   },
 });

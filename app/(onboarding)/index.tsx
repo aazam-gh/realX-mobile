@@ -328,6 +328,7 @@ const styles = StyleSheet.create({
     },
     loginBold: {
         fontFamily: Typography.metropolis.semiBold,
+        color: "#000000",
     },
 });
 

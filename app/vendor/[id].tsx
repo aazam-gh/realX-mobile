@@ -334,12 +334,8 @@ const styles = StyleSheet.create({
         left: 20,
         width: 100,
         height: 100,
-        borderRadius: 20,
-        backgroundColor: '#1E2a38', // Dark background based on screenshot
-        padding: 4,
         zIndex: 5,
         elevation: 5,
-        borderColor: '#FFFFFF',
     },
     logoImage: {
         width: '100%',

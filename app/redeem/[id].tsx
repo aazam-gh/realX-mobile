@@ -371,7 +371,7 @@ export default function RedeemScreen() {
                                             </View>
                                             <View style={styles.breakdownDivider} />
                                             <View style={styles.breakdownRow}>
-                                                <Text style={styles.breakdownLabelBold}>Amount After Discount</Text>
+                                                <Text style={styles.breakdownLabelBold}>Amount after Discount</Text>
                                                 <Text style={styles.breakdownValueBold}>
                                                     QAR {finalAmount.toFixed(2)}
                                                 </Text>
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
         fontFamily: Typography.metropolis.semiBold,
     },
     breakdownValueBold: {
-        fontSize: 18,
+        fontSize: 16,
         color: '#000',
         fontFamily: Typography.integral.bold,
     },

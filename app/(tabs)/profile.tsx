@@ -168,7 +168,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.menuContainer}>
-          <MenuItem icon="time-outline" label={t('redemption_history')} />
+          <MenuItem icon="time-outline" label={t('redemption_history')} onPress={() => router.push('/redemption-history' as any)} />
           <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} />
           <MenuItem
             icon="mail-outline"

@@ -410,12 +410,12 @@ const styles = StyleSheet.create({
     },
     offerCard: {
         marginBottom: 8,
-        gap: 12,
+        gap: 4,
     },
     offerInfoContainer: {
-        borderRadius: 40,
-        paddingHorizontal: 28,
-        paddingVertical: 24,
+        borderRadius: 30,
+        paddingHorizontal: 24,
+        paddingVertical: 16,
     },
     offerContent: {
         gap: 4,

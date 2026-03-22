@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         flexGrow: 1,
         paddingHorizontal: 24,
-        paddingTop: 10,
+        paddingTop: 20,
         paddingBottom: 40,
     },
     offerCardWrapper: {
@@ -529,7 +529,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#F7F7F7',
         borderRadius: 35,
         padding: 24,
-        marginTop: 20,
     },
     inputLabel: {
         fontSize: 16,
@@ -684,7 +683,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#F7F7F7',
         borderRadius: 35,
         padding: 24,
-        marginTop: 20,
     },
     creatorInputContainer: {
         backgroundColor: '#FFF',

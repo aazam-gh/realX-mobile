@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -16,6 +17,8 @@ export default function VendorScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const isDark = false;
+    const { i18n } = useTranslation();
+    const isArabic = i18n.language === 'ar';
     const [vendor, setVendor] = useState<any>(null);
     const [offers, setOffers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -160,47 +163,48 @@ export default function VendorScreen() {
 
                     {/* Offers List */}
                     <View style={styles.offersList}>
-                        {offers.map((offer) => (
-                            <View key={offer.id} style={styles.offerCard}>
-                                {/* Top Info Pill */}
-                                <View style={[styles.offerInfoContainer, { backgroundColor: '#F5F5F5' }]}>
-                                    <View style={styles.offerContent}>
-                                        <PhonkText style={[{ color: Colors.light.text }, styles.offerTitle]}>
-                                            {offer.discountType === 'percentage' ? (
-                                                <>
-                                                    FLAT <Text style={[{ color: Colors.light.text }, styles.greenText]}>{offer.discountValue}%</Text> OFF
-                                                </>
-                                            ) : offer.discountType === 'buy_one_get_one' || offer.titleEn?.toLowerCase().includes('buy') ? (
-                                                <PhonkText style={[{ color: Colors.light.text }, styles.offerTitle]}>
-                                                    BUY <Text style={[{ color: Colors.light.text }, styles.greenText]}>1</Text> GET <Text style={[{ color: Colors.light.text }, styles.greenText]}>1</Text>
-                                                </PhonkText>
-                                            ) : (
-                                                <>{offer.titleEn || offer.titleAr}</>
-                                            )}
-                                        </PhonkText>
-                                        <Text style={[{ color: Colors.light.tabIconDefault, fontFamily: Typography.poppins.medium }, styles.offerSubtitle]}>In-store</Text>
+                        {offers.map((offer) => {
+                            const offerTitle = isArabic
+                                ? (offer.titleAr || offer.titleEn)
+                                : (offer.titleEn || offer.titleAr);
+
+                            return (
+                                <View key={offer.id} style={styles.offerCard}>
+                                    {/* Top Info Pill */}
+                                    <View style={[styles.offerInfoContainer, { backgroundColor: '#F5F5F5' }]}>
+                                        <View style={styles.offerContent}>
+                                            <PhonkText style={[{ color: Colors.light.text }, styles.offerTitle]}>
+                                                {(offerTitle || "").split(/(\d+(?:\.\d+)?\s?%?)/).map((part: string, index: number) => 
+                                                    /^\d+(?:\.\d+)?\s?%?$/.test(part) ? (
+                                                        <PhonkText key={index} style={styles.greenText}>{part}</PhonkText>
+                                                    ) : (
+                                                        part
+                                                    )
+                                                )}
+                                            </PhonkText>
+                                        </View>
+                                    </View>
+                                    {/* Bottom Button Pills */}
+                                    <View style={styles.offerActionsRow}>
+                                        <TouchableOpacity
+                                            style={[styles.pillButton, { backgroundColor: '#FFF' }]}
+                                            onPress={() => setSelectedOfferForTC(offer)}
+                                        >
+                                            <Ionicons name="alert-circle-outline" size={22} color="#8E8E93" />
+                                            <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>View T&C</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={[styles.pillButton, styles.redeemPill]}
+                                            onPress={() => router.push(`/redeem/${offer.id}?vendorId=${id}`)}
+                                        >
+                                            <Ionicons name="flash" size={18} color="#FFF" />
+                                            <Text style={[{ color: '#FFF', fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>REDEEM</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
-                                {/* Bottom Button Pills */}
-                                <View style={styles.offerActionsRow}>
-                                    <TouchableOpacity
-                                        style={[styles.pillButton, { backgroundColor: '#FFF' }]}
-                                        onPress={() => setSelectedOfferForTC(offer)}
-                                    >
-                                        <Ionicons name="alert-circle-outline" size={22} color="#8E8E93" />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>View T&C</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={[styles.pillButton, styles.redeemPill]}
-                                        onPress={() => router.push(`/redeem/${offer.id}?vendorId=${id}`)}
-                                    >
-                                        <Ionicons name="flash" size={18} color="#FFF" />
-                                        <Text style={[{ color: '#FFF', fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>REDEEM</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        ))}
+                            );
+                        })}
                     </View>
                 </View>
             </ScrollView>
@@ -249,7 +253,9 @@ export default function VendorScreen() {
                                 contentContainerStyle={styles.modalBodyContent}
                             >
                                 <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.descriptionText]}>
-                                    {selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || 'No specific terms provided for this offer.'}
+                                    {isArabic
+                                        ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || 'No specific terms provided for this offer.')
+                                        : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || 'No specific terms provided for this offer.')}
                                 </Text>
 
                                 {/* Common Terms could go here */}

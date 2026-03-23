@@ -151,7 +151,7 @@ const HeaderContent = memo(({
                     onSelect={handleSubCategorySelect}
                 />
                 <BrowseSection
-                    title={config.browseTitle}
+                    mainCategory={headerTitle}
                     emoji={config.browseEmoji}
                     restaurants={config.restaurants}
                     onRestaurantPress={handleRestaurantPress}

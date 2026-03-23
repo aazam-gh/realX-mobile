@@ -16,6 +16,7 @@ type Restaurant = {
 
 type Props = {
     title?: string;
+    mainCategory?: string;
     emoji?: string;
     restaurants?: Restaurant[];
     onRestaurantPress?: (restaurant: Restaurant) => void;
@@ -54,16 +55,19 @@ const defaultRestaurants: Restaurant[] = [
 ];
 
 export default function BrowseSection({
-    title = 'Yallah! browse food',
+    title,
+    mainCategory,
     emoji = '😋',
     restaurants = [],
     onRestaurantPress,
 }: Props) {
+    const displayTitle = title || (mainCategory ? `Yallah! Browse ${mainCategory}` : 'Yallah! browse food');
+
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
                 <Text style={styles.headerTitle}>
-                    {title} <Text style={styles.emoji}>{emoji}</Text>
+                    {displayTitle} <Text style={styles.emoji}>{emoji}</Text>
                 </Text>
             </View>
             <ScrollView

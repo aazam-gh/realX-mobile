@@ -54,7 +54,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                     items.push({
                         id: 'coming-soon',
                         name: t('coming_soon'),
-                        image: require('../../assets/images/see-more.png')
+                        image: require('../../assets/images/see-more.svg')
                     });
                 }
 

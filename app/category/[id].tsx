@@ -356,7 +356,7 @@ export default function CategoryScreen() {
         })) || config.subCategories;
 
         return [
-            { id: 'all', name: t('all'), icon: require('../../assets/images/all.png') },
+            { id: 'all', name: t('all'), icon: require('../../assets/images/all.svg') },
             ...fetchedSubCategories
         ];
     }, [categoryData, config.subCategories, isArabic, t]);

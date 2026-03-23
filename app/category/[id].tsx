@@ -424,7 +424,6 @@ export default function CategoryScreen() {
                     onEndReachedThreshold={0.5}
                     renderItem={({ item, index }) => (
                         <View style={[
-                            styles.offerCardWrapper,
                             {
                                 paddingLeft: index % 2 === 0 ? 20 : 8,
                                 paddingRight: index % 2 === 0 ? 8 : 20
@@ -537,9 +536,6 @@ const styles = StyleSheet.create({
         gap: 16,
         justifyContent: 'flex-start',
         paddingHorizontal: 20,
-    },
-    offerCardWrapper: {
-        marginBottom: 16,
     },
     loadingContainer: {
         padding: 20,

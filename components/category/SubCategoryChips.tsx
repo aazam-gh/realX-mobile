@@ -17,8 +17,7 @@ type Props = {
     containerStyle?: ViewStyle;
 };
 
-const ICON_CONTAINER_SIZE = 60;
-const ICON_SIZE = 36;
+const ICON_SIZE = 48;
 
 /**
  * SubCategoryChip component for individual chips
@@ -46,7 +45,7 @@ const SubCategoryChip = memo(({
             if (isRemote) {
                 return <Image source={{ uri: icon }} style={styles.imageIcon} contentFit="contain" />;
             }
-            return <Text style={styles.emojiIcon}>{icon}</Text>;
+            return <Text>{icon}</Text>;
         }
 
         return null;
@@ -61,13 +60,7 @@ const SubCategoryChip = memo(({
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={`Select ${item.name} category`}
         >
-            <View style={[
-                styles.iconContainer,
-                { backgroundColor: isSelected ? Colors.brandGreenLight : '#F5F5F5' },
-                isSelected && styles.iconContainerSelected,
-            ]}>
-                {renderIcon()}
-            </View>
+            {renderIcon()}
             <Text style={[
                 styles.chipText,
                 { color: isSelected ? Colors.brandGreen : Colors.light.text },
@@ -120,32 +113,16 @@ const styles = StyleSheet.create({
         height: 125, // Fixed height to prevent layout jumps
     },
     scrollContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 28,
         gap: 16, // Using gap for consistent spacing between chips
     },
     chip: {
         alignItems: 'center',
     },
-    iconContainer: {
-        width: ICON_CONTAINER_SIZE,
-        height: ICON_CONTAINER_SIZE,
-        borderRadius: ICON_CONTAINER_SIZE / 2,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: 'transparent',
-        overflow: 'hidden',
-        marginBottom: 8,
-    },
-    iconContainerSelected: {
-        borderColor: Colors.brandGreen,
-    },
-    emojiIcon: {
-        fontSize: 28,
-    },
     imageIcon: {
         width: ICON_SIZE,
         height: ICON_SIZE,
+        marginBottom: 8,
     },
     chipText: {
         fontSize: 12,

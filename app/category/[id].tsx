@@ -58,7 +58,6 @@ const categoryConfig: Record<string, {
         accentColor?: string;
     }[];
     browseTitle: string;
-    browseEmoji: string;
     restaurants: {
         id: string;
         name: string;
@@ -77,7 +76,6 @@ const defaultConfig = {
     subCategories: [],
     promos: [],
     browseTitle: 'Yallah! Browse',
-    browseEmoji: '🍔',
     restaurants: [],
 };
 
@@ -99,6 +97,8 @@ interface HeaderContentProps {
     setSearchQuery: (query: string) => void;
     handleSearch: () => void;
     t: any;
+    showComingSoon: boolean;
+    loadingOffers: boolean;
 }
 
 const HeaderContent = memo(({
@@ -119,6 +119,8 @@ const HeaderContent = memo(({
     setSearchQuery,
     handleSearch,
     t,
+    showComingSoon,
+    loadingOffers,
 }: HeaderContentProps) => (
     <>
         <CategoryHeader
@@ -138,9 +140,9 @@ const HeaderContent = memo(({
 
         {loading ? (
             <View style={styles.comingSoonContainer}>
-                <Text>Loading...</Text>
+                <ActivityIndicator size="large" color={Colors.brandGreen} />
             </View>
-        ) : isCategoryActive ? (
+        ) : !showComingSoon ? (
             <>
                 <FilterTabs
                     selectedFilter={selectedFilter}
@@ -156,7 +158,6 @@ const HeaderContent = memo(({
                 )}
                 <BrowseSection
                     mainCategory={headerTitle}
-                    emoji={config.browseEmoji}
                     restaurants={config.restaurants}
                     onRestaurantPress={handleRestaurantPress}
                 />
@@ -222,6 +223,10 @@ export default function CategoryScreen() {
     // Derived state for subcategories existence
     const hasSubCategories = (categoryData?.subcategories && categoryData.subcategories.length > 0) || (config.subCategories && config.subCategories.length > 0);
     const isCategoryActive = categoryData ? categoryData.isActive !== false : true;
+
+    // Determine if we should show the "Coming Soon" UI
+    // It shows if the category is explicitly inactive OR if we've finished the initial fetch and found no offers
+    const showComingSoon = !isCategoryActive || (isListEnd && offers.length === 0 && !loadingOffers);
 
     useEffect(() => {
         const fetchCategory = async () => {
@@ -423,6 +428,8 @@ export default function CategoryScreen() {
                             setSearchQuery={setSearchQuery}
                             handleSearch={handleSearch}
                             t={t}
+                            showComingSoon={showComingSoon}
+                            loadingOffers={loadingOffers}
                         />
                     }
                     ListFooterComponent={renderFooter}
@@ -474,6 +481,8 @@ export default function CategoryScreen() {
                         setSearchQuery={setSearchQuery}
                         handleSearch={handleSearch}
                         t={t}
+                        showComingSoon={showComingSoon}
+                        loadingOffers={loadingOffers}
                     />
                 </ScrollView>
             )}

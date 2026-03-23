@@ -17,47 +17,13 @@ type Restaurant = {
 type Props = {
     title?: string;
     mainCategory?: string;
-    emoji?: string;
     restaurants?: Restaurant[];
     onRestaurantPress?: (restaurant: Restaurant) => void;
 };
 
-const defaultRestaurants: Restaurant[] = [
-    {
-        id: '1',
-        name: 'TeaTime',
-        cashbackText: 'Cashbacks',
-        discountText: '60% DISCOUNT',
-        isTrending: false,
-    },
-    {
-        id: '2',
-        name: 'Sahtein',
-        cashbackText: 'Cashbacks',
-        discountText: '60% DISCOUNT',
-        isTrending: true,
-        xcardEnabled: true,
-    },
-    {
-        id: '3',
-        name: 'Salt Bae',
-        cashbackText: 'Cashbacks',
-        discountText: '40% DISCOUNT',
-        isTrending: false,
-    },
-    {
-        id: '4',
-        name: 'Burger King',
-        cashbackText: 'Cashbacks',
-        discountText: '50% DISCOUNT',
-        isTrending: true,
-    },
-];
-
 export default function BrowseSection({
     title,
     mainCategory,
-    emoji = '😋',
     restaurants = [],
     onRestaurantPress,
 }: Props) {
@@ -67,7 +33,7 @@ export default function BrowseSection({
         <View style={styles.container}>
             <View style={styles.headerContainer}>
                 <Text style={styles.headerTitle}>
-                    {displayTitle} <Text style={styles.emoji}>{emoji}</Text>
+                    {displayTitle}
                 </Text>
             </View>
             <ScrollView
@@ -97,7 +63,7 @@ export default function BrowseSection({
 
 const styles = StyleSheet.create({
     container: {
-        paddingVertical: 16,
+        paddingBottom: 16,
     },
     headerContainer: {
         paddingHorizontal: 20,
@@ -106,9 +72,6 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontFamily: Typography.poppins.semiBold,
         color: Colors.light.text,
-    },
-    emoji: {
-        fontSize: 20,
     },
     scrollContent: {
         paddingHorizontal: 20,

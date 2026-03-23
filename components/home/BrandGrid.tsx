@@ -68,8 +68,8 @@ export default function BrandGrid() {
         <View style={styles.container}>
             <View style={styles.headerContainer}>
                 <Text style={styles.headerTitle}>
-                    <PhonkText style={styles.shopByText}>SHOP BY </PhonkText>
-                    <PhonkText style={styles.brandText}>BRAND</PhonkText>
+                    <PhonkText style={styles.shopByText}>TOP </PhonkText>
+                    <PhonkText style={styles.brandText}>BRANDS</PhonkText>
                 </Text>
             </View>
             <ScrollView

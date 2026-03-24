@@ -155,7 +155,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <View style={styles.sectionHeader}>
-          <PhonkText style={[{ color: Colors.light.text }, styles.sectionTitle]}>SAVINGS TRACKER 🔥</PhonkText>
+          <PhonkText style={[{ color: Colors.light.text }, styles.sectionTitle]}>SAVINGS TRACKER</PhonkText>
         </View>
 
         <View style={styles.savingsCard}>

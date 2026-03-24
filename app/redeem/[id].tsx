@@ -167,7 +167,7 @@ export default function RedeemScreen() {
                 [
                     {
                         text: 'Done',
-                        onPress: () => router.back(),
+                        onPress: () => router.replace('/'),
                     },
                 ]
             );

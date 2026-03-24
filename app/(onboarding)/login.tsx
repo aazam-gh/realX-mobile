@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth, isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink } from '@react-native-firebase/auth';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -9,6 +10,7 @@ import {
     Alert,
     Keyboard,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     StyleSheet,
     Text,
@@ -29,6 +31,7 @@ export default function LoginScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [isLinkSent, setIsLinkSent] = useState(false);
     const [manualLink, setManualLink] = useState('');
+    const [showSignUpModal, setShowSignUpModal] = useState(false);
     const inputRef = useRef<TextInput>(null);
     const url = Linking.useURL();
 
@@ -44,7 +47,7 @@ export default function LoginScreen() {
                         await signInWithEmailLink(authInstance, storedEmail, incomingUrl);
                         await clearAuthEmail();
                         console.log('Successfully signed in automatically!');
-                        router.replace('/(tabs)');
+                        // Navigation is handled by the root layout's onAuthStateChanged
                     } else {
                         Alert.alert('Error', 'No email found in storage. Please try starting again.');
                     }
@@ -85,6 +88,15 @@ export default function LoginScreen() {
         setIsLoading(true);
 
         try {
+            const fnInstance = getFunctions(undefined, 'me-central1');
+            const checkStudent = httpsCallable(fnInstance, 'checkStudentExists');
+            const result = await checkStudent({ email: trimmedEmail });
+
+            if (!(result.data as { exists: boolean }).exists) {
+                setShowSignUpModal(true);
+                return;
+            }
+
             await handleSendMagicLink(trimmedEmail);
         } catch (err: any) {
             console.error(err);
@@ -107,7 +119,7 @@ export default function LoginScreen() {
                     await signInWithEmailLink(authInstance, storedEmail, manualLink);
                     await clearAuthEmail();
                     console.log('Successfully signed in manually!');
-                    router.replace('/(tabs)');
+                    // Navigation is handled by the root layout's onAuthStateChanged
                 } else {
                     Alert.alert('Error', 'No email found in storage. Please try starting again.');
                 }
@@ -247,6 +259,42 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                 </KeyboardAvoidingView>
             </View>
+
+            <Modal
+                visible={showSignUpModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowSignUpModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalIconContainer}>
+                            <Ionicons name="person-add-outline" size={40} color={Colors.brandGreen} />
+                        </View>
+                        <PhonkText style={styles.modalTitle}>ACCOUNT NOT FOUND</PhonkText>
+                        <Text style={styles.modalText}>
+                            It looks like you don't have an account yet. Would you like to create one?
+                        </Text>
+                        
+                        <TouchableOpacity
+                            style={styles.modalPrimaryButton}
+                            onPress={() => {
+                                setShowSignUpModal(false);
+                                router.push({ pathname: '/(onboarding)/email', params: { role: 'student', mode: 'signup' } });
+                            }}
+                        >
+                            <Text style={styles.modalPrimaryButtonText}>Sign Up</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.modalSecondaryButton}
+                            onPress={() => setShowSignUpModal(false)}
+                        >
+                            <Text style={styles.modalSecondaryButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -348,6 +396,74 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#FFFFFF',
         fontSize: 18,
+        fontFamily: Typography.poppins.medium,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 30,
+        padding: 30,
+        width: '100%',
+        maxWidth: 400,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 13,
+        elevation: 10,
+    },
+    modalIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#F0F9F0',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    modalTitle: {
+        fontSize: 24,
+        color: Colors.brandGreen,
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    modalText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 30,
+        fontFamily: Typography.poppins.medium,
+        lineHeight: 24,
+    },
+    modalPrimaryButton: {
+        backgroundColor: Colors.brandGreen,
+        height: 56,
+        borderRadius: 28,
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    modalPrimaryButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    modalSecondaryButton: {
+        height: 56,
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalSecondaryButtonText: {
+        color: '#999',
+        fontSize: 16,
         fontFamily: Typography.poppins.medium,
     },
 });

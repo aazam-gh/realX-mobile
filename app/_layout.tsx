@@ -7,6 +7,7 @@ import {
   type FirebaseAuthTypes
 } from '@react-native-firebase/auth';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -100,8 +101,31 @@ export default function RootLayout() {
 
       const unsubscribe = onSnapshot(
         studentDocRef,
-        (docSnap) => {
-          setHasProfile(docSnap.exists());
+        async (docSnap) => {
+          if (docSnap.exists()) {
+            setHasProfile(true);
+          } else {
+            // Profile not found by UID — try server-side migration
+            // This handles the case where a magic link sign-in created a new auth UID
+            // but the user already has a Firestore profile under a previous UID.
+            try {
+              const fnInstance = getFunctions(undefined, 'me-central1');
+              const migrate = httpsCallable(fnInstance, 'migrateStudentProfile');
+              const result = await migrate();
+              const data = result.data as { migrated: boolean; reason?: string };
+
+              if (data.migrated) {
+                console.log('Profile migrated to current UID');
+                // onSnapshot will fire again with the new doc, setting hasProfile to true
+                return;
+              }
+            } catch (migrationError) {
+              console.error('Error during profile migration:', migrationError);
+            }
+
+            // No profile found by email either — truly a new user
+            setHasProfile(false);
+          }
         },
         (snapshotError) => {
           console.error('Error fetching student profile:', snapshotError);

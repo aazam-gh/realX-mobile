@@ -344,3 +344,84 @@ export const createVendorUser = onCall(
         };
     }
 );
+
+export const checkStudentExists = onCall(async (request: CallableRequest) => {
+    const email = (request.data as { email?: string })?.email?.toLowerCase().trim();
+
+    if (!email) {
+        throw new HttpsError('invalid-argument', 'Email is required');
+    }
+
+    try {
+        const snapshot = await admin
+            .firestore()
+            .collection('students')
+            .where('email', '==', email)
+            .limit(1)
+            .get();
+
+        return { exists: !snapshot.empty };
+    } catch (error) {
+        logger.error('checkStudentExists error', error);
+        throw new HttpsError('internal', 'Something went wrong');
+    }
+});
+
+export const migrateStudentProfile = onCall(async (request: CallableRequest) => {
+    const { auth } = request;
+    if (!auth) throw new HttpsError('unauthenticated', 'Must be logged in');
+
+    const uid = auth.uid;
+    const db = admin.firestore();
+
+    // Check if this user already has a profile under their current UID
+    const currentDoc = await db.collection('students').doc(uid).get();
+    if (currentDoc.exists) {
+        return { migrated: false, reason: 'Profile already exists for current UID' };
+    }
+
+    // Look up the user's email from Firebase Auth
+    const userRecord = await admin.auth().getUser(uid);
+    const email = userRecord.email;
+    if (!email) {
+        return { migrated: false, reason: 'No email associated with this account' };
+    }
+
+    // Query for an existing profile with this email
+    const snapshot = await db
+        .collection('students')
+        .where('email', '==', email)
+        .limit(1)
+        .get();
+
+    if (snapshot.empty) {
+        return { migrated: false, reason: 'No existing profile found for this email' };
+    }
+
+    const existingDoc = snapshot.docs[0];
+
+    // Don't migrate if it's the same document
+    if (existingDoc.id === uid) {
+        return { migrated: false, reason: 'Profile already under current UID' };
+    }
+
+    const existingData = existingDoc.data();
+
+    // Migrate: copy to new UID, delete old doc
+    await db.runTransaction(async (transaction) => {
+        transaction.set(db.collection('students').doc(uid), {
+            ...existingData,
+            uid: uid,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        transaction.delete(existingDoc.ref);
+    });
+
+    logger.info('Migrated student profile', {
+        fromUid: existingDoc.id,
+        toUid: uid,
+        email,
+    });
+
+    return { migrated: true };
+});

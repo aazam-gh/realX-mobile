@@ -4,15 +4,22 @@ import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore'
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  I18nManager,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
 import i18n, { setStoredLanguage } from '../../src/localization/i18n';
-import { applyRTL } from '../../src/localization/rtl';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -25,7 +32,7 @@ export default function ProfileScreen() {
     photoURL?: string;
     role?: string;
     creatorCode?: string;
-    savings?: number;
+    cashback?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -45,68 +52,60 @@ export default function ProfileScreen() {
     return () => unsubscribe();
   }, []);
 
-  const changeLanguage = async (language: 'en' | 'ar') => {
+  const changeLanguage = async (lang: 'en' | 'ar') => {
     try {
-      await i18n.changeLanguage(language);
-      await setStoredLanguage(language);
+      await setStoredLanguage(lang);
+      await i18n.changeLanguage(lang);
 
-      const directionChanged = applyRTL(language);
-
-      if (directionChanged) {
-        Alert.alert(t('restart_required'), t('restart_message'));
+      const shouldBeRTL = lang === 'ar';
+      if (I18nManager.isRTL !== shouldBeRTL) {
+        I18nManager.allowRTL(shouldBeRTL);
+        I18nManager.forceRTL(shouldBeRTL);
+        Alert.alert(t('restart_required'), t('restart_required_message'));
+        return;
       }
+
+      Alert.alert(t('language_changed'), lang === 'ar' ? t('arabic') : t('english'));
     } catch (error) {
-      console.error('Language change error:', error);
+      console.log('Language change error:', error);
+      Alert.alert(t('error'), t('could_not_change_language'));
     }
   };
 
-  const handleChangeLanguage = () => {
-    Alert.alert(
-      t('select_language'),
-      '',
-      [
-        { text: t('english'), onPress: () => void changeLanguage('en') },
-        { text: t('arabic'), onPress: () => void changeLanguage('ar') },
-        { text: t('cancel'), style: 'cancel' }
-      ]
-    );
+  const openLanguageMenu = () => {
+    Alert.alert(t('choose_language'), t('select_preferred_language'), [
+      { text: t('english'), onPress: () => changeLanguage('en') },
+      { text: t('arabic'), onPress: () => changeLanguage('ar') },
+      { text: t('cancel'), style: 'cancel' },
+    ]);
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      t('logout_title'),
-      t('logout_message'),
-      [
-        {
-          text: t('cancel'),
-          style: 'cancel',
+    Alert.alert(t('log_out'), t('logout_confirmation'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('log_out'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut(getAuth());
+          } catch (error) {
+            console.error('Logout error:', error);
+            Alert.alert(t('error'), t('logout_failed'));
+          }
         },
-        {
-          text: t('log_out'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut(getAuth());
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert(t('error'), t('logout_failed'));
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: Colors.light.background }]} edges={['top']}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <PhonkText style={[{ color: Colors.light.text }, styles.headerText]}>
-            PROFILE
-          </PhonkText>
+          <Text style={styles.headerText}>
+            {t('manage_your')}{' '}
+            <Text style={styles.greenText}>{t('profile')}</Text>
+          </Text>
         </View>
 
         <TouchableOpacity
@@ -122,55 +121,61 @@ export default function ProfileScreen() {
                   style={styles.avatar}
                 />
               ) : (
-                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F0F0' }]}>
-                  <Ionicons name="person" size={32} color="#AAA" />
+                <View style={styles.avatarFallback}>
+                  <Ionicons name="person" size={32} color="#CCC" />
                 </View>
               )}
             </View>
-            <View style={styles.badge}>
-              <PhonkText style={[{ color: '#FFFFFF' }, styles.badgeText]}>ROOKIE</PhonkText>
-            </View>
-          </View>
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.bottomPill}
-          activeOpacity={0.7}
-          onPress={() => router.push('/profile-details')}
-        >
-          <View style={styles.profileBottomRow}>
-            <View style={styles.userInfo}>
-              <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.userName]}>
-                {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
+            <View style={styles.nameContainer}>
+              <Text style={styles.userName}>
+                {userData ? `${userData.firstName ?? ''} ${userData.lastName ?? ''}`.trim() : t('loading')}
               </Text>
             </View>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => router.push('/profile-details')}
-            >
-              <Ionicons name="create-outline" size={16} color="#8E8E93" />
-              <PhonkText style={[{ color: Colors.light.text }, styles.editButtonText]}>PROFILE</PhonkText>
-            </TouchableOpacity>
           </View>
         </TouchableOpacity>
 
         <View style={styles.sectionHeader}>
-          <PhonkText style={[{ color: Colors.light.text }, styles.sectionTitle]}>SAVINGS TRACKER</PhonkText>
+          <Text style={styles.sectionTitle}>{t('savings_tracker')}</Text>
         </View>
 
         <View style={styles.savingsCard}>
-          <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.savingsLabel]}>All time you've saved</Text>
-          <View style={styles.savingsAmountContainer}>
-            <PhonkText style={[{ color: '#1AD04F' }, styles.savingsAmountGreen]}>
-              {(userData?.savings ?? 23.12).toFixed(2)}
-            </PhonkText>
-            <PhonkText style={[{ color: Colors.light.text }, styles.savingsCurrency]}> QAR</PhonkText>
+          <View style={styles.savingsInfo}>
+            <Text style={styles.savingsLabel}>{t('cashback_balance')}</Text>
+            <Text style={styles.savingsAmount}>
+              <Text style={styles.greenAmount}>{userData?.cashback ?? 0}</Text> QAR
+            </Text>
           </View>
         </View>
 
+        {userData?.role === 'creator' && userData?.creatorCode && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('creator_code')}</Text>
+            </View>
+
+            <View style={styles.savingsCard}>
+              <View style={styles.savingsInfo}>
+                <Text style={styles.savingsLabel}>{t('your_creator_code')}</Text>
+                <Text style={styles.savingsAmount}>
+                  <Text style={styles.greenAmount}>{userData.creatorCode}</Text>
+                </Text>
+              </View>
+            </View>
+          </>
+        )}
+
         <View style={styles.menuContainer}>
-          <MenuItem icon="time-outline" label={t('redemption_history')} onPress={() => router.push('/redemption-history' as any)} />
-          <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} />
+          <MenuItem
+            icon="time-outline"
+            label={t('redemption_history')}
+            onPress={() => router.push('/redemption-history' as any)}
+          />
+          <MenuItem
+            icon="language-outline"
+            label={t('change_language')}
+            onPress={openLanguageMenu}
+          />
           <MenuItem
             icon="mail-outline"
             label={t('contact_us')}
@@ -186,6 +191,7 @@ export default function ProfileScreen() {
             label={t('privacy_policy')}
             onPress={() => router.push('/privacy')}
           />
+
           <TouchableOpacity
             style={styles.logoutPill}
             onPress={handleLogout}
@@ -193,7 +199,7 @@ export default function ProfileScreen() {
           >
             <View style={styles.logoutContent}>
               <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
-              <PhonkText style={styles.logoutText}>{t('log_out').toUpperCase()}</PhonkText>
+              <Text style={styles.logoutText}>{t('log_out')}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -207,24 +213,23 @@ function MenuItem({
   label,
   onPress,
   color,
-  bgColor
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress?: () => void;
   color?: string;
-  bgColor?: string;
 }) {
-
   return (
     <TouchableOpacity
-      style={[styles.menuItem, { backgroundColor: bgColor || '#F5F5F7' }]}
+      style={styles.menuItem}
       activeOpacity={0.7}
       onPress={onPress}
     >
       <View style={styles.menuItemLeft}>
-        <Ionicons name={icon} size={24} color={color || "#000"} />
-        <Text style={[{ color: color || Colors.light.text, fontFamily: Typography.poppins.medium }, styles.menuItemLabel]}>{label}</Text>
+        <Ionicons name={icon} size={24} color={color || '#000'} />
+        <Text style={[styles.menuItemLabel, { color: color || Colors.light.text }]}>
+          {label}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -245,106 +250,83 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 28,
+    fontFamily: Typography.poppins.semiBold,
+    color: Colors.light.text,
     letterSpacing: 0.5,
+  },
+  greenText: {
+    color: '#1AD04F',
+    fontFamily: Typography.poppins.semiBold,
   },
   topPill: {
     backgroundColor: '#F5F5F7',
     borderRadius: 30,
-    padding: 8,
-
-  },
-  bottomPill: {
-    backgroundColor: '#F5F5F7',
-    borderRadius: 30,
-    paddingVertical: 24,
-    paddingHorizontal: 8,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 24,
   },
   profileTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
   avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 50,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     overflow: 'hidden',
+    marginRight: 16,
   },
   avatar: {
     width: '100%',
     height: '100%',
   },
-  badge: {
-    backgroundColor: '#1AD04F',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 30,
-  },
-  badgeText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  profileBottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  avatarFallback: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F0F0F0',
   },
-  userInfo: {
+  nameContainer: {
     flex: 1,
+    justifyContent: 'center',
   },
   userName: {
     fontSize: 20,
     fontFamily: Typography.poppins.semiBold,
-    paddingLeft: 4,
-  },
-
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    gap: 6,
-  },
-  editButtonText: {
-    fontSize: 10,
-    color: '#8E8E93',
+    color: Colors.light.text,
   },
   sectionHeader: {
     marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 18,
-    textTransform: 'uppercase',
+    fontFamily: Typography.poppins.semiBold,
+    color: Colors.light.text,
   },
   savingsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 32,
     padding: 16,
-    marginTop:8,
+    marginTop: 8,
     marginBottom: 16,
     borderWidth: 2,
     borderColor: '#F0F0F2',
   },
+  savingsInfo: {
+    gap: 8,
+  },
   savingsLabel: {
     fontSize: 14,
     fontFamily: Typography.poppins.medium,
-    color: '#000'
+    color: '#666',
   },
-  savingsAmountContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  savingsAmountGreen: {
+  savingsAmount: {
     fontSize: 32,
-    color: '#1AD04F',
-    marginRight: 8,
-  },
-  savingsCurrency: {
-    fontSize: 28,
+    fontFamily: Typography.poppins.semiBold,
     color: '#000',
+  },
+  greenAmount: {
+    color: '#1AD04F',
   },
   menuContainer: {
     gap: 12,
@@ -354,6 +336,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderRadius: 24,
+    backgroundColor: '#F5F5F7',
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -363,7 +346,6 @@ const styles = StyleSheet.create({
   menuItemLabel: {
     fontSize: 16,
     fontFamily: Typography.poppins.semiBold,
-    color: '#000',
   },
   logoutPill: {
     backgroundColor: '#FFF1F0',
@@ -380,6 +362,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 14,
+    fontFamily: Typography.poppins.semiBold,
     color: '#FF3B30',
   },
 });

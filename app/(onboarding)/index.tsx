@@ -8,6 +8,7 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../../components/PhonkText';
 
 const { width, height } = Dimensions.get('window');
 
@@ -48,8 +49,8 @@ export default function OnboardingScreen() {
 
                         {/* Headline */}
                         <View style={styles.headlineContainer}>
-                            <Text style={styles.headlineBroke}>BROKE?</Text>
-                            <Text style={styles.headlineNotAnymore}>NOT ANYMORE.</Text>
+                            <PhonkText style={styles.headlineBroke}>BROKE?</PhonkText>
+                            <PhonkText style={styles.headlineNotAnymore}>NOT ANYMORE.</PhonkText>
                         </View>
 
                         {/* Character Graphic */}
@@ -73,7 +74,7 @@ export default function OnboardingScreen() {
                                 onPress={handleGetStarted}
                                 activeOpacity={0.9}
                             >
-                                <Text style={styles.buttonText}>GET STARTED</Text>
+                                <PhonkText style={styles.buttonText}>GET STARTED</PhonkText>
                                 <View style={styles.arrowCircle}>
                                     <Ionicons name="arrow-forward" size={24} color="white" />
                                 </View>
@@ -106,7 +107,7 @@ export default function OnboardingScreen() {
                                     />
                                 </View>
                                 <View style={styles.roleTextContainer}>
-                                    <Text style={styles.roleTitle}>JOIN AS STUDENT</Text>
+                                    <PhonkText style={styles.roleTitle}>JOIN AS STUDENT</PhonkText>
                                     <Text style={styles.roleDescription}>
                                         Get exclusive discounts on 50+ brands + 1% cashback on every purchase
                                     </Text>
@@ -127,7 +128,7 @@ export default function OnboardingScreen() {
                                     />
                                 </View>
                                 <View style={styles.roleTextContainer}>
-                                    <Text style={styles.roleTitle}>JOIN AS CREATOR</Text>
+                                    <PhonkText style={styles.roleTitle}>JOIN AS CREATOR</PhonkText>
                                     <Text style={styles.roleDescription}>
                                         Share your personal code and earn double cashback when others use it
                                     </Text>
@@ -186,14 +187,12 @@ const styles = StyleSheet.create({
         paddingLeft: 10,
     },
     headlineBroke: {
-        fontFamily: Typography.integral.bold,
         fontSize: 40,
         color: '#FFFFFF',
         fontStyle: 'italic',
         lineHeight: 52,
     },
     headlineNotAnymore: {
-        fontFamily: Typography.integral.bold,
         fontSize: 40,
         color: '#FFFFFF',
         lineHeight: 52
@@ -217,7 +216,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
     },
     subtext: {
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         fontSize: 18,
         color: '#FFFFFF',
         textAlign: 'left',
@@ -244,7 +243,6 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     buttonText: {
-        fontFamily: Typography.integral.bold,
         fontSize: 18,
         color: '#18B852',
     },
@@ -301,13 +299,12 @@ const styles = StyleSheet.create({
         marginLeft: 4,
     },
     roleTitle: {
-        fontFamily: Typography.integral.bold,
         fontSize: 20,
         color: '#000000',
         marginBottom: 8,
     },
     roleDescription: {
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         fontSize: 12,
         color: '#000000',
         lineHeight: 16,
@@ -323,11 +320,12 @@ const styles = StyleSheet.create({
     },
     loginText: {
         color: '#FFFFFF',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         fontSize: 16,
     },
     loginBold: {
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
+        color: "#000000",
     },
 });
 

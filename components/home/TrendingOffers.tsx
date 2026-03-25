@@ -1,7 +1,7 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import { ThemedText } from '../ThemedText';
+import PhonkText from '../PhonkText';
 
 type OfferItem = {
     id: string;
@@ -25,10 +25,10 @@ export default function TrendingOffers({ offers = defaultOffers, onOfferPress }:
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
-                <ThemedText style={styles.headerTitle}>
-                    <ThemedText style={styles.trendingText}>TRENDING </ThemedText>
-                    <ThemedText style={styles.offersText}>OFFERS</ThemedText>
-                </ThemedText>
+                <View style={styles.headerTitle}>
+                    <PhonkText style={styles.trendingText}>TRENDING </PhonkText>
+                    <PhonkText style={styles.offersText}>OFFERS</PhonkText>
+                </View>
             </View>
             <ScrollView
                 horizontal
@@ -44,15 +44,15 @@ export default function TrendingOffers({ offers = defaultOffers, onOfferPress }:
                     >
                         {/* Placeholder for offer image */}
                         <View style={styles.imagePlaceholder}>
-                            <ThemedText style={styles.placeholderEmoji}>🏷️</ThemedText>
+                            <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.placeholderEmoji]}>🏷️</Text>
                         </View>
                         <View style={styles.offerContent}>
-                            <ThemedText style={styles.offerTitle} numberOfLines={1}>
+                            <PhonkText style={[{ color: '#000' }, styles.offerTitle]} numberOfLines={1}>
                                 {offer.title}
-                            </ThemedText>
-                            <ThemedText type="subtitle" style={styles.offerSubtitle} numberOfLines={1}>
+                            </PhonkText>
+                            <PhonkText style={[{ color: '#8E8E93' }, styles.offerSubtitle]} numberOfLines={1}>
                                 {offer.subtitle}
-                            </ThemedText>
+                            </PhonkText>
                         </View>
                     </TouchableOpacity>
                 ))}
@@ -70,15 +70,16 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     headerTitle: {
-        fontSize: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     trendingText: {
-        fontFamily: Typography.integral.bold,
+        fontSize: 20,
         color: Colors.light.text,
         letterSpacing: 1,
     },
     offersText: {
-        fontFamily: Typography.integral.bold,
+        fontSize: 20,
         color: Colors.brandGreen,
         fontStyle: 'italic',
         letterSpacing: 1,
@@ -113,11 +114,10 @@ const styles = StyleSheet.create({
     },
     offerTitle: {
         fontSize: 14,
-        fontFamily: Typography.integral.bold,
         marginBottom: 2,
     },
     offerSubtitle: {
         fontSize: 12,
-        fontFamily: Typography.integral.bold,
     },
 });
+

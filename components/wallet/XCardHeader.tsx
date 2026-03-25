@@ -1,11 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../PhonkText';
 
 export default function XCardHeader() {
     return (
         <View style={styles.container}>
-            <Text style={styles.titleX}>X</Text>
-            <Text style={styles.titleCard}>CARD</Text>
+            <PhonkText style={styles.titleX}>X</PhonkText>
+            <PhonkText style={styles.titleCard}>CARD</PhonkText>
         </View>
     );
 }
@@ -20,12 +21,10 @@ const styles = StyleSheet.create({
     },
     titleX: {
         fontSize: 28,
-        fontFamily: Typography.integral.bold,
         color: '#18B852',
     },
     titleCard: {
         fontSize: 28,
-        fontFamily: Typography.integral.bold,
         color: '#000000',
     },
 });

@@ -1,10 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { getAuth, signOut } from '@react-native-firebase/auth';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  I18nManager,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -13,7 +21,6 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useTheme } from '../../context/ThemeContext';
 import i18n, { setStoredLanguage } from '../../src/localization/i18n';
-import { applyRTL } from '../../src/localization/rtl';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -47,67 +54,59 @@ export default function ProfileScreen() {
     return () => unsubscribe();
   }, []);
 
-  const changeLanguage = async (language: 'en' | 'ar') => {
+  const changeLanguage = async (lang: 'en' | 'ar') => {
     try {
-      await i18n.changeLanguage(language);
-      await setStoredLanguage(language);
+      await setStoredLanguage(lang);
+      await i18n.changeLanguage(lang);
 
-      const directionChanged = applyRTL(language);
-
-      if (directionChanged) {
-        Alert.alert(t('restart_required'), t('restart_message'));
+      const shouldBeRTL = lang === 'ar';
+      if (I18nManager.isRTL !== shouldBeRTL) {
+        I18nManager.allowRTL(shouldBeRTL);
+        I18nManager.forceRTL(shouldBeRTL);
+        Alert.alert(t('restart_required'), t('restart_required_message'));
+        return;
       }
+
+      Alert.alert(t('language_changed'), lang === 'ar' ? t('arabic') : t('english'));
     } catch (error) {
-      console.error('Language change error:', error);
+      console.log('Language change error:', error);
+      Alert.alert(t('error'), t('could_not_change_language'));
     }
   };
 
-  const handleChangeLanguage = () => {
-    Alert.alert(
-      t('select_language'),
-      '',
-      [
-        { text: t('english'), onPress: () => void changeLanguage('en') },
-        { text: t('arabic'), onPress: () => void changeLanguage('ar') },
-        { text: t('cancel'), style: 'cancel' }
-      ]
-    );
+  const openLanguageMenu = () => {
+    Alert.alert(t('choose_language'), t('select_preferred_language'), [
+      { text: t('english'), onPress: () => changeLanguage('en') },
+      { text: t('arabic'), onPress: () => changeLanguage('ar') },
+      { text: t('cancel'), style: 'cancel' },
+    ]);
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      t('logout_title'),
-      t('logout_message'),
-      [
-        {
-          text: t('cancel'),
-          style: 'cancel',
+    Alert.alert(t('log_out'), t('logout_confirmation'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('log_out'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut(getAuth());
+          } catch (error) {
+            console.error('Logout error:', error);
+            Alert.alert(t('error'), t('logout_failed'));
+          }
         },
-        {
-          text: t('log_out'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut(getAuth());
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert(t('error'), t('logout_failed'));
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <ThemedText style={styles.headerText}>
-            {t('manage_your')} <ThemedText style={styles.greenText}>{t('profile')}</ThemedText>
+            {t('manage_your')}{' '}
+            <ThemedText style={styles.greenText}>{t('profile')}</ThemedText>
           </ThemedText>
         </View>
 
@@ -124,11 +123,21 @@ export default function ProfileScreen() {
                   style={styles.avatar}
                 />
               ) : (
-                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F5F5' }]}>
+                <View
+                  style={[
+                    styles.avatar,
+                    {
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#F5F5F5',
+                    },
+                  ]}
+                >
                   <Ionicons name="person" size={32} color="#CCC" />
                 </View>
               )}
             </View>
+
             <View style={styles.nameContainer}>
               <ThemedText style={styles.userName}>
                 {userData ? `${userData.firstName} ${userData.lastName}` : t('loading')}
@@ -141,9 +150,16 @@ export default function ProfileScreen() {
           <ThemedText style={styles.sectionTitle}>{t('savings_tracker')}</ThemedText>
         </View>
 
-        <View style={[styles.savingsCard, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]}>
+        <View
+          style={[
+            styles.savingsCard,
+            { backgroundColor: theme.background, borderColor: theme.subtitle + '20' },
+          ]}
+        >
           <View style={styles.savingsInfo}>
-            <ThemedText type="subtitle" style={styles.savingsLabel}>{t('your_cashback_balance')}</ThemedText>
+            <ThemedText type="subtitle" style={styles.savingsLabel}>
+              {t('cashback_balance')}
+            </ThemedText>
             <ThemedText style={styles.savingsAmount}>
               <ThemedText style={styles.greenAmount}>{userData?.cashback ?? 0}</ThemedText> QAR
             </ThemedText>
@@ -156,9 +172,16 @@ export default function ProfileScreen() {
               <ThemedText style={styles.sectionTitle}>{t('creator_code')}</ThemedText>
             </View>
 
-            <View style={[styles.savingsCard, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]}>
+            <View
+              style={[
+                styles.savingsCard,
+                { backgroundColor: theme.background, borderColor: theme.subtitle + '20' },
+              ]}
+            >
               <View style={styles.savingsInfo}>
-                <ThemedText type="subtitle" style={styles.savingsLabel}>{t('your_creator_code')}</ThemedText>
+                <ThemedText type="subtitle" style={styles.savingsLabel}>
+                  {t('your_creator_code')}
+                </ThemedText>
                 <ThemedText style={styles.savingsAmount}>
                   <ThemedText style={styles.greenAmount}>{userData.creatorCode}</ThemedText>
                 </ThemedText>
@@ -169,7 +192,7 @@ export default function ProfileScreen() {
 
         <View style={styles.menuContainer}>
           <MenuItem icon="time-outline" label={t('redemption_history')} />
-          <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} />
+          <MenuItem icon="language-outline" label={t('change_language')} onPress={openLanguageMenu} />
           <MenuItem
             icon="mail-outline"
             label={t('contact_us')}
@@ -201,7 +224,7 @@ function MenuItem({
   icon,
   label,
   onPress,
-  color
+  color,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -213,7 +236,10 @@ function MenuItem({
 
   return (
     <TouchableOpacity
-      style={[styles.menuItem, { backgroundColor: theme.background === '#FFFFFF' ? '#F5F5F5' : '#1A1D1F' }]}
+      style={[
+        styles.menuItem,
+        { backgroundColor: theme.background === '#FFFFFF' ? '#F5F5F5' : '#1A1D1F' },
+      ]}
       activeOpacity={0.7}
       onPress={onPress}
     >

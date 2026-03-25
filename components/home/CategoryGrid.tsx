@@ -1,7 +1,7 @@
 import { collection, getFirestore, onSnapshot, orderBy, query } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -28,7 +28,7 @@ const fallbackImageMap: Record<string, any> = {
   'coming-soon': require('../../assets/images/see-more.png'),
 };
 
-const desiredOrder = [
+const visibleOrder = [
   'books',
   'coffee',
   'electronics',
@@ -42,7 +42,7 @@ const desiredOrder = [
 export default function CategoryGrid() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const [dbCategories, setDbCategories] = useState<CategoryItem[]>([]);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,7 +56,19 @@ export default function CategoryGrid() {
           ...(doc.data() as any),
         })) as CategoryItem[];
 
-        setDbCategories(fetched);
+        const ordered = visibleOrder.map((id) => {
+          if (id === 'coming-soon') {
+            return {
+              id,
+              name_en: t('coming_soon'),
+              name_ar: t('coming_soon'),
+            } as CategoryItem;
+          }
+
+          return fetched.find((item) => item.id === id) || { id };
+        });
+
+        setCategories(ordered);
         setLoading(false);
       },
       (error) => {
@@ -66,47 +78,24 @@ export default function CategoryGrid() {
     );
 
     return unsubscribe;
-  }, []);
-
-  const categories = useMemo(() => {
-    const map = new Map<string, CategoryItem>();
-    dbCategories.forEach((item) => map.set(item.id.toLowerCase(), item));
-
-    return desiredOrder.map((id) => {
-      if (id === 'coming-soon') {
-        return {
-          id,
-          name_en: t('coming_soon'),
-          name_ar: t('coming_soon'),
-        };
-      }
-
-      return map.get(id) || { id };
-    });
-  }, [dbCategories, t]);
+  }, [t]);
 
   const getLabel = (item: CategoryItem) => {
-    const key = item.id.toLowerCase();
-
-    if (key === 'coming-soon') return t('coming_soon');
+    if (item.id === 'coming-soon') return t('coming_soon');
 
     if (i18n.language === 'ar') {
-      if (item.name_ar) return item.name_ar;
-      return t(key);
+      return item.name_ar || t(item.id);
     }
 
-    if (item.name_en) return item.name_en;
-    return t(key);
+    return item.name_en || t(item.id);
   };
 
   const getImageSource = (item: CategoryItem) => {
-    const key = item.id.toLowerCase();
-
     if (typeof item.image === 'string' && item.image.trim()) {
       return { uri: item.image };
     }
 
-    return fallbackImageMap[key] || fallbackImageMap['coming-soon'];
+    return fallbackImageMap[item.id] || fallbackImageMap['coming-soon'];
   };
 
   const handlePress = (item: CategoryItem) => {

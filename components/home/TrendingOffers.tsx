@@ -1,123 +1,71 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/Colors';
-import { Typography } from '../../constants/Typography';
+﻿import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+
 import { ThemedText } from '../ThemedText';
 
-type OfferItem = {
-    id: string;
-    title: string;
-    subtitle: string;
-    imageUrl?: string;
-};
-
-type Props = {
-    offers?: OfferItem[];
-    onOfferPress?: (offer: OfferItem) => void;
-};
-
-const defaultOffers: OfferItem[] = [
-    { id: '1', title: 'Restaurant Deal', subtitle: 'Up to 30% off' },
-    { id: '2', title: 'Coffee Shop', subtitle: 'Buy 1 Get 1 Free' },
-    { id: '3', title: 'Grocery Store', subtitle: 'Fresh Deals Daily' },
+const fallbackOffers = (t: (key: string) => string) => [
+  { id: '1', title: t('restaurant_deal'), subtitle: t('up_to_30_off') },
+  { id: '2', title: t('coffee_shop'), subtitle: t('buy_1_get_1_free') },
+  { id: '3', title: t('grocery_store'), subtitle: t('fresh_deals_daily') },
 ];
 
-export default function TrendingOffers({ offers = defaultOffers, onOfferPress }: Props) {
-    return (
-        <View style={styles.container}>
-            <View style={styles.headerContainer}>
-                <ThemedText style={styles.headerTitle}>
-                    <ThemedText style={styles.trendingText}>TRENDING </ThemedText>
-                    <ThemedText style={styles.offersText}>OFFERS</ThemedText>
-                </ThemedText>
-            </View>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-            >
-                {offers.map((offer) => (
-                    <TouchableOpacity
-                        key={offer.id}
-                        style={styles.offerCard}
-                        onPress={() => onOfferPress?.(offer)}
-                        activeOpacity={0.7}
-                    >
-                        {/* Placeholder for offer image */}
-                        <View style={styles.imagePlaceholder}>
-                            <ThemedText style={styles.placeholderEmoji}>🏷️</ThemedText>
-                        </View>
-                        <View style={styles.offerContent}>
-                            <ThemedText style={styles.offerTitle} numberOfLines={1}>
-                                {offer.title}
-                            </ThemedText>
-                            <ThemedText type="subtitle" style={styles.offerSubtitle} numberOfLines={1}>
-                                {offer.subtitle}
-                            </ThemedText>
-                        </View>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
-        </View>
-    );
+export default function TrendingOffers() {
+  const { t } = useTranslation();
+  const offers = fallbackOffers(t);
+
+  return (
+    <View style={styles.container}>
+      <ThemedText style={styles.title}>{t('trending_offers')}</ThemedText>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+        {offers.map((offer) => (
+          <TouchableOpacity key={offer.id} style={styles.card} activeOpacity={0.8}>
+            <View style={styles.badge} />
+            <ThemedText style={styles.offerTitle} numberOfLines={1}>
+              {offer.title}
+            </ThemedText>
+            <ThemedText type="subtitle" style={styles.offerSubtitle} numberOfLines={1}>
+              {offer.subtitle}
+            </ThemedText>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        paddingVertical: 16,
-    },
-    headerContainer: {
-        paddingHorizontal: 20,
-        marginBottom: 16,
-    },
-    headerTitle: {
-        fontSize: 20,
-    },
-    trendingText: {
-        fontFamily: Typography.integral.bold,
-        color: Colors.light.text,
-        letterSpacing: 1,
-    },
-    offersText: {
-        fontFamily: Typography.integral.bold,
-        color: Colors.brandGreen,
-        fontStyle: 'italic',
-        letterSpacing: 1,
-    },
-    scrollContent: {
-        paddingHorizontal: 20,
-        gap: 12,
-    },
-    offerCard: {
-        width: 150,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    imagePlaceholder: {
-        width: '100%',
-        height: 100,
-        backgroundColor: '#F5F5F5',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    placeholderEmoji: {
-        fontSize: 40,
-    },
-    offerContent: {
-        padding: 10,
-    },
-    offerTitle: {
-        fontSize: 14,
-        fontFamily: Typography.integral.bold,
-        marginBottom: 2,
-    },
-    offerSubtitle: {
-        fontSize: 12,
-        fontFamily: Typography.integral.bold,
-    },
+  container: {
+    marginTop: 8,
+  },
+  title: {
+    fontSize: 28,
+    marginBottom: 14,
+  },
+  row: {
+    gap: 12,
+    paddingRight: 6,
+  },
+  card: {
+    width: 160,
+    borderRadius: 18,
+    backgroundColor: '#F5F5F5',
+    padding: 14,
+    justifyContent: 'flex-end',
+    minHeight: 140,
+  },
+  badge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#F0C27B',
+    marginBottom: 12,
+  },
+  offerTitle: {
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  offerSubtitle: {
+    fontSize: 14,
+  },
 });

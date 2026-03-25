@@ -1,215 +1,187 @@
-﻿import { collection, getDocs, getFirestore, orderBy, query } from '@react-native-firebase/firestore';
-import { FlashList } from '@shopify/flash-list';
+import { collection, getFirestore, onSnapshot, orderBy, query } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, I18nManager, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Colors } from '../../constants/Colors';
-import { Typography } from '../../constants/Typography';
+
 import { ThemedText } from '../ThemedText';
+import { Colors } from '../../constants/Colors';
 
 type CategoryItem = {
-    id: string;
-    name: string;
-    image?: string | any;
-    icon?: string;
+  id: string;
+  name?: string;
+  name_en?: string;
+  name_ar?: string;
+  image?: string;
+  order?: number;
 };
 
-type Props = {
-    categories?: CategoryItem[];
-    onCategoryPress?: (category: CategoryItem) => void;
+const fallbackImageMap: Record<string, any> = {
+  books: require('../../assets/images/books.png'),
+  coffee: require('../../assets/images/coffee.png'),
+  electronics: require('../../assets/images/electronics.png'),
+  entertainment: require('../../assets/images/food.png'),
+  food: require('../../assets/images/food.png'),
+  pharmacy: require('../../assets/images/food.png'),
+  grocery: require('../../assets/images/grocery.png'),
+  'coming-soon': require('../../assets/images/see-more.png'),
 };
 
-const CATEGORY_TRANSLATIONS: Record<string, { en: string; ar: string }> = {
-    books: { en: 'Books', ar: 'كتب' },
-    coffee: { en: 'Coffee', ar: 'قهوة' },
-    electronics: { en: 'Electronics', ar: 'إلكترونيات' },
-    entertainment: { en: 'Entertainment', ar: 'ترفيه' },
-    food: { en: 'Food', ar: 'طعام' },
-    pharmacy: { en: 'Pharmacy', ar: 'صيدلية' },
-    grocery: { en: 'Grocery', ar: 'بقالة' },
-};
+const desiredOrder = [
+  'books',
+  'coffee',
+  'electronics',
+  'entertainment',
+  'food',
+  'pharmacy',
+  'grocery',
+  'coming-soon',
+];
 
-function normalizeCategoryKey(value?: string) {
-    return (value || '')
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '')
-        .replace(/[^a-z]/g, '');
-}
+export default function CategoryGrid() {
+  const router = useRouter();
+  const { t, i18n } = useTranslation();
+  const [dbCategories, setDbCategories] = useState<CategoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-function getMappedCategory(language: string, englishName?: string, arabicName?: string, id?: string) {
-    const keyFromEnglish = normalizeCategoryKey(englishName);
-    const keyFromId = normalizeCategoryKey(id);
-    const mapped = CATEGORY_TRANSLATIONS[keyFromEnglish] || CATEGORY_TRANSLATIONS[keyFromId];
+  useEffect(() => {
+    const db = getFirestore();
 
-    if (language === 'ar') {
-        return arabicName || mapped?.ar || englishName || 'فئة';
-    }
+    const unsubscribe = onSnapshot(
+      query(collection(db, 'categories'), orderBy('order', 'asc')),
+      (snapshot) => {
+        const fetched = snapshot.docs.map((doc) => ({
+          id: doc.id.toLowerCase(),
+          ...(doc.data() as any),
+        })) as CategoryItem[];
 
-    return englishName || mapped?.en || arabicName || 'Category';
-}
-
-export default function CategoryGrid({ categories: propCategories, onCategoryPress }: Props) {
-    const router = useRouter();
-    const { t, i18n } = useTranslation();
-    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
-
-    const [fetchedCategories, setFetchedCategories] = useState<CategoryItem[]>([]);
-    const [loading, setLoading] = useState(!propCategories);
-
-    useEffect(() => {
-        if (propCategories) return;
-
-        const fetchCategories = async () => {
-            try {
-                const db = getFirestore();
-                const q = query(
-                    collection(db, 'categories'),
-                    orderBy('order', 'asc')
-                );
-
-                const snapshot = await getDocs(q);
-
-                const items: CategoryItem[] = snapshot.docs.map((doc: { id: string; data: () => any }) => {
-                    const data = doc.data();
-
-                    const englishName =
-                        data.nameEnglish ??
-                        data.name_en ??
-                        data.name ??
-                        '';
-
-                    const arabicName =
-                        data.nameArabic ??
-                        data.name_ar ??
-                        '';
-
-                    return {
-                        id: doc.id,
-                        name: getMappedCategory(i18n.language, englishName, arabicName, doc.id),
-                        image: data.imageUrl,
-                    };
-                });
-
-                if (items.length > 0) {
-                    items.push({
-                        id: 'coming-soon',
-                        name: t('coming_soon'),
-                        image: require('../../assets/images/see-more.png')
-                    });
-                }
-
-                setFetchedCategories(items);
-            } catch (error) {
-                console.error('Error fetching categories:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        void fetchCategories();
-    }, [propCategories, i18n.language, t]);
-
-    const displayCategories = propCategories || fetchedCategories;
-
-    const handleCategoryPress = (item: CategoryItem) => {
-        if (onCategoryPress) {
-            onCategoryPress(item);
-        } else if (item.id !== 'coming-soon') {
-            router.push({
-                pathname: "/category/[id]",
-                params: { id: item.id, name: item.name }
-            });
-        }
-    };
-
-    const renderCategory = ({ item }: { item: CategoryItem }) => {
-        return (
-            <TouchableOpacity
-                style={styles.categoryItem}
-                onPress={() => handleCategoryPress(item)}
-                activeOpacity={0.7}
-            >
-                <View style={styles.imageContainer}>
-                    {item.image ? (
-                        <Image
-                            source={typeof item.image === 'string' ? { uri: item.image } : item.image}
-                            style={styles.categoryImage}
-                            contentFit="contain"
-                        />
-                    ) : (
-                        <ThemedText style={{ fontSize: 40 }}>{item.icon}</ThemedText>
-                    )}
-                </View>
-
-                <ThemedText
-                    style={[
-                        styles.categoryName,
-                        {
-                            writingDirection: isRTL ? 'rtl' : 'ltr',
-                            textAlign: 'center',
-                        }
-                    ]}
-                    numberOfLines={1}
-                >
-                    {item.name}
-                </ThemedText>
-            </TouchableOpacity>
-        );
-    };
-
-    if (loading) {
-        return (
-            <View style={[styles.container, styles.loaderContainer]}>
-                <ActivityIndicator size="small" color={Colors.light.tint} />
-            </View>
-        );
-    }
-
-    if (displayCategories.length === 0) {
-        return null;
-    }
-
-    return (
-        <View style={[styles.container, { minHeight: Math.ceil((displayCategories.length || 1) / 4) * 130 }]}>
-            <FlashList
-                data={displayCategories}
-                renderItem={renderCategory}
-                keyExtractor={(item) => item.id}
-                numColumns={4}
-                scrollEnabled={false}
-                extraData={i18n.language}
-            />
-        </View>
+        setDbCategories(fetched);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching categories:', error);
+        setLoading(false);
+      }
     );
+
+    return unsubscribe;
+  }, []);
+
+  const categories = useMemo(() => {
+    const map = new Map<string, CategoryItem>();
+    dbCategories.forEach((item) => map.set(item.id.toLowerCase(), item));
+
+    return desiredOrder.map((id) => {
+      if (id === 'coming-soon') {
+        return {
+          id,
+          name_en: t('coming_soon'),
+          name_ar: t('coming_soon'),
+        };
+      }
+
+      return map.get(id) || { id };
+    });
+  }, [dbCategories, t]);
+
+  const getLabel = (item: CategoryItem) => {
+    const key = item.id.toLowerCase();
+
+    if (key === 'coming-soon') return t('coming_soon');
+
+    if (i18n.language === 'ar') {
+      if (item.name_ar) return item.name_ar;
+      return t(key);
+    }
+
+    if (item.name_en) return item.name_en;
+    return t(key);
+  };
+
+  const getImageSource = (item: CategoryItem) => {
+    const key = item.id.toLowerCase();
+
+    if (typeof item.image === 'string' && item.image.trim()) {
+      return { uri: item.image };
+    }
+
+    return fallbackImageMap[key] || fallbackImageMap['coming-soon'];
+  };
+
+  const handlePress = (item: CategoryItem) => {
+    if (item.id === 'coming-soon') return;
+
+    router.push({
+      pathname: '/category/[id]',
+      params: {
+        id: item.id,
+        title: getLabel(item),
+      },
+    });
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="small" color={Colors.light.tint} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.grid}>
+      {categories.map((item) => (
+        <TouchableOpacity
+          key={item.id}
+          style={styles.item}
+          activeOpacity={0.8}
+          onPress={() => handlePress(item)}
+        >
+          <View style={styles.imageWrap}>
+            <Image source={getImageSource(item)} style={styles.image} contentFit="cover" />
+          </View>
+          <ThemedText style={styles.label} numberOfLines={2}>
+            {getLabel(item)}
+          </ThemedText>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-    },
-    categoryItem: {
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    imageContainer: {
-        marginBottom: 8,
-    },
-    categoryImage: {
-        width: 80,
-        height: 80,
-    },
-    categoryName: {
-        fontSize: 12,
-        fontFamily: Typography.metropolis.medium,
-        textAlign: 'center',
-    },
-    loaderContainer: {
-        height: 150,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 18,
+    marginBottom: 24,
+  },
+  item: {
+    width: '22%',
+    alignItems: 'center',
+  },
+  imageWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 8,
+    backgroundColor: '#F4F4F4',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  label: {
+    textAlign: 'center',
+    fontSize: 13,
+    minHeight: 32,
+  },
+  loader: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
 });

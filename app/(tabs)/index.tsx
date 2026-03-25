@@ -3,23 +3,12 @@ import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore'
 import { useEffect, useState } from 'react';
 import { ScrollView, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-
-import {
-  BrandGrid,
-  CategoryGrid,
-  GreetingHeader,
-  PromoBanner,
-  SearchBar,
-  TrendingOffers
-} from '../../components/home';
-
+import { BrandGrid, CategoryGrid, GreetingHeader, PromoBanner, SearchBar, TrendingOffers } from '../../components/home';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function HomeScreen() {
   const [userName, setUserName] = useState<string>('');
   const { theme, colorScheme } = useTheme();
-  const { t } = useTranslation();
   const isDark = colorScheme === 'dark';
 
   useEffect(() => {
@@ -43,7 +32,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
       <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
+        barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor={theme.background}
       />
       <ScrollView
@@ -51,8 +40,8 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
       >
-        <GreetingHeader userName={userName || t('user')} />
-        <SearchBar placeholder={t('search_placeholder')} />
+        <GreetingHeader userName={userName || 'User'} />
+        <SearchBar placeholder="Search for anything..." />
         <PromoBanner />
         <CategoryGrid />
         <TrendingOffers />

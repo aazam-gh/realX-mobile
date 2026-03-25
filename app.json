@@ -15,9 +15,7 @@
       "bundleIdentifier": "com.reelx.app",
       "googleServicesFile": "./GoogleService-Info.plist",
       "associatedDomains": [
-        "applinks:reelx-backend.firebaseapp.com",
-        "applinks:reelx-backend.web.app",
-        "applinks:reelx.app"
+        "applinks:reelx-backend.web.app"
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -62,6 +60,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-localization",
       [
         "react-native-bottom-tabs"
       ],
@@ -81,9 +80,8 @@
         "expo-font",
         {
           "fonts": [
-            "./assets/fonts/integralcf-bold.otf",
-            "./assets/fonts/metropolis.semi-bold.otf",
-            "./assets/fonts/metropolis.medium.otf"
+            "./assets/fonts/phonk.otf",
+            "./assets/fonts/poppins.ttf"
           ]
         }
       ],
@@ -108,7 +106,8 @@
       "@react-native-community/datetimepicker",
       "expo-asset",
       "expo-image",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { getAuth, signOut } from '@react-native-firebase/auth';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
@@ -10,21 +10,19 @@ import {
   Linking,
   ScrollView,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-import { ThemedText } from '../../components/ThemedText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import { useTheme } from '../../context/ThemeContext';
 import i18n, { setStoredLanguage } from '../../src/localization/i18n';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
   const { t } = useTranslation();
 
   const [userData, setUserData] = useState<{
@@ -46,7 +44,7 @@ export default function ProfileScreen() {
     const studentDocRef = doc(db, 'students', user.uid);
 
     const unsubscribe = onSnapshot(studentDocRef, (docSnap) => {
-      if (docSnap.exists()) {
+      if (docSnap && docSnap.exists()) {
         setUserData(docSnap.data() as any);
       }
     });
@@ -101,98 +99,83 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <ThemedText style={styles.headerText}>
+          <Text style={styles.headerText}>
             {t('manage_your')}{' '}
-            <ThemedText style={styles.greenText}>{t('profile')}</ThemedText>
-          </ThemedText>
+            <Text style={styles.greenText}>{t('profile')}</Text>
+          </Text>
         </View>
 
         <TouchableOpacity
-          style={styles.profileCard}
+          style={styles.topPill}
           activeOpacity={0.7}
           onPress={() => router.push('/profile-details')}
         >
-          <View style={styles.profileInfo}>
-            <View style={styles.avatar}>
+          <View style={styles.profileTopRow}>
+            <View style={styles.avatarContainer}>
               {userData?.photoURL || getAuth().currentUser?.photoURL ? (
                 <Image
                   source={{ uri: userData?.photoURL || getAuth().currentUser?.photoURL || undefined }}
                   style={styles.avatar}
                 />
               ) : (
-                <View
-                  style={[
-                    styles.avatar,
-                    {
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      backgroundColor: '#F5F5F5',
-                    },
-                  ]}
-                >
+                <View style={styles.avatarFallback}>
                   <Ionicons name="person" size={32} color="#CCC" />
                 </View>
               )}
             </View>
 
             <View style={styles.nameContainer}>
-              <ThemedText style={styles.userName}>
-                {userData ? `${userData.firstName} ${userData.lastName}` : t('loading')}
-              </ThemedText>
+              <Text style={styles.userName}>
+                {userData ? `${userData.firstName ?? ''} ${userData.lastName ?? ''}`.trim() : t('loading')}
+              </Text>
             </View>
           </View>
         </TouchableOpacity>
 
         <View style={styles.sectionHeader}>
-          <ThemedText style={styles.sectionTitle}>{t('savings_tracker')}</ThemedText>
+          <Text style={styles.sectionTitle}>{t('savings_tracker')}</Text>
         </View>
 
-        <View
-          style={[
-            styles.savingsCard,
-            { backgroundColor: theme.background, borderColor: theme.subtitle + '20' },
-          ]}
-        >
+        <View style={styles.savingsCard}>
           <View style={styles.savingsInfo}>
-            <ThemedText type="subtitle" style={styles.savingsLabel}>
-              {t('cashback_balance')}
-            </ThemedText>
-            <ThemedText style={styles.savingsAmount}>
-              <ThemedText style={styles.greenAmount}>{userData?.cashback ?? 0}</ThemedText> QAR
-            </ThemedText>
+            <Text style={styles.savingsLabel}>{t('cashback_balance')}</Text>
+            <Text style={styles.savingsAmount}>
+              <Text style={styles.greenAmount}>{userData?.cashback ?? 0}</Text> QAR
+            </Text>
           </View>
         </View>
 
         {userData?.role === 'creator' && userData?.creatorCode && (
           <>
             <View style={styles.sectionHeader}>
-              <ThemedText style={styles.sectionTitle}>{t('creator_code')}</ThemedText>
+              <Text style={styles.sectionTitle}>{t('creator_code')}</Text>
             </View>
 
-            <View
-              style={[
-                styles.savingsCard,
-                { backgroundColor: theme.background, borderColor: theme.subtitle + '20' },
-              ]}
-            >
+            <View style={styles.savingsCard}>
               <View style={styles.savingsInfo}>
-                <ThemedText type="subtitle" style={styles.savingsLabel}>
-                  {t('your_creator_code')}
-                </ThemedText>
-                <ThemedText style={styles.savingsAmount}>
-                  <ThemedText style={styles.greenAmount}>{userData.creatorCode}</ThemedText>
-                </ThemedText>
+                <Text style={styles.savingsLabel}>{t('your_creator_code')}</Text>
+                <Text style={styles.savingsAmount}>
+                  <Text style={styles.greenAmount}>{userData.creatorCode}</Text>
+                </Text>
               </View>
             </View>
           </>
         )}
 
         <View style={styles.menuContainer}>
-          <MenuItem icon="time-outline" label={t('redemption_history')} />
-          <MenuItem icon="language-outline" label={t('change_language')} onPress={openLanguageMenu} />
+          <MenuItem
+            icon="time-outline"
+            label={t('redemption_history')}
+            onPress={() => router.push('/redemption-history' as any)}
+          />
+          <MenuItem
+            icon="language-outline"
+            label={t('change_language')}
+            onPress={openLanguageMenu}
+          />
           <MenuItem
             icon="mail-outline"
             label={t('contact_us')}
@@ -208,12 +191,17 @@ export default function ProfileScreen() {
             label={t('privacy_policy')}
             onPress={() => router.push('/privacy')}
           />
-          <MenuItem
-            icon="log-out-outline"
-            label={t('log_out')}
+
+          <TouchableOpacity
+            style={styles.logoutPill}
             onPress={handleLogout}
-            color="#FF3B30"
-          />
+            activeOpacity={0.7}
+          >
+            <View style={styles.logoutContent}>
+              <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
+              <Text style={styles.logoutText}>{t('log_out')}</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -231,21 +219,17 @@ function MenuItem({
   onPress?: () => void;
   color?: string;
 }) {
-  const { theme } = useTheme();
-  const iconColor = color || theme.text;
-
   return (
     <TouchableOpacity
-      style={[
-        styles.menuItem,
-        { backgroundColor: theme.background === '#FFFFFF' ? '#F5F5F5' : '#1A1D1F' },
-      ]}
+      style={styles.menuItem}
       activeOpacity={0.7}
       onPress={onPress}
     >
       <View style={styles.menuItemLeft}>
-        <Ionicons name={icon} size={24} color={iconColor} />
-        <ThemedText style={[styles.menuItemLabel, { color: iconColor }]}>{label}</ThemedText>
+        <Ionicons name={icon} size={24} color={color || '#000'} />
+        <Text style={[styles.menuItemLabel, { color: color || Colors.light.text }]}>
+          {label}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -257,81 +241,92 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 24,
+    paddingTop: 8,
     paddingBottom: 100,
   },
   header: {
-    marginBottom: 32,
-  },
-  headerText: {
-    fontSize: 32,
-    fontFamily: Typography.metropolis.semiBold,
-    lineHeight: 40,
-  },
-  greenText: {
-    color: Colors.brandGreen,
-  },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 32,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    marginBottom: 20,
-    backgroundColor: '#FFF',
-  },
-  profileInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#F5F5F5',
-  },
-  nameContainer: {
-    marginLeft: 16,
-  },
-  userName: {
-    fontSize: 18,
-    fontFamily: Typography.metropolis.semiBold,
-  },
-  sectionHeader: {
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontFamily: Typography.metropolis.semiBold,
+  headerText: {
+    fontSize: 28,
+    fontFamily: Typography.poppins.semiBold,
+    color: Colors.light.text,
+    letterSpacing: 0.5,
   },
-  savingsCard: {
+  greenText: {
+    color: '#1AD04F',
+    fontFamily: Typography.poppins.semiBold,
+  },
+  topPill: {
+    backgroundColor: '#F5F5F7',
+    borderRadius: 30,
+    padding: 16,
+    marginBottom: 24,
+  },
+  profileTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 24,
+  },
+  avatarContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    overflow: 'hidden',
+    marginRight: 16,
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarFallback: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0F0F0',
+  },
+  nameContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  userName: {
+    fontSize: 20,
+    fontFamily: Typography.poppins.semiBold,
+    color: Colors.light.text,
+  },
+  sectionHeader: {
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: Typography.poppins.semiBold,
+    color: Colors.light.text,
+  },
+  savingsCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 32,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    marginBottom: 20,
-    backgroundColor: '#FFF',
+    padding: 16,
+    marginTop: 8,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#F0F0F2',
   },
   savingsInfo: {
-    flex: 1,
+    gap: 8,
   },
   savingsLabel: {
     fontSize: 14,
-    fontFamily: Typography.metropolis.medium,
-    marginBottom: 8,
+    fontFamily: Typography.poppins.medium,
+    color: '#666',
   },
   savingsAmount: {
     fontSize: 32,
-    fontFamily: Typography.metropolis.semiBold,
+    fontFamily: Typography.poppins.semiBold,
+    color: '#000',
   },
   greenAmount: {
-    color: Colors.brandGreen,
+    color: '#1AD04F',
   },
   menuContainer: {
     gap: 12,
@@ -339,10 +334,9 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
-    paddingVertical: 20,
+    padding: 20,
     borderRadius: 24,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F5F5F7',
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -350,7 +344,25 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   menuItemLabel: {
-    fontSize: 18,
-    fontFamily: Typography.metropolis.semiBold,
+    fontSize: 16,
+    fontFamily: Typography.poppins.semiBold,
+  },
+  logoutPill: {
+    backgroundColor: '#FFF1F0',
+    borderRadius: 30,
+    paddingVertical: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFD5D2',
+  },
+  logoutContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logoutText: {
+    fontSize: 14,
+    fontFamily: Typography.poppins.semiBold,
+    color: '#FF3B30',
   },
 });

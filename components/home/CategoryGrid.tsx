@@ -3,10 +3,10 @@ import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import { ThemedText } from '../ThemedText';
 
 type CategoryItem = {
     id: string;
@@ -22,8 +22,11 @@ type Props = {
 
 export default function CategoryGrid({ categories: propCategories, onCategoryPress }: Props) {
     const router = useRouter();
+    const { t, i18n } = useTranslation();
     const [fetchedCategories, setFetchedCategories] = useState<CategoryItem[]>([]);
     const [loading, setLoading] = useState(!propCategories);
+
+    const isArabic = i18n.language === 'ar';
 
     useEffect(() => {
         if (propCategories) return;
@@ -37,18 +40,21 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                 );
 
                 const snapshot = await getDocs(q);
-                const items: CategoryItem[] = snapshot.docs.map((doc: { id: string; data: () => any }) => ({
-                    id: doc.id,
-                    name: doc.data().nameEnglish,
-                    image: doc.data().imageUrl,
-                }));
+                const items: CategoryItem[] = snapshot.docs.map((doc: any) => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        name: isArabic ? (data.nameArabic || data.nameAr || data.nameEnglish) : data.nameEnglish,
+                        image: data.imageUrl,
+                    };
+                });
 
                 // Add "See More" at the end to match original layout if it fits
                 if (items.length > 0) {
                     items.push({
                         id: 'coming-soon',
-                        name: 'Coming Soon!',
-                        image: require('../../assets/images/see-more.png')
+                        name: t('coming_soon'),
+                        image: require('../../assets/images/see-more.svg')
                     });
                 }
 
@@ -91,10 +97,10 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                             contentFit="contain"
                         />
                     ) : (
-                        <ThemedText style={{ fontSize: 40 }}>{item.icon}</ThemedText>
+                        <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, { fontSize: 40 }]}>{item.icon}</Text>
                     )}
                 </View>
-                <ThemedText style={styles.categoryName} numberOfLines={1}>{item.name}</ThemedText>
+                <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.categoryName]} numberOfLines={1}>{item.name}</Text>
             </TouchableOpacity>
         );
     };
@@ -142,7 +148,7 @@ const styles = StyleSheet.create({
     },
     categoryName: {
         fontSize: 12,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         textAlign: 'center',
     },
     loaderContainer: {

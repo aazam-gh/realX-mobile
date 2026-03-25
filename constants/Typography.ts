@@ -1,10 +1,10 @@
 export const Typography = {
-    integral: {
-        bold: 'IntegralBold',
+    phonk: {
+        bold: 'Phonk',
     },
-    metropolis: {
-        medium: 'MetropolisMedium',
-        semiBold: 'MetropolisSemiBold',
+    poppins: {
+        medium: 'Poppins',
+        semiBold: 'Poppins',
     }
 };
 

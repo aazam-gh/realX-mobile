@@ -58,6 +58,7 @@ export default function ProfileScreen() {
       await i18n.changeLanguage(lang);
 
       const shouldBeRTL = lang === 'ar';
+
       if (I18nManager.isRTL !== shouldBeRTL) {
         I18nManager.allowRTL(shouldBeRTL);
         I18nManager.forceRTL(shouldBeRTL);
@@ -65,7 +66,10 @@ export default function ProfileScreen() {
         return;
       }
 
-      Alert.alert(t('language_changed'), lang === 'ar' ? t('arabic') : t('english'));
+      Alert.alert(
+        t('language_changed'),
+        lang === 'ar' ? t('arabic') : t('english')
+      );
     } catch (error) {
       console.log('Language change error:', error);
       Alert.alert(t('error'), t('could_not_change_language'));
@@ -100,7 +104,10 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.header}>
           <Text style={styles.headerText}>
             {t('manage_your')}{' '}
@@ -129,7 +136,9 @@ export default function ProfileScreen() {
 
             <View style={styles.nameContainer}>
               <Text style={styles.userName}>
-                {userData ? `${userData.firstName ?? ''} ${userData.lastName ?? ''}`.trim() : t('loading')}
+                {userData
+                  ? `${userData.firstName ?? ''} ${userData.lastName ?? ''}`.trim()
+                  : t('loading')}
               </Text>
             </View>
           </View>

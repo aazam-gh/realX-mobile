@@ -1,8 +1,7 @@
 import { Image } from 'expo-image';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import { ThemedText } from '../ThemedText';
 
 type Props = {
     id: string;
@@ -15,6 +14,7 @@ type Props = {
     logoUri?: string;
     onPress?: () => void;
     style?: any;
+    xcardEnabled?: boolean;
 };
 
 export default function RestaurantCard({
@@ -27,6 +27,7 @@ export default function RestaurantCard({
     logoUri,
     onPress,
     style,
+    xcardEnabled = false,
 }: Props) {
     return (
         <TouchableOpacity
@@ -36,63 +37,56 @@ export default function RestaurantCard({
         >
             {/* Image placeholder or actual image */}
             <View style={styles.imageContainer}>
-                {imageUri ? (
-                    <Image
-                        source={{ uri: imageUri }}
-                        style={styles.image}
-                        contentFit="cover"
-                        transition={200}
-                    />
-                ) : (
-                    <View style={styles.imagePlaceholder}>
-                        <ThemedText style={styles.placeholderEmoji}>🍽️</ThemedText>
-                    </View>
-                )}
+                  <View style={styles.topPill}>
+    <Image
+      source={{ uri: imageUri }}
+      style={styles.topImage}
+      contentFit="cover"
+    />
+  </View>
 
-                {/* Logo in bottom corner */}
-                <View style={styles.logoContainer}>
-                    <View style={styles.logoWrapper}>
-                        {logoUri ? (
-                            <Image
-                                source={{ uri: logoUri }}
-                                style={styles.logoImage}
-                                contentFit="cover"
-                            />
-                        ) : (
-                            <ThemedText style={styles.logoEmoji}>🏪</ThemedText>
-                        )}
-                    </View>
-                </View>
+  <View style={styles.bottomPill}>
+    <Image
+      source={{ uri: imageUri }}
+      style={styles.bottomImage}
+      contentFit="cover"
+    />
+  </View>
+    {/* Logo */}
+  <View style={styles.logoContainer}>
+    <View style={styles.logoWrapper}>
+      {logoUri ? (
+        <Image
+          source={{ uri: logoUri }}
+          style={styles.logoImage}
+          contentFit="cover"
+        />
+      ) : (
+        <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.logoEmoji]}>🏪</Text>
+      )}
+    </View>
+  </View>
 
-                {/* Badges Container */}
-                <View style={styles.badgesContainer}>
-                    {/* Top Rated Badge (Left) */}
-                    {isTopRated ? (
-                        <View style={styles.topRatedBadge}>
-                            <ThemedText style={styles.trendingIcon}>⭐</ThemedText>
-                            <ThemedText style={[styles.badgeText, styles.topRatedText]}>TOP RATED</ThemedText>
-                        </View>
-                    ) : (
-                        <View />
-                    )}
-
-                    {/* Trending Badge (Right) */}
-                    {isTrending && (
-                        <View style={styles.trendingBadge}>
-                            <ThemedText style={styles.trendingIcon}>⚡</ThemedText>
-                            <ThemedText style={styles.badgeText}>TRENDING</ThemedText>
-                        </View>
-                    )}
-                </View>
+  {/* Cashback Badge */}
+  {xcardEnabled && (
+    <View style={styles.xcardBadge}>
+      <Image
+        source={require('../../assets/images/cashback.png')}
+        style={styles.xcardIcon}
+        contentFit="contain"
+      />
+    </View>
+  )}
             </View>
+
 
             {/* Content */}
             <View style={styles.content}>
-                <ThemedText style={styles.name} numberOfLines={1}>{name}</ThemedText>
+                <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.name]} numberOfLines={1}>{name}</Text>
 
                 {/* Discount Tag */}
                 <View style={styles.discountWrapper}>
-                    <ThemedText style={styles.discountText}>{discountText}</ThemedText>
+                    <Text style={[{ color: Colors.brandGreen, fontFamily: Typography.poppins.medium }, styles.discountText]}>{discountText}</Text>
                 </View>
             </View>
         </TouchableOpacity>
@@ -115,7 +109,7 @@ const styles = StyleSheet.create({
     imageContainer: {
         width: '100%',
         height: 120, // Keep height or make it variable? 120 is fine for a card.
-        position: 'relative',
+
     },
     image: {
         width: '100%',
@@ -195,7 +189,7 @@ const styles = StyleSheet.create({
     },
     badgeText: { // generic text style for badges
         fontSize: 10,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: '#FFFFFF',
         letterSpacing: 0.5,
     },
@@ -208,7 +202,7 @@ const styles = StyleSheet.create({
     },
     name: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         marginBottom: 4,
     },
     cashbackRow: {
@@ -219,7 +213,7 @@ const styles = StyleSheet.create({
     },
     cashbackText: {
         fontSize: 12,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#666666',
     },
     discountWrapper: {
@@ -231,7 +225,51 @@ const styles = StyleSheet.create({
     },
     discountText: {
         fontSize: 13,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: Colors.brandGreen,
     },
+
+    topPill: {
+  flex: 1,
+  borderRadius: 20,
+  overflow: 'hidden',
+},
+
+bottomPill: {
+  flex: 1,
+  borderRadius: 20,
+  overflow: 'hidden',
+},
+
+topImage: {
+  width: '100%',
+  height: '200%',
+},
+
+bottomImage: {
+  width: '100%',
+  height: '200%',
+  transform: [{ translateY: '-50%' }],
+},
+xcardBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 10,
+},
+xcardIcon: {
+    width: 20,
+    height: 20,
+},
 });

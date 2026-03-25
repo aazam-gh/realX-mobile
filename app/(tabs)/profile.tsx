@@ -4,16 +4,20 @@ import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore'
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedText } from '../../components/ThemedText';
+
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import { useTheme } from '../../context/ThemeContext';
+import PhonkText from '../../components/PhonkText';
+import i18n, { setStoredLanguage } from '../../src/localization/i18n';
+import { applyRTL } from '../../src/localization/rtl';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { t } = useTranslation();
+
   const [userData, setUserData] = useState<{
     firstName?: string;
     lastName?: string;
@@ -21,7 +25,7 @@ export default function ProfileScreen() {
     photoURL?: string;
     role?: string;
     creatorCode?: string;
-    cashback?: number;
+    savings?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -33,7 +37,7 @@ export default function ProfileScreen() {
     const studentDocRef = doc(db, 'students', user.uid);
 
     const unsubscribe = onSnapshot(studentDocRef, (docSnap) => {
-      if (docSnap.exists()) {
+      if (docSnap && docSnap.exists()) {
         setUserData(docSnap.data() as any);
       }
     });
@@ -41,25 +45,51 @@ export default function ProfileScreen() {
     return () => unsubscribe();
   }, []);
 
+  const changeLanguage = async (language: 'en' | 'ar') => {
+    try {
+      await i18n.changeLanguage(language);
+      await setStoredLanguage(language);
+
+      const directionChanged = applyRTL(language);
+
+      if (directionChanged) {
+        Alert.alert(t('restart_required'), t('restart_message'));
+      }
+    } catch (error) {
+      console.error('Language change error:', error);
+    }
+  };
+
+  const handleChangeLanguage = () => {
+    Alert.alert(
+      t('select_language'),
+      '',
+      [
+        { text: t('english'), onPress: () => void changeLanguage('en') },
+        { text: t('arabic'), onPress: () => void changeLanguage('ar') },
+        { text: t('cancel'), style: 'cancel' }
+      ]
+    );
+  };
 
   const handleLogout = () => {
     Alert.alert(
-      'Log out',
-      'Are you sure you want to log out?',
+      t('logout_title'),
+      t('logout_message'),
       [
         {
-          text: 'Cancel',
+          text: t('cancel'),
           style: 'cancel',
         },
         {
-          text: 'Log out',
+          text: t('log_out'),
           style: 'destructive',
           onPress: async () => {
             try {
               await signOut(getAuth());
             } catch (error) {
               console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to log out. Please try again.');
+              Alert.alert(t('error'), t('logout_failed'));
             }
           },
         },
@@ -68,104 +98,104 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: Colors.light.background }]} edges={['top']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header */}
         <View style={styles.header}>
-          <ThemedText style={styles.headerText}>
-            Manage your <ThemedText style={styles.greenText}>profile</ThemedText>
-          </ThemedText>
+          <PhonkText style={[{ color: Colors.light.text }, styles.headerText]}>
+            PROFILE
+          </PhonkText>
         </View>
 
-        {/* Profile Info Card */}
         <TouchableOpacity
-          style={styles.profileCard}
+          style={styles.topPill}
           activeOpacity={0.7}
           onPress={() => router.push('/profile-details')}
         >
-          <View style={styles.profileInfo}>
-            <View style={styles.avatar}>
+          <View style={styles.profileTopRow}>
+            <View style={styles.avatarContainer}>
               {userData?.photoURL || getAuth().currentUser?.photoURL ? (
                 <Image
                   source={{ uri: userData?.photoURL || getAuth().currentUser?.photoURL || undefined }}
                   style={styles.avatar}
                 />
               ) : (
-                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F5F5' }]}>
-                  <Ionicons name="person" size={32} color="#CCC" />
+                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F0F0' }]}>
+                  <Ionicons name="person" size={32} color="#AAA" />
                 </View>
               )}
             </View>
-            <View style={styles.nameContainer}>
-              <ThemedText style={styles.userName}>
-                {userData ? `${userData.firstName} ${userData.lastName}` : 'Loading...'}
-              </ThemedText>
+            <View style={styles.badge}>
+              <PhonkText style={[{ color: '#FFFFFF' }, styles.badgeText]}>ROOKIE</PhonkText>
             </View>
           </View>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={styles.bottomPill}
+          activeOpacity={0.7}
+          onPress={() => router.push('/profile-details')}
+        >
+          <View style={styles.profileBottomRow}>
+            <View style={styles.userInfo}>
+              <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.userName]}>
+                {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => router.push('/profile-details')}
+            >
+              <Ionicons name="create-outline" size={16} color="#8E8E93" />
+              <PhonkText style={[{ color: Colors.light.text }, styles.editButtonText]}>PROFILE</PhonkText>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
 
-
-        {/* Savings Tracker Section */}
         <View style={styles.sectionHeader}>
-          <ThemedText style={styles.sectionTitle}>Savings Tracker</ThemedText>
+          <PhonkText style={[{ color: Colors.light.text }, styles.sectionTitle]}>SAVINGS TRACKER</PhonkText>
         </View>
 
-        <View style={[styles.savingsCard, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]}>
-          <View style={styles.savingsInfo}>
-            <ThemedText type="subtitle" style={styles.savingsLabel}>Your cashback balance</ThemedText>
-            <ThemedText style={styles.savingsAmount}>
-              <ThemedText style={styles.greenAmount}>{userData?.cashback ?? 0}</ThemedText> QAR
-            </ThemedText>
+        <View style={styles.savingsCard}>
+          <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.savingsLabel]}>All time you've saved</Text>
+          <View style={styles.savingsAmountContainer}>
+            <PhonkText style={[{ color: '#1AD04F' }, styles.savingsAmountGreen]}>
+              {(userData?.savings ?? 23.12).toFixed(2)}
+            </PhonkText>
+            <PhonkText style={[{ color: Colors.light.text }, styles.savingsCurrency]}> QAR</PhonkText>
           </View>
         </View>
 
-        {/* Creator Code Section */}
-        {userData?.role === 'creator' && userData?.creatorCode && (
-          <>
-            <View style={styles.sectionHeader}>
-              <ThemedText style={styles.sectionTitle}>Creator Code</ThemedText>
-            </View>
-
-            <View style={[styles.savingsCard, { backgroundColor: theme.background, borderColor: theme.subtitle + '20' }]}>
-              <View style={styles.savingsInfo}>
-                <ThemedText type="subtitle" style={styles.savingsLabel}>Your Creator Code</ThemedText>
-                <ThemedText style={styles.savingsAmount}>
-                  <ThemedText style={styles.greenAmount}>{userData.creatorCode}</ThemedText>
-                </ThemedText>
-              </View>
-            </View>
-          </>
-        )}
-
-        {/* Menu Items */}
         <View style={styles.menuContainer}>
-          <MenuItem icon="time-outline" label="Redemption History" />
-          <MenuItem icon="language-outline" label="Change Language" />
+          <MenuItem icon="time-outline" label={t('redemption_history')} onPress={() => router.push('/redemption-history' as any)} />
+          <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} />
           <MenuItem
             icon="mail-outline"
-            label="Contact Us"
+            label={t('contact_us')}
             onPress={() => Linking.openURL('mailto:info@realx.qa')}
           />
           <MenuItem
             icon="document-text-outline"
-            label="Terms and Conditions"
+            label={t('terms_and_conditions')}
             onPress={() => router.push('/terms')}
           />
           <MenuItem
             icon="shield-checkmark-outline"
-            label="Privacy Policy"
+            label={t('privacy_policy')}
             onPress={() => router.push('/privacy')}
           />
-          <MenuItem
-            icon="log-out-outline"
-            label="Log out"
+          <TouchableOpacity
+            style={styles.logoutPill}
             onPress={handleLogout}
-            color="#FF3B30"
-          />
+            activeOpacity={0.7}
+          >
+            <View style={styles.logoutContent}>
+              <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
+              <PhonkText style={styles.logoutText}>{t('log_out').toUpperCase()}</PhonkText>
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -176,25 +206,25 @@ function MenuItem({
   icon,
   label,
   onPress,
-  color
+  color,
+  bgColor
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress?: () => void;
   color?: string;
+  bgColor?: string;
 }) {
-  const { theme } = useTheme();
-  const iconColor = color || theme.text;
 
   return (
     <TouchableOpacity
-      style={[styles.menuItem, { backgroundColor: theme.background === '#FFFFFF' ? '#F5F5F5' : '#1A1D1F' }]}
+      style={[styles.menuItem, { backgroundColor: bgColor || '#F5F5F7' }]}
       activeOpacity={0.7}
       onPress={onPress}
     >
       <View style={styles.menuItemLeft}>
-        <Ionicons name={icon} size={24} color={iconColor} />
-        <ThemedText style={[styles.menuItemLabel, { color: iconColor }]}>{label}</ThemedText>
+        <Ionicons name={icon} size={24} color={color || "#000"} />
+        <Text style={[{ color: color || Colors.light.text, fontFamily: Typography.poppins.medium }, styles.menuItemLabel]}>{label}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -206,82 +236,115 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 24,
+    paddingTop: 8,
     paddingBottom: 100,
   },
   header: {
-    marginBottom: 32,
-  },
-  headerText: {
-    fontSize: 32,
-    fontFamily: Typography.metropolis.semiBold,
-    lineHeight: 40,
-  },
-  greenText: {
-    color: Colors.brandGreen,
-  },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 32,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    marginBottom: 20,
-    backgroundColor: '#FFF',
-  },
-  profileInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#F5F5F5',
-  },
-  nameContainer: {
-    marginLeft: 16,
-  },
-  userName: {
-    fontSize: 18,
-    fontFamily: Typography.metropolis.semiBold,
-  },
-
-  sectionHeader: {
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontFamily: Typography.metropolis.semiBold,
+  headerText: {
+    fontSize: 28,
+    letterSpacing: 0.5,
   },
-  savingsCard: {
+  topPill: {
+    backgroundColor: '#F5F5F7',
+    borderRadius: 30,
+    padding: 8,
+
+  },
+  bottomPill: {
+    backgroundColor: '#F5F5F7',
+    borderRadius: 30,
+    paddingVertical: 24,
+    paddingHorizontal: 8,
+    marginBottom: 16,
+  },
+  profileTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 50,
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  badge: {
+    backgroundColor: '#1AD04F',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 30,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  profileBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 20,
+    fontFamily: Typography.poppins.semiBold,
+    paddingLeft: 4,
+  },
+
+  editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 24,
-    borderRadius: 32,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    marginBottom: 20,
-    backgroundColor: '#FFF',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    gap: 6,
   },
-  savingsInfo: {
-    flex: 1,
+  editButtonText: {
+    fontSize: 10,
+    color: '#8E8E93',
+  },
+  sectionHeader: {
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    textTransform: 'uppercase',
+  },
+  savingsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 32,
+    padding: 16,
+    marginTop:8,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#F0F0F2',
   },
   savingsLabel: {
     fontSize: 14,
-    fontFamily: Typography.metropolis.medium,
-    marginBottom: 8,
+    fontFamily: Typography.poppins.medium,
+    color: '#000'
   },
-  savingsAmount: {
+  savingsAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  savingsAmountGreen: {
     fontSize: 32,
-    fontFamily: Typography.metropolis.semiBold,
+    color: '#1AD04F',
+    marginRight: 8,
   },
-  greenAmount: {
-    color: Colors.brandGreen,
+  savingsCurrency: {
+    fontSize: 28,
+    color: '#000',
   },
   menuContainer: {
     gap: 12,
@@ -289,10 +352,8 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
-    paddingVertical: 20,
+    padding: 20,
     borderRadius: 24,
-    backgroundColor: '#F5F5F5',
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -300,7 +361,25 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   menuItemLabel: {
-    fontSize: 18,
-    fontFamily: Typography.metropolis.semiBold,
+    fontSize: 16,
+    fontFamily: Typography.poppins.semiBold,
+    color: '#000',
+  },
+  logoutPill: {
+    backgroundColor: '#FFF1F0',
+    borderRadius: 30,
+    paddingVertical: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFD5D2',
+  },
+  logoutContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logoutText: {
+    fontSize: 14,
+    color: '#FF3B30',
   },
 });

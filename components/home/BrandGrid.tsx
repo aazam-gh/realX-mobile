@@ -1,110 +1,156 @@
+import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
-import { I18nManager, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Colors } from '../../constants/Colors';
-import { Typography } from '../../constants/Typography';
+
 import { ThemedText } from '../ThemedText';
+import { Colors } from '../../constants/Colors';
 
 type BrandItem = {
-    id: string;
-    name: string;
-    image: any;
+  id: string;
+  name: string;
+  logoUrl: string;
+  isActive: boolean;
 };
 
-const defaultBrands: BrandItem[] = [
-    { id: '1', name: 'Brand 1', image: require('../../assets/images/coffee.png') },
-    { id: '2', name: 'Brand 2', image: require('../../assets/images/food.png') },
-    { id: '3', name: 'Brand 3', image: require('../../assets/images/grocery.png') },
-    { id: '4', name: 'Brand 4', image: require('../../assets/images/pharma.png') },
-    { id: '5', name: 'Brand 5', image: require('../../assets/images/entertainer.png') },
-    { id: '6', name: 'Brand 6', image: require('../../assets/images/electronics.png') },
-    { id: '7', name: 'Brand 7', image: require('../../assets/images/books.png') },
-    { id: '8', name: 'Brand 8', image: require('../../assets/images/see-more.png') },
-];
-
 export default function BrandGrid() {
-    const { t, i18n } = useTranslation();
-    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
 
+  const [brands, setBrands] = useState<BrandItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        const db = getFirestore();
+        const brandsDocRef = doc(db, 'cms', 'brand');
+        const brandsSnap = await getDoc(brandsDocRef);
+
+        if (brandsSnap.exists()) {
+          const data = brandsSnap.data();
+          const activeBrands = (data?.brands || [])
+            .filter((b: any) => b.isActive)
+            .map((b: any) => ({
+              id: b.id,
+              name: b.name,
+              logoUrl: b.logoUrl,
+              isActive: b.isActive,
+            })) as BrandItem[];
+
+          setBrands(activeBrands);
+        }
+      } catch (error) {
+        console.error('Error fetching brands:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBrands();
+  }, []);
+
+  const handlePress = (brand: BrandItem) => {
+    router.push(`/vendor/${brand.name}`);
+  };
+
+  if (loading) {
     return (
-        <View style={styles.container}>
-            <View style={styles.headerContainer}>
-                <ThemedText style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
-                    <ThemedText style={styles.shopByText}>{t('shop_by_word')} </ThemedText>
-                    <ThemedText style={styles.brandText}>{t('brand_word')}</ThemedText>
-                </ThemedText>
-            </View>
-
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={[
-                    styles.scrollContent,
-                    { flexDirection: isRTL ? 'row-reverse' : 'row' }
-                ]}
-            >
-                {defaultBrands.map((brand) => (
-                    <TouchableOpacity
-                        key={brand.id}
-                        style={styles.brandItem}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.imageContainer}>
-                            <Image source={brand.image} style={styles.brandImage} contentFit="contain" />
-                        </View>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
-        </View>
+      <View style={[styles.container, styles.loaderContainer]}>
+        <ActivityIndicator size="small" color={Colors.brandGreen} />
+      </View>
     );
+  }
+
+  if (brands.length === 0) {
+    return null;
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <ThemedText style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+          <ThemedText style={styles.shopByText}>{t('shop_by_word')} </ThemedText>
+          <ThemedText style={styles.brandText}>{t('brand_word')}</ThemedText>
+        </ThemedText>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { flexDirection: isRTL ? 'row-reverse' : 'row' },
+        ]}
+      >
+        {brands.map((brand) => (
+          <TouchableOpacity
+            key={brand.id}
+            style={styles.brandItem}
+            activeOpacity={0.7}
+            onPress={() => handlePress(brand)}
+          >
+            <Image
+              source={{ uri: brand.logoUrl }}
+              style={styles.imageContainer}
+              contentFit="contain"
+              cachePolicy="memory-disk"
+            />
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        paddingVertical: 16,
-    },
-    headerContainer: {
-        paddingHorizontal: 20,
-        marginBottom: 16,
-    },
-    headerTitle: {
-        fontSize: 20,
-    },
-    shopByText: {
-        fontFamily: Typography.integral.bold,
-        color: Colors.light.text,
-        letterSpacing: 1,
-    },
-    brandText: {
-        fontFamily: Typography.integral.bold,
-        color: Colors.brandGreen,
-        fontStyle: 'italic',
-        letterSpacing: 1,
-    },
-    scrollContent: {
-        paddingHorizontal: 20,
-        gap: 16,
-    },
-    brandItem: {
-        alignItems: 'center',
-    },
-    imageContainer: {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        backgroundColor: '#FFFFFF',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
-    },
-    brandImage: {
-        width: 45,
-        height: 45,
-    },
+  container: {
+    paddingVertical: 16,
+  },
+  headerContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+  },
+  shopByText: {
+    color: Colors.light.text,
+    letterSpacing: 1,
+  },
+  brandText: {
+    color: Colors.brandGreen,
+    fontStyle: 'italic',
+    letterSpacing: 1,
+  },
+  loaderContainer: {
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  brandItem: {
+    alignItems: 'center',
+  },
+  imageContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
 });

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../PhonkText';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -35,7 +36,7 @@ const STEPS: StepData[] = [
 function StepItem({ step }: { step: StepData }) {
     return (
         <View style={styles.stepItem}>
-            <Text style={styles.stepNumber}>{step.number}</Text>
+            <PhonkText style={styles.stepNumber}>{step.number}</PhonkText>
             <Text style={styles.stepText}>
                 {step.text}
                 {step.emoji && ` ${step.emoji}`}
@@ -75,8 +76,8 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                     >
                         {/* Logo */}
                         <View style={styles.logoContainer}>
-                            <Text style={styles.logoX}>X</Text>
-                            <Text style={styles.logoCard}>CARD</Text>
+                            <PhonkText style={styles.logoX}>X</PhonkText>
+                            <PhonkText style={styles.logoCard}>CARD</PhonkText>
                         </View>
 
                         {/* Divider */}
@@ -84,9 +85,9 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
 
                         {/* Title */}
                         <View style={styles.titleContainer}>
-                            <Text style={styles.titleText}>HOW DOES </Text>
-                            <Text style={styles.titleHighlight}>THIS</Text>
-                            <Text style={styles.titleText}> WORK?</Text>
+                            <PhonkText style={styles.titleText}>HOW DOES </PhonkText>
+                            <PhonkText style={styles.titleHighlight}>THIS</PhonkText>
+                            <PhonkText style={styles.titleText}> WORK?</PhonkText>
                         </View>
 
                         {/* Steps */}
@@ -137,12 +138,10 @@ const styles = StyleSheet.create({
     },
     logoX: {
         fontSize: 28,
-        fontFamily: Typography.integral.bold,
         color: '#18B852',
     },
     logoCard: {
         fontSize: 28,
-        fontFamily: Typography.integral.bold,
         color: '#000000',
     },
     divider: {
@@ -159,12 +158,10 @@ const styles = StyleSheet.create({
     },
     titleText: {
         fontSize: 22,
-        fontFamily: Typography.integral.bold,
         color: '#000000',
     },
     titleHighlight: {
         fontSize: 22,
-        fontFamily: Typography.integral.bold,
         color: '#18B852',
     },
     stepsContainer: {
@@ -181,14 +178,13 @@ const styles = StyleSheet.create({
     },
     stepNumber: {
         fontSize: 22,
-        fontFamily: Typography.integral.bold,
         color: '#18B852',
         marginRight: 16,
         minWidth: 24,
     },
     stepText: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#000000',
         flex: 1,
     },

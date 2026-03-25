@@ -194,12 +194,7 @@ export const redeemOffer = onCall(async (request: CallableRequest) => {
             creatorCodeOwnerUid = codeDoc.data()?.uid || null;
         }
 
-        // Pre-read creator profile (needed later for cashback writes)
-        let creatorProfileDoc: admin.firestore.DocumentSnapshot | null = null;
-        if (creatorCodeOwnerUid) {
-            const creatorRef = db.collection('students').doc(creatorCodeOwnerUid);
-            creatorProfileDoc = await transaction.get(creatorRef);
-        }
+
 
         // 2. Verify vendor PIN
         const vendorDoc = await transaction.get(vendorRef);
@@ -230,12 +225,13 @@ export const redeemOffer = onCall(async (request: CallableRequest) => {
         const finalAmount = totalAmount - discountAmount;
 
         // 5. Calculate cashback (only for xcard-enabled vendors)
+        const round = (n: number) => Math.round(n * 100) / 100;
         let cashbackAmount = 0;
         let creatorCashbackAmount = 0;
         if (isXcard) {
-            cashbackAmount = finalAmount * 0.01; // 1% cashback to redeemer
+            cashbackAmount = round(finalAmount * 0.01); // 1% cashback to redeemer
             if (creatorCodeOwnerUid) {
-                creatorCashbackAmount = finalAmount * 0.01; // 1% to creator code owner
+                creatorCashbackAmount = round(finalAmount * 0.01); // 1% to creator code owner
             }
         }
 
@@ -262,28 +258,30 @@ export const redeemOffer = onCall(async (request: CallableRequest) => {
         // 7. Perform writes
         transaction.set(transactionRef, transactionData);
 
+        // Combine cashback amounts if the user used their own creator code
+        let totalUserCashback = cashbackAmount;
+        let updateCreatorSeparately = true;
+
+        if (creatorCodeOwnerUid === uid && creatorCashbackAmount > 0) {
+            totalUserCashback += creatorCashbackAmount;
+            updateCreatorSeparately = false;
+        }
+
         // Update user savings and cashback
         const userUpdates: Record<string, admin.firestore.FieldValue> = {
             savings: admin.firestore.FieldValue.increment(discountAmount),
         };
-        if (cashbackAmount > 0) {
-            userUpdates.cashback = admin.firestore.FieldValue.increment(cashbackAmount);
+        if (totalUserCashback > 0) {
+            userUpdates.cashback = admin.firestore.FieldValue.increment(totalUserCashback);
         }
         transaction.update(userRef, userUpdates);
 
-        // Update creator code owner's cashback
-        if (creatorCodeOwnerUid && creatorCashbackAmount > 0) {
+        // Update creator code owner's cashback if it's a different user
+        if (updateCreatorSeparately && creatorCodeOwnerUid && creatorCashbackAmount > 0) {
             const creatorRef = db.collection('students').doc(creatorCodeOwnerUid);
-            if (creatorProfileDoc?.exists) {
-                transaction.update(creatorRef, {
-                    cashback: admin.firestore.FieldValue.increment(creatorCashbackAmount),
-                });
-            } else {
-                logger.warn('Creator profile missing for cashback', {
-                    creatorCodeOwnerUid,
-                    creatorCode: creatorCode ? creatorCode.trim() : null,
-                });
-            }
+            transaction.set(creatorRef, {
+                cashback: admin.firestore.FieldValue.increment(creatorCashbackAmount),
+            }, { merge: true });
         }
 
         return {

@@ -50,12 +50,6 @@ export default function LoginScreen() {
     const inputRef = useRef<TextInput>(null);
     const url = Linking.useURL();
 
-    // 🔥 Helper: run migration after login
-    const runMigration = async () => {
-        const functions = getFunctions(undefined, 'me-central1');
-        const migrate = httpsCallable(functions, 'migrateStudentProfile');
-        await migrate();
-    };
 
     useEffect(() => {
         const verifyAutomaticLink = async (incomingUrl: string) => {
@@ -72,7 +66,6 @@ export default function LoginScreen() {
 
                         await signInWithEmailLink(authInstance, normalizedEmail, incomingUrl);
 
-                        await runMigration(); // 🔥 critical
 
                         await clearAuthEmail();
                         console.log('Successfully signed in automatically!');
@@ -152,8 +145,6 @@ export default function LoginScreen() {
                     const normalizedEmail = normalizeEmail(storedEmail);
 
                     await signInWithEmailLink(authInstance, normalizedEmail, manualLink);
-
-                    await runMigration(); // 🔥 critical
 
                     await clearAuthEmail();
                     console.log('Successfully signed in manually!');

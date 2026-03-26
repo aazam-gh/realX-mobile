@@ -54,12 +54,6 @@ export default function EmailOnboarding() {
   const hasHandledLink = useRef(false);
   const url = Linking.useLinkingURL();
 
-  // 🔥 Helper: run migration after login
-  const runMigration = async () => {
-    const functions = getFunctions(undefined, 'me-central1');
-    const migrate = httpsCallable(functions, 'migrateStudentProfile');
-    await migrate();
-  };
 
   // Verify email link
   const verifyAutomaticLink = async (incomingUrl: string) => {
@@ -85,7 +79,6 @@ export default function EmailOnboarding() {
             const normalizedEmail = normalizeEmail(inputEmail);
 
             await signInWithEmailLink(authInstance, normalizedEmail, incomingUrl);
-            await runMigration(); // 🔥 critical
 
             if (isNewUser) {
               router.replace({
@@ -106,8 +99,7 @@ export default function EmailOnboarding() {
       const normalizedEmail = normalizeEmail(storedEmail);
 
       await signInWithEmailLink(authInstance, normalizedEmail, incomingUrl);
-      await runMigration(); // 🔥 critical
-
+      
       await clearAuthEmail();
 
       if (isNewUser) {
@@ -159,6 +151,19 @@ export default function EmailOnboarding() {
     try {
       const authInstance = getAuth();
 
+      // ✅ Signup: Check if account exists (prevent duplicates)
+      if (isNewUser) {
+        const fnInstance = getFunctions(undefined, 'me-central1');
+        const checkStudent = httpsCallable(fnInstance, 'checkStudentExists');
+
+        const result = await checkStudent({ email: normalizedEmail });
+
+        if ((result.data as { exists: boolean }).exists) {
+          Alert.alert('Account exists', 'Please login instead.');
+          return;
+        }
+      }
+
       await sendSignInLinkToEmail(authInstance, normalizedEmail, actionCodeSettings);
       await saveAuthEmail(normalizedEmail);
 
@@ -189,7 +194,6 @@ export default function EmailOnboarding() {
         const normalizedEmail = normalizeEmail(storedEmail);
 
         await signInWithEmailLink(authInstance, normalizedEmail, manualLink);
-        await runMigration(); // 🔥 critical
 
         await clearAuthEmail();
 

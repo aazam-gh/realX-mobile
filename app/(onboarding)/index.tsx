@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         alignSelf: 'flex-start',
         marginLeft: -24, // Negate content padding to hit edge
-        marginTop: -20,
+        marginTop: 20,
     },
     characterImage: {
         width: width * 0.85,

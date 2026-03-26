@@ -24,6 +24,10 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 
+
+
+
+
 export default function DetailsOnboarding() {
     const router = useRouter();
     const params = useLocalSearchParams<{ email?: string; role?: string }>();

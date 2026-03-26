@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth, isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink } from '@react-native-firebase/auth';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -23,6 +24,21 @@ import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import { actionCodeSettings, clearAuthEmail, getAuthEmail, saveAuthEmail } from '../../utils/auth';
 
+// ✅ Email normalization (strict identity)
+const normalizeEmail = (email: string): string => {
+  const trimmed = email.trim().toLowerCase();
+  const [local, domain] = trimmed.split('@');
+
+  if (!domain) return trimmed;
+
+  if (domain === 'gmail.com' || domain === 'googlemail.com') {
+    const cleanLocal = local.split('+')[0].replace(/\./g, '');
+    return `${cleanLocal}@gmail.com`;
+  }
+
+  return trimmed;
+};
+
 export default function EmailOnboarding() {
   const router = useRouter();
   const params = useLocalSearchParams<{ role?: string; mode?: string }>();
@@ -36,9 +52,16 @@ export default function EmailOnboarding() {
   const inputRef = useRef<TextInput>(null);
 
   const hasHandledLink = useRef(false);
-  const url = Linking.useLinkingURL(); // Updated hook, deprecated useURL replaced
+  const url = Linking.useLinkingURL();
 
-  // Verify a given email sign-in link
+  // 🔥 Helper: run migration after login
+  const runMigration = async () => {
+    const functions = getFunctions(undefined, 'me-central1');
+    const migrate = httpsCallable(functions, 'migrateStudentProfile');
+    await migrate();
+  };
+
+  // Verify email link
   const verifyAutomaticLink = async (incomingUrl: string) => {
     if (hasHandledLink.current) return;
 
@@ -52,18 +75,27 @@ export default function EmailOnboarding() {
       let storedEmail = await getAuthEmail();
 
       if (!storedEmail) {
-        // Fallback: ask user for email if not in storage
+        // 🔴 fallback (user manually inputs email)
         Alert.prompt(
           'Confirm Email',
           'Enter your email to complete sign-in',
           async (inputEmail) => {
             if (!inputEmail) return;
-            await signInWithEmailLink(authInstance, inputEmail, incomingUrl);
+
+            const normalizedEmail = normalizeEmail(inputEmail);
+
+            await signInWithEmailLink(authInstance, normalizedEmail, incomingUrl);
+            await runMigration(); // 🔥 critical
+
             if (isNewUser) {
-              router.replace({ pathname: '/(onboarding)/details', params: { role, email: inputEmail } });
+              router.replace({
+                pathname: '/(onboarding)/details',
+                params: { role, email: normalizedEmail },
+              });
             } else {
               router.replace('/(tabs)');
             }
+
             await clearAuthEmail();
           },
           'plain-text',
@@ -71,11 +103,18 @@ export default function EmailOnboarding() {
         return;
       }
 
-      await signInWithEmailLink(authInstance, storedEmail, incomingUrl);
+      const normalizedEmail = normalizeEmail(storedEmail);
+
+      await signInWithEmailLink(authInstance, normalizedEmail, incomingUrl);
+      await runMigration(); // 🔥 critical
+
       await clearAuthEmail();
-      console.log('Successfully signed in automatically!');
+
       if (isNewUser) {
-        router.replace({ pathname: '/(onboarding)/details', params: { role, email: storedEmail } });
+        router.replace({
+          pathname: '/(onboarding)/details',
+          params: { role, email: normalizedEmail },
+        });
       } else {
         router.replace('/(tabs)');
       }
@@ -88,7 +127,7 @@ export default function EmailOnboarding() {
     }
   };
 
-  // Cold start: app launched from closed state
+  // Cold start
   useEffect(() => {
     const checkInitialLink = async () => {
       const initialUrl = await Linking.getInitialURL();
@@ -101,7 +140,7 @@ export default function EmailOnboarding() {
     checkInitialLink();
   }, []);
 
-  // App open / foreground: handle incoming links
+  // Foreground
   useEffect(() => {
     if (url) {
       verifyAutomaticLink(url);
@@ -113,15 +152,17 @@ export default function EmailOnboarding() {
   };
 
   const handleSendMagicLink = async () => {
-    const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail) return;
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail) return;
 
     setIsLoading(true);
     try {
       const authInstance = getAuth();
-      await sendSignInLinkToEmail(authInstance, trimmedEmail, actionCodeSettings);
-      await saveAuthEmail(trimmedEmail);
-      Alert.alert('Email Sent', `A magic link has been sent to ${trimmedEmail}. Check your inbox.`);
+
+      await sendSignInLinkToEmail(authInstance, normalizedEmail, actionCodeSettings);
+      await saveAuthEmail(normalizedEmail);
+
+      Alert.alert('Email Sent', `A magic link has been sent to ${normalizedEmail}. Check your inbox.`);
     } catch (err: any) {
       console.error(err);
       Alert.alert('Error', err.message || 'An error occurred. Please try again.');
@@ -136,16 +177,27 @@ export default function EmailOnboarding() {
     setIsLoading(true);
     try {
       const authInstance = getAuth();
+
       if (await isSignInWithEmailLink(authInstance, manualLink)) {
         const storedEmail = await getAuthEmail();
+
         if (!storedEmail) {
           Alert.alert('Error', 'No email found in storage. Please start again.');
           return;
         }
-        await signInWithEmailLink(authInstance, storedEmail, manualLink);
+
+        const normalizedEmail = normalizeEmail(storedEmail);
+
+        await signInWithEmailLink(authInstance, normalizedEmail, manualLink);
+        await runMigration(); // 🔥 critical
+
         await clearAuthEmail();
+
         if (isNewUser) {
-          router.replace({ pathname: '/(onboarding)/details', params: { role, email: storedEmail } });
+          router.replace({
+            pathname: '/(onboarding)/details',
+            params: { role, email: normalizedEmail },
+          });
         } else {
           router.replace('/(tabs)');
         }
@@ -180,7 +232,6 @@ export default function EmailOnboarding() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Header / Background Section */}
       <View style={styles.headerBackground}>
         <SafeAreaView edges={['top']} style={styles.headerContent}>
           <View style={styles.topButtons}>
@@ -194,7 +245,6 @@ export default function EmailOnboarding() {
         </SafeAreaView>
       </View>
 
-      {/* Main Content Card */}
       <View style={styles.cardContainer}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.card}>
@@ -223,6 +273,7 @@ export default function EmailOnboarding() {
                   autoFocus
                 />
               </View>
+
               {manualLink && (
                 <View style={{ alignItems: 'center', marginVertical: 10 }}>
                   <Ionicons name="mail-outline" size={60} color={Colors.brandGreen} />
@@ -265,6 +316,7 @@ export default function EmailOnboarding() {
     </View>
   );
 }
+
 
 // --- Styles remain unchanged ---
 const styles = StyleSheet.create({

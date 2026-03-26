@@ -25,6 +25,21 @@ import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import { actionCodeSettings, clearAuthEmail, getAuthEmail, saveAuthEmail } from '../../utils/auth';
 
+// ✅ Email normalization
+const normalizeEmail = (email: string): string => {
+    const trimmed = email.trim().toLowerCase();
+    const [local, domain] = trimmed.split('@');
+
+    if (!domain) return trimmed;
+
+    if (domain === 'gmail.com' || domain === 'googlemail.com') {
+        const cleanLocal = local.split('+')[0].replace(/\./g, '');
+        return `${cleanLocal}@gmail.com`;
+    }
+
+    return trimmed;
+};
+
 export default function LoginScreen() {
     const router = useRouter();
     const [email, setEmail] = useState('');
@@ -35,19 +50,32 @@ export default function LoginScreen() {
     const inputRef = useRef<TextInput>(null);
     const url = Linking.useURL();
 
+    // 🔥 Helper: run migration after login
+    const runMigration = async () => {
+        const functions = getFunctions(undefined, 'me-central1');
+        const migrate = httpsCallable(functions, 'migrateStudentProfile');
+        await migrate();
+    };
+
     useEffect(() => {
         const verifyAutomaticLink = async (incomingUrl: string) => {
             const authInstance = getAuth();
+
             if (await isSignInWithEmailLink(authInstance, incomingUrl)) {
                 setIsLoading(true);
+
                 try {
                     const storedEmail = await getAuthEmail();
 
                     if (storedEmail) {
-                        await signInWithEmailLink(authInstance, storedEmail, incomingUrl);
+                        const normalizedEmail = normalizeEmail(storedEmail);
+
+                        await signInWithEmailLink(authInstance, normalizedEmail, incomingUrl);
+
+                        await runMigration(); // 🔥 critical
+
                         await clearAuthEmail();
                         console.log('Successfully signed in automatically!');
-                        // Navigation is handled by the root layout's onAuthStateChanged
                     } else {
                         Alert.alert('Error', 'No email found in storage. Please try starting again.');
                     }
@@ -63,7 +91,7 @@ export default function LoginScreen() {
         if (url && isLinkSent) {
             verifyAutomaticLink(url);
         }
-    }, [url, isLinkSent, router]);
+    }, [url, isLinkSent]);
 
     const handleBack = () => {
         if (isLinkSent) {
@@ -73,31 +101,34 @@ export default function LoginScreen() {
         }
     };
 
-    const handleSendMagicLink = async (trimmedEmail: string) => {
-        const getAuthInstance = getAuth();
-        await sendSignInLinkToEmail(getAuthInstance, trimmedEmail, actionCodeSettings);
-        await saveAuthEmail(trimmedEmail);
+    const handleSendMagicLink = async (inputEmail: string) => {
+        const normalizedEmail = normalizeEmail(inputEmail);
+
+        const authInstance = getAuth();
+        await sendSignInLinkToEmail(authInstance, normalizedEmail, actionCodeSettings);
+        await saveAuthEmail(normalizedEmail);
 
         setIsLinkSent(true);
     };
 
     const handleLogin = async () => {
-        const trimmedEmail = email.trim().toLowerCase();
-        if (!trimmedEmail) return;
+        const normalizedEmail = normalizeEmail(email);
+        if (!normalizedEmail) return;
 
         setIsLoading(true);
 
         try {
             const fnInstance = getFunctions(undefined, 'me-central1');
             const checkStudent = httpsCallable(fnInstance, 'checkStudentExists');
-            const result = await checkStudent({ email: trimmedEmail });
+
+            const result = await checkStudent({ email: normalizedEmail });
 
             if (!(result.data as { exists: boolean }).exists) {
                 setShowSignUpModal(true);
                 return;
             }
 
-            await handleSendMagicLink(trimmedEmail);
+            await handleSendMagicLink(normalizedEmail);
         } catch (err: any) {
             console.error(err);
             Alert.alert('Error', err.message || 'An error occurred. Please try again.');
@@ -110,16 +141,22 @@ export default function LoginScreen() {
         if (!manualLink.trim()) return;
 
         setIsLoading(true);
+
         try {
             const authInstance = getAuth();
+
             if (await isSignInWithEmailLink(authInstance, manualLink)) {
                 const storedEmail = await getAuthEmail();
 
                 if (storedEmail) {
-                    await signInWithEmailLink(authInstance, storedEmail, manualLink);
+                    const normalizedEmail = normalizeEmail(storedEmail);
+
+                    await signInWithEmailLink(authInstance, normalizedEmail, manualLink);
+
+                    await runMigration(); // 🔥 critical
+
                     await clearAuthEmail();
                     console.log('Successfully signed in manually!');
-                    // Navigation is handled by the root layout's onAuthStateChanged
                 } else {
                     Alert.alert('Error', 'No email found in storage. Please try starting again.');
                 }
@@ -141,7 +178,7 @@ export default function LoginScreen() {
             } else {
                 setIsLoading(true);
                 try {
-                    await handleSendMagicLink(email.trim().toLowerCase());
+                    await handleSendMagicLink(email);
                     Alert.alert('Email Sent', 'A new link has been sent to your email.');
                 } catch (err: any) {
                     Alert.alert('Error', err.message || 'Failed to resend email.');
@@ -275,7 +312,7 @@ export default function LoginScreen() {
                         <Text style={styles.modalText}>
                             It looks like you don't have an account yet. Would you like to create one?
                         </Text>
-                        
+
                         <TouchableOpacity
                             style={styles.modalPrimaryButton}
                             onPress={() => {

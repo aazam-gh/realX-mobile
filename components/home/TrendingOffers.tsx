@@ -1,4 +1,4 @@
-﻿import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '../ThemedText';
@@ -17,7 +17,11 @@ export default function TrendingOffers() {
     <View style={styles.container}>
       <ThemedText style={styles.title}>{t('trending_offers')}</ThemedText>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+      >
         {offers.map((offer) => (
           <TouchableOpacity key={offer.id} style={styles.card} activeOpacity={0.8}>
             <View style={styles.badge} />

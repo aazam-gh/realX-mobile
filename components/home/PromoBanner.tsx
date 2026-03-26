@@ -1,8 +1,8 @@
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, View } from 'react-native';
-import { ThemedText } from '../ThemedText';
+import { ActivityIndicator, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 const BANNER_WIDTH = screenWidth - 48;
@@ -25,6 +25,7 @@ export default function PromoBanner() {
     const [loading, setLoading] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
     const scrollViewRef = useRef<ScrollView>(null);
+    const router = useRouter();
 
     useEffect(() => {
         const fetchBanners = async () => {
@@ -49,10 +50,31 @@ export default function PromoBanner() {
         fetchBanners();
     }, []);
 
+    useEffect(() => {
+        if (banners.length <= 1) return;
+
+        const interval = setInterval(() => {
+            const nextIndex = (activeIndex + 1) % banners.length;
+            scrollViewRef.current?.scrollTo({
+                x: nextIndex * (BANNER_WIDTH + 10),
+                animated: true,
+            });
+            setActiveIndex(nextIndex);
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [banners.length, activeIndex]);
+
     const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const contentOffsetX = event.nativeEvent.contentOffset.x;
         const index = Math.round(contentOffsetX / (BANNER_WIDTH + 10));
         setActiveIndex(index);
+    };
+
+    const handlePress = (banner: BannerItem) => {
+        if (banner.offerId) {
+            router.push(`/vendor/${banner.offerId}`);
+        }
     };
 
     if (loading) {
@@ -66,7 +88,7 @@ export default function PromoBanner() {
     if (banners.length === 0) {
         return (
             <View style={[styles.container, styles.loaderContainer]}>
-                <ThemedText type="subtitle">No banners available</ThemedText>
+                <Text style={{ color: '#8E8E93', fontFamily: 'System' }}>No banners available</Text>
             </View>
         );
     }
@@ -84,12 +106,18 @@ export default function PromoBanner() {
                 scrollEventThrottle={16}
             >
                 {banners.map((banner) => (
-                    <View key={banner.bannerId} style={styles.bannerColumn}>
+                    <TouchableOpacity
+                        key={banner.bannerId}
+                        style={styles.bannerColumn}
+                        onPress={() => handlePress(banner)}
+                        activeOpacity={0.9}
+                    >
                         <View style={styles.topPill}>
                             <Image
                                 source={{ uri: banner.images.mobile }}
                                 style={styles.topImage}
                                 contentFit="cover"
+                                cachePolicy="memory-disk"
                                 accessibilityLabel={banner.altText || 'Banner Image'}
                             />
                         </View>
@@ -99,10 +127,11 @@ export default function PromoBanner() {
                                 source={{ uri: banner.images.mobile }}
                                 style={styles.bottomImage}
                                 contentFit="cover"
+                                cachePolicy="memory-disk"
                                 accessibilityLabel={banner.altText || 'Banner Image'}
                             />
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 ))}
             </ScrollView>
 

@@ -1,5 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { getAuth } from '@react-native-firebase/auth';
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -9,6 +11,7 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
+    ScrollView,
     StatusBar,
     StyleSheet,
     Text,
@@ -20,17 +23,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../../components/PhonkText';
 
 // Types for better type safety
 interface VendorData {
     profilePicture?: string;
     name?: string;
+    xcard?: boolean;
+    pin?: string;
     [key: string]: any;
 }
 
 interface OfferData {
     discountValue?: string | number;
     discountType?: string;
+    vendorId?: string;
     [key: string]: any;
 }
 
@@ -40,10 +47,14 @@ export default function RedeemScreen() {
     const [vendor, setVendor] = useState<VendorData | null>(null);
     const [offer, setOffer] = useState<OfferData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [step, setStep] = useState<'creator' | 'pin'>('creator');
+    const [isRedeeming, setIsRedeeming] = useState(false);
+    const [resolvedVendorId, setResolvedVendorId] = useState<string>('');
+
+    // Step: 'creator' only shown for xcard vendors, otherwise start at 'pin'
+    const [step, setStep] = useState<'creator' | 'pin'>('pin');
     const [creatorCode, setCreatorCode] = useState('');
     const [pin, setPin] = useState('');
-    const [amount, setAmount] = useState('80');
+    const [amount, setAmount] = useState('');
 
     const pinInputRef = useRef<TextInput>(null);
     const amountInputRef = useRef<TextInput>(null);
@@ -52,22 +63,41 @@ export default function RedeemScreen() {
         let isMounted = true;
 
         const fetchData = async () => {
-            if (!id || !vendorId) return;
+            if (!id) return;
             try {
                 const db = getFirestore();
 
-                // Fetch Vendor
-                const vendorRef = doc(db, 'vendors', vendorId);
-                const vendorSnap = await getDoc(vendorRef);
-                if (vendorSnap.exists() && isMounted) {
-                    setVendor(vendorSnap.data() as VendorData);
-                }
-
-                // Fetch Offer
+                // Fetch Offer first to get vendorId if not provided
                 const offerRef = doc(db, 'offers', id);
                 const offerSnap = await getDoc(offerRef);
+
+                let currentVendorId = vendorId;
+
                 if (offerSnap.exists() && isMounted) {
-                    setOffer(offerSnap.data() as OfferData);
+                    const offerData = offerSnap.data() as OfferData;
+                    setOffer(offerData);
+
+                    // If vendorId was not provided, use the one from the offer document
+                    if (!currentVendorId && offerData.vendorId) {
+                        currentVendorId = offerData.vendorId;
+                    }
+                }
+
+                if (currentVendorId) {
+                    setResolvedVendorId(currentVendorId);
+
+                    // Fetch Vendor
+                    const vendorRef = doc(db, 'vendors', currentVendorId);
+                    const vendorSnap = await getDoc(vendorRef);
+                    if (vendorSnap.exists() && isMounted) {
+                        const vendorData = vendorSnap.data() as VendorData;
+                        setVendor(vendorData);
+
+                        // If vendor has xcard enabled, start with creator code step
+                        if (vendorData.xcard === true) {
+                            setStep('creator');
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -83,10 +113,78 @@ export default function RedeemScreen() {
         };
     }, [id, vendorId]);
 
+    // Discount calculation
+    const totalAmount = parseFloat(amount) || 0;
+    const discountValue = Number(offer?.discountValue) || 0;
+    const discountType = offer?.discountType || 'percentage';
+
+    let discountAmount = 0;
+    if (discountType === 'percentage') {
+        discountAmount = totalAmount * (discountValue / 100);
+    } else {
+        discountAmount = Math.min(discountValue, totalAmount);
+    }
+    const finalAmount = Math.max(0, totalAmount - discountAmount);
+
+    const canRedeem = pin.length === 4 && totalAmount > 0;
+
+    const handleRedeem = async () => {
+        if (!canRedeem) return;
+
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) {
+            Alert.alert('Error', 'You must be logged in to redeem.');
+            return;
+        }
+
+        setIsRedeeming(true);
+        try {
+            const functions = getFunctions(undefined, 'me-central1');
+            const redeemOffer = httpsCallable(functions, 'redeemOffer');
+
+            const result = await redeemOffer({
+                offerId: id,
+                vendorId: resolvedVendorId,
+                vendorName: vendor?.name || '',
+                totalAmount,
+                pin,
+                creatorCode: creatorCode ? creatorCode.trim() : undefined,
+                discountValue,
+                discountType,
+            });
+
+            const data = result.data as any;
+
+            let message = `You saved QAR ${data.discountAmount?.toFixed(2) || discountAmount.toFixed(2)}!`;
+            if (data.cashbackAmount > 0) {
+                message += `\nCashback earned: QAR ${data.cashbackAmount.toFixed(2)}`;
+            }
+
+            Alert.alert(
+                'Redemption Successful! 🎉',
+                message,
+                [
+                    {
+                        text: 'Done',
+                        onPress: () => router.replace('/'),
+                    },
+                ]
+            );
+        } catch (error: any) {
+            console.error('Offer redemption error:', error);
+            Alert.alert(
+                'Redemption Failed',
+                error.message || 'Something went wrong. Please try again.'
+            );
+        } finally {
+            setIsRedeeming(false);
+        }
+    };
+
     const handleAction = () => {
         if (step === 'creator') {
             setStep('pin');
-            // Slight delay to allow render before focus
             setTimeout(() => {
                 pinInputRef.current?.focus();
             }, 300);
@@ -102,15 +200,7 @@ export default function RedeemScreen() {
                 return;
             }
 
-            // Logic for redemption will go here
-            console.log(`Redeeming with PIN: ${pin}, Amount: ${amount}, Creator: ${creatorCode}`);
-
-            if (creatorCode) {
-                Alert.alert('Success', 'Redemption successful');
-            } else {
-                Alert.alert('Success', 'Redemption successful');
-            }
-            // router.push('/redeem/success');
+            handleRedeem();
         }
     };
 
@@ -147,7 +237,7 @@ export default function RedeemScreen() {
                             <TouchableOpacity
                                 style={styles.backButton}
                                 onPress={() => {
-                                    if (step === 'pin') {
+                                    if (step === 'pin' && vendor.xcard === true) {
                                         setStep('creator');
                                         Keyboard.dismiss();
                                     } else {
@@ -159,15 +249,20 @@ export default function RedeemScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.content}>
+                        <ScrollView
+                            style={{ flex: 1 }}
+                            contentContainerStyle={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                        >
                             {/* Offer Card */}
                             <View style={styles.offerCardWrapper}>
                                 <View style={styles.offerCard}>
-                                    <Text style={styles.offerTitle}>
+                                    <PhonkText style={styles.offerTitle}>
                                         FLAT <Text style={styles.greenText}>
                                             {offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}
                                         </Text> OFF
-                                    </Text>
+                                    </PhonkText>
                                 </View>
 
                                 {/* Logo Overlay */}
@@ -180,7 +275,7 @@ export default function RedeemScreen() {
                                 </View>
                             </View>
 
-                            {/* Conditional Cards based on Step */}
+                            {/* Creator Code Step (xcard vendors only) */}
                             {step === 'creator' && (
                                 <View style={styles.creatorCard}>
                                     <Text style={styles.inputLabel}>
@@ -203,6 +298,7 @@ export default function RedeemScreen() {
                                 </View>
                             )}
 
+                            {/* PIN + Amount Step */}
                             {step === 'pin' && (
                                 <View style={styles.redemptionCard}>
                                     <Text style={styles.inputLabel}>Enter Vendor PIN:</Text>
@@ -230,7 +326,6 @@ export default function RedeemScreen() {
                                                 if (numericText.length <= 4) {
                                                     setPin(numericText);
                                                 }
-                                                // Auto-advance to amount if 4 digits entered
                                                 if (numericText.length === 4) {
                                                     amountInputRef.current?.focus();
                                                 }
@@ -242,7 +337,7 @@ export default function RedeemScreen() {
                                         />
                                     </View>
 
-                                    <Text style={styles.inputLabel}>Total Paid:</Text>
+                                    <Text style={styles.inputLabel}>Total Bill:</Text>
                                     <View style={styles.amountInputContainer}>
                                         <Text style={styles.currencyPrefix}>QAR</Text>
                                         <TextInput
@@ -257,6 +352,43 @@ export default function RedeemScreen() {
                                             onSubmitEditing={handleAction}
                                         />
                                     </View>
+
+                                    {/* Breakdown */}
+                                    {totalAmount > 0 && (
+                                        <View style={styles.breakdownContainer}>
+                                            <View style={styles.breakdownRow}>
+                                                <Text style={styles.breakdownLabel}>Total Bill</Text>
+                                                <Text style={styles.breakdownValue}>
+                                                    QAR {totalAmount.toFixed(2)}
+                                                </Text>
+                                            </View>
+                                            <View style={styles.breakdownRow}>
+                                                <Text style={styles.breakdownLabelGreen}>
+                                                    Discount ({offer.discountValue}{discountType === 'percentage' ? '%' : ''})
+                                                </Text>
+                                                <Text style={styles.breakdownValueGreen}>
+                                                    − QAR {discountAmount.toFixed(2)}
+                                                </Text>
+                                            </View>
+                                            <View style={styles.breakdownDivider} />
+                                            <View style={styles.breakdownRow}>
+                                                <Text style={styles.breakdownLabelBold}>Amount to Pay</Text>
+                                                <PhonkText style={styles.breakdownValueBold}>
+                                                    QAR {finalAmount.toFixed(2)}
+                                                </PhonkText>
+                                            </View>
+                                            {vendor.xcard === true && (
+                                                <View style={styles.breakdownRow}>
+                                                    <Text style={styles.cashbackLabel}>
+                                                        💰 Cashback (1%)
+                                                    </Text>
+                                                    <Text style={styles.cashbackValue}>
+                                                        + QAR {(finalAmount * 0.01).toFixed(2)}
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                    )}
                                 </View>
                             )}
 
@@ -265,16 +397,26 @@ export default function RedeemScreen() {
 
                             {/* Action Button */}
                             <TouchableOpacity
-                                style={styles.redeemButton}
+                                style={[
+                                    styles.redeemButton,
+                                    step === 'pin' && !canRedeem && styles.redeemButtonDisabled,
+                                ]}
                                 activeOpacity={0.9}
                                 onPress={handleAction}
+                                disabled={(step === 'pin' && !canRedeem) || isRedeeming}
                             >
-                                <Ionicons name="flash" size={20} color="#FFF" />
-                                <Text style={styles.redeemButtonText}>
-                                    {step === 'creator' ? 'CONTINUE' : 'REDEEM'}
-                                </Text>
+                                {isRedeeming ? (
+                                    <ActivityIndicator size="small" color="#FFF" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="flash" size={20} color="#FFF" />
+                                        <PhonkText style={styles.redeemButtonText}>
+                                            {step === 'creator' ? 'CONTINUE' : 'REDEEM'}
+                                        </PhonkText>
+                                    </>
+                                )}
                             </TouchableOpacity>
-                        </View>
+                        </ScrollView>
                     </View>
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
@@ -307,12 +449,12 @@ const styles = StyleSheet.create({
     errorText: {
         fontSize: 16,
         color: '#666',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         marginBottom: 10,
     },
     backLink: {
         color: Colors.brandGreen,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     header: {
         flexDirection: 'row',
@@ -333,11 +475,11 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
-    content: {
-        flex: 1,
+    scrollContent: {
+        flexGrow: 1,
         paddingHorizontal: 24,
-        paddingTop: 40,
-        paddingBottom: 30,
+        paddingTop: 20,
+        paddingBottom: 40,
     },
     offerCardWrapper: {
         position: 'relative',
@@ -352,19 +494,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    tcButton: {
-        position: 'absolute',
-        top: 20,
-        right: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    tcText: {
-        fontSize: 14,
-        color: '#888',
-        fontFamily: Typography.metropolis.semiBold,
     },
     logoContainer: {
         position: 'absolute',
@@ -390,29 +519,21 @@ const styles = StyleSheet.create({
     },
     offerTitle: {
         fontSize: 32,
-        fontFamily: Typography.integral.bold,
         color: '#000',
         textAlign: 'center',
     },
     greenText: {
         color: Colors.brandGreen,
     },
-    offerSubtitle: {
-        fontSize: 16,
-        color: '#888',
-        fontFamily: Typography.metropolis.medium,
-        marginTop: 4,
-    },
     redemptionCard: {
         backgroundColor: '#F7F7F7',
         borderRadius: 35,
         padding: 24,
-        marginTop: 20,
     },
     inputLabel: {
         fontSize: 16,
         color: '#444',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         marginBottom: 12,
     },
     pinContainer: {
@@ -444,7 +565,7 @@ const styles = StyleSheet.create({
     pinText: {
         fontSize: 30,
         color: '#E0E0E0',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         marginTop: 10,
     },
     hiddenPinInput: {
@@ -470,14 +591,70 @@ const styles = StyleSheet.create({
     currencyPrefix: {
         fontSize: 16,
         color: '#AAA',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         marginRight: 10,
     },
     amountInput: {
         flex: 1,
         fontSize: 18,
         color: '#000',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    breakdownContainer: {
+        marginTop: 20,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 20,
+    },
+    breakdownRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+    breakdownLabel: {
+        fontSize: 14,
+        color: '#666',
+        fontFamily: Typography.poppins.medium,
+    },
+    breakdownValue: {
+        fontSize: 14,
+        color: '#666',
+        fontFamily: Typography.poppins.semiBold,
+    },
+    breakdownLabelGreen: {
+        fontSize: 14,
+        color: Colors.brandGreen,
+        fontFamily: Typography.poppins.medium,
+    },
+    breakdownValueGreen: {
+        fontSize: 14,
+        color: Colors.brandGreen,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    breakdownDivider: {
+        height: 1,
+        backgroundColor: '#F0F0F0',
+        marginVertical: 4,
+    },
+    breakdownLabelBold: {
+        fontSize: 16,
+        color: '#000',
+        fontFamily: Typography.poppins.semiBold,
+    },
+    breakdownValueBold: {
+        fontSize: 16,
+        color: '#000',
+    },
+    cashbackLabel: {
+        fontSize: 13,
+        color: '#FF9800',
+        fontFamily: Typography.poppins.medium,
+    },
+    cashbackValue: {
+        fontSize: 13,
+        color: '#FF9800',
+        fontFamily: Typography.poppins.semiBold,
     },
     redeemButton: {
         backgroundColor: Colors.brandGreen,
@@ -494,17 +671,18 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 8,
     },
+    redeemButtonDisabled: {
+        opacity: 0.5,
+    },
     redeemButtonText: {
         color: '#FFF',
         fontSize: 22,
-        fontFamily: Typography.integral.bold,
         letterSpacing: 1,
     },
     creatorCard: {
         backgroundColor: '#F7F7F7',
         borderRadius: 35,
         padding: 24,
-        marginTop: 20,
     },
     creatorInputContainer: {
         backgroundColor: '#FFF',
@@ -521,11 +699,11 @@ const styles = StyleSheet.create({
     creatorInput: {
         fontSize: 18,
         color: '#000',
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     optionalText: {
         color: '#888',
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         fontSize: 14,
     },
 });

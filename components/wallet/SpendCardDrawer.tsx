@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../PhonkText';
 import RedeemGiftCard from './RedeemGiftCard';
 
 type Props = {
@@ -155,8 +156,8 @@ export default function SpendCardDrawer({
                                 <Text style={styles.backArrow}>←</Text>
                             </TouchableOpacity>
                             <View style={styles.logoContainer}>
-                                <Text style={styles.logoX}>X</Text>
-                                <Text style={styles.logoCard}>CARD</Text>
+                                <PhonkText style={styles.logoX}>X</PhonkText>
+                                <PhonkText style={styles.logoCard}>CARD</PhonkText>
                             </View>
                             <View style={styles.headerSpacer} />
                         </View>
@@ -164,9 +165,9 @@ export default function SpendCardDrawer({
                         {/* Balance Card */}
                         <View style={styles.balanceCard}>
                             <Text style={styles.balanceLabel}>Available Balance:</Text>
-                            <Text style={styles.balanceValue}>
-                                {balance} {currency}
-                            </Text>
+                            <PhonkText style={styles.balanceValue}>
+                                {balance.toFixed(2)} {currency}
+                            </PhonkText>
                         </View>
 
                         {/* Search Bar */}
@@ -242,12 +243,10 @@ const styles = StyleSheet.create({
     },
     logoX: {
         fontSize: 24,
-        fontFamily: Typography.integral.bold,
         color: Colors.brandGreen,
     },
     logoCard: {
         fontSize: 24,
-        fontFamily: Typography.integral.bold,
         color: '#000000',
     },
     headerSpacer: {
@@ -267,12 +266,11 @@ const styles = StyleSheet.create({
     },
     balanceLabel: {
         fontSize: 14,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#666666',
     },
     balanceValue: {
         fontSize: 20,
-        fontFamily: Typography.integral.bold,
         color: '#000000',
     },
     searchContainer: {
@@ -294,7 +292,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 14,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#000000',
         padding: 0,
     },
@@ -335,12 +333,12 @@ const styles = StyleSheet.create({
     },
     brandLogoPlaceholder: {
         fontSize: 18,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: '#FFFFFF',
     },
     brandName: {
         fontSize: 15,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#000000',
         flex: 1,
     },

@@ -7,6 +7,7 @@ import {
   type FirebaseAuthTypes
 } from '@react-native-firebase/auth';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -14,7 +15,6 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ThemeProvider } from '../context/ThemeContext';
 import { clearAuthEmail, getAuthEmail } from '../utils/auth';
 import { initI18n } from '../src/localization/i18n';
 import { applyRTL } from '../src/localization/rtl';
@@ -23,9 +23,8 @@ void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    IntegralBold: require('../assets/fonts/integralcf-bold.otf'),
-    MetropolisSemiBold: require('../assets/fonts/metropolis.semi-bold.otf'),
-    MetropolisMedium: require('../assets/fonts/metropolis.medium.otf'),
+    Phonk: require('../assets/fonts/phonk.otf'),
+    Poppins: require('../assets/fonts/poppins.ttf'),
   });
 
   const [i18nReady, setI18nReady] = useState(false);
@@ -102,8 +101,31 @@ export default function RootLayout() {
 
       const unsubscribe = onSnapshot(
         studentDocRef,
-        (docSnap) => {
-          setHasProfile(docSnap.exists());
+        async (docSnap) => {
+          if (docSnap.exists()) {
+            setHasProfile(true);
+          } else {
+            // Profile not found by UID — try server-side migration
+            // This handles the case where a magic link sign-in created a new auth UID
+            // but the user already has a Firestore profile under a previous UID.
+            try {
+              const fnInstance = getFunctions(undefined, 'me-central1');
+              const migrate = httpsCallable(fnInstance, 'migrateStudentProfile');
+              const result = await migrate();
+              const data = result.data as { migrated: boolean; reason?: string };
+
+              if (data.migrated) {
+                console.log('Profile migrated to current UID');
+                // onSnapshot will fire again with the new doc, setting hasProfile to true
+                return;
+              }
+            } catch (migrationError) {
+              console.error('Error during profile migration:', migrationError);
+            }
+
+            // No profile found by email either — truly a new user
+            setHasProfile(false);
+          }
         },
         (snapshotError) => {
           console.error('Error fetching student profile:', snapshotError);
@@ -157,20 +179,20 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <SafeAreaProvider>
-        <Stack>
-          <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="category" options={{ headerShown: false }} />
-          <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
-          <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
-          <Stack.Screen name="profile-details" options={{ headerShown: false }} />
-          <Stack.Screen name="terms" options={{ headerShown: false }} />
-          <Stack.Screen name="privacy" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
-        </Stack>
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <Stack>
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="category" options={{ headerShown: false }} />
+        <Stack.Screen name="search" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="redemption-history" options={{ headerShown: false }} />
+        <Stack.Screen name="profile-details" options={{ headerShown: false }} />
+        <Stack.Screen name="terms" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
+      </Stack>
+    </SafeAreaProvider>
   );
 }

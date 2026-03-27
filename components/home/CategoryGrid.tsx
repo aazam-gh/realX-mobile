@@ -2,11 +2,11 @@ import { collection, getFirestore, onSnapshot, orderBy, query } from '@react-nat
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { ThemedText } from '../ThemedText';
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 
 type CategoryItem = {
   id: string;
@@ -14,30 +14,9 @@ type CategoryItem = {
   name_en?: string;
   name_ar?: string;
   image?: string;
+  imageUrl?: string;
   order?: number;
 };
-
-const fallbackImageMap: Record<string, any> = {
-  books: require('../../assets/images/books.png'),
-  coffee: require('../../assets/images/coffee.png'),
-  electronics: require('../../assets/images/electronics.png'),
-  entertainment: require('../../assets/images/food.png'),
-  food: require('../../assets/images/food.png'),
-  pharmacy: require('../../assets/images/food.png'),
-  grocery: require('../../assets/images/grocery.png'),
-  'coming-soon': require('../../assets/images/see-more.png'),
-};
-
-const visibleOrder = [
-  'books',
-  'coffee',
-  'electronics',
-  'entertainment',
-  'food',
-  'pharmacy',
-  'grocery',
-  'coming-soon',
-];
 
 export default function CategoryGrid() {
   const router = useRouter();
@@ -56,19 +35,7 @@ export default function CategoryGrid() {
           ...(doc.data() as any),
         })) as CategoryItem[];
 
-        const ordered = visibleOrder.map((id) => {
-          if (id === 'coming-soon') {
-            return {
-              id,
-              name_en: t('coming_soon'),
-              name_ar: t('coming_soon'),
-            } as CategoryItem;
-          }
-
-          return fetched.find((item) => item.id === id) || { id };
-        });
-
-        setCategories(ordered);
+        setCategories(fetched);
         setLoading(false);
       },
       (error) => {
@@ -78,29 +45,25 @@ export default function CategoryGrid() {
     );
 
     return unsubscribe;
-  }, [t]);
+  }, []);
 
   const getLabel = (item: CategoryItem) => {
-    if (item.id === 'coming-soon') return t('coming_soon');
-
     if (i18n.language === 'ar') {
-      return item.name_ar || t(item.id);
+      return item.name_ar || item.name || item.name_en || t(item.id);
     }
 
-    return item.name_en || t(item.id);
+    return item.name_en || item.name || t(item.id);
   };
 
   const getImageSource = (item: CategoryItem) => {
-    if (typeof item.image === 'string' && item.image.trim()) {
-      return { uri: item.image };
+    const image = item.imageUrl || item.image;
+    if (typeof image === 'string' && image.trim()) {
+      return { uri: image };
     }
-
-    return fallbackImageMap[item.id] || fallbackImageMap['coming-soon'];
+    return null;
   };
 
   const handlePress = (item: CategoryItem) => {
-    if (item.id === 'coming-soon') return;
-
     router.push({
       pathname: '/category/[id]',
       params: {
@@ -128,11 +91,15 @@ export default function CategoryGrid() {
           onPress={() => handlePress(item)}
         >
           <View style={styles.imageWrap}>
-            <Image source={getImageSource(item)} style={styles.image} contentFit="cover" />
+            {getImageSource(item) ? (
+              <Image source={getImageSource(item)!} style={styles.image} contentFit="cover" />
+            ) : (
+              <View style={styles.placeholder} />
+            )}
           </View>
-          <ThemedText style={styles.label} numberOfLines={2}>
+          <Text style={styles.label} numberOfLines={2}>
             {getLabel(item)}
-          </ThemedText>
+          </Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -158,15 +125,24 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 8,
     backgroundColor: '#F4F4F4',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   image: {
     width: '100%',
     height: '100%',
   },
+  placeholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#F4F4F4',
+  },
   label: {
     textAlign: 'center',
     fontSize: 13,
     minHeight: 32,
+    color: '#000',
+    fontFamily: Typography.poppins.medium,
   },
   loader: {
     justifyContent: 'center',

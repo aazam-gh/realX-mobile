@@ -2,15 +2,17 @@ import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { ThemedText } from '../ThemedText';
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 
 type BrandItem = {
   id: string;
   name: string;
+  name_en?: string;
+  name_ar?: string;
   logoUrl: string;
   isActive: boolean;
 };
@@ -37,6 +39,8 @@ export default function BrandGrid() {
             .map((b: any) => ({
               id: b.id,
               name: b.name,
+              name_en: b.name_en,
+              name_ar: b.name_ar,
               logoUrl: b.logoUrl,
               isActive: b.isActive,
             })) as BrandItem[];
@@ -72,10 +76,14 @@ export default function BrandGrid() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <ThemedText style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
-          <ThemedText style={styles.shopByText}>{t('shop_by_word')} </ThemedText>
-          <ThemedText style={styles.brandText}>{t('brand_word')}</ThemedText>
-        </ThemedText>
+        <Text
+          style={[
+            styles.headerTitle,
+            { textAlign: isRTL ? 'right' : 'left' },
+          ]}
+        >
+          {t('shop_by_brand')}
+        </Text>
       </View>
 
       <ScrollView
@@ -116,15 +124,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-  },
-  shopByText: {
+    fontFamily: Typography.poppins.semiBold,
     color: Colors.light.text,
-    letterSpacing: 1,
-  },
-  brandText: {
-    color: Colors.brandGreen,
-    fontStyle: 'italic',
-    letterSpacing: 1,
   },
   loaderContainer: {
     height: 120,

@@ -49,40 +49,6 @@ export default function RootLayout() {
     void setupLocalization();
   }, []);
 
-  useEffect(() => {
-    const handleDeepLink = async (url: string | null) => {
-      if (!url) return;
-
-      if (!url.includes('signIn')) return;
-      if (!url.includes('oobCode')) return;
-
-      try {
-        const authInstance = getAuth();
-
-        if (!isSignInWithEmailLink(authInstance, url)) return;
-
-        const email = await getAuthEmail();
-        if (!email) return;
-
-        await signInWithEmailLink(authInstance, email, url);
-        await clearAuthEmail();
-        console.log('Successfully signed in with email link!');
-      } catch (err) {
-        console.error('Error signing in with email link:', err);
-      }
-    };
-
-    Linking.getInitialURL().then((url) => {
-      void handleDeepLink(url);
-    });
-
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      void handleDeepLink(url);
-    });
-
-    return () => subscription.remove();
-  }, []);
-
   function onAuthStateChangedHandler(currentUser: FirebaseAuthTypes.User | null) {
     setUser(currentUser);
     if (initializing) setInitializing(false);

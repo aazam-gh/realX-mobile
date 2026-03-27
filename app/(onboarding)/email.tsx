@@ -69,31 +69,7 @@ export default function EmailOnboarding() {
       let storedEmail = await getAuthEmail();
 
       if (!storedEmail) {
-        // 🔴 fallback (user manually inputs email)
-        Alert.prompt(
-          'Confirm Email',
-          'Enter your email to complete sign-in',
-          async (inputEmail) => {
-            if (!inputEmail) return;
-
-            const normalizedEmail = normalizeEmail(inputEmail);
-
-            await signInWithEmailLink(authInstance, normalizedEmail, incomingUrl);
-
-            if (isNewUser) {
-              router.replace({
-                pathname: '/(onboarding)/details',
-                params: { role, email: normalizedEmail },
-              });
-            } else {
-              router.replace('/(tabs)');
-            }
-
-            await clearAuthEmail();
-          },
-          'plain-text',
-        );
-        return;
+        throw new Error('Session expired. Please request a new login link on this device.');
       }
 
       const normalizedEmail = normalizeEmail(storedEmail);

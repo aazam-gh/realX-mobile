@@ -1,159 +1,152 @@
-import { collection, getDocs, getFirestore, orderBy, query } from '@react-native-firebase/firestore';
-import { FlashList } from '@shopify/flash-list';
+import { collection, getFirestore, onSnapshot, orderBy, query } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
 type CategoryItem = {
-    id: string;
-    name: string;
-    image?: string | any;
-    icon?: string;
+  id: string;
+  name?: string;
+  name_en?: string;
+  name_ar?: string;
+  image?: string;
+  imageUrl?: string;
+  order?: number;
 };
 
-type Props = {
-    categories?: CategoryItem[];
-    onCategoryPress?: (category: CategoryItem) => void;
-};
+export default function CategoryGrid() {
+  const router = useRouter();
+  const { t, i18n } = useTranslation();
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function CategoryGrid({ categories: propCategories, onCategoryPress }: Props) {
-    const router = useRouter();
-    const { t, i18n } = useTranslation();
-    const [fetchedCategories, setFetchedCategories] = useState<CategoryItem[]>([]);
-    const [loading, setLoading] = useState(!propCategories);
+  useEffect(() => {
+    const db = getFirestore();
 
-    const isArabic = i18n.language === 'ar';
+    const unsubscribe = onSnapshot(
+      query(collection(db, 'categories'), orderBy('order', 'asc')),
+      (snapshot) => {
+        const fetched = snapshot.docs.map((doc) => ({
+          id: doc.id.toLowerCase(),
+          ...(doc.data() as any),
+        })) as CategoryItem[];
 
-    useEffect(() => {
-        if (propCategories) return;
-
-        const fetchCategories = async () => {
-            try {
-                const db = getFirestore();
-                const q = query(
-                    collection(db, 'categories'),
-                    orderBy('order', 'asc')
-                );
-
-                const snapshot = await getDocs(q);
-                const items: CategoryItem[] = snapshot.docs.map((doc: any) => {
-                    const data = doc.data();
-                    return {
-                        id: doc.id,
-                        name: isArabic ? (data.nameArabic || data.nameAr || data.nameEnglish) : data.nameEnglish,
-                        image: data.imageUrl,
-                    };
-                });
-
-                // Add "See More" at the end to match original layout if it fits
-                if (items.length > 0) {
-                    items.push({
-                        id: 'coming-soon',
-                        name: t('coming_soon'),
-                        image: require('../../assets/images/see-more.svg')
-                    });
-                }
-
-                setFetchedCategories(items);
-            } catch (error) {
-                console.error('Error fetching categories:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchCategories();
-    }, [propCategories]);
-
-    const displayCategories = propCategories || fetchedCategories;
-
-    const handleCategoryPress = (item: CategoryItem) => {
-        if (onCategoryPress) {
-            onCategoryPress(item);
-        } else if (item.id !== 'coming-soon') {
-            router.push({
-                pathname: "/category/[id]",
-                params: { id: item.id, name: item.name }
-            });
-        }
-    };
-
-    const renderCategory = ({ item }: { item: CategoryItem }) => {
-        return (
-            <TouchableOpacity
-                style={styles.categoryItem}
-                onPress={() => handleCategoryPress(item)}
-                activeOpacity={0.7}
-            >
-                <View style={styles.imageContainer}>
-                    {item.image ? (
-                        <Image
-                            source={typeof item.image === 'string' ? { uri: item.image } : item.image}
-                            style={styles.categoryImage}
-                            contentFit="contain"
-                        />
-                    ) : (
-                        <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, { fontSize: 40 }]}>{item.icon}</Text>
-                    )}
-                </View>
-                <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.categoryName]} numberOfLines={1}>{item.name}</Text>
-            </TouchableOpacity>
-        );
-    };
-
-    if (loading) {
-        return (
-            <View style={[styles.container, styles.loaderContainer]}>
-                <ActivityIndicator size="small" color={Colors.light.tint} />
-            </View>
-        );
-    }
-
-    if (displayCategories.length === 0) {
-        return null; // Or some fallback
-    }
-
-    return (
-        <View style={[styles.container, { minHeight: Math.ceil((displayCategories.length || 1) / 4) * 130 }]}>
-            <FlashList
-                data={displayCategories}
-                renderItem={renderCategory}
-                keyExtractor={(item) => item.id}
-                numColumns={4}
-                scrollEnabled={false}
-            />
-        </View>
+        setCategories(fetched);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching categories:', error);
+        setLoading(false);
+      }
     );
+
+    return unsubscribe;
+  }, []);
+
+  const getLabel = (item: CategoryItem) => {
+    if (i18n.language === 'ar') {
+      return item.name_ar || item.name || item.name_en || t(item.id);
+    }
+
+    return item.name_en || item.name || t(item.id);
+  };
+
+  const getImageSource = (item: CategoryItem) => {
+    const image = item.imageUrl || item.image;
+    if (typeof image === 'string' && image.trim()) {
+      return { uri: image };
+    }
+    return null;
+  };
+
+  const handlePress = (item: CategoryItem) => {
+    router.push({
+      pathname: '/category/[id]',
+      params: {
+        id: item.id,
+        title: getLabel(item),
+      },
+    });
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="small" color={Colors.light.tint} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.grid}>
+      {categories.map((item) => (
+        <TouchableOpacity
+          key={item.id}
+          style={styles.item}
+          activeOpacity={0.8}
+          onPress={() => handlePress(item)}
+        >
+          <View style={styles.imageWrap}>
+            {getImageSource(item) ? (
+              <Image source={getImageSource(item)!} style={styles.image} contentFit="cover" />
+            ) : (
+              <View style={styles.placeholder} />
+            )}
+          </View>
+          <Text style={styles.label} numberOfLines={2}>
+            {getLabel(item)}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-    },
-    categoryItem: {
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    imageContainer: {
-        marginBottom: 8,
-    },
-    categoryImage: {
-        width: 80,
-        height: 80,
-    },
-    categoryName: {
-        fontSize: 12,
-        fontFamily: Typography.poppins.medium,
-        textAlign: 'center',
-    },
-    loaderContainer: {
-        height: 150,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 18,
+    marginBottom: 24,
+  },
+  item: {
+    width: '22%',
+    alignItems: 'center',
+  },
+  imageWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 8,
+    backgroundColor: '#F4F4F4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  placeholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#F4F4F4',
+  },
+  label: {
+    textAlign: 'center',
+    fontSize: 13,
+    minHeight: 32,
+    color: '#000',
+    fontFamily: Typography.poppins.medium,
+  },
+  loader: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
 });

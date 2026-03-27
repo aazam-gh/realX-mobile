@@ -12,9 +12,8 @@ import {
   GreetingHeader,
   PromoBanner,
   SearchBar,
-  TrendingOffers
+  TrendingOffers,
 } from '../../components/home';
-
 import { Colors } from '../../constants/Colors';
 
 export default function HomeScreen() {
@@ -22,7 +21,6 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const { t } = useTranslation();
   const router = useRouter();
-  const isDark = false;
 
   useEffect(() => {
     const authInstance = getAuth();

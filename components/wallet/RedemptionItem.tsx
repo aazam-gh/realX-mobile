@@ -60,7 +60,7 @@ export default function RedemptionItem({ item }: Props) {
                     {item.savedAmount.toFixed(2)} {item.currency}
                 </Text>
                 <Text style={styles.totalBillText}>
-                    of {item.totalBill.toFixed(2)} {item.currency}
+                    Instead of {item.totalBill.toFixed(2)} {item.currency}
                 </Text>
             </View>
         </View>
@@ -117,12 +117,12 @@ const styles = StyleSheet.create({
     },
     savedContainer: {
         alignItems: 'flex-end',
+        marginTop: 16,
     },
     savedLabel: {
         fontSize: 18,
         fontFamily: Typography.poppins.semiBold,
         color: Colors.brandGreen,
-        marginBottom: 2,
     },
     totalBillText: {
         fontSize: 11,

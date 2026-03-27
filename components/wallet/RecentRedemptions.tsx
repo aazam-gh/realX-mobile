@@ -28,7 +28,7 @@ export default function RecentRedemptions() {
         const q = query(
             collection(db, 'transactions'),
             where('userId', '==', user.uid),
-            where('type', '==', 'giftcard_redemption'),
+            where('type', '==', 'giftcard'),
             orderBy('createdAt', 'desc'),
             limit(3)
         );
@@ -69,7 +69,7 @@ export default function RecentRedemptions() {
                     merchantName: vendorName,
                     date: dateStr,
                     offerType: t('gift_card'),
-                    savedAmount: data.redemptionCardAmount || 0,
+                    savedAmount: data.finalAmount || 0,
                     totalBill: data.totalAmount || 0,
                     remainingToPay: data.remainingAmount || 0,
                     currency: 'QR',

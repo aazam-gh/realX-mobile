@@ -70,7 +70,7 @@ export default function GiftCardCheckout({
                 vendorId: brand.id,
                 vendorName: brand.name,
                 giftCardAmount: selectedAmount,
-                totalBill: totalBillNum,
+                totalAmount: totalBillNum,
                 pin,
             });
 

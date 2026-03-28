@@ -269,7 +269,7 @@ xcardBadge: {
     zIndex: 10,
 },
 xcardIcon: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
 },
 });

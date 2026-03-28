@@ -21,9 +21,9 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import PhonkText from '../../components/PhonkText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
 
 // Types for better type safety
 interface VendorData {

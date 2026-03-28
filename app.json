@@ -39,7 +39,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "reelx-backend.firebaseapp.com",
+              "host": "reelx-backend.web.app",
               "pathPrefix": "/finishSignIn"
             },
             {
@@ -61,6 +61,7 @@
     "plugins": [
       "expo-router",
       "expo-localization",
+      "expo-notifications",
       [
         "react-native-bottom-tabs"
       ],
@@ -68,7 +69,8 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/icon.png",
-          "enableFullScreenImage_legacy": true
+          "width": 100,
+          "backgroundColor": "#18B852"
         }
       ],
       [

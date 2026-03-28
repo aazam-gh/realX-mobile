@@ -63,6 +63,7 @@ export default function RedemptionHistoryScreen() {
         const q = query(
           collection(db, 'transactions'),
           where('userId', '==', user.uid),
+          where('type', '==', 'offer'),
           orderBy('createdAt', 'desc'),
           limit(10)
         );
@@ -128,16 +129,20 @@ export default function RedemptionHistoryScreen() {
   };
 
   const renderItem = ({ item }: { item: Transaction }) => {
-    const isOffer = item.type === 'offer_redemption';
     const logoUri = vendorLogos[item.vendorId];
     
     // Fallbacks
     const savings = item.discountAmount ?? 0;
     const paid = item.finalAmount ?? item.totalAmount ?? 0;
-    const discountText =
-      isOffer && item.discountValue
-        ? `${item.discountValue}${item.discountType === 'percentage' ? '%' : ''} Student Discount`
-        : 'Gift Card Redeemed';
+const discountPercent =
+  item.discountAmount && item.totalAmount
+    ? Math.round((item.discountAmount / item.totalAmount) * 100)
+    : null;
+
+const discountText =
+  discountPercent
+    ? `${discountPercent}% Student Discount`
+    : 'Offer Redeemed';
 
     return (
       <View style={{ marginBottom: 24 }}>

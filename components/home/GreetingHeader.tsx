@@ -11,7 +11,7 @@ export default function GreetingHeader({ userName }: Props) {
         <View style={styles.container}>
             <View style={styles.textContainer}>
                 <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.greeting]}>
-                    Hey <Text style={[{ color: Colors.brandGreen, fontFamily: Typography.poppins.medium }, styles.userName]}>{userName}</Text>,
+                    Hey <Text style={[{ color: Colors.brandGreen, fontFamily: Typography.phonk.bold }, styles.userName]}>{userName}</Text>,
                 </Text>
                 <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.subtitle]}>Ready to save?</Text>
             </View>
@@ -48,7 +48,6 @@ const styles = StyleSheet.create({
     },
     userName: {
         color: Colors.brandGreen,
-        fontFamily: Typography.poppins.semiBold,
     },
     subtitle: {
         fontSize: 28,

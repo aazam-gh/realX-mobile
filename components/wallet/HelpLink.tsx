@@ -1,4 +1,6 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 
 type Props = {
@@ -6,6 +8,8 @@ type Props = {
 };
 
 export default function HelpLink({ onPress }: Props) {
+    const { t } = useTranslation();
+
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -14,9 +18,9 @@ export default function HelpLink({ onPress }: Props) {
                 activeOpacity={0.7}
             >
                 <View style={styles.iconContainer}>
-                    <Text style={styles.icon}>ⓘ</Text>
+                    <Ionicons name="information-circle-outline" size={16} color="#666666" />
                 </View>
-                <Text style={styles.linkText}>How does this work?</Text>
+                <Text style={styles.linkText}>{t('how_does_this_work')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -28,17 +32,13 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
     },
     linkContainer: {
-        flexDirection: 'row',
+        flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
         alignItems: 'center',
         paddingVertical: 8,
         paddingHorizontal: 16,
     },
     iconContainer: {
-        marginRight: 6,
-    },
-    icon: {
-        fontSize: 16,
-        color: '#666666',
+        marginEnd: 6,
     },
     linkText: {
         fontSize: 14,

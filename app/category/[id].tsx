@@ -22,8 +22,8 @@ const iconMap: Record<string, any> = {
 
 const foodItems = [
   { id: 'all', labelKey: 'all', emoji: '??' },
-  { id: 'burger', label: 'Burger', emoji: '?' },
-  { id: 'pizza', label: 'Pizza', emoji: '??' },
+  { id: 'burger', labelKey: 'burger', emoji: '?' },
+  { id: 'pizza', labelKey: 'pizza', emoji: '??' },
 ];
 
 export default function CategoryDetailsScreen() {
@@ -74,7 +74,11 @@ export default function CategoryDetailsScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={28} color="#000" />
+            <Ionicons
+              name={i18n.language === 'ar' ? 'arrow-forward' : 'arrow-back'}
+              size={28}
+              color="#000"
+            />
           </TouchableOpacity>
 
           <Image source={iconMap[id]} style={styles.headerIcon} contentFit="cover" />
@@ -116,7 +120,7 @@ export default function CategoryDetailsScreen() {
                     <ThemedText style={styles.foodEmoji}>{item.emoji}</ThemedText>
                   </View>
                   <ThemedText style={[styles.foodLabel, item.id === 'all' && styles.foodLabelActive]}>
-                    {item.labelKey ? t(item.labelKey) : item.label}
+                    {t(item.labelKey)}
                   </ThemedText>
                 </View>
               ))}
@@ -157,13 +161,13 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   backBtn: {
-    marginRight: 12,
+    marginEnd: 12,
   },
   headerIcon: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    marginRight: 10,
+    marginEnd: 10,
   },
   headerTitle: {
     fontSize: 22,
@@ -180,7 +184,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    marginLeft: 10,
+    marginStart: 10,
     fontSize: 16,
   },
   comingSoonWrap: {

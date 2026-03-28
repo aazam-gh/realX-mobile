@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { I18nManager, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useTheme } from '../../context/ThemeContext';
@@ -10,16 +11,24 @@ type Props = {
     onChangeText?: (text: string) => void;
 };
 
-export default function SearchBar({ placeholder = 'Search for anything...', value, onChangeText }: Props) {
+export default function SearchBar({ placeholder, value, onChangeText }: Props) {
     const { theme } = useTheme();
+    const { t, i18n } = useTranslation();
 
     return (
         <View style={styles.container}>
             <View style={styles.searchContainer}>
                 <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.icon} />
                 <TextInput
-                    style={[styles.input, { color: theme.text }]}
-                    placeholder={placeholder}
+                    style={[
+                        styles.input,
+                        {
+                            color: theme.text,
+                            textAlign: i18n.language === 'ar' ? 'right' : 'left',
+                            writingDirection: i18n.language === 'ar' ? 'rtl' : 'ltr',
+                        },
+                    ]}
+                    placeholder={placeholder ?? t('search_anything')}
                     placeholderTextColor={theme.subtitle}
                     value={value}
                     onChangeText={onChangeText}
@@ -35,7 +44,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
     },
     searchContainer: {
-        flexDirection: 'row',
+        flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
         alignItems: 'center',
         backgroundColor: '#F5F5F5',
         borderRadius: 24,
@@ -45,7 +54,7 @@ const styles = StyleSheet.create({
         borderColor: '#E0E0E0',
     },
     icon: {
-        marginRight: 10,
+        marginEnd: 10,
     },
     input: {
         flex: 1,

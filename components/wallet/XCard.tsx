@@ -1,4 +1,6 @@
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Dimensions, I18nManager, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -11,10 +13,11 @@ type Props = {
 };
 
 export default function XCard({ earnings = 0, currency = 'QAR' }: Props) {
+    const { t } = useTranslation();
+
     return (
         <View style={styles.container}>
             <View style={styles.card}>
-                {/* Background pattern - diagonal "REALX" text */}
                 <View style={styles.patternContainer}>
                     {[...Array(8)].map((_, rowIndex) => (
                         <View key={rowIndex} style={styles.patternRow}>
@@ -27,20 +30,17 @@ export default function XCard({ earnings = 0, currency = 'QAR' }: Props) {
                     ))}
                 </View>
 
-                {/* Card content */}
                 <View style={styles.cardContent}>
-                    {/* Earnings section */}
                     <View style={styles.earningsSection}>
-                        <Text style={styles.earningsLabel}>Cashback:</Text>
+                        <Text style={styles.earningsLabel}>{t('cashback_balance')}</Text>
                         <View style={styles.earningsRow}>
                             <Text style={styles.earningsAmount}>
                                 {earnings} {currency}
                             </Text>
-                            <Text style={styles.coinEmoji}>💰</Text>
+                            <Ionicons name="wallet-outline" size={20} color="#FFFFFF" style={styles.coinIcon} />
                         </View>
                     </View>
 
-                    {/* realX branding */}
                     <View style={styles.brandingContainer}>
                         <Text style={styles.brandReal}>real</Text>
                         <Text style={styles.brandX}>X</Text>
@@ -95,9 +95,10 @@ const styles = StyleSheet.create({
         fontFamily: Typography.metropolis.medium,
         color: 'rgba(255, 255, 255, 0.8)',
         marginBottom: 4,
+        textAlign: I18nManager.isRTL ? 'right' : 'left',
     },
     earningsRow: {
-        flexDirection: 'row',
+        flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
         alignItems: 'center',
     },
     earningsAmount: {
@@ -105,9 +106,8 @@ const styles = StyleSheet.create({
         fontFamily: Typography.metropolis.semiBold,
         color: '#FFFFFF',
     },
-    coinEmoji: {
-        fontSize: 20,
-        marginLeft: 8,
+    coinIcon: {
+        marginStart: 8,
     },
     brandingContainer: {
         flexDirection: 'row',

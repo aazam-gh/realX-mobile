@@ -1,27 +1,66 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
+import RestaurantCard from '../category/RestaurantCard';
 
-type OfferItem = {
-    id: string;
-    title: string;
-    subtitle: string;
-    imageUrl?: string;
-};
+export default function TrendingOffers() {
+    const [offers, setOffers] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
-type Props = {
-    offers?: OfferItem[];
-    onOfferPress?: (offer: OfferItem) => void;
-};
+    useEffect(() => {
+        const fetchTrendingOffers = async () => {
+            try {
+                const db = getFirestore();
+                const cmsDocRef = doc(db, 'cms', 'trending-offers');
+                const cmsSnap = await getDoc(cmsDocRef);
 
-const defaultOffers: OfferItem[] = [
-    { id: '1', title: 'Restaurant Deal', subtitle: 'Up to 30% off' },
-    { id: '2', title: 'Coffee Shop', subtitle: 'Buy 1 Get 1 Free' },
-    { id: '3', title: 'Grocery Store', subtitle: 'Fresh Deals Daily' },
-];
+                if (cmsSnap.exists()) {
+                    const data = cmsSnap.data();
+                    const offerIds = data?.offerIds || [];
 
-export default function TrendingOffers({ offers = defaultOffers, onOfferPress }: Props) {
+                    const offersPromises = offerIds.map(async (id: string) => {
+                        const offerDoc = await getDoc(doc(db, 'offers', id));
+                        if (offerDoc.exists()) {
+                            return { id: offerDoc.id, ...offerDoc.data() };
+                        }
+                        return null;
+                    });
+
+                    const fetchedOffers = (await Promise.all(offersPromises)).filter(o => o !== null);
+                    setOffers(fetchedOffers);
+                }
+            } catch (error) {
+                console.error('Error fetching trending offers:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTrendingOffers();
+    }, []);
+
+    const handleOfferPress = (offer: any) => {
+        if (offer.vendorId) {
+            router.push({ pathname: '/vendor/[id]', params: { id: offer.vendorId } });
+        }
+    };
+
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.loaderContainer]}>
+                <ActivityIndicator size="small" color={Colors.brandGreen} />
+            </View>
+        );
+    }
+
+    if (offers.length === 0) {
+        return null;
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
@@ -36,25 +75,20 @@ export default function TrendingOffers({ offers = defaultOffers, onOfferPress }:
                 contentContainerStyle={styles.scrollContent}
             >
                 {offers.map((offer) => (
-                    <TouchableOpacity
+                    <RestaurantCard
                         key={offer.id}
+                        id={offer.id}
+                        name={offer.titleEn || offer.titleAr || 'Untitled Offer'}
+                        cashbackText={offer.descriptionEn || offer.descriptionAr || 'Special Offer'}
+                        discountText={`${offer.discountValue || ''}${offer.discountType === 'percentage' ? '%' : ''} OFF`}
+                        isTrending={offer.isTrending}
+                        isTopRated={offer.isTopRated}
+                        imageUri={offer.bannerImage}
+                        logoUri={offer.vendorProfilePicture}
+                        xcardEnabled={offer.xcard}
+                        onPress={() => handleOfferPress(offer)}
                         style={styles.offerCard}
-                        onPress={() => onOfferPress?.(offer)}
-                        activeOpacity={0.7}
-                    >
-                        {/* Placeholder for offer image */}
-                        <View style={styles.imagePlaceholder}>
-                            <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.placeholderEmoji]}>🏷️</Text>
-                        </View>
-                        <View style={styles.offerContent}>
-                            <PhonkText style={[{ color: '#000' }, styles.offerTitle]} numberOfLines={1}>
-                                {offer.title}
-                            </PhonkText>
-                            <PhonkText style={[{ color: '#8E8E93' }, styles.offerSubtitle]} numberOfLines={1}>
-                                {offer.subtitle}
-                            </PhonkText>
-                        </View>
-                    </TouchableOpacity>
+                    />
                 ))}
             </ScrollView>
         </View>
@@ -84,40 +118,17 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
         letterSpacing: 1,
     },
+    loaderContainer: {
+        height: 120,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     scrollContent: {
         paddingHorizontal: 20,
         gap: 12,
     },
     offerCard: {
-        width: 150,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    imagePlaceholder: {
-        width: '100%',
-        height: 100,
-        backgroundColor: '#F5F5F5',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    placeholderEmoji: {
-        fontSize: 40,
-    },
-    offerContent: {
-        padding: 10,
-    },
-    offerTitle: {
-        fontSize: 14,
-        marginBottom: 2,
-    },
-    offerSubtitle: {
-        fontSize: 12,
+        width: 220,
     },
 });
 

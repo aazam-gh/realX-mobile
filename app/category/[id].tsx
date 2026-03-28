@@ -288,7 +288,12 @@ export default function CategoryScreen() {
             const querySnapshot = await getDocs(q);
 
             if (!querySnapshot.empty) {
-                const fetchedOffers = querySnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+                const fetchedOffers = querySnapshot.docs.map((doc: any) => ({ 
+                    id: doc.id, 
+                    ...doc.data(),
+                    // Use the denormalized xcard field directly from the offer document
+                    xcard: doc.data().xcard || false
+                }));
 
                 if (isNew) {
                     setOffers(fetchedOffers);
@@ -297,12 +302,7 @@ export default function CategoryScreen() {
                 }
 
                 setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]);
-
-                if (querySnapshot.docs.length < PAGE_SIZE) {
-                    setIsListEnd(true);
-                } else {
-                    setIsListEnd(false);
-                }
+                setIsListEnd(querySnapshot.docs.length < PAGE_SIZE);
             } else {
                 setIsListEnd(true);
                 if (isNew) setOffers([]);
@@ -451,7 +451,7 @@ export default function CategoryScreen() {
                                 isTopRated={item.isTopRated}
                                 imageUri={item.bannerImage}
                                 logoUri={item.vendorProfilePicture}
-                                xcardEnabled={item.xcardEnabled}
+                                xcardEnabled={item.xcard}
                                 onPress={() => handlePromoPress({ id: item.id, title: item.titleEn, vendorId: item.vendorId })}
                             />
                         </View>

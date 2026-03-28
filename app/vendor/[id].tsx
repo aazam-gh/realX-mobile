@@ -170,6 +170,12 @@ export default function VendorScreen() {
 
                             return (
                                 <View key={offer.id} style={styles.offerCard}>
+                                    {offer.xcard && (
+                                        <Image
+                                            source={require('../../assets/images/cashback.png')}
+                                            style={styles.xcardBadge}
+                                        />
+                                    )}
                                     {/* Top Info Pill */}
                                     <View style={[styles.offerInfoContainer, { backgroundColor: '#F5F5F5' }]}>
                                         <View style={styles.offerContent}>
@@ -410,7 +416,13 @@ const styles = StyleSheet.create({
     },
     offerCard: {
         marginBottom: 8,
-
+        position: 'relative',
+    },
+    xcardBadge: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        zIndex: 10,
     },
     offerInfoContainer: {
         borderRadius: 30,

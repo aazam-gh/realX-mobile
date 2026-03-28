@@ -75,6 +75,7 @@ export default function SearchScreen() {
             const fetched = snapshot.docs.map((doc: any) => ({
                 id: doc.id,
                 ...doc.data(),
+                xcard: doc.data().xcard || false
             }));
 
             if (isNew) {
@@ -144,7 +145,7 @@ export default function SearchScreen() {
                     isTopRated={item.isTopRated}
                     imageUri={item.bannerImage}
                     logoUri={item.vendorProfilePicture}
-                    xcardEnabled={item.xcardEnabled}
+                    xcardEnabled={item.xcard}
                     onPress={() => handleOfferPress(item)}
                 />
             </View>

@@ -1,50 +1,52 @@
-import { Dimensions, ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Dimensions, I18nManager, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../PhonkText';
 
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth - 40;
-const CARD_ASPECT_RATIO = 335 / 190; // Standard card aspect ratio roughly
-const CARD_HEIGHT = CARD_WIDTH / CARD_ASPECT_RATIO;
-
-const xcardImage = require('../../assets/images/xcard.png');
+const CARD_HEIGHT = 200;
 
 type Props = {
     earnings?: number;
     currency?: string;
-    creatorCode?: string;
 };
 
-export default function AZxXCard({ earnings = 0, currency = 'QAR', creatorCode }: Props) {
+export default function XCard({ earnings = 0, currency = 'QAR' }: Props) {
+    const { t } = useTranslation();
+
     return (
         <View style={styles.container}>
-            <ImageBackground
-                source={xcardImage}
-                style={styles.card}
-                imageStyle={styles.cardImage}
-                resizeMode="cover"
-            >
-                {/* Card content overlaid on the image */}
+            <View style={styles.card}>
+                <View style={styles.patternContainer}>
+                    {[...Array(8)].map((_, rowIndex) => (
+                        <View key={rowIndex} style={styles.patternRow}>
+                            {[...Array(5)].map((_, colIndex) => (
+                                <Text key={colIndex} style={styles.patternText}>
+                                    REALX
+                                </Text>
+                            ))}
+                        </View>
+                    ))}
+                </View>
+
                 <View style={styles.cardContent}>
-                    {/* Earnings section */}
                     <View style={styles.earningsSection}>
-                        <Text style={styles.earningsLabel}>Cashback:</Text>
+                        <Text style={styles.earningsLabel}>{t('cashback_balance')}</Text>
                         <View style={styles.earningsRow}>
                             <Text style={styles.earningsAmount}>
-                                {earnings.toFixed(2)} {currency}
+                                {earnings} {currency}
                             </Text>
+                            <Ionicons name="wallet-outline" size={20} color="#FFFFFF" style={styles.coinIcon} />
                         </View>
                     </View>
 
-                    {/* Creator Code Section (Bottom Right) */}
-                    {creatorCode && (
-                        <View style={styles.creatorCodeContainer}>
-                            <Text style={styles.creatorCodeLabel}>CREATOR CODE</Text>
-                            <PhonkText style={styles.creatorCodeText}>{creatorCode}</PhonkText>
-                        </View>
-                    )}
+                    <View style={styles.brandingContainer}>
+                        <Text style={styles.brandReal}>real</Text>
+                        <Text style={styles.brandX}>X</Text>
+                    </View>
                 </View>
-            </ImageBackground>
+            </View>
         </View>
     );
 }
@@ -58,14 +60,31 @@ const styles = StyleSheet.create({
         width: CARD_WIDTH,
         height: CARD_HEIGHT,
         borderRadius: 20,
+        backgroundColor: '#0A3D2E',
         overflow: 'hidden',
+        position: 'relative',
     },
-    cardImage: {
-        borderRadius: 20,
+    patternContainer: {
+        ...StyleSheet.absoluteFillObject,
+        opacity: 0.15,
+        transform: [{ rotate: '-15deg' }],
+        top: -20,
+        left: -30,
+    },
+    patternRow: {
+        flexDirection: 'row',
+        marginBottom: 12,
+    },
+    patternText: {
+        fontSize: 14,
+        fontFamily: Typography.metropolis.semiBold,
+        color: '#FFFFFF',
+        marginRight: 20,
+        letterSpacing: 2,
     },
     cardContent: {
         flex: 1,
-        padding: 24,
+        padding: 20,
         justifyContent: 'space-between',
     },
     earningsSection: {
@@ -73,35 +92,35 @@ const styles = StyleSheet.create({
     },
     earningsLabel: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        fontFamily: Typography.metropolis.medium,
         color: 'rgba(255, 255, 255, 0.8)',
         marginBottom: 4,
+        textAlign: I18nManager.isRTL ? 'right' : 'left',
     },
     earningsRow: {
-        flexDirection: 'row',
+        flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
         alignItems: 'center',
     },
     earningsAmount: {
         fontSize: 28,
-        fontFamily: Typography.poppins.semiBold,
+        fontFamily: Typography.metropolis.semiBold,
         color: '#FFFFFF',
     },
-    creatorCodeContainer: {
-        alignSelf: 'flex-end',
-        alignItems: 'flex-end',
+    coinIcon: {
+        marginStart: 8,
     },
-    creatorCodeLabel: {
-        fontSize: 10,
-        fontFamily: Typography.poppins.medium,
-        color: 'rgba(255, 255, 255, 0.6)',
-        letterSpacing: 1,
+    brandingContainer: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
     },
-    creatorCodeText: {
-        fontSize: 18,
+    brandReal: {
+        fontSize: 32,
+        fontFamily: Typography.metropolis.semiBold,
         color: '#FFFFFF',
     },
-    coinEmoji: {
-        fontSize: 24,
-        marginLeft: 8,
+    brandX: {
+        fontSize: 36,
+        fontFamily: Typography.integral.bold,
+        color: '#18B852',
     },
 });

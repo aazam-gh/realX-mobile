@@ -1,8 +1,8 @@
 import { getAuth } from '@react-native-firebase/auth';
-import { collection, doc, getDoc, getFirestore, limit, onSnapshot, orderBy, query, where } from '@react-native-firebase/firestore';
+import { collection, getFirestore, onSnapshot, query, where } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, I18nManager, StyleSheet, Text, View } from 'react-native';
+import { I18nManager, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -12,33 +12,32 @@ const LOGO_COLORS = ['#3D5A80', '#C41E3A', '#8B4513', '#2A9D8F', '#E76F51', '#E9
 
 export default function RecentRedemptions() {
     const [redemptions, setRedemptions] = useState<RedemptionData[]>([]);
-    const [loading, setLoading] = useState(true);
     const { t } = useTranslation();
-    const isRTL = I18nManager.isRTL;
 
     useEffect(() => {
         const auth = getAuth();
         const user = auth.currentUser;
-        if (!user) {
-            setLoading(false);
-            return;
-        }
+        if (!user) return;
 
         const db = getFirestore();
         const q = query(
             collection(db, 'transactions'),
-            where('userId', '==', user.uid),
-            where('type', '==', 'giftcard'),
-            orderBy('createdAt', 'desc'),
-            limit(3)
+            where('userId', '==', user.uid)
         );
 
-        const unsubscribe = onSnapshot(q, async (snapshot) => {
-            const db = getFirestore();
-            const formattedData: RedemptionData[] = await Promise.all(snapshot.docs.map(async (snapshotDoc: any) => {
-                const data = snapshotDoc.data();
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const docs = snapshot.docs
+                .map((doc: any) => ({ id: doc.id, ...doc.data() }))
+                .filter((data: any) => data.type === 'giftcard_redemption')
+                .sort((a: any, b: any) => {
+                    const timeA = a.createdAt?.seconds || 0;
+                    const timeB = b.createdAt?.seconds || 0;
+                    return timeB - timeA;
+                })
+                .slice(0, 3);
 
-                let dateStr = '';
+            const formattedData: RedemptionData[] = docs.map((data: any) => {
+                let dateStr = new Date().toLocaleDateString('en-GB');
                 if (data.createdAt) {
                     const date = new Date(data.createdAt.seconds * 1000);
                     const day = String(date.getDate()).padStart(2, '0');
@@ -50,39 +49,22 @@ export default function RecentRedemptions() {
                 const vendorName = data.vendorName || t('unknown_vendor');
                 const charCode = vendorName.charCodeAt(0) || 0;
                 const color = LOGO_COLORS[charCode % LOGO_COLORS.length];
-
-                let logoUrl = null;
-                if (data.vendorId) {
-                    try {
-                        const vendorDoc = await getDoc(doc(db, 'vendors', data.vendorId));
-                        if (vendorDoc.exists()) {
-                            const vendorData = vendorDoc.data();
-                            logoUrl = vendorData?.profilePicture || vendorData?.logoUrl || vendorData?.imageUrl || null;
-                        }
-                    } catch (error) {
-                        console.warn(`Error fetching vendor logo for ${data.vendorId}:`, error);
-                    }
-                }
+                const savedAmount = (data.totalAmount || 0) - (data.remainingAmount || 0);
 
                 return {
-                    id: snapshotDoc.id,
+                    id: data.id,
                     merchantName: vendorName,
                     date: dateStr,
                     offerType: t('gift_card'),
-                    savedAmount: data.finalAmount || 0,
-                    totalBill: data.totalAmount || 0,
-                    remainingToPay: data.remainingAmount || 0,
-                    currency: 'QR',
+                    savedAmount: savedAmount > 0 ? savedAmount : 0,
+                    currency: t('qr_currency'),
                     logoBackgroundColor: color,
-                    logoUrl: logoUrl,
                 };
-            }));
+            });
 
             setRedemptions(formattedData);
-            setLoading(false);
         }, (err) => {
             console.warn('RecentRedemptions fetch error:', err);
-            setLoading(false);
         });
 
         return () => unsubscribe();
@@ -94,24 +76,9 @@ export default function RecentRedemptions() {
 
     const renderSeparator = () => <View style={styles.separator} />;
 
-    if (loading) {
-        return (
-            <View style={styles.container}>
-                <Text style={[styles.sectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
-                    {t('recent_redemptions')}
-                </Text>
-                <ActivityIndicator
-                    size="small"
-                    color={Colors.brandGreen}
-                    style={styles.loader}
-                />
-            </View>
-        );
-    }
-
     return (
         <View style={styles.container}>
-            <Text style={[styles.sectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+            <Text style={[styles.sectionTitle, { textAlign: I18nManager.isRTL ? 'right' : 'left' }]}>
                 {t('recent_redemptions')}
             </Text>
             {redemptions.length > 0 ? (
@@ -124,7 +91,7 @@ export default function RecentRedemptions() {
                     contentContainerStyle={styles.listContent}
                 />
             ) : (
-                <Text style={[styles.emptyText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                <Text style={[styles.emptyText, { textAlign: I18nManager.isRTL ? 'right' : 'left' }]}>
                     {t('no_recent_redemptions')}
                 </Text>
             )}
@@ -138,7 +105,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 20,
-        fontFamily: Typography.poppins.semiBold,
+        fontFamily: Typography.metropolis.semiBold,
         color: Colors.light.text,
         paddingHorizontal: 20,
         marginBottom: 16,
@@ -153,12 +120,9 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        fontFamily: Typography.metropolis.medium,
         color: '#999999',
         paddingHorizontal: 20,
         paddingTop: 10,
-    },
-    loader: {
-        paddingTop: 20,
     },
 });

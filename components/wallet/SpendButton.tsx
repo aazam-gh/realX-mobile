@@ -1,4 +1,6 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
@@ -7,6 +9,8 @@ type Props = {
 };
 
 export default function SpendButton({ onPress }: Props) {
+    const { t } = useTranslation();
+
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -14,8 +18,8 @@ export default function SpendButton({ onPress }: Props) {
                 onPress={onPress}
                 activeOpacity={0.85}
             >
-                <Text style={styles.lightningIcon}>⚡</Text>
-                <Text style={styles.buttonText}>SPEND THE CARD</Text>
+                <Ionicons name="flash" size={18} color="#FFFFFF" style={styles.lightningIcon} />
+                <Text style={styles.buttonText}>{t('spend_the_card')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -31,7 +35,7 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         paddingVertical: 18,
         paddingHorizontal: 24,
-        flexDirection: 'row',
+        flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
         alignItems: 'center',
         justifyContent: 'center',
         shadowColor: Colors.brandGreen,
@@ -41,8 +45,7 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     lightningIcon: {
-        fontSize: 18,
-        marginRight: 10,
+        marginEnd: 10,
     },
     buttonText: {
         fontSize: 16,

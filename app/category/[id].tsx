@@ -1,279 +1,561 @@
-import { Ionicons } from '@expo/vector-icons';
+import { collection, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, startAfter, where } from '@react-native-firebase/firestore';
+import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image } from 'expo-image';
-import React from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ImageSourcePropType, Keyboard, ScrollView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+    BrowseSection,
+    CategoryHeader,
+    FilterTabs,
+    RestaurantCard,
+    SubCategoryChips
+} from '../../components/category';
 import { useTranslation } from 'react-i18next';
+import { SearchBar } from '../../components/home';
+import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 
-import { ThemedText } from '../../components/ThemedText';
-
-const safeImage = require('../../assets/images/food.png');
-
-const iconMap: Record<string, any> = {
-  books: safeImage,
-  coffee: safeImage,
-  electronics: safeImage,
-  entertainment: safeImage,
-  food: safeImage,
-  pharmacy: safeImage,
-  grocery: safeImage,
-};
-
-const foodItems = [
-  { id: 'all', labelKey: 'all', emoji: '??' },
-  { id: 'burger', labelKey: 'burger', emoji: '?' },
-  { id: 'pizza', labelKey: 'pizza', emoji: '??' },
+const BACKGROUND_ICONS = [
+    { name: 'laptop-outline' as const, top: '2%', left: '75%', size: 28, color: '#8E8E93', rotation: '15deg' },
+    { name: 'watch-outline' as const, top: '1%', left: '90%', size: 32, color: '#8E8E93', rotation: '-20deg' },
+    { name: 'pizza-outline' as const, top: '8%', left: '25%', size: 22, color: '#8E8E93', rotation: '-30deg' },
+    { name: 'fast-food-outline' as const, top: '1%', left: '45%', size: 32, color: '#8E8E93', rotation: '10deg' },
+    { name: 'cafe-outline' as const, top: '22%', left: '60%', size: 24, color: '#53C268', rotation: '-15deg' },
+    { name: 'beaker-outline' as const, top: '22%', left: '72%', size: 28, color: '#53C268', rotation: '25deg' },
+    { name: 'ice-cream-outline' as const, top: '25%', left: '20%', size: 22, color: '#8E8E93', rotation: '15deg' },
+    { name: 'football-outline' as const, top: '28%', left: '38%', size: 26, color: '#8E8E93', rotation: '-25deg' },
+    { name: 'storefront-outline' as const, top: '35%', left: '5%', size: 36, color: '#53C268', rotation: '-10deg' },
+    { name: 'car-outline' as const, top: '35%', left: '85%', size: 32, color: '#8E8E93', rotation: '25deg' },
+    { name: 'medkit-outline' as const, top: '42%', left: '15%', size: 30, color: '#53C268', rotation: '-15deg' },
+    { name: 'bicycle-outline' as const, top: '48%', left: '85%', size: 26, color: '#8E8E93', rotation: '45deg' },
+    { name: 'laptop-outline' as const, top: '55%', left: '5%', size: 28, color: '#53C268', rotation: '10deg' },
+    { name: 'bus-outline' as const, top: '65%', left: '92%', size: 32, color: '#8E8E93', rotation: '-15deg' },
+    { name: 'fast-food-outline' as const, top: '72%', left: '35%', size: 32, color: '#8E8E93', rotation: '-20deg' },
+    { name: 'egg-outline' as const, top: '70%', left: '80%', size: 28, color: '#8E8E93', rotation: '45deg' },
+    { name: 'nutrition-outline' as const, top: '78%', left: '50%', size: 24, color: '#8E8E93', rotation: '15deg' },
+    { name: 'ice-cream-outline' as const, top: '80%', left: '88%', size: 40, color: '#8E8E93', rotation: '30deg' },
+    { name: 'laptop-outline' as const, top: '85%', left: '8%', size: 36, color: '#8E8E93', rotation: '-15deg' },
+    { name: 'watch-outline' as const, top: '90%', left: '28%', size: 32, color: '#8E8E93', rotation: '10deg' },
+    { name: 'pizza-outline' as const, top: '88%', left: '60%', size: 24, color: '#53C268', rotation: '-45deg' },
+    { name: 'restaurant-outline' as const, top: '92%', left: '65%', size: 30, color: '#53C268', rotation: '20deg' },
+    { name: 'cafe-outline' as const, top: '95%', left: '75%', size: 28, color: '#53C268', rotation: '-15deg' },
+    { name: 'ice-cream-outline' as const, top: '95%', left: '55%', size: 26, color: '#53C268', rotation: '10deg' },
 ];
 
-export default function CategoryDetailsScreen() {
-  const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string; title?: string }>();
-  const { t, i18n } = useTranslation();
+// Category configuration map
+const categoryConfig: Record<string, {
+    title: string;
+    icon: string | ImageSourcePropType;
+    subCategories: { id: string; name: string; icon: string }[];
+    promos: {
+        id: string;
+        title: string;
+        subtitle: string;
+        discount?: string;
+        backgroundColor: string;
+        accentColor?: string;
+    }[];
+    browseTitle: string;
+    restaurants: {
+        id: string;
+        name: string;
+        cashbackText?: string;
+        discountText?: string;
+        isTrending?: boolean;
+        logoUri?: string;
+    }[];
+}> = {};
 
-  const id = (params.id || '').toLowerCase();
-  const title = params.title || t(id || 'category');
-  const isFood = id === 'food';
 
-  const getSearchPlaceholder = () => {
-    if (id === 'books') return t('search_books');
-    if (id === 'coffee') return t('search_coffee');
-    if (id === 'electronics') return t('search_electronics');
-    if (id === 'food') return t('search_food');
-    return t('search_anything');
-  };
+// Default config for unknown categories
+const defaultConfig = {
+    title: 'Category',
+    icon: '📦',
+    subCategories: [],
+    promos: [],
+    browseTitle: 'Yallah! Browse',
+    restaurants: [],
+};
 
-  const getComingSoonTitle = () => {
-    const map: Record<string, string> = {
-      books: 'books_coming_soon',
-      coffee: 'coffee_coming_soon',
-      electronics: 'electronics_coming_soon',
-      entertainment: 'entertainment_coming_soon',
-      food: 'food_coming_soon',
-      pharmacy: 'pharmacy_coming_soon',
-      grocery: 'grocery_coming_soon',
-    };
-    return t(map[id] || 'coming_soon');
-  };
+interface HeaderContentProps {
+    headerTitle: string;
+    headerIcon: any;
+    handleBackPress: () => void;
+    loading: boolean;
+    hasSubCategories: boolean;
+    isCategoryActive: boolean;
+    selectedFilter: string;
+    handleFilterChange: (id: string) => void;
+    subCategories: any[];
+    selectedSubCategory: string;
+    handleSubCategorySelect: (sub: any) => void;
+    config: any;
+    handleRestaurantPress: (r: any) => void;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    handleSearch: () => void;
+    t: any;
+    showComingSoon: boolean;
+    loadingOffers: boolean;
+}
 
-  const getComingSoonDesc = () => {
-    const map: Record<string, string> = {
-      books: 'books_coming_soon_desc',
-      coffee: 'coffee_coming_soon_desc',
-      electronics: 'electronics_coming_soon_desc',
-      entertainment: 'entertainment_coming_soon_desc',
-      food: 'food_coming_soon_desc',
-      pharmacy: 'pharmacy_coming_soon_desc',
-      grocery: 'grocery_coming_soon_desc',
-    };
-    return t(map[id] || 'coming_soon');
-  };
+const HeaderContent = memo(({
+    headerTitle,
+    headerIcon,
+    handleBackPress,
+    loading,
+    hasSubCategories,
+    isCategoryActive,
+    selectedFilter,
+    handleFilterChange,
+    subCategories,
+    selectedSubCategory,
+    handleSubCategorySelect,
+    config,
+    handleRestaurantPress,
+    searchQuery,
+    setSearchQuery,
+    handleSearch,
+    t,
+    showComingSoon,
+    loadingOffers,
+}: HeaderContentProps) => (
+    <>
+        <CategoryHeader
+            title={headerTitle}
+            icon={headerIcon}
+            onBackPress={handleBackPress}
+        />
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons
-              name={i18n.language === 'ar' ? 'arrow-forward' : 'arrow-back'}
-              size={28}
-              color="#000"
+        {isCategoryActive && (
+            <SearchBar
+                placeholder={t('search_placeholder_category', { category: headerTitle.toLowerCase() })}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmit={handleSearch}
             />
-          </TouchableOpacity>
-
-          <Image source={iconMap[id]} style={styles.headerIcon} contentFit="cover" />
-          <ThemedText style={styles.headerTitle}>{title}</ThemedText>
-        </View>
-
-        <View style={styles.searchWrap}>
-          <Ionicons name="search" size={22} color="#20C05C" />
-          <TextInput
-            style={[
-              styles.searchInput,
-              {
-                textAlign: i18n.language === 'ar' ? 'right' : 'left',
-                writingDirection: i18n.language === 'ar' ? 'rtl' : 'ltr',
-              },
-            ]}
-            placeholder={getSearchPlaceholder()}
-            placeholderTextColor="#777"
-          />
-        </View>
-
-        {isFood ? (
-          <>
-            <View style={styles.filterRow}>
-              <View style={styles.filterPill}>
-                <Ionicons name="flash" size={18} color="#000" />
-                <ThemedText style={styles.filterText}>{t('top_rated')}</ThemedText>
-              </View>
-              <View style={styles.filterPill}>
-                <Ionicons name="flame" size={18} color="#000" />
-                <ThemedText style={styles.filterText}>{t('trending')}</ThemedText>
-              </View>
-            </View>
-
-            <View style={styles.foodCategoryRow}>
-              {foodItems.map((item) => (
-                <View key={item.id} style={styles.foodCategoryItem}>
-                  <View style={[styles.foodCircle, item.id === 'all' && styles.foodCircleActive]}>
-                    <ThemedText style={styles.foodEmoji}>{item.emoji}</ThemedText>
-                  </View>
-                  <ThemedText style={[styles.foodLabel, item.id === 'all' && styles.foodLabelActive]}>
-                    {t(item.labelKey)}
-                  </ThemedText>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.browseHeader}>
-              <ThemedText style={styles.browseTitle}>{t('browse_items')}</ThemedText>
-              <ThemedText style={styles.browseIcon}>??</ThemedText>
-            </View>
-          </>
-        ) : (
-          <View style={styles.comingSoonWrap}>
-            <View style={styles.hourglassWrap}>
-              <ThemedText style={styles.hourglass}>?</ThemedText>
-            </View>
-            <ThemedText style={styles.comingSoonTitle}>{getComingSoonTitle()}</ThemedText>
-            <ThemedText style={styles.comingSoonDesc}>{getComingSoonDesc()}</ThemedText>
-          </View>
         )}
-      </ScrollView>
-    </SafeAreaView>
-  );
+
+        {loading ? (
+            <View style={styles.comingSoonContainer}>
+                <ActivityIndicator size="large" color={Colors.brandGreen} />
+            </View>
+        ) : !showComingSoon ? (
+            <>
+                <FilterTabs
+                    selectedFilter={selectedFilter}
+                    onFilterChange={handleFilterChange}
+                />
+
+                {hasSubCategories && (
+                    <SubCategoryChips
+                        subCategories={subCategories}
+                        selectedId={selectedSubCategory}
+                        onSelect={handleSubCategorySelect}
+                    />
+                )}
+                <BrowseSection
+                    mainCategory={headerTitle}
+                    restaurants={config.restaurants}
+                    onRestaurantPress={handleRestaurantPress}
+                />
+            </>
+        ) : (
+            <View style={styles.comingSoonContainer}>
+                <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                    {BACKGROUND_ICONS.map((icon, i) => (
+                        <Ionicons
+                            key={i}
+                            name={icon.name}
+                            size={icon.size}
+                            color={icon.color}
+                            style={{
+                                position: 'absolute',
+                                top: icon.top as any,
+                                left: icon.left as any,
+                                transform: [{ rotate: icon.rotation }],
+                                opacity: 0.3,
+                            }}
+                        />
+                    ))}
+                </View>
+                <Image 
+                    source={require('../../assets/images/comingsoon.png')} 
+                    style={styles.comingSoonImage} 
+                    resizeMode="contain"
+                />
+                 <Text style={styles.comingSoonTitle}>
+                    {t('coming_soon_title')} <Text style={styles.comingSoonTitleGreen}>{t('coming_soon_accent')}</Text> 🚀
+                </Text>
+                <Text style={styles.comingSoonSubtitle}>
+                    {t('coming_soon_subtitle')}
+                </Text>
+            </View>
+        )}
+    </>
+));
+
+export default function CategoryScreen() {
+    const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
+    const router = useRouter();
+    const { t, i18n } = useTranslation();
+    const isArabic = i18n.language === 'ar';
+
+    const [categoryData, setCategoryData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [selectedFilter, setSelectedFilter] = useState('all');
+    const [selectedSubCategory, setSelectedSubCategory] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const [offers, setOffers] = useState<any[]>([]);
+    const [loadingOffers, setLoadingOffers] = useState(false);
+    const [lastDoc, setLastDoc] = useState<any>(null);
+    const [isListEnd, setIsListEnd] = useState(false);
+
+    // Get category configuration or use default
+    const config = categoryConfig[id?.toLowerCase() || ''] || {
+        ...defaultConfig,
+        title: name || defaultConfig.title,
+    };
+
+    // Derived state for subcategories existence
+    const hasSubCategories = (categoryData?.subcategories && categoryData.subcategories.length > 0) || (config.subCategories && config.subCategories.length > 0);
+    const isCategoryActive = categoryData ? categoryData.isActive !== false : true;
+
+    // Determine if we should show the "Coming Soon" UI
+    // It shows if the category is explicitly inactive OR if we've finished the initial fetch and found no offers
+    const showComingSoon = !isCategoryActive || (isListEnd && offers.length === 0 && !loadingOffers);
+
+    useEffect(() => {
+        const fetchCategory = async () => {
+            if (!id) return;
+            try {
+                const db = getFirestore();
+                const docRef = doc(db, 'categories', id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    setCategoryData(docSnap.data());
+                }
+            } catch (error) {
+                console.error("Error fetching category:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCategory();
+    }, [id]);
+
+    const fetchOffers = async (isNew = false) => {
+        if (loadingOffers || (isListEnd && !isNew) || !isCategoryActive) return;
+
+        setLoadingOffers(true);
+        try {
+            const db = getFirestore();
+            const offersRef = collection(db, 'offers');
+            const categoryName = (isArabic ? (categoryData?.nameArabic || categoryData?.nameAr) : null) || categoryData?.nameEnglish || config.title;
+            const PAGE_SIZE = 10;
+
+            let q;
+
+            // Base constraints
+            const baseConstraints: any[] = [where('status', '==', 'active')];
+
+            // Filter logic
+            if (selectedSubCategory !== 'all') {
+                // Filter by subcategory
+                baseConstraints.push(where('categories', 'array-contains', selectedSubCategory));
+            } else {
+                // Filter by main category
+                baseConstraints.push(where('mainCategory', '==', categoryName));
+            }
+
+            // Top-rated / Trending logic
+            if (selectedFilter === 'trending') {
+                baseConstraints.push(where('isTrending', '==', true));
+            }
+
+            // Construct query with pagination
+            if (isNew) {
+                q = query(offersRef, ...baseConstraints, orderBy('createdAt', 'desc') as any, limit(PAGE_SIZE) as any);
+            } else {
+                q = query(offersRef, ...baseConstraints, orderBy('createdAt', 'desc') as any, startAfter(lastDoc) as any, limit(PAGE_SIZE) as any);
+            }
+
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const fetchedOffers = querySnapshot.docs.map((doc: any) => ({ 
+                    id: doc.id, 
+                    ...doc.data(),
+                    // Use the denormalized xcard field directly from the offer document
+                    xcard: doc.data().xcard || false
+                }));
+
+                if (isNew) {
+                    setOffers(fetchedOffers);
+                } else {
+                    setOffers(prev => [...prev, ...fetchedOffers]);
+                }
+
+                setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]);
+                setIsListEnd(querySnapshot.docs.length < PAGE_SIZE);
+            } else {
+                setIsListEnd(true);
+                if (isNew) setOffers([]);
+            }
+        } catch (error) {
+            console.error("Error fetching offers:", error);
+        } finally {
+            setLoadingOffers(false);
+        }
+    };
+
+    // Initial fetch or filter change
+    useEffect(() => {
+        if (!loading && isCategoryActive) {
+            // Reset pagination state
+            setLastDoc(null);
+            setIsListEnd(false);
+            fetchOffers(true);
+        }
+    }, [selectedSubCategory, selectedFilter, loading, isCategoryActive, config.title]);
+
+    const handleLoadMore = () => {
+        if (!loadingOffers && !isListEnd) {
+            fetchOffers(false);
+        }
+    };
+
+    const handleBackPress = useCallback(() => {
+        router.back();
+    }, [router]);
+
+    const handleFilterChange = useCallback((filterId: string) => {
+        setSelectedFilter(filterId);
+    }, []);
+
+    const handleSearch = useCallback(() => {
+        Keyboard.dismiss();
+    }, []);
+
+    const handleSubCategorySelect = useCallback((subCategory: { id: string; name: string; icon: any }) => {
+        setSelectedSubCategory(subCategory.id);
+    }, []);
+
+    const handleRestaurantPress = useCallback((restaurant: { id: string; name: string }) => {
+        console.log('Restaurant pressed:', restaurant.name);
+    }, []);
+
+    const handlePromoPress = useCallback((promo: { id: string; title: string; vendorId?: string }) => {
+        if (promo.vendorId) {
+            router.push({ pathname: '/vendor/[id]', params: { id: promo.vendorId } });
+        } else {
+            console.log('Promo pressed but no vendorId:', promo.title);
+        }
+    }, [router]);
+
+    const subCategories = useMemo(() => {
+        const fetchedSubCategories = categoryData?.subcategories?.map((sub: any) => ({
+            id: sub.nameEnglish,
+            name: isArabic ? (sub.nameArabic || sub.nameAr || sub.nameEnglish) : sub.nameEnglish,
+            icon: sub.imageUrl
+        })) || config.subCategories;
+
+        return [
+            { id: 'all', name: t('all'), icon: require('../../assets/images/all.svg') },
+            ...fetchedSubCategories
+        ];
+    }, [categoryData, config.subCategories, isArabic, t]);
+
+    const headerTitle = (isArabic ? (categoryData?.nameArabic || categoryData?.nameAr) : null) || categoryData?.nameEnglish || config.title;
+    const headerIcon = categoryData?.imageUrl || config.icon;
+
+    const filteredOffers = useMemo(() => {
+        if (!searchQuery.trim()) return offers;
+        const lowerQuery = searchQuery.toLowerCase();
+        return offers.filter((offer: any) => {
+            const titleEn = offer.titleEn?.toLowerCase() || '';
+            const titleAr = offer.titleAr?.toLowerCase() || '';
+            const descEn = offer.descriptionEn?.toLowerCase() || '';
+            const descAr = offer.descriptionAr?.toLowerCase() || '';
+            
+            return titleEn.includes(lowerQuery) || 
+                   titleAr.includes(lowerQuery) || 
+                   descEn.includes(lowerQuery) || 
+                   descAr.includes(lowerQuery);
+        });
+    }, [offers, searchQuery]);
+
+    const renderFooter = () => {
+        if (!loadingOffers) return <View style={{ height: 20 }} />;
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={Colors.brandGreen} />
+            </View>
+        );
+    };
+
+    return (
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+            <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
+            {!loading && isCategoryActive ? (
+                <FlashList
+                    data={filteredOffers}
+                    keyExtractor={(item) => item.id}
+                    numColumns={2}
+                    contentContainerStyle={styles.contentContainer}
+                    showsVerticalScrollIndicator={false}
+                    ListHeaderComponent={
+                        <HeaderContent
+                            headerTitle={headerTitle}
+                            headerIcon={headerIcon}
+                            handleBackPress={handleBackPress}
+                            loading={loading}
+                            hasSubCategories={hasSubCategories}
+                            isCategoryActive={isCategoryActive}
+                            selectedFilter={selectedFilter}
+                            handleFilterChange={handleFilterChange}
+                            subCategories={subCategories}
+                            selectedSubCategory={selectedSubCategory}
+                            handleSubCategorySelect={handleSubCategorySelect}
+                            config={config}
+                            handleRestaurantPress={handleRestaurantPress}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            handleSearch={handleSearch}
+                            t={t}
+                            showComingSoon={showComingSoon}
+                            loadingOffers={loadingOffers}
+                        />
+                    }
+                    ListFooterComponent={renderFooter}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.5}
+                    renderItem={({ item, index }) => (
+                        <View style={[
+                            {
+                                paddingLeft: index % 2 === 0 ? 20 : 8,
+                                paddingRight: index % 2 === 0 ? 8 : 20
+                            }
+                        ]}>
+                            <RestaurantCard
+                                id={item.id}
+                                name={item.titleEn || item.titleAr || 'Untitled Offer'}
+                                cashbackText={item.descriptionEn || item.descriptionAr || 'Special Offer'}
+                                discountText={`${item.discountValue}${item.discountType === 'percentage' ? '%' : ''} OFF`}
+                                isTrending={item.isTrending}
+                                isTopRated={item.isTopRated}
+                                imageUri={item.bannerImage}
+                                logoUri={item.vendorProfilePicture}
+                                xcardEnabled={item.xcard}
+                                onPress={() => handlePromoPress({ id: item.id, title: item.titleEn, vendorId: item.vendorId })}
+                            />
+                        </View>
+                    )}
+                />
+            ) : (
+                <ScrollView
+                    style={styles.container}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.contentContainer}
+                >
+                    <HeaderContent
+                        headerTitle={headerTitle}
+                        headerIcon={headerIcon}
+                        handleBackPress={handleBackPress}
+                        loading={loading}
+                        hasSubCategories={hasSubCategories}
+                        isCategoryActive={isCategoryActive}
+                        selectedFilter={selectedFilter}
+                        handleFilterChange={handleFilterChange}
+                        subCategories={subCategories}
+                        selectedSubCategory={selectedSubCategory}
+                        handleSubCategorySelect={handleSubCategorySelect}
+                        config={config}
+                        handleRestaurantPress={handleRestaurantPress}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        handleSearch={handleSearch}
+                        t={t}
+                        showComingSoon={showComingSoon}
+                        loadingOffers={loadingOffers}
+                    />
+                </ScrollView>
+            )}
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    paddingHorizontal: 18,
-    paddingBottom: 30,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 18,
-  },
-  backBtn: {
-    marginEnd: 12,
-  },
-  headerIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    marginEnd: 10,
-  },
-  headerTitle: {
-    fontSize: 22,
-  },
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#D9D9D9',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 18,
-  },
-  searchInput: {
-    flex: 1,
-    marginStart: 10,
-    fontSize: 16,
-  },
-  comingSoonWrap: {
-    alignItems: 'center',
-    marginTop: 80,
-  },
-  hourglassWrap: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: '#F7F7F7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 26,
-  },
-  hourglass: {
-    fontSize: 64,
-  },
-  comingSoonTitle: {
-    fontSize: 24,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  comingSoonDesc: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#7A7A7A',
-    lineHeight: 28,
-    paddingHorizontal: 12,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 22,
-  },
-  filterPill: {
-    flex: 1,
-    backgroundColor: '#F2F2F2',
-    borderRadius: 20,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  filterText: {
-    fontSize: 16,
-  },
-  foodCategoryRow: {
-    flexDirection: 'row',
-    gap: 14,
-    marginBottom: 24,
-  },
-  foodCategoryItem: {
-    alignItems: 'center',
-  },
-  foodCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  foodCircleActive: {
-    borderWidth: 3,
-    borderColor: '#20C05C',
-    backgroundColor: '#FFFFFF',
-  },
-  foodEmoji: {
-    fontSize: 28,
-  },
-  foodLabel: {
-    fontSize: 14,
-    color: '#333',
-  },
-  foodLabelActive: {
-    color: '#20C05C',
-  },
-  browseHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  browseTitle: {
-    fontSize: 20,
-  },
-  browseIcon: {
-    fontSize: 22,
-  },
+    safeArea: {
+        flex: 1,
+        backgroundColor: Colors.light.background,
+    },
+    container: {
+        flex: 1,
+        backgroundColor: Colors.light.background,
+    },
+    contentContainer: {
+        paddingBottom: 20,
+    },
+    // New FlashList spacing style
+    flatListContent: {
+        paddingBottom: 20,
+    },
+    comingSoonContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 40,
+        paddingVertical: 100,
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    comingSoonImage: {
+        width: 200,
+        height: 200,
+        marginBottom: 20,
+        zIndex: 10,
+    },
+    comingSoonTitle: {
+        fontSize: 28,
+        fontFamily: Typography.poppins.semiBold,
+        color: '#000000',
+        textAlign: 'center',
+        marginBottom: 12,
+        zIndex: 10,
+    },
+    comingSoonTitleGreen: {
+        color: '#53C268',
+        fontStyle: 'italic',
+    },
+    comingSoonSubtitle: {
+        fontSize: 16,
+        fontFamily: Typography.poppins.medium,
+        color: '#8E8E93',
+        textAlign: 'center',
+        lineHeight: 24,
+        zIndex: 10,
+    },
+    offersContainer: {
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: 16,
+    },
+    offersGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 16,
+        justifyContent: 'flex-start',
+        paddingHorizontal: 20,
+    },
+    loadingContainer: {
+        padding: 20,
+        alignItems: 'center',
+        width: '100%',
+    },
 });

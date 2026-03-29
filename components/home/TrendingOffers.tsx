@@ -1,71 +1,134 @@
-﻿import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
-
-import { ThemedText } from '../ThemedText';
-
-const fallbackOffers = (t: (key: string) => string) => [
-  { id: '1', title: t('restaurant_deal'), subtitle: t('up_to_30_off') },
-  { id: '2', title: t('coffee_shop'), subtitle: t('buy_1_get_1_free') },
-  { id: '3', title: t('grocery_store'), subtitle: t('fresh_deals_daily') },
-];
+import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { Colors } from '../../constants/Colors';
+import PhonkText from '../PhonkText';
+import RestaurantCard from '../category/RestaurantCard';
 
 export default function TrendingOffers() {
-  const { t } = useTranslation();
-  const offers = fallbackOffers(t);
+    const [offers, setOffers] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
-  return (
-    <View style={styles.container}>
-      <ThemedText style={styles.title}>{t('trending_offers')}</ThemedText>
+    useEffect(() => {
+        const fetchTrendingOffers = async () => {
+            try {
+                const db = getFirestore();
+                const cmsDocRef = doc(db, 'cms', 'trending-offers');
+                const cmsSnap = await getDoc(cmsDocRef);
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-        {offers.map((offer) => (
-          <TouchableOpacity key={offer.id} style={styles.card} activeOpacity={0.8}>
-            <View style={styles.badge} />
-            <ThemedText style={styles.offerTitle} numberOfLines={1}>
-              {offer.title}
-            </ThemedText>
-            <ThemedText type="subtitle" style={styles.offerSubtitle} numberOfLines={1}>
-              {offer.subtitle}
-            </ThemedText>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
+                if (cmsSnap.exists()) {
+                    const data = cmsSnap.data();
+                    const offerIds = data?.offerIds || [];
+
+                    const offersPromises = offerIds.map(async (id: string) => {
+                        const offerDoc = await getDoc(doc(db, 'offers', id));
+                        if (offerDoc.exists()) {
+                            return { id: offerDoc.id, ...offerDoc.data() };
+                        }
+                        return null;
+                    });
+
+                    const fetchedOffers = (await Promise.all(offersPromises)).filter(o => o !== null);
+                    setOffers(fetchedOffers);
+                }
+            } catch (error) {
+                console.error('Error fetching trending offers:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTrendingOffers();
+    }, []);
+
+    const handleOfferPress = (offer: any) => {
+        if (offer.vendorId) {
+            router.push({ pathname: '/vendor/[id]', params: { id: offer.vendorId } });
+        }
+    };
+
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.loaderContainer]}>
+                <ActivityIndicator size="small" color={Colors.brandGreen} />
+            </View>
+        );
+    }
+
+    if (offers.length === 0) {
+        return null;
+    }
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.headerContainer}>
+                <View style={styles.headerTitle}>
+                    <PhonkText style={styles.trendingText}>TRENDING </PhonkText>
+                    <PhonkText style={styles.offersText}>OFFERS</PhonkText>
+                </View>
+            </View>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
+                {offers.map((offer) => (
+                    <RestaurantCard
+                        key={offer.id}
+                        id={offer.id}
+                        name={offer.titleEn || offer.titleAr || 'Untitled Offer'}
+                        cashbackText={offer.descriptionEn || offer.descriptionAr || 'Special Offer'}
+                        discountText={`${offer.discountValue || ''}${offer.discountType === 'percentage' ? '%' : ''} OFF`}
+                        isTrending={offer.isTrending}
+                        isTopRated={offer.isTopRated}
+                        imageUri={offer.bannerImage}
+                        logoUri={offer.vendorProfilePicture}
+                        xcardEnabled={offer.xcard}
+                        onPress={() => handleOfferPress(offer)}
+                        style={styles.offerCard}
+                    />
+                ))}
+            </ScrollView>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginTop: 8,
-  },
-  title: {
-    fontSize: 28,
-    marginBottom: 14,
-  },
-  row: {
-    gap: 12,
-    paddingRight: 6,
-  },
-  card: {
-    width: 160,
-    borderRadius: 18,
-    backgroundColor: '#F5F5F5',
-    padding: 14,
-    justifyContent: 'flex-end',
-    minHeight: 140,
-  },
-  badge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#F0C27B',
-    marginBottom: 12,
-  },
-  offerTitle: {
-    fontSize: 18,
-    marginBottom: 4,
-  },
-  offerSubtitle: {
-    fontSize: 14,
-  },
+    container: {
+        paddingVertical: 16,
+    },
+    headerContainer: {
+        paddingHorizontal: 20,
+        marginBottom: 16,
+    },
+    headerTitle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    trendingText: {
+        fontSize: 20,
+        color: Colors.light.text,
+        letterSpacing: 1,
+    },
+    offersText: {
+        fontSize: 20,
+        color: Colors.brandGreen,
+        fontStyle: 'italic',
+        letterSpacing: 1,
+    },
+    loaderContainer: {
+        height: 120,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    scrollContent: {
+        paddingHorizontal: 20,
+        gap: 12,
+    },
+    offerCard: {
+        width: 220,
+    },
 });
+

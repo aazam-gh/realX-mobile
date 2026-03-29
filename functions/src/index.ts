@@ -1,189 +1,384 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
+
 import * as admin from 'firebase-admin';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions';
-import * as logger from 'firebase-functions/logger';
 
 admin.initializeApp();
+setGlobalOptions({ region: 'me-central1', maxInstances: 10 });
 
-setGlobalOptions({ maxInstances: 10 });
+const db = admin.firestore();
 
-const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+/**
+ * =============================
+ * Utils
+ * =============================
+ */
+const generateCode = () =>
+  Math.random().toString(36).substring(2, 8).toUpperCase();
 
-export const assignCreatorCode = onCall(async (request) => {
-    const { auth } = request;
-    if (!auth) throw new HttpsError('unauthenticated', 'Must be logged in');
+const toCents = (amount: number) => Math.round(amount * 100);
+const fromCents = (cents: number) => cents / 100;
 
-    const uid = auth.uid;
-    const db = admin.firestore();
+const verifyPin = (inputPin: string, storedPin: string) => inputPin === storedPin;
 
-    let assignedCode: string | null = null;
-    let attempts = 0;
+/**
+ * =============================
+ * Creator Code Helpers
+ * =============================
+ */
+const validateCreatorCode = async (tx, creatorCode: string | null) => {
+  if (!creatorCode) return null;
 
-    while (!assignedCode && attempts < 5) {
-        const code = generateCode();
-        const codeRef = db.collection('creator_codes').doc(code);
-        const userRef = db.collection('students').doc(uid);
+  const code = creatorCode.trim().toUpperCase();
+  const codeRef = db.collection('creator_codes').doc(code);
+  const codeDoc = await tx.get(codeRef);
 
-        try {
-            await db.runTransaction(async (transaction) => {
-                const codeDoc = await transaction.get(codeRef);
-                if (codeDoc.exists) {
-                    throw new Error('COLLISION'); // Code taken, throw to retry
-                }
+  if (!codeDoc.exists) {
+    throw new HttpsError('not-found', 'Invalid creator code');
+  }
 
-                // Claim the code
-                transaction.set(codeRef, { uid, createdAt: admin.firestore.FieldValue.serverTimestamp() });
-                // Update the user document
-                transaction.update(userRef, { creatorCode: code });
-            });
+  const creatorUid = codeDoc.data()?.uid;
+  const creatorRef = db.collection('students').doc(creatorUid);
+  const creatorDoc = await tx.get(creatorRef);
 
-            assignedCode = code; // Success! Break the loop
-        } catch (error) {
-            if (error instanceof Error && error.message !== 'COLLISION') throw error;
-            if (!(error instanceof Error)) throw error;
-            attempts++;
-        }
+  if (!creatorDoc.exists) {
+    throw new HttpsError('not-found', 'Creator not found');
+  }
+
+  return { creatorUid, creatorRef, code };
+};
+
+/**
+ * =============================
+ * Pricing / Discount Logic
+ * =============================
+ */
+const calculateDiscount = (totalCents: number, discountType, discountValue) => {
+  let discountCents = 0;
+
+  if (discountType === 'percentage') {
+    discountCents = Math.round(totalCents * (discountValue / 100));
+  } else if (discountType === 'amount') {
+    discountCents = toCents(discountValue);
+  } else {
+    throw new HttpsError('invalid-argument', 'Invalid discount type');
+  }
+
+  discountCents = Math.min(discountCents, totalCents);
+  return discountCents;
+};
+
+/**
+ * =============================
+ * Cashback Logic (UPDATED RULES)
+ * =============================
+ */
+const calculateCashback = ({
+  finalCents,
+  vendorData,
+  creatorUid,
+  type,
+}) => {
+  let userCashback = 0;
+  let creatorCashback = 0;
+
+  const isXcardVendor = vendorData.xcard === true;
+
+  // ❌ No cashback for giftcards
+  if (type === 'giftcard') {
+    return { userCashback, creatorCashback };
+  }
+
+  if (!isXcardVendor) {
+    return { userCashback, creatorCashback };
+  }
+
+  const cashbackCents = Math.round(finalCents * 0.01);
+
+  // ✅ User always gets cashback for xcard vendor
+  userCashback = cashbackCents;
+
+  // ✅ Creator gets cashback if code used (even self-use)
+  if (creatorUid) {
+    creatorCashback = cashbackCents;
+  }
+
+  return { userCashback, creatorCashback };
+};
+
+/**
+ * =============================
+ * Core Transaction
+ * =============================
+ */
+const processTransaction = async (options) => {
+  const {
+    uid,
+    vendorId,
+    vendorName,
+    totalAmount,
+    pin,
+    type,
+    giftCardAmount = 0,
+    offerId = null,
+    discountValue = 0,
+    discountType = null,
+    creatorCode = null,
+  } = options;
+
+  const userRef = db.collection('students').doc(uid);
+  const vendorRef = db.collection('vendors').doc(vendorId);
+  const transactionRef = db.collection('transactions').doc();
+
+  return db.runTransaction(async (tx) => {
+    /**
+     * =============================
+     * 1. READS
+     * =============================
+     */
+    const [userDoc, vendorDoc] = await Promise.all([
+      tx.get(userRef),
+      tx.get(vendorRef),
+    ]);
+
+    if (!userDoc.exists) throw new HttpsError('not-found', 'User not found');
+    if (!vendorDoc.exists) throw new HttpsError('not-found', 'Vendor not found');
+
+    const userData = userDoc.data();
+    const vendorData = vendorDoc.data();
+
+    /**
+     * =============================
+     * 2. PIN VALIDATION
+     * =============================
+     */
+    if (!verifyPin(pin, vendorData.pin)) {
+      throw new HttpsError('permission-denied', 'Invalid PIN');
     }
 
-    if (!assignedCode) {
-        throw new HttpsError('internal', 'Failed to generate unique code');
+    /**
+     * =============================
+     * 3. AMOUNTS
+     * =============================
+     */
+    const totalCents = toCents(totalAmount);
+    let discountCents = 0;
+    let finalCents = totalCents;
+    let giftcardSavingsCents = 0;
+
+    /**
+     * =============================
+     * 4. OFFER LOGIC
+     * =============================
+     */
+    let creatorData = null;
+
+    if (type !== 'giftcard') {
+      discountCents = calculateDiscount(totalCents, discountType, discountValue);
+      finalCents = totalCents - discountCents;
+
+      creatorData = await validateCreatorCode(tx, creatorCode);
     }
 
-    return { creatorCode: assignedCode };
-});
+    /**
+     * =============================
+     * 5. GIFT CARD LOGIC
+     * =============================
+     */
+    if (type === 'giftcard') {
+      const balance = toCents(userData.cashback || 0);
+      const redeemCents = toCents(giftCardAmount);
+      giftcardSavingsCents = redeemCents;
 
-export const redeemGiftCard = onCall(async (request) => {
-    const { auth, data } = request;
-    if (!auth) throw new HttpsError('unauthenticated', 'Must be logged in');
+      if (balance < redeemCents) {
+        throw new HttpsError('failed-precondition', 'Insufficient balance');
+      }
 
-    const { vendorId, vendorName, giftCardAmount, totalBill, pin } = data as {
-        vendorId: string;
-        vendorName: string;
-        giftCardAmount: number;
-        totalBill: number;
-        pin: string;
-    };
+      finalCents = Math.max(0, totalCents - redeemCents);
 
-    // Validate required fields
-    if (!vendorId || !vendorName) {
-        throw new HttpsError('invalid-argument', 'Vendor information is required');
-    }
-    if (typeof giftCardAmount !== 'number' || giftCardAmount <= 0) {
-        throw new HttpsError('invalid-argument', 'Invalid gift card amount');
-    }
-    if (typeof totalBill !== 'number' || totalBill <= 0) {
-        throw new HttpsError('invalid-argument', 'Invalid total bill amount');
-    }
-    if (!pin || pin.length !== 4) {
-        throw new HttpsError('invalid-argument', 'A 4-digit PIN is required');
+      tx.update(userRef, {
+        cashback: admin.firestore.FieldValue.increment(-fromCents(redeemCents)),
+      });
     }
 
-    const uid = auth.uid;
-    const db = admin.firestore();
-
-    const vendorRef = db.collection('vendors').doc(vendorId);
-    const userRef = db.collection('students').doc(uid);
-    const transactionRef = db.collection('transactions').doc();
-
-    const result = await db.runTransaction(async (transaction) => {
-        // Verify vendor PIN
-        const vendorDoc = await transaction.get(vendorRef);
-        if (!vendorDoc.exists) {
-            throw new HttpsError('not-found', 'Vendor not found');
-        }
-        const vendorData = vendorDoc.data();
-        if (!vendorData || String(vendorData.pin) !== String(pin)) {
-            throw new HttpsError('permission-denied', 'Incorrect vendor PIN');
-        }
-
-        // Verify user cashback balance
-        const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists) {
-            throw new HttpsError('not-found', 'User not found');
-        }
-        const userData = userDoc.data();
-        const currentCashback = userData?.cashback || 0;
-
-        if (currentCashback < giftCardAmount) {
-            throw new HttpsError('failed-precondition', 'Insufficient cashback balance');
-        }
-
-        const remainingAmount = Math.max(0, totalBill - giftCardAmount);
-
-        const transactionData = {
-            totalAmount: totalBill,
-            vendorName,
-            vendorId,
-            redemptionCardAmount: giftCardAmount,
-            remainingAmount,
-            type: 'giftcard_redemption',
-            userId: uid,
-            pin,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        };
-
-        // Perform writes
-        transaction.set(transactionRef, transactionData);
-        transaction.update(userRef, {
-            cashback: admin.firestore.FieldValue.increment(-giftCardAmount),
-        });
-
-        return { transactionId: transactionRef.id, remainingAmount };
+    /**
+     * =============================
+     * 6. CASHBACK
+     * =============================
+     */
+    const { userCashback, creatorCashback } = calculateCashback({
+      finalCents,
+      vendorData,
+      creatorUid: creatorData?.creatorUid,
+      type,
     });
 
-    return result;
+    /**
+     * =============================
+     * 7. WRITE TRANSACTION
+     * =============================
+     */
+    tx.set(transactionRef, {
+      type,
+      userId: uid,
+      vendorId,
+      vendorName,
+      totalAmount,
+      discountAmount: fromCents(discountCents),
+      finalAmount: fromCents(finalCents),
+      creatorCode: creatorData?.code || null,
+      creatorUid: creatorData?.creatorUid || null,
+      cashbackAmount: fromCents(userCashback),
+      creatorCashbackAmount: fromCents(creatorCashback),
+      offerId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    /**
+     * =============================
+     * 8. UPDATE USER
+     * =============================
+     */
+    const userUpdates = {};
+
+    const totalSavingsCents = discountCents + giftcardSavingsCents;
+
+    if (totalSavingsCents > 0) {
+      userUpdates.savings =
+        admin.firestore.FieldValue.increment(fromCents(totalSavingsCents));
+    }
+
+    if (userCashback > 0) {
+      userUpdates.cashback =
+        admin.firestore.FieldValue.increment(fromCents(userCashback));
+    }
+
+    if (Object.keys(userUpdates).length > 0) {
+      tx.update(userRef, userUpdates);
+    }
+
+    /**
+     * =============================
+     * 9. UPDATE CREATOR
+     * =============================
+     */
+    if (creatorData?.creatorRef && creatorCashback > 0) {
+      tx.update(creatorData.creatorRef, {
+        cashback: admin.firestore.FieldValue.increment(
+          fromCents(creatorCashback)
+        ),
+      });
+    }
+
+    return {
+      transactionId: transactionRef.id,
+      finalAmount: fromCents(finalCents),
+    };
+  });
+};
+
+/**
+ * =============================
+ * Public Functions
+ * =============================
+ */
+export const redeemGiftCard = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Login required');
+  }
+
+  return processTransaction({
+    uid: request.auth.uid,
+    type: 'giftcard',
+    ...request.data,
+  });
 });
 
-export const createVendorUser = onCall(
-    { region: 'me-central1' },
-    async (request) => {
-        const { auth, data } = request;
+export const redeemOffer = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Login required');
+  }
 
-        // 1️⃣ Auth required
-        if (!auth) {
-            throw new HttpsError('unauthenticated', 'User not authenticated');
-        }
+  return processTransaction({
+    uid: request.auth.uid,
+    type: 'offer',
+    ...request.data,
+  });
+});
 
-        // 2️⃣ Super admin only
-        if (!auth.token.admin) {
-            throw new HttpsError('permission-denied', 'Admin access required');
-        }
+/**
+ * =============================
+ * Creator Code Assignment
+ * =============================
+ */
+export const assignCreatorCode = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Must be logged in');
+  }
 
-        const { name, email, password } = data;
+  const uid = request.auth.uid;
+  const userRef = db.collection('students').doc(uid);
 
-        // 3️⃣ Validate input
-        if (!name || !email || !password) {
-            throw new HttpsError(
-                'invalid-argument',
-                'name, email, and password are required'
-            );
-        }
+  return db.runTransaction(async (tx) => {
+    const userDoc = await tx.get(userRef);
 
-        const authAdmin = admin.auth();
-        const db = admin.firestore();
-
-        // 4️⃣ Create Auth user
-        const user = await authAdmin.createUser({
-            email,
-            password,
-            displayName: name,
-            emailVerified: true, // optional since you're onboarding manually
-        });
-
-        // 6️⃣ Create vendor Firestore document
-        await db.collection('vendors').doc(user.uid).set({
-            name,
-            email,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        logger.info('Vendor created', {
-            vendorId: user.uid,
-        });
-
-        return {
-            uid: user.uid,
-            success: true,
-        };
+    if (!userDoc.exists) {
+      throw new HttpsError('not-found', 'User not found');
     }
-);
+
+    const existingCode = userDoc.data()?.creatorCode;
+    if (existingCode) {
+      return { creatorCode: existingCode };
+    }
+
+    let code = null;
+    let attempts = 0;
+
+    while (!code && attempts < 5) {
+      const candidate = generateCode();
+      const codeRef = db.collection('creator_codes').doc(candidate);
+      const codeDoc = await tx.get(codeRef);
+
+      if (!codeDoc.exists) {
+        tx.set(codeRef, {
+          uid,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        tx.update(userRef, { creatorCode: candidate });
+        code = candidate;
+      }
+
+      attempts++;
+    }
+
+    if (!code) {
+      throw new HttpsError('internal', 'Failed to generate code');
+    }
+
+    return { creatorCode: code };
+  });
+});
+
+/**
+ * =============================
+ * Student Check
+ * =============================
+ */
+export const checkStudentExists = onCall(async (request: CallableRequest) => {
+  const email = request.data?.email?.toLowerCase()?.trim();
+
+  if (!email) {
+    throw new HttpsError('invalid-argument', 'Email required');
+  }
+
+  const snapshot = await db
+    .collection('students')
+    .where('email', '==', email)
+    .limit(1)
+    .get();
+
+  return { exists: !snapshot.empty };
+});

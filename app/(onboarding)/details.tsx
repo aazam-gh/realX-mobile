@@ -22,6 +22,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../../components/PhonkText';
+
+
+
+
 
 export default function DetailsOnboarding() {
     const router = useRouter();
@@ -63,7 +68,7 @@ export default function DetailsOnboarding() {
             await setDoc(doc(db, 'students', user.uid), studentData);
 
             if (role === 'creator') {
-                const functions = getFunctions();
+                const functions = getFunctions(undefined, 'me-central1');
                 const assignCode = httpsCallable(functions, 'assignCreatorCode');
                 await assignCode();
             }
@@ -134,12 +139,12 @@ export default function DetailsOnboarding() {
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={styles.card}>
                             <View style={styles.textContainer}>
-                                <Text style={styles.titleLine}>
+                                <PhonkText style={styles.titleLine}>
                                     <Text style={styles.blackText}>ENTER YOUR</Text>
-                                </Text>
-                                <Text style={styles.titleLine}>
+                                </PhonkText>
+                                <PhonkText style={styles.titleLine}>
                                     <Text style={styles.greenText}>DETAILS</Text>
-                                </Text>
+                                </PhonkText>
                             </View>
 
                             <View style={styles.formContainer}>
@@ -175,7 +180,7 @@ export default function DetailsOnboarding() {
                                     disabled={isLoading}
                                     activeOpacity={0.7}
                                 >
-                                    <Text style={[styles.input, !dob && { color: '#999999' }]}>
+                                    <Text style={[styles.input, !dob && { color: '#00000' }]}>
                                         {formatDate(dob)}
                                     </Text>
                                 </TouchableOpacity>
@@ -198,6 +203,7 @@ export default function DetailsOnboarding() {
                                             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                                             onChange={onDateChange}
                                             maximumDate={new Date()}
+                                            textColor="black"
                                         />
                                     </View>
                                 )}
@@ -295,7 +301,6 @@ const styles = StyleSheet.create({
     },
     titleLine: {
         fontSize: 32,
-        fontFamily: Typography.integral.bold,
         textAlign: 'center',
         lineHeight: 38,
     },
@@ -321,14 +326,14 @@ const styles = StyleSheet.create({
     },
     input: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     genderContainer: {
         marginTop: 10,
     },
     label: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         marginBottom: 10,
         marginLeft: 10,
     },
@@ -353,11 +358,11 @@ const styles = StyleSheet.create({
     },
     genderText: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     genderTextSelected: {
         color: Colors.brandGreen,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
     },
     footer: {
         paddingBottom: 40,
@@ -376,7 +381,7 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#FFFFFF',
         fontSize: 18,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     iosPickerContainer: {
         backgroundColor: '#F3F3F3',
@@ -396,7 +401,7 @@ const styles = StyleSheet.create({
     },
     doneButtonText: {
         color: Colors.brandGreen,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         fontSize: 16,
     },
 });

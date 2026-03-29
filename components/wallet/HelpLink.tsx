@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     },
     linkText: {
         fontSize: 14,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#666666',
     },
 });

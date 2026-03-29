@@ -1,4 +1,4 @@
-﻿import i18n from 'i18next';
+import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
@@ -8,8 +8,15 @@ import ar from './locales/ar.json';
 
 export const LANGUAGE_KEY = 'app_language';
 
-export async function setStoredLanguage(language: 'en' | 'ar') {
-  await AsyncStorage.setItem(LANGUAGE_KEY, language);
+const resources = {
+  en: { translation: en },
+  ar: { translation: ar },
+};
+
+function getDeviceLanguage(): 'en' | 'ar' {
+  const locales = getLocales();
+  const languageCode = locales?.[0]?.languageCode ?? 'en';
+  return languageCode === 'ar' ? 'ar' : 'en';
 }
 
 export async function getStoredLanguage(): Promise<'en' | 'ar' | null> {
@@ -22,21 +29,15 @@ export async function getStoredLanguage(): Promise<'en' | 'ar' | null> {
   }
 }
 
-function getDeviceLanguage(): 'en' | 'ar' {
-  const locales = getLocales();
-  const languageCode = locales?.[0]?.languageCode ?? 'en';
-  return languageCode === 'ar' ? 'ar' : 'en';
+export async function setStoredLanguage(language: 'en' | 'ar') {
+  await AsyncStorage.setItem(LANGUAGE_KEY, language);
 }
 
-const resources = {
-  en: { translation: en },
-  ar: { translation: ar },
-};
+export async function initI18n() {
+  const storedLanguage = await getStoredLanguage();
+  const initialLanguage = storedLanguage ?? getDeviceLanguage();
 
-const initialLanguage = getDeviceLanguage();
-
-if (!i18n.isInitialized) {
-  i18n.use(initReactI18next).init({
+  await i18n.use(initReactI18next).init({
     compatibilityJSON: 'v3',
     resources,
     lng: initialLanguage,
@@ -45,14 +46,8 @@ if (!i18n.isInitialized) {
       escapeValue: false,
     },
   });
-}
 
-export async function initI18n() {
-  const storedLanguage = await getStoredLanguage();
-  if (storedLanguage && i18n.language !== storedLanguage) {
-    await i18n.changeLanguage(storedLanguage);
-  }
-  return i18n;
+  return initialLanguage;
 }
 
 export default i18n;

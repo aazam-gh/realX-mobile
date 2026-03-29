@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { getAuth, isSignInWithEmailLink, sendSignInLinkToEmail, signInWithEmailLink } from '@react-native-firebase/auth';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -9,6 +10,7 @@ import {
     Alert,
     Keyboard,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     StyleSheet,
     Text,
@@ -20,7 +22,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import PhonkText from '../../components/PhonkText';
 import { actionCodeSettings, clearAuthEmail, getAuthEmail, saveAuthEmail } from '../../utils/auth';
+
+// ✅ Email normalization
+const normalizeEmail = (email: string): string => {
+    const trimmed = email.trim().toLowerCase();
+    const [local, domain] = trimmed.split('@');
+
+    if (!domain) return trimmed;
+
+    if (domain === 'gmail.com' || domain === 'googlemail.com') {
+        const cleanLocal = local.split('+')[0].replace(/\./g, '');
+        return `${cleanLocal}@gmail.com`;
+    }
+
+    return trimmed;
+};
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -28,22 +46,29 @@ export default function LoginScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [isLinkSent, setIsLinkSent] = useState(false);
     const [manualLink, setManualLink] = useState('');
+    const [showSignUpModal, setShowSignUpModal] = useState(false);
     const inputRef = useRef<TextInput>(null);
     const url = Linking.useURL();
+
 
     useEffect(() => {
         const verifyAutomaticLink = async (incomingUrl: string) => {
             const authInstance = getAuth();
+
             if (await isSignInWithEmailLink(authInstance, incomingUrl)) {
                 setIsLoading(true);
+
                 try {
                     const storedEmail = await getAuthEmail();
 
                     if (storedEmail) {
-                        await signInWithEmailLink(authInstance, storedEmail, incomingUrl);
+                        const normalizedEmail = normalizeEmail(storedEmail);
+
+                        await signInWithEmailLink(authInstance, normalizedEmail, incomingUrl);
+
+
                         await clearAuthEmail();
                         console.log('Successfully signed in automatically!');
-                        router.replace('/(tabs)');
                     } else {
                         Alert.alert('Error', 'No email found in storage. Please try starting again.');
                     }
@@ -59,7 +84,7 @@ export default function LoginScreen() {
         if (url && isLinkSent) {
             verifyAutomaticLink(url);
         }
-    }, [url, isLinkSent, router]);
+    }, [url, isLinkSent]);
 
     const handleBack = () => {
         if (isLinkSent) {
@@ -69,22 +94,34 @@ export default function LoginScreen() {
         }
     };
 
-    const handleSendMagicLink = async (trimmedEmail: string) => {
-        const getAuthInstance = getAuth();
-        await sendSignInLinkToEmail(getAuthInstance, trimmedEmail, actionCodeSettings);
-        await saveAuthEmail(trimmedEmail);
+    const handleSendMagicLink = async (inputEmail: string) => {
+        const normalizedEmail = normalizeEmail(inputEmail);
+
+        const authInstance = getAuth();
+        await sendSignInLinkToEmail(authInstance, normalizedEmail, actionCodeSettings);
+        await saveAuthEmail(normalizedEmail);
 
         setIsLinkSent(true);
     };
 
     const handleLogin = async () => {
-        const trimmedEmail = email.trim().toLowerCase();
-        if (!trimmedEmail) return;
+        const normalizedEmail = normalizeEmail(email);
+        if (!normalizedEmail) return;
 
         setIsLoading(true);
 
         try {
-            await handleSendMagicLink(trimmedEmail);
+            const fnInstance = getFunctions(undefined, 'me-central1');
+            const checkStudent = httpsCallable(fnInstance, 'checkStudentExists');
+
+            const result = await checkStudent({ email: normalizedEmail });
+
+            if (!(result.data as { exists: boolean }).exists) {
+                setShowSignUpModal(true);
+                return;
+            }
+
+            await handleSendMagicLink(normalizedEmail);
         } catch (err: any) {
             console.error(err);
             Alert.alert('Error', err.message || 'An error occurred. Please try again.');
@@ -97,16 +134,20 @@ export default function LoginScreen() {
         if (!manualLink.trim()) return;
 
         setIsLoading(true);
+
         try {
             const authInstance = getAuth();
+
             if (await isSignInWithEmailLink(authInstance, manualLink)) {
                 const storedEmail = await getAuthEmail();
 
                 if (storedEmail) {
-                    await signInWithEmailLink(authInstance, storedEmail, manualLink);
+                    const normalizedEmail = normalizeEmail(storedEmail);
+
+                    await signInWithEmailLink(authInstance, normalizedEmail, manualLink);
+
                     await clearAuthEmail();
                     console.log('Successfully signed in manually!');
-                    router.replace('/(tabs)');
                 } else {
                     Alert.alert('Error', 'No email found in storage. Please try starting again.');
                 }
@@ -128,7 +169,7 @@ export default function LoginScreen() {
             } else {
                 setIsLoading(true);
                 try {
-                    await handleSendMagicLink(email.trim().toLowerCase());
+                    await handleSendMagicLink(email);
                     Alert.alert('Email Sent', 'A new link has been sent to your email.');
                 } catch (err: any) {
                     Alert.alert('Error', err.message || 'Failed to resend email.');
@@ -165,17 +206,17 @@ export default function LoginScreen() {
                         <View style={styles.textContainer}>
                             {isLinkSent ? (
                                 <>
-                                    <Text style={styles.titleLine}>
+                                    <PhonkText style={styles.titleLine}>
                                         <Text style={styles.greenText}>CHECK YOUR</Text>
-                                    </Text>
-                                    <Text style={styles.titleLine}>
+                                    </PhonkText>
+                                    <PhonkText style={styles.titleLine}>
                                         <Text style={styles.blackText}>EMAIL</Text>
-                                    </Text>
+                                    </PhonkText>
                                 </>
                             ) : (
-                                <Text style={styles.titleLine}>
+                                <PhonkText style={styles.titleLine}>
                                     <Text style={styles.greenText}>LOGIN</Text>
-                                </Text>
+                                </PhonkText>
                             )}
                         </View>
 
@@ -246,6 +287,42 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                 </KeyboardAvoidingView>
             </View>
+
+            <Modal
+                visible={showSignUpModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowSignUpModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalIconContainer}>
+                            <Ionicons name="person-add-outline" size={40} color={Colors.brandGreen} />
+                        </View>
+                        <PhonkText style={styles.modalTitle}>ACCOUNT NOT FOUND</PhonkText>
+                        <Text style={styles.modalText}>
+                            It looks like you don't have an account yet. Would you like to create one?
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.modalPrimaryButton}
+                            onPress={() => {
+                                setShowSignUpModal(false);
+                                router.push({ pathname: '/(onboarding)/email', params: { role: 'student', mode: 'signup' } });
+                            }}
+                        >
+                            <Text style={styles.modalPrimaryButtonText}>Sign Up</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.modalSecondaryButton}
+                            onPress={() => setShowSignUpModal(false)}
+                        >
+                            <Text style={styles.modalSecondaryButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -300,7 +377,6 @@ const styles = StyleSheet.create({
     },
     titleLine: {
         fontSize: 32,
-        fontFamily: Typography.integral.bold,
         textAlign: 'center',
         lineHeight: 38,
     },
@@ -321,7 +397,7 @@ const styles = StyleSheet.create({
     },
     input: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     infoText: {
         fontSize: 14,
@@ -329,7 +405,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 20,
         paddingHorizontal: 10,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
     },
     footer: {
         paddingBottom: 40,
@@ -348,6 +424,74 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#FFFFFF',
         fontSize: 18,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 30,
+        padding: 30,
+        width: '100%',
+        maxWidth: 400,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 13,
+        elevation: 10,
+    },
+    modalIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#F0F9F0',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    modalTitle: {
+        fontSize: 24,
+        color: Colors.brandGreen,
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    modalText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 30,
+        fontFamily: Typography.poppins.medium,
+        lineHeight: 24,
+    },
+    modalPrimaryButton: {
+        backgroundColor: Colors.brandGreen,
+        height: 56,
+        borderRadius: 28,
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    modalPrimaryButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    modalSecondaryButton: {
+        height: 56,
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalSecondaryButtonText: {
+        color: '#999',
+        fontSize: 16,
+        fontFamily: Typography.poppins.medium,
     },
 });

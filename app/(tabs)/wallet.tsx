@@ -18,6 +18,7 @@ export default function WalletScreen() {
   const [isHelpDrawerVisible, setIsHelpDrawerVisible] = useState(false);
   const [isSpendDrawerVisible, setIsSpendDrawerVisible] = useState(false);
   const [balance, setBalance] = useState(0);
+  const [creatorCode, setCreatorCode] = useState<string | undefined>(undefined);
   const currency = 'QAR';
 
   useEffect(() => {
@@ -28,14 +29,21 @@ export default function WalletScreen() {
     const db = getFirestore();
     const studentRef = doc(db, 'students', user.uid);
 
-    const unsubscribe = onSnapshot(studentRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data) {
-          setBalance(typeof data.cashback === 'number' ? data.cashback : 0);
+    const unsubscribe = onSnapshot(
+      studentRef,
+      (docSnap) => {
+        if (docSnap && docSnap.exists()) {
+          const data = docSnap.data();
+          if (data) {
+            setBalance(typeof data.cashback === 'number' ? data.cashback : 0);
+            setCreatorCode(data.creatorCode);
+          }
         }
+      },
+      (error) => {
+        console.warn('Wallet snapshot error:', error);
       }
-    });
+    );
 
     return () => unsubscribe();
   }, []);
@@ -64,7 +72,7 @@ export default function WalletScreen() {
         showsVerticalScrollIndicator={false}
       >
         <XCardHeader />
-        <XCard earnings={balance} currency={currency} />
+        <XCard earnings={balance} currency={currency} creatorCode={creatorCode} />
         <SpendButton onPress={handleSpendPress} />
         <HelpLink onPress={handleHelpPress} />
         <RecentRedemptions />

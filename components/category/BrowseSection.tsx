@@ -10,57 +10,30 @@ type Restaurant = {
     discountText?: string;
     isTrending?: boolean;
     imageUri?: string;
+    logoUri?: string;
+    xcardEnabled?: boolean;
 };
 
 type Props = {
     title?: string;
-    emoji?: string;
+    mainCategory?: string;
     restaurants?: Restaurant[];
     onRestaurantPress?: (restaurant: Restaurant) => void;
 };
 
-const defaultRestaurants: Restaurant[] = [
-    {
-        id: '1',
-        name: 'TeaTime',
-        cashbackText: 'Cashbacks',
-        discountText: '60% DISCOUNT',
-        isTrending: false,
-    },
-    {
-        id: '2',
-        name: 'Sahtein',
-        cashbackText: 'Cashbacks',
-        discountText: '60% DISCOUNT',
-        isTrending: true,
-    },
-    {
-        id: '3',
-        name: 'Salt Bae',
-        cashbackText: 'Cashbacks',
-        discountText: '40% DISCOUNT',
-        isTrending: false,
-    },
-    {
-        id: '4',
-        name: 'Burger King',
-        cashbackText: 'Cashbacks',
-        discountText: '50% DISCOUNT',
-        isTrending: true,
-    },
-];
-
 export default function BrowseSection({
-    title = 'Yallah! browse food',
-    emoji = '😋',
+    title,
+    mainCategory,
     restaurants = [],
     onRestaurantPress,
 }: Props) {
+    const displayTitle = title || (mainCategory ? `Yallah! Browse ${mainCategory}` : 'Yallah! browse food');
+
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
                 <Text style={styles.headerTitle}>
-                    {title} <Text style={styles.emoji}>{emoji}</Text>
+                    {displayTitle}
                 </Text>
             </View>
             <ScrollView
@@ -77,6 +50,8 @@ export default function BrowseSection({
                         discountText={restaurant.discountText}
                         isTrending={restaurant.isTrending}
                         imageUri={restaurant.imageUri}
+                        logoUri={restaurant.logoUri}
+                        xcardEnabled={restaurant.xcardEnabled}
                         onPress={() => onRestaurantPress?.(restaurant)}
                         style={{ width: 170 }}
                     />
@@ -88,19 +63,15 @@ export default function BrowseSection({
 
 const styles = StyleSheet.create({
     container: {
-        paddingVertical: 16,
+        paddingBottom: 16,
     },
     headerContainer: {
         paddingHorizontal: 20,
-        marginBottom: 16,
     },
     headerTitle: {
         fontSize: 20,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: Colors.light.text,
-    },
-    emoji: {
-        fontSize: 20,
     },
     scrollContent: {
         paddingHorizontal: 20,

@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textDecorationLine: 'underline',
     color: '#fff',
-    fontFamily: Typography.metropolis.medium,
+    fontFamily: Typography.poppins.medium,
   },
 });
 

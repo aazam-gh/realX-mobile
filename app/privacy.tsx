@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 24,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: '#000',
     },
     scrollContent: {
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     },
     lastUpdated: {
         fontSize: 14,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#999',
         marginBottom: 24,
     },
@@ -114,13 +114,13 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 18,
-        fontFamily: Typography.metropolis.semiBold,
+        fontFamily: Typography.poppins.semiBold,
         color: '#000',
         marginBottom: 12,
     },
     paragraph: {
         fontSize: 16,
-        fontFamily: Typography.metropolis.medium,
+        fontFamily: Typography.poppins.medium,
         color: '#666',
         lineHeight: 24,
     },

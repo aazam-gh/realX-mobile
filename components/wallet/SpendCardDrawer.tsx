@@ -1,9 +1,11 @@
 import { collection, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    I18nManager,
     Modal,
     StyleSheet,
     Text,
@@ -11,10 +13,10 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../PhonkText';
 import RedeemGiftCard from './RedeemGiftCard';
 
 type Props = {
@@ -27,12 +29,10 @@ type Props = {
 type BrandItem = {
     id: string;
     name: string;
-    logo: string | null; // null for placeholder
+    logo: string | null;
     backgroundColor?: string;
     loyalty?: number[];
 };
-
-// Fetch dynamically instead of using placeholders
 
 function BrandListItem({
     brand,
@@ -66,7 +66,9 @@ function BrandListItem({
                     </Text>
                 )}
             </View>
-            <Text style={styles.brandName}>{brand.name}</Text>
+            <Text style={[styles.brandName, { textAlign: I18nManager.isRTL ? 'right' : 'left' }]}>
+                {brand.name}
+            </Text>
         </TouchableOpacity>
     );
 }
@@ -78,6 +80,7 @@ export default function SpendCardDrawer({
     currency,
 }: Props) {
     const insets = useSafeAreaInsets();
+    const { t, i18n } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
     const [brands, setBrands] = useState<BrandItem[]>([]);
@@ -146,43 +149,51 @@ export default function SpendCardDrawer({
                     />
                 ) : (
                     <>
-                        {/* Header */}
                         <View style={styles.header}>
                             <TouchableOpacity
                                 style={styles.backButton}
                                 onPress={onClose}
                                 activeOpacity={0.7}
                             >
-                                <Text style={styles.backArrow}>←</Text>
+                                <Ionicons
+                                    name={i18n.language === 'ar' ? 'arrow-forward' : 'arrow-back'}
+                                    size={20}
+                                    color="#000000"
+                                />
                             </TouchableOpacity>
                             <View style={styles.logoContainer}>
-                                <PhonkText style={styles.logoX}>X</PhonkText>
-                                <PhonkText style={styles.logoCard}>CARD</PhonkText>
+                                <Text style={styles.logoX}>X</Text>
+                                <Text style={styles.logoCard}>CARD</Text>
                             </View>
                             <View style={styles.headerSpacer} />
                         </View>
 
-                        {/* Balance Card */}
                         <View style={styles.balanceCard}>
-                            <Text style={styles.balanceLabel}>Available Balance:</Text>
-                            <PhonkText style={styles.balanceValue}>
-                                {balance.toFixed(2)} {currency}
-                            </PhonkText>
+                            <Text style={[styles.balanceLabel, { textAlign: I18nManager.isRTL ? 'right' : 'left' }]}>
+                                {t('available_balance')}
+                            </Text>
+                            <Text style={styles.balanceValue}>
+                                {balance} {currency}
+                            </Text>
                         </View>
 
-                        {/* Search Bar */}
                         <View style={styles.searchContainer}>
-                            <Text style={styles.searchIcon}>🔍</Text>
+                            <Ionicons name="search" size={16} color="#999999" style={styles.searchIcon} />
                             <TextInput
-                                style={styles.searchInput}
-                                placeholder="Search for brands..."
+                                style={[
+                                    styles.searchInput,
+                                    {
+                                        textAlign: i18n.language === 'ar' ? 'right' : 'left',
+                                        writingDirection: i18n.language === 'ar' ? 'rtl' : 'ltr',
+                                    },
+                                ]}
+                                placeholder={t('search_brands')}
                                 placeholderTextColor="#999999"
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
                             />
                         </View>
 
-                        {/* Brand List */}
                         {loading ? (
                             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                                 <ActivityIndicator size="large" color={Colors.brandGreen} />
@@ -233,20 +244,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    backArrow: {
-        fontSize: 20,
-        color: '#000000',
-    },
     logoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     logoX: {
         fontSize: 24,
+        fontFamily: Typography.integral.bold,
         color: Colors.brandGreen,
     },
     logoCard: {
         fontSize: 24,
+        fontFamily: Typography.integral.bold,
         color: '#000000',
     },
     headerSpacer: {
@@ -266,15 +275,16 @@ const styles = StyleSheet.create({
     },
     balanceLabel: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        fontFamily: Typography.metropolis.medium,
         color: '#666666',
     },
     balanceValue: {
         fontSize: 20,
+        fontFamily: Typography.integral.bold,
         color: '#000000',
     },
     searchContainer: {
-        flexDirection: 'row',
+        flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
         alignItems: 'center',
         backgroundColor: '#FFFFFF',
         marginHorizontal: 16,
@@ -286,13 +296,12 @@ const styles = StyleSheet.create({
         borderColor: '#E8E8E8',
     },
     searchIcon: {
-        fontSize: 16,
-        marginRight: 10,
+        marginEnd: 10,
     },
     searchInput: {
         flex: 1,
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        fontFamily: Typography.metropolis.medium,
         color: '#000000',
         padding: 0,
     },
@@ -303,7 +312,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
     brandItem: {
-        flexDirection: 'row',
+        flexDirection: I18nManager.isRTL ? 'row-reverse' : 'row',
         alignItems: 'center',
         paddingVertical: 14,
         paddingHorizontal: 4,
@@ -324,7 +333,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 14,
+        marginEnd: 14,
         overflow: 'hidden',
     },
     brandLogoImage: {
@@ -333,12 +342,12 @@ const styles = StyleSheet.create({
     },
     brandLogoPlaceholder: {
         fontSize: 18,
-        fontFamily: Typography.poppins.semiBold,
+        fontFamily: Typography.metropolis.semiBold,
         color: '#FFFFFF',
     },
     brandName: {
         fontSize: 15,
-        fontFamily: Typography.poppins.medium,
+        fontFamily: Typography.metropolis.medium,
         color: '#000000',
         flex: 1,
     },

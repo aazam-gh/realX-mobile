@@ -1,6 +1,6 @@
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
@@ -9,6 +9,8 @@ import RestaurantCard from '../category/RestaurantCard';
 export default function TrendingOffers() {
     const [offers, setOffers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const scrollViewRef = useRef<ScrollView | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -43,6 +45,33 @@ export default function TrendingOffers() {
         fetchTrendingOffers();
     }, []);
 
+    useEffect(() => {
+        if (offers.length <= 1) {
+            return;
+        }
+
+        const interval = setInterval(() => {
+            setCurrentIndex((prevIndex) => (prevIndex + 1) % offers.length);
+        }, 4000);
+
+        return () => clearInterval(interval);
+    }, [offers.length]);
+
+    useEffect(() => {
+        if (!scrollViewRef.current || offers.length === 0) {
+            return;
+        }
+
+        const cardWidth = 220;
+        const gap = 12;
+        const horizontalPadding = 20;
+        const maxIndex = Math.max(0, offers.length - 1);
+        const safeIndex = Math.min(currentIndex, maxIndex);
+        const offset = horizontalPadding + safeIndex * (cardWidth + gap);
+
+        scrollViewRef.current.scrollTo({ x: offset, animated: true });
+    }, [currentIndex, offers.length]);
+
     const handleOfferPress = (offer: any) => {
         if (offer.vendorId) {
             router.push({ pathname: '/vendor/[id]', params: { id: offer.vendorId } });
@@ -70,6 +99,7 @@ export default function TrendingOffers() {
                 </View>
             </View>
             <ScrollView
+                ref={scrollViewRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
@@ -131,4 +161,3 @@ const styles = StyleSheet.create({
         width: 220,
     },
 });
-

@@ -1,5 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useEffect } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
@@ -11,6 +13,18 @@ type Props = {
 };
 
 export default function SearchBar({ placeholder = 'Search for anything...', value, onChangeText, onSubmit }: Props) {
+    const navigation = useNavigation();
+
+    useEffect(() => {
+        if (!onChangeText) return;
+
+        const unsubscribe = navigation.addListener('blur', () => {
+            onChangeText('');
+        });
+
+        return unsubscribe;
+    }, [navigation, onChangeText]);
+
     return (
             <View style={styles.searchContainer}>
                 <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.icon} />

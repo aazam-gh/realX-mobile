@@ -74,13 +74,11 @@ export default function FilterTabs({ selectedFilter, onFilterChange, filters = d
                 {/* Content Overlay */}
                 {filters.map((filter) => {
                     const isSelected = selectedFilter === filter.id;
-                    const gapOverride = filter.id === 'all' ? 4 : 8;
-                    const paddingOverride = filter.id === 'all' ? 6 : 12;
 
                     return (
                         <TouchableOpacity
                             key={filter.id}
-                            style={[styles.filterButton, { width: tabWidth, gap: gapOverride, paddingHorizontal: paddingOverride }]}
+                            style={[styles.filterButton, { width: tabWidth }]}
                             onPress={() => onFilterChange?.(filter.id)}
                             activeOpacity={1}
                         >

@@ -12,6 +12,7 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 type CategoryItem = {
     id: string;
     name: string;
+    englishName?: string;
     image?: string | any;
     icon?: string;
 };
@@ -51,6 +52,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                     return {
                         id: doc.id,
                         name: isArabic ? (data.nameArabic || data.nameAr || data.nameEnglish) : data.nameEnglish,
+                        englishName: data.nameEnglish,
                         image: data.imageUrl,
                     };
                 });
@@ -93,7 +95,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
         } else {
             router.push({
                 pathname: "/category/[id]",
-                params: { id: item.id, name: item.name }
+                params: { id: item.id, name: item.name, englishName: item.englishName || item.name }
             });
         }
     };

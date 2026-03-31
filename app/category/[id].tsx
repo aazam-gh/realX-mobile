@@ -2,7 +2,7 @@ import { collection, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, 
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, ImageSourcePropType, Keyboard, ScrollView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
+import { ActivityIndicator, ImageSourcePropType, Keyboard, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -200,7 +200,7 @@ const HeaderContent = memo(({
 HeaderContent.displayName = 'HeaderContent';
 
 export default function CategoryScreen() {
-    const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
+    const { id, name, englishName } = useLocalSearchParams<{ id: string; name?: string; englishName?: string }>();
     const router = useRouter();
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === 'ar';
@@ -215,6 +215,9 @@ export default function CategoryScreen() {
     const [loadingOffers, setLoadingOffers] = useState(false);
     const lastDocRef = useRef<any>(null);
     const [isListEnd, setIsListEnd] = useState(false);
+    const flashListRef = useRef<FlashList<any> | null>(null);
+    const scrollOffsetRef = useRef(0);
+    const shouldRestoreScrollRef = useRef(false);
 
     // Get category configuration or use default
     const config = categoryConfig[id?.toLowerCase() || ''] || {
@@ -229,6 +232,17 @@ export default function CategoryScreen() {
     // Determine if we should show the "Coming Soon" UI
     // It shows if the category is explicitly inactive OR if we've finished the initial fetch and found no offers
     const showComingSoon = !isCategoryActive || (isListEnd && offers.length === 0 && !loadingOffers);
+    const englishCategoryName = useMemo(() => {
+        return categoryData?.nameEnglish || englishName || name || config.title || undefined;
+    }, [categoryData?.nameEnglish, config.title, englishName, name]);
+
+    const restoreFlashListScroll = useCallback(() => {
+        if (!shouldRestoreScrollRef.current) return;
+        shouldRestoreScrollRef.current = false;
+        requestAnimationFrame(() => {
+            flashListRef.current?.scrollToOffset({ offset: scrollOffsetRef.current, animated: false });
+        });
+    }, []);
 
     useEffect(() => {
         const fetchCategory = async () => {
@@ -256,9 +270,14 @@ export default function CategoryScreen() {
 
         setLoadingOffers(true);
         try {
+            if (!englishCategoryName) {
+                setIsListEnd(true);
+                setOffers([]);
+                return;
+            }
+
             const db = getFirestore();
             const offersRef = collection(db, 'offers');
-            const categoryName = (isArabic ? (categoryData?.nameArabic || categoryData?.nameAr) : null) || categoryData?.nameEnglish || config.title;
             const PAGE_SIZE = 10;
 
             const baseConstraints: any[] = [where('status', '==', 'active')];
@@ -266,11 +285,13 @@ export default function CategoryScreen() {
             if (selectedSubCategory !== 'all') {
                 baseConstraints.push(where('categories', 'array-contains', selectedSubCategory));
             } else {
-                baseConstraints.push(where('mainCategory', '==', categoryName));
+                baseConstraints.push(where('mainCategory', '==', englishCategoryName));
             }
 
             if (selectedFilter === 'trending') {
                 baseConstraints.push(where('isTrending', '==', true));
+            } else if (selectedFilter === 'cashbacks') {
+                baseConstraints.push(where('xcard', '==', true));
             }
 
             let q;
@@ -298,18 +319,23 @@ export default function CategoryScreen() {
                     setOffers(prev => [...prev, ...fetchedOffers]);
                 }
 
+                restoreFlashListScroll();
+
                 lastDocRef.current = querySnapshot.docs[querySnapshot.docs.length - 1];
                 setIsListEnd(querySnapshot.docs.length < PAGE_SIZE);
             } else {
                 setIsListEnd(true);
-                if (isNew) setOffers([]);
+                if (isNew) {
+                    setOffers([]);
+                    restoreFlashListScroll();
+                }
             }
         } catch (error) {
             console.error("Error fetching offers:", error);
         } finally {
             setLoadingOffers(false);
         }
-    }, [loadingOffers, isListEnd, isCategoryActive, selectedSubCategory, selectedFilter, isArabic, categoryData, config.title]);
+    }, [loadingOffers, isListEnd, isCategoryActive, selectedSubCategory, selectedFilter, englishCategoryName, restoreFlashListScroll]);
 
     const fetchOffersRef = useRef(fetchOffers);
     useEffect(() => {
@@ -323,7 +349,7 @@ export default function CategoryScreen() {
         setIsListEnd(false);
         fetchOffersRef.current(true);
     }
-}, [selectedSubCategory, selectedFilter, loading, isCategoryActive, config.title]);
+}, [selectedSubCategory, selectedFilter, loading, isCategoryActive, englishCategoryName]);
 
     const handleLoadMore = () => {
         if (!loadingOffers && !isListEnd) {
@@ -344,7 +370,15 @@ export default function CategoryScreen() {
     }, []);
 
     const handleSubCategorySelect = useCallback((subCategory: { id: string; name: string; icon: any }) => {
+        if (subCategory.id === 'all' && selectedSubCategory !== 'all') {
+            shouldRestoreScrollRef.current = true;
+        }
+
         setSelectedSubCategory(subCategory.id);
+    }, [selectedSubCategory]);
+
+    const handleFlashListScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
     }, []);
 
     const handleRestaurantPress = useCallback((restaurant: { id: string; name: string }) => {
@@ -372,7 +406,7 @@ export default function CategoryScreen() {
         ];
     }, [categoryData, config.subCategories, isArabic, t]);
 
-    const headerTitle = (isArabic ? (categoryData?.nameArabic || categoryData?.nameAr) : null) || categoryData?.nameEnglish || config.title;
+    const headerTitle = (isArabic ? (categoryData?.nameArabic || categoryData?.nameAr || name) : null) || categoryData?.nameEnglish || name || config.title;
     const headerIcon = categoryData?.imageUrl || config.icon;
 
     const filteredOffers = useMemo(() => {
@@ -405,11 +439,14 @@ export default function CategoryScreen() {
             <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
             {!loading && isCategoryActive ? (
                 <FlashList
+                    ref={flashListRef}
                     data={filteredOffers}
                     keyExtractor={(item) => item.id}
                     numColumns={2}
                     contentContainerStyle={styles.contentContainer}
                     showsVerticalScrollIndicator={false}
+                    onScroll={handleFlashListScroll}
+                    scrollEventThrottle={16}
                     ListHeaderComponent={
                         <HeaderContent
                             headerTitle={headerTitle}

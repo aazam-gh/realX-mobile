@@ -129,7 +129,7 @@ const HeaderContent = memo(({
             onBackPress={handleBackPress}
         />
 
-        {isCategoryActive && (
+        {isCategoryActive && !showComingSoon && (
             <SearchBar
                 placeholder={t('search_placeholder_category', { category: headerTitle.toLowerCase() })}
                 value={searchQuery}

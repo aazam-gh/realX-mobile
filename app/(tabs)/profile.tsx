@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, I18nManager, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, I18nManager, ImageBackground, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Updates from 'expo-updates';
 
@@ -185,6 +185,36 @@ export default function ProfileScreen() {
             <PhonkText style={[{ color: Colors.light.text }, styles.savingsCurrency]}> {t('currency_qar')}</PhonkText>
           </View>
         </View>
+
+        <TouchableOpacity 
+          style={styles.universityBanner} 
+          onPress={() => router.push('/x-academy')}
+          activeOpacity={0.9}
+        >
+          <ImageBackground
+            source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/reelx-backend.firebasestorage.app/o/universities%2Funi_id4w96g49%2Fbanner_1775060689467_Frame%20427318887.png?alt=media' }}
+            style={styles.universityBannerBg}
+            imageStyle={{ borderRadius: 20 }}
+          >
+            <View style={styles.universityBannerOverlay}>
+              <View style={[styles.onlyOnRealxBadge, isRTL && styles.badgeRTL]}>
+                <PhonkText style={styles.onlyOnRealxText}>{t('only_on_realx')}</PhonkText>
+              </View>
+              
+              <PhonkText style={[styles.universityBannerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+                {t('apply_to_universities')}
+              </PhonkText>
+              
+              <TouchableOpacity
+                style={styles.universityBannerButton}
+                onPress={() => router.push('/x-academy')}
+                activeOpacity={0.8}
+              >
+                <PhonkText style={styles.universityBannerButtonText}>{t('apply_now')}</PhonkText>
+              </TouchableOpacity>
+            </View>
+          </ImageBackground>
+        </TouchableOpacity>
 
         <View style={styles.menuContainer}>
           <MenuItem icon="time-outline" label={t('redemption_history')} onPress={() => router.push('/redemption-history' as any)} isRTL={isRTL} />
@@ -380,6 +410,57 @@ const styles = StyleSheet.create({
   savingsCurrency: {
     fontSize: 28,
     color: '#000',
+  },
+  universityBanner: {
+    marginBottom: 24,
+    borderRadius: 20,
+    overflow: 'hidden',
+    height: 180,
+    borderWidth: 2,
+    borderColor: '#0b56b8', // To match the image's blue border
+  },
+  universityBannerBg: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-end',
+  },
+  universityBannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(100, 20, 20, 0.5)',
+    padding: 16,
+    justifyContent: 'space-between',
+  },
+  onlyOnRealxBadge: {
+    backgroundColor: '#1AD04F',
+    alignSelf: 'flex-end',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  badgeRTL: {
+    alignSelf: 'flex-start',
+  },
+  onlyOnRealxText: {
+    color: '#FFF',
+    fontSize: 10,
+  },
+  universityBannerTitle: {
+    color: '#FFF',
+    fontSize: 22,
+    marginTop: 'auto',
+    marginBottom: 12,
+    lineHeight: 24,
+  },
+  universityBannerButton: {
+    backgroundColor: '#FFF',
+    paddingVertical: 12,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  universityBannerButtonText: {
+    color: '#8A1538',
+    fontSize: 16,
   },
   menuContainer: {
     gap: 12,

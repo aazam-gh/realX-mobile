@@ -150,5 +150,11 @@
   "onboarding_details_title_prefix": "أدخل",
   "onboarding_details_title_suffix": "تفاصيلك",
   "onboarding_no_authenticated_user_message": "لم يتم العثور على مستخدم مصدق.",
-  "onboarding_saving": "جارٍ الحفظ..."
+  "onboarding_saving": "جارٍ الحفظ...",
+  "apply_to_universities": "قدم للجامعات في قطر",
+  "only_on_realx": "فقط على ريل إكس",
+  "apply_now": "قدم الآن",
+  "x_academy": "أكاديمية إكس",
+  "universities": "الجامعات",
+  "random_text_here": "نص عشوائي هنا..."
 }

@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, TouchableOpacity, View, I18nManager } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -30,6 +31,9 @@ export default function RestaurantCard({
     style,
     xcardEnabled = false,
 }: Props) {
+    const { i18n } = useTranslation();
+    const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+
     const handlePress = () => {
         triggerSubtleHaptic();
         onPress?.();
@@ -87,11 +91,22 @@ export default function RestaurantCard({
 
             {/* Content */}
             <View style={styles.content}>
-                <Text style={[{ color: '#000', fontFamily: Typography.poppins.medium }, styles.name]} numberOfLines={1}>{name}</Text>
+                <Text style={[
+                  { color: '#000', fontFamily: Typography.poppins.medium }, 
+                  styles.name,
+                  { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }
+                ]} numberOfLines={1}>{name}</Text>
 
                 {/* Discount Tag */}
-                <View style={styles.discountWrapper}>
-                    <Text style={[{ color: Colors.brandGreen, fontFamily: Typography.poppins.medium }, styles.discountText]}>{discountText}</Text>
+                <View style={[
+                  styles.discountWrapper,
+                  { alignSelf: isArabic ? 'flex-end' : 'flex-start' }
+                ]}>
+                    <Text style={[
+                      { color: Colors.brandGreen, fontFamily: Typography.poppins.medium }, 
+                      styles.discountText,
+                      { textAlign: isArabic ? 'right' : 'left' }
+                    ]}>{discountText}</Text>
                 </View>
             </View>
         </TouchableOpacity>
@@ -133,7 +148,7 @@ const styles = StyleSheet.create({
     },
     logoContainer: {
         position: 'absolute',
-        left: 10,
+        start: 10,
         bottom: 10, // Logo in the corner
         zIndex: 2,
     },
@@ -161,8 +176,8 @@ const styles = StyleSheet.create({
     badgesContainer: { // Container for badges to handle spacing/positioning if needed
         position: 'absolute',
         top: 10,
-        left: 0,
-        right: 0,
+        start: 0,
+        end: 0,
         flexDirection: 'row',
         justifyContent: 'space-between', // Distribute badges
         paddingHorizontal: 10,
@@ -177,7 +192,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         gap: 4,
         alignSelf: 'flex-start',
-        marginLeft: 'auto', // Push to right if alone, or use justifyContent
+        marginStart: 'auto', // Push to right if alone, or use justifyContent
     },
     topRatedBadge: {
         flexDirection: 'row',
@@ -259,7 +274,7 @@ bottomImage: {
 xcardBadge: {
     position: 'absolute',
     top: 10,
-    right: 10,
+    end: 10,
     width: 32,
     height: 32,
     backgroundColor: '#FFFFFF',

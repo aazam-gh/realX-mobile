@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, View, I18nManager } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import RestaurantCard from './RestaurantCard';
@@ -27,12 +28,23 @@ export default function BrowseSection({
     restaurants = [],
     onRestaurantPress,
 }: Props) {
-    const displayTitle = title || (mainCategory ? `Yallah! Browse ${mainCategory}` : 'Yallah! browse food');
+    const { t, i18n } = useTranslation();
+    const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+
+    const displayTitle = title || (mainCategory 
+        ? t('browse_main_category', { category: mainCategory }) 
+        : t('browse_food_fallback'));
 
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
-                <Text style={styles.headerTitle}>
+                <Text style={[
+                    styles.headerTitle,
+                    { 
+                      textAlign: isArabic ? 'right' : 'left',
+                      writingDirection: isArabic ? 'rtl' : 'ltr'
+                    }
+                ]}>
                     {displayTitle}
                 </Text>
             </View>

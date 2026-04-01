@@ -156,5 +156,7 @@
   ,"apply_now": "APPLY NOW"
   ,"x_academy": "X ACADEMY"
   ,"universities": "UNIVERSITIES"
-  ,"random_text_here": "Random text here..."
+  ,"random_text_here": "Random text here...",
+  "browse_main_category": "Yallah! Browse {{category}}",
+  "browse_food_fallback": "Yallah! browse food"
 }

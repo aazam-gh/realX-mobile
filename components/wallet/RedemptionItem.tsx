@@ -2,6 +2,7 @@ import { I18nManager, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { useTranslation } from 'react-i18next';
 
 export type RedemptionData = {
     id: string;
@@ -23,6 +24,7 @@ type Props = {
 
 export default function RedemptionItem({ item }: Props) {
     const isRTL = I18nManager.isRTL;
+    const { t } = useTranslation();
 
     return (
         <View style={[styles.container, isRTL && styles.containerRTL]}>
@@ -55,12 +57,15 @@ export default function RedemptionItem({ item }: Props) {
             </View>
 
             {/* Saved Amount */}
-            <View style={[styles.savedContainer, isRTL && { alignItems: 'flex-start' }]}>
+            <View style={[styles.savedContainer, isRTL && { alignItems: 'flex-start' }]}> 
                 <Text style={styles.savedLabel}>
                     {item.savedAmount.toFixed(2)} {item.currency}
                 </Text>
-                <Text style={styles.totalBillText}>
-                    Instead of {item.totalBill.toFixed(2)} {item.currency}
+                <Text style={[styles.totalBillText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    {t('instead_of', {
+                        total: item.totalBill.toFixed(2),
+                        currency: item.currency,
+                    })}
                 </Text>
             </View>
         </View>

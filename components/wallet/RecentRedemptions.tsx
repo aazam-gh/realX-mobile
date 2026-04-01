@@ -92,7 +92,9 @@ export default function RecentRedemptions() {
         <RedemptionItem item={item} />
     );
 
-    const renderSeparator = () => <View style={styles.separator} />;
+    const renderSeparator = () => (
+        <View style={[styles.separator, isRTL && styles.separatorRTL]} />
+    );
 
     if (loading) {
         return (
@@ -150,6 +152,10 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: '#F0F0F0',
         marginLeft: 84,
+    },
+    separatorRTL: {
+        marginLeft: 0,
+        marginRight: 84,
     },
     emptyText: {
         fontSize: 14,

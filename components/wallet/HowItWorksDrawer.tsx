@@ -1,6 +1,7 @@
 import { GlassView } from 'expo-glass-effect';
 import {
     Dimensions,
+    I18nManager,
     Modal,
     Pressable,
     ScrollView,
@@ -9,6 +10,7 @@ import {
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 
@@ -25,19 +27,18 @@ type StepData = {
     emoji?: string;
 };
 
-const STEPS: StepData[] = [
-    { number: '1', text: 'Choose a brand' },
-    { number: '2', text: 'Pick a gift card value' },
-    { number: '3', text: 'Tap Redeem to generate it' },
-    { number: '4', text: 'Show the gift card at checkout' },
-    { number: '5', text: 'Enjoy your savings', emoji: '🎉' },
-];
+type StepItemProps = {
+    step: StepData;
+    isRTL: boolean;
+};
 
-function StepItem({ step }: { step: StepData }) {
+function StepItem({ step, isRTL }: StepItemProps) {
     return (
-        <View style={styles.stepItem}>
-            <PhonkText style={styles.stepNumber}>{step.number}</PhonkText>
-            <Text style={styles.stepText}>
+        <View style={[styles.stepItem, isRTL && styles.stepItemRTL]}>
+            <PhonkText style={[styles.stepNumber, isRTL && styles.stepNumberRTL]}>
+                {step.number}
+            </PhonkText>
+            <Text style={[styles.stepText, { textAlign: isRTL ? 'right' : 'left' }]}>
                 {step.text}
                 {step.emoji && ` ${step.emoji}`}
             </Text>
@@ -47,6 +48,16 @@ function StepItem({ step }: { step: StepData }) {
 
 export default function HowItWorksDrawer({ visible, onClose }: Props) {
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
+    const isRTL = I18nManager.isRTL;
+
+    const steps: StepData[] = [
+        { number: '1', text: t('how_it_works_step_1') },
+        { number: '2', text: t('how_it_works_step_2') },
+        { number: '3', text: t('how_it_works_step_3') },
+        { number: '4', text: t('how_it_works_step_4') },
+        { number: '5', text: t('how_it_works_step_5') },
+    ];
 
     return (
         <Modal
@@ -84,16 +95,21 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                         <View style={styles.divider} />
 
                         {/* Title */}
-                        <View style={styles.titleContainer}>
-                            <PhonkText style={styles.titleText}>HOW DOES </PhonkText>
-                            <PhonkText style={styles.titleHighlight}>THIS</PhonkText>
-                            <PhonkText style={styles.titleText}> WORK?</PhonkText>
+                        <View
+                            style={[
+                                styles.titleContainer,
+                                isRTL && styles.titleContainerRTL,
+                            ]}
+                        >
+                            <PhonkText style={styles.titleText}>{t('how_it_works_title_prefix')}</PhonkText>
+                            <PhonkText style={styles.titleHighlight}>{t('how_it_works_title_highlight')}</PhonkText>
+                            <PhonkText style={styles.titleText}>{t('how_it_works_title_suffix')}</PhonkText>
                         </View>
 
                         {/* Steps */}
                         <View style={styles.stepsContainer}>
-                            {STEPS.map((step) => (
-                                <StepItem key={step.number} step={step} />
+                            {steps.map((step) => (
+                                <StepItem key={step.number} step={step} isRTL={isRTL} />
                             ))}
                         </View>
                     </ScrollView>
@@ -156,6 +172,9 @@ const styles = StyleSheet.create({
         paddingTop: 28,
         paddingBottom: 24,
     },
+    titleContainerRTL: {
+        flexDirection: 'row-reverse',
+    },
     titleText: {
         fontSize: 22,
         color: '#000000',
@@ -176,11 +195,18 @@ const styles = StyleSheet.create({
         paddingVertical: 18,
         paddingHorizontal: 20,
     },
+    stepItemRTL: {
+        flexDirection: 'row-reverse',
+    },
     stepNumber: {
         fontSize: 22,
         color: '#18B852',
         marginRight: 16,
         minWidth: 24,
+    },
+    stepNumberRTL: {
+        marginRight: 0,
+        marginLeft: 16,
     },
     stepText: {
         fontSize: 16,

@@ -1,11 +1,14 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Typography } from '../../constants/Typography';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     onPress?: () => void;
 };
 
 export default function HelpLink({ onPress }: Props) {
+    const { t } = useTranslation();
+    const isRTL = I18nManager.isRTL;
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -13,10 +16,12 @@ export default function HelpLink({ onPress }: Props) {
                 onPress={onPress}
                 activeOpacity={0.7}
             >
-                <View style={styles.iconContainer}>
+                <View style={[styles.iconContainer, isRTL && styles.iconContainerRTL]}>
                     <Text style={styles.icon}>ⓘ</Text>
                 </View>
-                <Text style={styles.linkText}>How does this work?</Text>
+                <Text style={[styles.linkText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    {t('help_link_text')}
+                </Text>
             </TouchableOpacity>
         </View>
     );
@@ -35,6 +40,10 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         marginRight: 6,
+    },
+    iconContainerRTL: {
+        marginRight: 0,
+        marginLeft: 6,
     },
     icon: {
         fontSize: 16,

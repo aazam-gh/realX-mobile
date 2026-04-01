@@ -1,6 +1,7 @@
-import { Dimensions, ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, ImageBackground, I18nManager, StyleSheet, Text, View } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
+import { useTranslation } from 'react-i18next';
 
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth - 40;
@@ -16,6 +17,8 @@ type Props = {
 };
 
 export default function AZxXCard({ earnings = 0, currency = 'QAR', creatorCode }: Props) {
+    const { t } = useTranslation();
+    const isRTL = I18nManager.isRTL;
     return (
         <View style={styles.container}>
             <ImageBackground
@@ -28,7 +31,7 @@ export default function AZxXCard({ earnings = 0, currency = 'QAR', creatorCode }
                 <View style={styles.cardContent}>
                     {/* Earnings section */}
                     <View style={styles.earningsSection}>
-                        <Text style={styles.earningsLabel}>Cashback:</Text>
+                        <Text style={styles.earningsLabel}>{t('xcard_cashback_label')}</Text>
                         <View style={styles.earningsRow}>
                             <Text style={styles.earningsAmount}>
                                 {earnings.toFixed(2)} {currency}
@@ -37,12 +40,12 @@ export default function AZxXCard({ earnings = 0, currency = 'QAR', creatorCode }
                     </View>
 
                     {/* Creator Code Section (Bottom Right) */}
-                    {creatorCode && (
-                        <View style={styles.creatorCodeContainer}>
-                            <Text style={styles.creatorCodeLabel}>CREATOR CODE</Text>
-                            <PhonkText style={styles.creatorCodeText}>{creatorCode}</PhonkText>
-                        </View>
-                    )}
+                {creatorCode && (
+                    <View style={[styles.creatorCodeContainer, isRTL && styles.creatorCodeContainerRTL]}>
+                        <Text style={styles.creatorCodeLabel}>{t('xcard_creator_code_label')}</Text>
+                        <PhonkText style={styles.creatorCodeText}>{creatorCode}</PhonkText>
+                    </View>
+                )}
                 </View>
             </ImageBackground>
         </View>
@@ -89,6 +92,10 @@ const styles = StyleSheet.create({
     creatorCodeContainer: {
         alignSelf: 'flex-end',
         alignItems: 'flex-end',
+    },
+    creatorCodeContainerRTL: {
+        alignSelf: 'flex-start',
+        alignItems: 'flex-start',
     },
     creatorCodeLabel: {
         fontSize: 10,

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
+    I18nManager,
     ScrollView,
     StyleSheet,
     Text,
@@ -13,6 +14,7 @@ import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 import GiftCardCheckout from './GiftCardCheckout';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import { useTranslation } from 'react-i18next';
 
 type Brand = {
     id: string;
@@ -41,6 +43,8 @@ export default function RedeemGiftCard({
     const amounts = brand.loyalty && brand.loyalty.length > 0 ? brand.loyalty : [25, 50, 75];
     const [selectedAmount, setSelectedAmount] = useState(amounts[0]);
     const [showCheckout, setShowCheckout] = useState(false);
+    const { t } = useTranslation();
+    const isRTL = I18nManager.isRTL;
 
     if (showCheckout) {
         return (
@@ -57,7 +61,7 @@ export default function RedeemGiftCard({
     return (
         <View style={styles.container}>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, isRTL && styles.headerRTL]}>
                 <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => {
@@ -66,7 +70,7 @@ export default function RedeemGiftCard({
                     }}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="arrow-back" size={24} color="#000000" />
+                    <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#000000" />
                 </TouchableOpacity>
                 <View style={styles.logoContainer}>
                     <PhonkText style={styles.logoX}>X</PhonkText>
@@ -81,7 +85,14 @@ export default function RedeemGiftCard({
             >
                 {/* Main Card */}
                 <View style={styles.mainCard}>
-                    <Text style={styles.inStoreBadge}>In-store</Text>
+                    <Text
+                        style={[
+                            styles.inStoreBadge,
+                            isRTL ? styles.inStoreBadgeRTL : undefined,
+                        ]}
+                    >
+                        {t('in_store_badge')}
+                    </Text>
 
                     <View style={styles.logoWrapper}>
                         <View style={[styles.brandLogoContainer, { backgroundColor: brand.backgroundColor || '#F0F0F0' }]}>
@@ -98,8 +109,8 @@ export default function RedeemGiftCard({
                     <Text style={styles.brandName}>{brand.name}</Text>
 
                     <View style={styles.generateGiftCardWrapper}>
-                        <PhonkText style={styles.generateText}>GENERATE</PhonkText>
-                        <PhonkText style={styles.giftCardText}>GIFT CARD</PhonkText>
+                    <PhonkText style={styles.generateText}>{t('generate_text')}</PhonkText>
+                    <PhonkText style={styles.giftCardText}>{t('gift_card_text')}</PhonkText>
                     </View>
 
                     <View style={styles.selectedAmountContainer}>
@@ -113,7 +124,7 @@ export default function RedeemGiftCard({
                 <View style={styles.selectionSection}>
                     {/* MAX LIMIT label removed */}
 
-                    <View style={styles.amountOptions}>
+                    <View style={[styles.amountOptions, isRTL && styles.amountOptionsRTL]}>
                         {amounts.map((amount) => (
                             <TouchableOpacity
                                 key={amount}
@@ -141,11 +152,15 @@ export default function RedeemGiftCard({
                 {selectedAmount > maxLimit && (
                     <View style={styles.insufficientContainer}>
                         <Ionicons name="alert-circle" size={18} color="#E53935" />
-                        <Text style={styles.insufficientText}>
-                            Insufficient balance. You need {currency} {selectedAmount.toFixed(2)} but only have {currency} {maxLimit.toFixed(2)}.
-                        </Text>
-                    </View>
-                )}
+                <Text style={[styles.insufficientText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    {t('insufficient_balance_warning', {
+                        currency,
+                        selectedAmount: selectedAmount.toFixed(2),
+                        maxLimit: maxLimit.toFixed(2),
+                    })}
+                </Text>
+            </View>
+        )}
 
                 {/* Redeem Button */}
                 <TouchableOpacity
@@ -158,16 +173,16 @@ export default function RedeemGiftCard({
                     disabled={selectedAmount > maxLimit}
                 >
                     <Ionicons name="flash" size={20} color="#FFFFFF" style={styles.redeemIcon} />
-                    <PhonkText style={styles.redeemButtonText}>REDEEM</PhonkText>
+                    <PhonkText style={styles.redeemButtonText}>{t('redeem_button_text')}</PhonkText>
                 </TouchableOpacity>
 
                 {/* T&C */}
                 <TouchableOpacity
-                    style={styles.tcButton}
+                    style={[styles.tcButton, isRTL && styles.tcButtonRTL]}
                     onPress={() => triggerSubtleHaptic()}
                 >
                     <Ionicons name="information-circle-outline" size={18} color="#999999" />
-                    <Text style={styles.tcButtonText}>View T&C</Text>
+                    <Text style={[styles.tcButtonText, isRTL && styles.tcButtonTextRTL]}>{t('view_tc')}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </View>
@@ -185,6 +200,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
+    },
+    headerRTL: {
+        flexDirection: 'row-reverse',
     },
     backButton: {
         width: 40,
@@ -228,6 +246,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#999999',
         fontFamily: Typography.poppins.medium,
+    },
+    inStoreBadgeRTL: {
+        left: undefined,
+        right: 30,
+        textAlign: 'right',
     },
     logoWrapper: {
         marginTop: -70, // Offset to make logo pop out
@@ -298,6 +321,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         gap: 12,
     },
+    amountOptionsRTL: {
+        flexDirection: 'row-reverse',
+    },
     amountOption: {
         flex: 1,
         height: 56,
@@ -365,10 +391,17 @@ const styles = StyleSheet.create({
         marginTop: 20,
         paddingVertical: 10,
     },
+    tcButtonRTL: {
+        flexDirection: 'row-reverse',
+    },
     tcButtonText: {
         fontSize: 13,
         fontFamily: Typography.poppins.medium,
         color: '#999999',
         marginLeft: 6,
+    },
+    tcButtonTextRTL: {
+        marginLeft: 0,
+        marginRight: 6,
     },
 });

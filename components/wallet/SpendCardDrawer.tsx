@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    I18nManager,
     Modal,
     StyleSheet,
     Text,
@@ -16,6 +17,7 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 import RedeemGiftCard from './RedeemGiftCard';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     visible: boolean;
@@ -38,15 +40,18 @@ function BrandListItem({
     brand,
     isSelected,
     onSelect,
+    isRTL,
 }: {
     brand: BrandItem;
     isSelected: boolean;
     onSelect: () => void;
+    isRTL: boolean;
 }) {
     return (
         <TouchableOpacity
             style={[
                 styles.brandItem,
+                isRTL && styles.brandItemRTL,
                 isSelected && styles.brandItemSelected,
             ]}
             onPress={onSelect}
@@ -56,6 +61,7 @@ function BrandListItem({
                 style={[
                     styles.brandLogo,
                     { backgroundColor: brand.backgroundColor || '#F0F0F0' },
+                    isRTL ? { marginLeft: 14 } : { marginRight: 14 },
                 ]}
             >
                 {brand.logo ? (
@@ -66,7 +72,9 @@ function BrandListItem({
                     </Text>
                 )}
             </View>
-            <Text style={styles.brandName}>{brand.name}</Text>
+            <Text style={[styles.brandName, { textAlign: isRTL ? 'right' : 'left' }]}>
+                {brand.name}
+            </Text>
         </TouchableOpacity>
     );
 }
@@ -82,6 +90,8 @@ export default function SpendCardDrawer({
     const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
     const [brands, setBrands] = useState<BrandItem[]>([]);
     const [loading, setLoading] = useState(false);
+    const { t } = useTranslation();
+    const isRTL = I18nManager.isRTL;
 
     useEffect(() => {
         if (!visible) return;
@@ -147,14 +157,14 @@ export default function SpendCardDrawer({
                 ) : (
                     <>
                         {/* Header */}
-                        <View style={styles.header}>
-                            <TouchableOpacity
-                                style={styles.backButton}
-                                onPress={onClose}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={styles.backArrow}>←</Text>
-                            </TouchableOpacity>
+                        <View style={[styles.header, isRTL && styles.headerRTL]}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={onClose}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={styles.backArrow}>{isRTL ? '→' : '←'}</Text>
+                        </TouchableOpacity>
                             <View style={styles.logoContainer}>
                                 <PhonkText style={styles.logoX}>X</PhonkText>
                                 <PhonkText style={styles.logoCard}>CARD</PhonkText>
@@ -164,18 +174,18 @@ export default function SpendCardDrawer({
 
                         {/* Balance Card */}
                         <View style={styles.balanceCard}>
-                            <Text style={styles.balanceLabel}>Available Balance:</Text>
+                            <Text style={styles.balanceLabel}>{t('available_balance')}</Text>
                             <PhonkText style={styles.balanceValue}>
                                 {balance.toFixed(2)} {currency}
                             </PhonkText>
                         </View>
 
                         {/* Search Bar */}
-                        <View style={styles.searchContainer}>
-                            <Text style={styles.searchIcon}>🔍</Text>
+                        <View style={[styles.searchContainer, isRTL && styles.searchContainerRTL]}>
+                            <Text style={[styles.searchIcon, isRTL && styles.searchIconRTL]}>🔍</Text>
                             <TextInput
-                                style={styles.searchInput}
-                                placeholder="Search for brands..."
+                                style={[styles.searchInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                                placeholder={t('search_brands_placeholder')}
                                 placeholderTextColor="#999999"
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
@@ -196,6 +206,7 @@ export default function SpendCardDrawer({
                                         brand={item}
                                         isSelected={selectedBrandId === item.id}
                                         onSelect={() => handleBrandSelect(item.id)}
+                                        isRTL={isRTL}
                                     />
                                 )}
                                 style={styles.brandList}
@@ -224,6 +235,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
+    },
+    headerRTL: {
+        flexDirection: 'row-reverse',
     },
     backButton: {
         width: 40,
@@ -285,9 +299,16 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E8E8E8',
     },
+    searchContainerRTL: {
+        flexDirection: 'row-reverse',
+    },
     searchIcon: {
         fontSize: 16,
         marginRight: 10,
+    },
+    searchIconRTL: {
+        marginLeft: 10,
+        marginRight: 0,
     },
     searchInput: {
         flex: 1,
@@ -312,6 +333,9 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginBottom: 4,
     },
+    brandItemRTL: {
+        flexDirection: 'row-reverse',
+    },
     brandItemSelected: {
         backgroundColor: '#F0F8FF',
         borderWidth: 2,
@@ -324,7 +348,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 14,
         overflow: 'hidden',
     },
     brandLogoImage: {

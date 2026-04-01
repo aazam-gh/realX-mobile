@@ -1,21 +1,24 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     onPress?: () => void;
 };
 
 export default function SpendButton({ onPress }: Props) {
+    const { t } = useTranslation();
+    const isRTL = I18nManager.isRTL;
     return (
         <View style={styles.container}>
             <TouchableOpacity
-                style={styles.button}
+                style={[styles.button, isRTL && styles.buttonRTL]}
                 onPress={onPress}
                 activeOpacity={0.85}
             >
-                <Text style={styles.lightningIcon}>⚡</Text>
-                <Text style={styles.buttonText}>SPEND THE CARD</Text>
+                <Text style={[styles.lightningIcon, isRTL && styles.lightningIconRTL]}>⚡</Text>
+                <Text style={styles.buttonText}>{t('spend_button_text')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -40,9 +43,16 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 4,
     },
+    buttonRTL: {
+        flexDirection: 'row-reverse',
+    },
     lightningIcon: {
         fontSize: 18,
         marginRight: 10,
+    },
+    lightningIconRTL: {
+        marginRight: 0,
+        marginLeft: 10,
     },
     buttonText: {
         fontSize: 16,

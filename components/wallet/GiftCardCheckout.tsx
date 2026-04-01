@@ -6,6 +6,7 @@ import React, { useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    I18nManager,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -19,6 +20,7 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import { useTranslation } from 'react-i18next';
 
 type Brand = {
     id: string;
@@ -51,6 +53,8 @@ export default function GiftCardCheckout({
     const remainingAmount = Math.max(0, totalBillNum - selectedAmount);
 
     const canRedeem = pin.length === 4 && totalBillNum > 0;
+    const { t } = useTranslation();
+    const isRTL = I18nManager.isRTL;
 
     const handleRedeem = async () => {
         if (!canRedeem) return;
@@ -59,7 +63,7 @@ export default function GiftCardCheckout({
         const auth = getAuth();
         const user = auth.currentUser;
         if (!user) {
-            Alert.alert('Error', 'You must be logged in to redeem.');
+            Alert.alert(t('error'), t('login_required_message'));
             return;
         }
 
@@ -77,11 +81,14 @@ export default function GiftCardCheckout({
             });
 
             Alert.alert(
-                'Redemption successful!',
-                `You saved ${selectedAmount} qar`,
+                t('redemption_success_title'),
+                t('redemption_success_message', {
+                    currency,
+                    amount: selectedAmount.toFixed(2),
+                }),
                 [
                     {
-                        text: 'Done',
+                        text: t('done'),
                         onPress: () => onSuccess?.(),
                     },
                 ]
@@ -89,8 +96,8 @@ export default function GiftCardCheckout({
         } catch (error: any) {
             console.error('Gift card redemption error:', error);
             Alert.alert(
-                'Redemption Failed',
-                error.message || 'Something went wrong. Please try again.'
+                t('redemption_failed_title'),
+                error.message || t('redemption_failed_message')
             );
         } finally {
             setIsRedeeming(false);
@@ -103,7 +110,7 @@ export default function GiftCardCheckout({
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, isRTL && styles.headerRTL]}>
                 <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => {
@@ -112,7 +119,7 @@ export default function GiftCardCheckout({
                     }}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="arrow-back" size={24} color="#000000" />
+                    <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color="#000000" />
                 </TouchableOpacity>
                 <View style={styles.logoContainer}>
                     <PhonkText style={styles.logoX}>X</PhonkText>
@@ -130,19 +137,21 @@ export default function GiftCardCheckout({
                 <View style={styles.offerCardWrapper}>
                     <View style={styles.offerCard}>
                         <TouchableOpacity
-                            style={styles.tcButton}
+                            style={[styles.tcButton, isRTL && styles.tcButtonRTL]}
                             onPress={() => triggerSubtleHaptic()}
                         >
                             <Ionicons name="information-circle-outline" size={18} color="#888" />
-                            <Text style={styles.tcText}>View T&C</Text>
+                            <Text style={[styles.tcText, isRTL && styles.tcTextRTL]}>
+                                {t('view_tc')}
+                            </Text>
                         </TouchableOpacity>
 
                         <PhonkText style={styles.offerTitle}>
                             {selectedAmount.toFixed(2)}
                             <Text style={styles.greenText}>{currency}</Text>
                         </PhonkText>
-                        <PhonkText style={styles.offerSubtitleLabel}>Gift Card</PhonkText>
-                        <Text style={styles.offerSubtitle}>In-store</Text>
+                        <PhonkText style={styles.offerSubtitleLabel}>{t('gift_card_text')}</PhonkText>
+                        <Text style={styles.offerSubtitle}>{t('in_store_badge')}</Text>
                     </View>
 
                     {/* Logo Overlay */}
@@ -162,10 +171,12 @@ export default function GiftCardCheckout({
                 {/* Redemption Card */}
                 <View style={styles.redemptionCard}>
                     {/* PIN Entry */}
-                    <Text style={styles.inputLabel}>Enter Vendor PIN:</Text>
+                    <Text style={[styles.inputLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                        {t('enter_vendor_pin')}
+                    </Text>
                     <TouchableOpacity
                         activeOpacity={1}
-                        style={styles.pinContainer}
+                        style={[styles.pinContainer, isRTL && styles.pinContainerRTL]}
                         onPress={() => {
                             triggerSubtleHaptic();
                             pinInputRef.current?.focus();
@@ -191,11 +202,15 @@ export default function GiftCardCheckout({
                     />
 
                     {/* Total Bill */}
-                    <Text style={styles.inputLabel}>Total Bill:</Text>
-                    <View style={styles.amountInputContainer}>
-                        <Text style={styles.currencyPrefix}>{currency}</Text>
+                    <Text style={[styles.inputLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                        {t('total_bill')}
+                    </Text>
+                    <View style={[styles.amountInputContainer, isRTL && styles.amountInputContainerRTL]}>
+                        <Text style={[styles.currencyPrefix, isRTL && styles.currencyPrefixRTL]}>
+                            {currency}
+                        </Text>
                         <TextInput
-                            style={styles.amountInput}
+                            style={[styles.amountInput, { textAlign: isRTL ? 'right' : 'left' }]}
                             value={totalBill}
                             onChangeText={setTotalBill}
                             keyboardType="numeric"
@@ -208,20 +223,20 @@ export default function GiftCardCheckout({
                     {totalBillNum > 0 && (
                         <View style={styles.breakdownContainer}>
                             <View style={styles.breakdownRow}>
-                                <Text style={styles.breakdownLabel}>Total Bill</Text>
+                            <Text style={styles.breakdownLabel}>{t('total_bill')}</Text>
                                 <Text style={styles.breakdownValue}>
                                     {currency} {totalBillNum.toFixed(2)}
                                 </Text>
                             </View>
                             <View style={styles.breakdownRow}>
-                                <Text style={styles.breakdownLabelGreen}>Gift Card Redeemed</Text>
+                            <Text style={styles.breakdownLabelGreen}>{t('gift_card_redeemed_label')}</Text>
                                 <Text style={styles.breakdownValueGreen}>
                                     − {currency} {Math.min(selectedAmount, totalBillNum).toFixed(2)}
                                 </Text>
                             </View>
                             <View style={styles.breakdownDivider} />
                             <View style={styles.breakdownRow}>
-                                <Text style={styles.breakdownLabelBold}>Amount to Pay</Text>
+                                <Text style={styles.breakdownLabelBold}>{t('amount_to_pay_label')}</Text>
                                 <PhonkText style={styles.breakdownValueBold}>
                                     {currency} {remainingAmount.toFixed(2)}
                                 </PhonkText>
@@ -245,7 +260,7 @@ export default function GiftCardCheckout({
                     ) : (
                         <>
                             <Ionicons name="flash" size={20} color="#FFF" />
-                            <PhonkText style={styles.redeemButtonText}>REDEEM</PhonkText>
+                            <PhonkText style={styles.redeemButtonText}>{t('redeem_button_text')}</PhonkText>
                         </>
                     )}
                 </TouchableOpacity>
@@ -265,6 +280,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
+    },
+    headerRTL: {
+        flexDirection: 'row-reverse',
     },
     backButton: {
         width: 40,
@@ -315,10 +333,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 4,
     },
+    tcButtonRTL: {
+        right: undefined,
+        left: 20,
+        flexDirection: 'row-reverse',
+    },
     tcText: {
         fontSize: 14,
         color: '#888',
         fontFamily: Typography.poppins.semiBold,
+    },
+    tcTextRTL: {
+        marginLeft: 0,
+        marginRight: 4,
     },
     offerTitle: {
         fontSize: 32,
@@ -391,6 +418,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginBottom: 24,
     },
+    pinContainerRTL: {
+        flexDirection: 'row-reverse',
+    },
     pinBox: {
         width: 65,
         height: 65,
@@ -423,11 +453,18 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 2,
     },
+    amountInputContainerRTL: {
+        flexDirection: 'row-reverse',
+    },
     currencyPrefix: {
         fontSize: 16,
         color: '#AAA',
         fontFamily: Typography.poppins.semiBold,
         marginRight: 10,
+    },
+    currencyPrefixRTL: {
+        marginLeft: 10,
+        marginRight: 0,
     },
     amountInput: {
         flex: 1,

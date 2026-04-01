@@ -16,12 +16,13 @@ export default function VendorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { i18n } = useTranslation();
+    const { i18n, t } = useTranslation();
     const isArabic = i18n.language === 'ar';
     const [vendor, setVendor] = useState<any>(null);
     const [offers, setOffers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedOfferForTC, setSelectedOfferForTC] = useState<any>(null);
+    const [actualVendorId, setActualVendorId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -32,12 +33,13 @@ export default function VendorScreen() {
                 // Fetch Vendor
                 const vendorRef = doc(db, 'vendors', id);
                 const vendorSnap = await getDoc(vendorRef);
-
+                
                 let vendorData = null;
-                let actualVendorId = id;
+                let foundVendorId = id;
 
                 if (vendorSnap.exists()) {
                     vendorData = vendorSnap.data();
+                    setActualVendorId(id);
                 } else {
                     // Fallback: Try searching by name if ID lookup fails
                     // This is useful since the banner's offerId might be the vendor name
@@ -48,7 +50,17 @@ export default function VendorScreen() {
                     if (!nameSnap.empty) {
                         const foundDoc = nameSnap.docs[0];
                         vendorData = foundDoc.data();
-                        actualVendorId = foundDoc.id;
+                        foundVendorId = foundDoc.id;
+                        setActualVendorId(foundDoc.id);
+                    } else if (isArabic) {
+                        const nameArQuery = query(vendorsRef, where('nameAr', '==', id));
+                        const nameArSnap = await getDocs(nameArQuery);
+                        if (!nameArSnap.empty) {
+                            const foundDoc = nameArSnap.docs[0];
+                            vendorData = foundDoc.data();
+                            foundVendorId = foundDoc.id;
+                            setActualVendorId(foundDoc.id);
+                        }
                     }
                 }
 
@@ -57,7 +69,7 @@ export default function VendorScreen() {
 
                     // Fetch Offers using the actual document ID
                     const offersRef = collection(db, 'offers');
-                    const q = query(offersRef, where('vendorId', '==', actualVendorId), where('status', '==', 'active'));
+                    const q = query(offersRef, where('vendorId', '==', foundVendorId), where('status', '==', 'active'));
                     const querySnapshot = await getDocs(q);
 
                     const fetchedOffers = querySnapshot.docs.map((doc: any) => ({
@@ -88,7 +100,7 @@ export default function VendorScreen() {
     if (!vendor) {
         return (
                 <View style={[styles.errorContainer, { backgroundColor: Colors.light.background }]}>
-                <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.errorText]}>Vendor not found</Text>
+                <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.errorText]}>{t('vendor_not_found')}</Text>
             </View>
         );
     }
@@ -148,7 +160,7 @@ export default function VendorScreen() {
                                 contentFit="contain"
                             />
                         ) : (
-                            <PhonkText style={[{ color: Colors.light.text }, styles.vendorName]}>{vendor.name}</PhonkText>
+                            <PhonkText style={[{ color: Colors.light.text }, styles.vendorName]}>{isArabic ? (vendor.nameAr || vendor.name) : vendor.name}</PhonkText>
                         )}
                     </View>
 
@@ -196,15 +208,15 @@ export default function VendorScreen() {
                                             onPress={() => setSelectedOfferForTC(offer)}
                                         >
                                             <Ionicons name="alert-circle-outline" size={22} color="#8E8E93" />
-                                            <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>View T&C</Text>
+                                            <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('view_tc')}</Text>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
                                             style={[styles.pillButton, styles.redeemPill]}
-                                            onPress={() => router.push(`/redeem/${offer.id}?vendorId=${id}`)}
+                                            onPress={() => router.push(`/redeem/${offer.id}?vendorId=${actualVendorId || id}`)}
                                         >
                                             <Ionicons name="flash" size={18} color="#FFF" />
-                                            <Text style={[{ color: '#FFF', fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>REDEEM</Text>
+                                            <Text style={[{ color: '#FFF', fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -243,7 +255,7 @@ export default function VendorScreen() {
 
                         <View style={styles.modalContent}>
                             <View style={styles.modalHeader}>
-                                <PhonkText style={[{ color: Colors.light.text }, styles.modalTitleText]}>TERMS & CONDITIONS</PhonkText>
+                                <PhonkText style={[{ color: Colors.light.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
                                 <TouchableOpacity
                                     onPress={() => setSelectedOfferForTC(null)}
                                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -257,21 +269,21 @@ export default function VendorScreen() {
                                 style={styles.modalBody}
                                 contentContainerStyle={styles.modalBodyContent}
                             >
-                                <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.descriptionText]}>
+                                <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
                                     {isArabic
-                                        ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || 'No specific terms provided for this offer.')
-                                        : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || 'No specific terms provided for this offer.')}
+                                        ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || t('no_specific_terms'))
+                                        : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || t('no_specific_terms'))}
                                 </Text>
 
                                 {/* Common Terms could go here */}
                                 <View style={styles.commonTerms}>
-                                    <View style={styles.termRow}>
+                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                         <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.termText]}>Valid for in-store purchases only</Text>
+                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
                                     </View>
-                                    <View style={styles.termRow}>
+                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                         <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
-                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.termText]}>Cannot be combined with other offers</Text>
+                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
                                     </View>
                                 </View>
                             </ScrollView>

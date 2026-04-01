@@ -158,5 +158,11 @@
   ,"universities": "UNIVERSITIES"
   ,"random_text_here": "Random text here...",
   "browse_main_category": "Yallah! Browse {{category}}",
-  "browse_food_fallback": "Yallah! browse food"
+  "browse_food_fallback": "Yallah! browse food",
+  "terms_and_conditions_caps": "TERMS & CONDITIONS",
+  "in_store_only": "Valid for in-store purchases only",
+  "cannot_be_combined": "Cannot be combined with other offers",
+  "redeem_caps": "REDEEM",
+  "vendor_not_found": "Vendor not found",
+  "no_specific_terms": "No specific terms provided for this offer."
 }

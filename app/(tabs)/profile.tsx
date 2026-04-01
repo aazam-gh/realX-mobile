@@ -118,7 +118,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.topPill}>
-          <View style={[styles.profileTopRow, isRTL && styles.rowReverse]}>
+          <View style={[styles.profileTopRow]}>
             <View style={styles.avatarContainer}>
               {userData?.photoURL || getAuth().currentUser?.photoURL ? (
                 <Image
@@ -132,24 +132,24 @@ export default function ProfileScreen() {
               )}
             </View>
             <View style={styles.badge}>
-              <PhonkText style={[{ color: '#FFFFFF' }, styles.badgeText]}>{t('rookie_badge')}</PhonkText>
+              <PhonkText style={[{ color: '#FFFFFF', textAlign: isRTL ? 'right' : 'left' }, styles.badgeText]}>{t('rookie_badge')}</PhonkText>
             </View>
           </View>
         </View>
 
         <View style={styles.bottomPill}>
-          <View style={[styles.profileBottomRow, isRTL && styles.rowReverse]}>
+          <View style={[styles.profileBottomRow]}>
             <View style={styles.userInfo}>
-              <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.userName]}>
+              <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isRTL ? 'right' : 'left' }, styles.userName]}>
                 {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
               </Text>
             </View>
             <TouchableOpacity
-              style={styles.editButton}
+              style={[styles.editButton]}
               onPress={() => router.push('/profile-details')}
             >
               <Ionicons name="create-outline" size={16} color="#8E8E93" />
-              <PhonkText style={[{ color: Colors.light.text }, styles.editButtonText]}>
+              <PhonkText style={[{ color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' }, styles.editButtonText]}>
                 {t('profile')}
               </PhonkText>
             </TouchableOpacity>
@@ -159,7 +159,7 @@ export default function ProfileScreen() {
         <View style={styles.sectionHeader}>
           <PhonkText
             style={[
-              { color: Colors.light.text },
+              { color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' },
               styles.sectionTitle,
               { textTransform: isRTL ? 'none' : 'uppercase' },
             ]}
@@ -178,11 +178,11 @@ export default function ProfileScreen() {
           >
             {t('all_time_saved')}
           </Text>
-          <View style={[styles.savingsAmountContainer, isRTL && styles.rowReverse]}> 
-            <PhonkText style={[{ color: '#1AD04F' }, styles.savingsAmountGreen]}>
+          <View style={[styles.savingsAmountContainer]}> 
+            <PhonkText style={[{ color: '#1AD04F', textAlign: isRTL ? 'right' : 'left' }, styles.savingsAmountGreen]}>
               {(userData?.savings ?? 0).toFixed(2)}
             </PhonkText>
-            <PhonkText style={[{ color: Colors.light.text }, styles.savingsCurrency]}> {t('currency_qar')}</PhonkText>
+            <PhonkText style={[{ color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' }, styles.savingsCurrency]}> {t('currency_qar')}</PhonkText>
           </View>
         </View>
 
@@ -242,9 +242,9 @@ export default function ProfileScreen() {
             onPress={handleLogout}
             activeOpacity={0.7}
           >
-            <View style={[styles.logoutContent, isRTL && styles.rowReverse]}> 
+            <View style={[styles.logoutContent]}> 
               <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
-              <PhonkText style={styles.logoutText}>{t('log_out').toUpperCase()}</PhonkText>
+              <PhonkText style={[styles.logoutText, { textAlign: isRTL ? 'right' : 'left' }]}>{t('log_out').toUpperCase()}</PhonkText>
             </View>
           </TouchableOpacity>
         </View>
@@ -274,12 +274,11 @@ function MenuItem({
       style={[
         styles.menuItem,
         { backgroundColor: bgColor || '#F5F5F7' },
-        { flexDirection: isRTL ? 'row-reverse' : 'row' },
       ]}
       activeOpacity={0.7}
       onPress={onPress}
     >
-      <View style={styles.menuItemLeft}>
+      <View style={[styles.menuItemLeft]}>
         <Ionicons name={icon} size={24} color={color || "#000"} />
         <Text
           style={[
@@ -361,7 +360,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 20,
     fontFamily: Typography.poppins.semiBold,
-    paddingLeft: 4,
+    paddingHorizontal: 4,
   },
 
   editButton: {
@@ -401,11 +400,11 @@ const styles = StyleSheet.create({
   savingsAmountContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
+    gap: 8,
   },
   savingsAmountGreen: {
     fontSize: 32,
     color: '#1AD04F',
-    marginRight: 8,
   },
   savingsCurrency: {
     fontSize: 28,

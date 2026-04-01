@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    I18nManager,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
@@ -20,6 +21,7 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PhonkText from '../../components/PhonkText';
 import { Colors } from '../../constants/Colors';
@@ -30,6 +32,7 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 interface VendorData {
     profilePicture?: string;
     name?: string;
+    nameAr?: string;
     xcard?: boolean;
     pin?: string;
     [key: string]: any;
@@ -39,12 +42,16 @@ interface OfferData {
     discountValue?: string | number;
     discountType?: string;
     vendorId?: string;
+    titleEn?: string;
+    titleAr?: string;
     [key: string]: any;
 }
 
 export default function RedeemScreen() {
     const { id, vendorId } = useLocalSearchParams<{ id: string; vendorId: string }>();
     const router = useRouter();
+    const { t, i18n } = useTranslation();
+    const isArabic = i18n.language === 'ar';
     const [vendor, setVendor] = useState<VendorData | null>(null);
     const [offer, setOffer] = useState<OfferData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -135,7 +142,7 @@ export default function RedeemScreen() {
         const auth = getAuth();
         const user = auth.currentUser;
         if (!user) {
-            Alert.alert('Error', 'You must be logged in to redeem.');
+            Alert.alert(t('error'), t('login_required_message'));
             return;
         }
 
@@ -147,7 +154,7 @@ export default function RedeemScreen() {
             const result = await redeemOffer({
                 offerId: id,
                 vendorId: resolvedVendorId,
-                vendorName: vendor?.name || '',
+                vendorName: (isArabic ? (vendor?.nameAr || vendor?.name) : vendor?.name) || '',
                 totalAmount,
                 pin,
                 creatorCode: creatorCode ? creatorCode.trim() : undefined,
@@ -157,17 +164,20 @@ export default function RedeemScreen() {
 
             const data = result.data as any;
 
-            let message = `You saved QAR ${data.discountAmount?.toFixed(2) || discountAmount.toFixed(2)}!`;
+            const currency = t('currency_qar');
+            const savedAmount = data.discountAmount?.toFixed(2) || discountAmount.toFixed(2);
+            let message = t('you_saved_success_message', { currency, amount: savedAmount });
+            
             if (data.cashbackAmount > 0) {
-                message += `\nCashback earned: QAR ${data.cashbackAmount.toFixed(2)}`;
+                message += `\n${t('cashback_earned_success_message', { currency, amount: data.cashbackAmount.toFixed(2) })}`;
             }
 
             Alert.alert(
-                'Redemption Successful! 🎉',
+                t('redemption_successful_title'),
                 message,
                 [
                     {
-                        text: 'Done',
+                        text: t('done'),
                         onPress: () => router.replace('/'),
                     },
                 ]
@@ -175,8 +185,8 @@ export default function RedeemScreen() {
         } catch (error: any) {
             console.error('Offer redemption error:', error);
             Alert.alert(
-                'Redemption Failed',
-                error.message || 'Something went wrong. Please try again.'
+                t('redemption_failed_title'),
+                error.message || t('redemption_failed_message')
             );
         } finally {
             setIsRedeeming(false);
@@ -194,11 +204,11 @@ export default function RedeemScreen() {
             Keyboard.dismiss();
 
             if (pin.length !== 4) {
-                Alert.alert('Hold on', 'Please enter a 4-digit PIN');
+                Alert.alert(t('hold_on'), t('enter_4_digit_pin'));
                 return;
             }
             if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-                Alert.alert('Hold on', 'Please enter a valid amount');
+                Alert.alert(t('hold_on'), t('enter_valid_amount'));
                 return;
             }
 
@@ -217,14 +227,14 @@ export default function RedeemScreen() {
     if (!vendor || !offer) {
         return (
             <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>Information not found</Text>
+                <Text style={styles.errorText}>{t('redemption_info_not_found')}</Text>
                 <TouchableOpacity
                     onPress={() => {
                         triggerSubtleHaptic();
                         router.back();
                     }}
                 >
-                    <Text style={styles.backLink}>Go Back</Text>
+                    <Text style={styles.backLink}>{t('go_back')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -253,7 +263,7 @@ export default function RedeemScreen() {
                                     }
                                 }}
                             >
-                                <Ionicons name="arrow-back" size={24} color="#000" />
+                                <Ionicons name={isArabic ? "arrow-forward" : "arrow-back"} size={24} color="#000" />
                             </TouchableOpacity>
                         </View>
 
@@ -266,10 +276,10 @@ export default function RedeemScreen() {
                             {/* Offer Card */}
                             <View style={styles.offerCardWrapper}>
                                 <View style={styles.offerCard}>
-                                    <PhonkText style={styles.offerTitle}>
-                                        FLAT <Text style={styles.greenText}>
+                                    <PhonkText style={[styles.offerTitle, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        {t('flat_off_prefix')}<Text style={styles.greenText}>
                                             {offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}
-                                        </Text> OFF
+                                        </Text>{t('flat_off_suffix')}
                                     </PhonkText>
                                 </View>
 
@@ -286,15 +296,15 @@ export default function RedeemScreen() {
                             {/* Creator Code Step (xcard vendors only) */}
                             {step === 'creator' && (
                                 <View style={styles.creatorCard}>
-                                    <Text style={styles.inputLabel}>
-                                        Have a creator code? <Text style={styles.optionalText}>(Optional)</Text>
+                                    <Text style={[styles.inputLabel, { textAlign: isArabic ? 'right' : 'left' }]}>
+                                        {t('have_creator_code')} <Text style={styles.optionalText}>{t('optional')}</Text>
                                     </Text>
-                                    <View style={styles.creatorInputContainer}>
+                                    <View style={[styles.creatorInputContainer, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                         <TextInput
-                                            style={styles.creatorInput}
+                                            style={[styles.creatorInput, { textAlign: isArabic ? 'right' : 'left' }]}
                                             value={creatorCode}
                                             onChangeText={(text) => setCreatorCode(text.toUpperCase())}
-                                            placeholder="REELX1"
+                                            placeholder={t('creator_code_placeholder')}
                                             placeholderTextColor="#CCC"
                                             autoCapitalize="characters"
                                             maxLength={6}
@@ -309,11 +319,11 @@ export default function RedeemScreen() {
                             {/* PIN + Amount Step */}
                             {step === 'pin' && (
                                 <View style={styles.redemptionCard}>
-                                    <Text style={styles.inputLabel}>Enter Vendor PIN:</Text>
+                                    <Text style={[styles.inputLabel, { textAlign: isArabic ? 'right' : 'left' }]}>{t('enter_vendor_pin')}</Text>
                                     <View style={styles.pinContainer}>
                                         <TouchableOpacity
                                             activeOpacity={1}
-                                            style={styles.pinVisualContainer}
+                                            style={[styles.pinVisualContainer, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}
                                             onPress={() => {
                                                 triggerSubtleHaptic();
                                                 pinInputRef.current?.focus();
@@ -348,12 +358,12 @@ export default function RedeemScreen() {
                                         />
                                     </View>
 
-                                    <Text style={styles.inputLabel}>Total Bill:</Text>
-                                    <View style={styles.amountInputContainer}>
-                                        <Text style={styles.currencyPrefix}>QAR</Text>
+                                    <Text style={[styles.inputLabel, { textAlign: isArabic ? 'right' : 'left' }]}>{t('total_bill')}:</Text>
+                                    <View style={[styles.amountInputContainer, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Text style={styles.currencyPrefix}>{t('currency_qar')}</Text>
                                         <TextInput
                                             ref={amountInputRef}
-                                            style={styles.amountInput}
+                                            style={[styles.amountInput, { textAlign: isArabic ? 'right' : 'left' }]}
                                             value={amount}
                                             onChangeText={setAmount}
                                             keyboardType="decimal-pad"
@@ -367,34 +377,34 @@ export default function RedeemScreen() {
                                     {/* Breakdown */}
                                     {totalAmount > 0 && (
                                         <View style={styles.breakdownContainer}>
-                                            <View style={styles.breakdownRow}>
-                                                <Text style={styles.breakdownLabel}>Total Bill</Text>
+                                            <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                                <Text style={[styles.breakdownLabel, { textAlign: isArabic ? 'right' : 'left' }]}>{t('total_bill')}</Text>
                                                 <Text style={styles.breakdownValue}>
-                                                    QAR {totalAmount.toFixed(2)}
+                                                    {t('currency_qar')} {totalAmount.toFixed(2)}
                                                 </Text>
                                             </View>
-                                            <View style={styles.breakdownRow}>
-                                                <Text style={styles.breakdownLabelGreen}>
-                                                    Discount ({offer.discountValue}{discountType === 'percentage' ? '%' : ''})
+                                            <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                                <Text style={[styles.breakdownLabelGreen, { textAlign: isArabic ? 'right' : 'left' }]}>
+                                                    {t('home_title')} ({offer.discountValue}{discountType === 'percentage' ? '%' : ''})
                                                 </Text>
                                                 <Text style={styles.breakdownValueGreen}>
-                                                    − QAR {discountAmount.toFixed(2)}
+                                                    − {t('currency_qar')} {discountAmount.toFixed(2)}
                                                 </Text>
                                             </View>
                                             <View style={styles.breakdownDivider} />
-                                            <View style={styles.breakdownRow}>
-                                                <Text style={styles.breakdownLabelBold}>Amount to Pay</Text>
+                                            <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                                <Text style={[styles.breakdownLabelBold, { textAlign: isArabic ? 'right' : 'left' }]}>{t('amount_to_pay_label')}</Text>
                                                 <PhonkText style={styles.breakdownValueBold}>
-                                                    QAR {finalAmount.toFixed(2)}
+                                                    {t('currency_qar')} {finalAmount.toFixed(2)}
                                                 </PhonkText>
                                             </View>
                                             {vendor.xcard === true && (
-                                                <View style={styles.breakdownRow}>
-                                                    <Text style={styles.cashbackLabel}>
-                                                        💰 Cashback (1%)
+                                                <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                                    <Text style={[styles.cashbackLabel, { textAlign: isArabic ? 'right' : 'left' }]}>
+                                                        {t('cashback_label_formatted', { percentage: 1 })}
                                                     </Text>
                                                     <Text style={styles.cashbackValue}>
-                                                        + QAR {(finalAmount * 0.01).toFixed(2)}
+                                                        + {t('currency_qar')} {(finalAmount * 0.01).toFixed(2)}
                                                     </Text>
                                                 </View>
                                             )}
@@ -422,7 +432,7 @@ export default function RedeemScreen() {
                                     <>
                                         <Ionicons name="flash" size={20} color="#FFF" />
                                         <PhonkText style={styles.redeemButtonText}>
-                                            {step === 'creator' ? 'CONTINUE' : 'REDEEM'}
+                                            {step === 'creator' ? t('continue_caps') : t('redeem_caps')}
                                         </PhonkText>
                                     </>
                                 )}

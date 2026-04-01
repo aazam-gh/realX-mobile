@@ -156,5 +156,20 @@
   "apply_now": "قدم الآن",
   "x_academy": "أكاديمية إكس",
   "universities": "الجامعات",
-  "random_text_here": "نص عشوائي هنا..."
+  "random_text_here": "نص عشوائي هنا...",
+  "flat_off_prefix": "خصم ",
+  "flat_off_suffix": " ثابت",
+  "have_creator_code": "هل لديك كود منشئ؟",
+  "optional": "(اختياري)",
+  "creator_code_placeholder": "REELX1",
+  "cashback_label_formatted": "💰 كاش باك ({{percentage}}%)",
+  "redemption_info_not_found": "المعلومات غير موجودة",
+  "go_back": "العودة",
+  "hold_on": "انتظر قليلاً",
+  "enter_4_digit_pin": "يرجى إدخال رمز PIN المكون من 4 أرقام",
+  "enter_valid_amount": "يرجى إدخال مبلغ صحيح",
+  "redemption_successful_title": "تم الاسترداد بنجاح! 🎉",
+  "you_saved_success_message": "لقد وفرت {{currency}} {{amount}}!",
+  "cashback_earned_success_message": "الكاش باك المكتسب: {{currency}} {{amount}}",
+  "continue_caps": "متابعة"
 }

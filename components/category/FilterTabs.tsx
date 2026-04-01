@@ -20,9 +20,9 @@ interface FilterTabsProps {
 }
 
 const defaultFilters: FilterOption[] = [
-    { id: 'trending', label: 'Trending', icon: 'flame' },
     { id: 'all', label: 'All', icon: 'apps-outline' },
-    { id: 'cashbacks', label: 'Cashback', icon: 'cash-outline' },
+    { id: 'cashbacks', label: 'Cash', icon: 'cash-outline' },
+    { id: 'trending', label: 'Top', icon: 'flame' },
 ];
 
 export default function FilterTabs({ selectedFilter, onFilterChange, filters = defaultFilters }: FilterTabsProps) {

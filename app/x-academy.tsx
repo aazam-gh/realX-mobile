@@ -81,7 +81,7 @@ export default function XAcademyScreen() {
         </TouchableOpacity>
 
         <PhonkText style={styles.headerTitle}>
-          <Text style={{ color: Colors.brandGreen }}>X </Text>
+          <Text style={{ color: Colors.brandGreen }}>X</Text>
           <Text style={{ color: Colors.light.text }}>ACADEMY</Text>
         </PhonkText>
       </View>
@@ -185,16 +185,6 @@ export default function XAcademyScreen() {
                           {uniName}
                         </Text>
 
-                        <Text
-                          style={[
-                            styles.uniDesc,
-                            { textAlign: isRTL ? 'right' : 'left' },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {t('random_text_here')}
-                        </Text>
-
                         <View style={[styles.applyButton, isRTL && styles.rowReverse]}>
                           <Text style={styles.applyButtonText}>
                             {t('apply_now').toUpperCase()}
@@ -283,7 +273,7 @@ const styles = StyleSheet.create({
   uniCard: {
     borderRadius: 24,
     overflow: 'hidden',
-    height: 120,
+    height: 100,
     backgroundColor: '#000',
   },
 
@@ -302,25 +292,24 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 8,
     gap: 16,
   },
 
   logoContainer: {
-    width: 64,
-    height: 64,
+    width: 80,
+    height: 80,
     backgroundColor: '#FFF',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 8,
+
   },
 
   uniLogo: { width: '100%', height: '100%' },
 
   uniDetails: {
     flex: 1,
-    justifyContent: 'center',
   },
 
   uniName: {
@@ -328,13 +317,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.poppins.semiBold,
     fontSize: 16,
     marginBottom: 2,
-  },
-
-  uniDesc: {
-    color: '#D1D1D6',
-    fontFamily: Typography.poppins.semiBold,
-    fontSize: 12,
-    marginBottom: 8,
   },
 
   applyButton: {

@@ -413,11 +413,9 @@ const styles = StyleSheet.create({
   },
   universityBanner: {
     marginBottom: 24,
-    borderRadius: 20,
+    borderRadius: 30,
     overflow: 'hidden',
-    height: 180,
-    borderWidth: 2,
-    borderColor: '#0b56b8', // To match the image's blue border
+    height: 160,
   },
   universityBannerBg: {
     width: '100%',
@@ -433,6 +431,7 @@ const styles = StyleSheet.create({
   onlyOnRealxBadge: {
     backgroundColor: '#1AD04F',
     alignSelf: 'flex-end',
+    marginTop: -18,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -447,8 +446,7 @@ const styles = StyleSheet.create({
   universityBannerTitle: {
     color: '#FFF',
     fontSize: 22,
-    marginTop: 'auto',
-    marginBottom: 12,
+    marginBottom: 8,
     lineHeight: 24,
   },
   universityBannerButton: {

@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    I18nManager,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -18,6 +19,7 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 import PhonkText from '../components/PhonkText';
@@ -25,6 +27,9 @@ import PhonkText from '../components/PhonkText';
 export default function ProfileDetailsScreen() {
     const router = useRouter();
     const BRAND_GREEN = Colors.brandGreen;
+    const { t } = useTranslation();
+    const isRTL = I18nManager.isRTL;
+    const backIconName: keyof typeof Ionicons.glyphMap = isRTL ? 'arrow-forward' : 'arrow-back';
 
     // Form states
     const [firstName, setFirstName] = useState('');
@@ -73,14 +78,14 @@ export default function ProfileDetailsScreen() {
                 }
             } catch (error) {
                 console.error('Error fetching user data:', error);
-                Alert.alert('Error', 'Failed to load profile data');
+            Alert.alert(t('error'), t('profile_load_failed'));
             } finally {
                 setIsLoading(false);
             }
-        };
+    };
 
-        fetchUserData();
-    }, [router]);
+    fetchUserData();
+}, [router, t]);
 
     const handleBack = () => {
         router.back();
@@ -123,10 +128,10 @@ export default function ProfileDetailsScreen() {
             });
 
             setIsEditing(false);
-            Alert.alert('Success', 'Profile updated successfully');
+            Alert.alert(t('success'), t('profile_update_success'));
         } catch (error) {
             console.error('Error updating profile:', error);
-            Alert.alert('Error', 'Failed to update profile');
+            Alert.alert(t('error'), t('profile_update_failure'));
         } finally {
             setIsSaving(false);
         }
@@ -134,12 +139,12 @@ export default function ProfileDetailsScreen() {
 
     const handleDeleteAccount = () => {
         Alert.alert(
-            'Delete Account',
-            'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.',
+            t('delete_account'),
+            t('delete_account_confirmation'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
                 {
-                    text: 'Delete Permanently',
+                    text: t('delete_account_permanently'),
                     style: 'destructive',
                     onPress: async () => {
                         const authInstance = getAuth();
@@ -159,18 +164,16 @@ export default function ProfileDetailsScreen() {
                                 // User already deleted, sign out is a no-op
                             }
                             
-                            Alert.alert('Account Deleted', 'Your account and data have been successfully removed.');
+                            Alert.alert(t('delete_account_success_title'), t('delete_account_success_message'));
                             router.replace('/(onboarding)');
                         } catch (error: any) {
                             console.error('Error deleting account:', error);
                             if (error.code === 'auth/requires-recent-login') {
-                                Alert.alert(
-                                    'Security Re-authentication Required',
-                                    'For security reasons, deleting your account requires a recent login. Please log out and log back in, then try again.',
-                                    [{ text: 'OK' }]
-                                );
+                                Alert.alert(t('security_reauth_required'), t('security_reauth_message'), [
+                                    { text: t('ok') },
+                                ]);
                             } else {
-                                Alert.alert('Error', 'Failed to delete account. Please try again later.');
+                                Alert.alert(t('error'), t('delete_account_failure'));
                             }
                         } finally {
                             setIsLoading(false);
@@ -190,17 +193,19 @@ export default function ProfileDetailsScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: Colors.light.background }]} edges={['top']}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
-                </TouchableOpacity>
-                <PhonkText style={styles.headerTitle}>DETAILS</PhonkText>
-                <TouchableOpacity onPress={handleToggleEdit} style={styles.editButton}>
-                    <PhonkText style={[styles.editButtonText, isEditing && { color: BRAND_GREEN }]}>
-                        {isEditing ? 'SAVE' : 'EDIT'}
-                    </PhonkText>
-                </TouchableOpacity>
-            </View>
+        <View style={[styles.header, isRTL && styles.rowReverse]}>
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+                <Ionicons name={backIconName} size={24} color={Colors.light.text} />
+            </TouchableOpacity>
+                <PhonkText style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'center' }]}>
+                    {t('profile_details_title')}
+                </PhonkText>
+            <TouchableOpacity onPress={handleToggleEdit} style={styles.editButton}>
+                <PhonkText style={[styles.editButtonText, isEditing && { color: BRAND_GREEN }]}>
+                    {isEditing ? t('save') : t('edit')}
+                </PhonkText>
+            </TouchableOpacity>
+        </View>
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -229,14 +234,20 @@ export default function ProfileDetailsScreen() {
                             <>
                                 {/* First Name Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={styles.label}>FIRST NAME</PhonkText>
+                                    <PhonkText style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                        {t('first_name')}
+                                    </PhonkText>
                                     <View style={[styles.inputWrapper, !isEditing && styles.disabledInput]}>
                                         <TextInput
-                                            style={[styles.input, !isEditing && styles.disabledText, { color: Colors.light.text }]}
+                                            style={[
+                                                styles.input,
+                                                !isEditing && styles.disabledText,
+                                                { color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' },
+                                            ]}
                                             value={firstName}
                                             onChangeText={setFirstName}
                                             editable={isEditing}
-                                            placeholder="First name"
+                                            placeholder={t('first_name_placeholder')}
                                             placeholderTextColor="#999"
                                         />
                                     </View>
@@ -244,14 +255,20 @@ export default function ProfileDetailsScreen() {
 
                                 {/* Last Name Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={styles.label}>LAST NAME</PhonkText>
+                                    <PhonkText style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                        {t('last_name')}
+                                    </PhonkText>
                                     <View style={[styles.inputWrapper, !isEditing && styles.disabledInput]}>
                                         <TextInput
-                                            style={[styles.input, !isEditing && styles.disabledText, { color: Colors.light.text }]}
+                                            style={[
+                                                styles.input,
+                                                !isEditing && styles.disabledText,
+                                                { color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' },
+                                            ]}
                                             value={lastName}
                                             onChangeText={setLastName}
                                             editable={isEditing}
-                                            placeholder="Last name"
+                                            placeholder={t('last_name_placeholder')}
                                             placeholderTextColor="#999"
                                         />
                                     </View>
@@ -259,13 +276,19 @@ export default function ProfileDetailsScreen() {
 
                                 {/* Email Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={styles.label}>EMAIL ADDRESS</PhonkText>
+                                    <PhonkText style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                        {t('email_address')}
+                                    </PhonkText>
                                     <View style={[styles.inputWrapper, styles.disabledInput]}>
                                         <TextInput
-                                            style={[styles.input, styles.disabledText, { color: Colors.light.text }]}
+                                            style={[
+                                                styles.input,
+                                                styles.disabledText,
+                                                { color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' },
+                                            ]}
                                             value={email}
                                             editable={false}
-                                            placeholder="Email address"
+                                            placeholder={t('email_address_placeholder')}
                                             placeholderTextColor="#999"
                                         />
                                     </View>
@@ -273,13 +296,22 @@ export default function ProfileDetailsScreen() {
 
                                 {/* Date of Birth Field */}
                                 <View style={styles.inputGroup}>
-                                    <PhonkText style={styles.label}>DATE OF BIRTH</PhonkText>
+                                    <PhonkText style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+                                        {t('date_of_birth')}
+                                    </PhonkText>
                                     <TouchableOpacity
                                         style={[styles.inputWrapper, !isEditing && styles.disabledInput]}
                                         onPress={() => isEditing && setShowDatePicker(true)}
                                         disabled={!isEditing}
                                     >
-                                        <Text style={[styles.input, !isEditing && styles.disabledText, !dob && { color: '#999' }]}>
+                                        <Text
+                                            style={[
+                                                styles.input,
+                                                !isEditing && styles.disabledText,
+                                                !dob && { color: '#999' },
+                                                { textAlign: isRTL ? 'right' : 'left' },
+                                            ]}
+                                        >
                                             {formatDate(dob)}
                                         </Text>
                                     </TouchableOpacity>
@@ -306,9 +338,9 @@ export default function ProfileDetailsScreen() {
                             onPress={handleDeleteAccount}
                             activeOpacity={0.7}
                         >
-                            <View style={styles.deleteContent}>
-                                <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                                <PhonkText style={styles.deleteAccountText}>DELETE ACCOUNT</PhonkText>
+                    <View style={[styles.deleteContent, isRTL && styles.rowReverse]}>
+                        <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                        <PhonkText style={styles.deleteAccountText}>{t('delete_account')}</PhonkText>
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -328,6 +360,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingVertical: 16,
         gap: 16,
+    },
+    rowReverse: {
+        flexDirection: 'row-reverse',
     },
     backButton: {
         width: 44,

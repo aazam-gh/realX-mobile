@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, I18nManager, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '../../constants/Colors';
@@ -17,6 +17,7 @@ import { applyRTL } from '../../src/localization/rtl';
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const isRTL = I18nManager.isRTL;
 
   const [userData, setUserData] = useState<{
     firstName?: string;
@@ -104,15 +105,18 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.header}>
-          <PhonkText style={[{ color: Colors.light.text }, styles.headerText]}>
-            PROFILE
+          <PhonkText
+            style={[
+              { color: Colors.light.text, textAlign: isRTL ? 'right' : 'left' },
+              styles.headerText,
+            ]}
+          >
+            {t('profile')}
           </PhonkText>
         </View>
 
-        <View
-          style={styles.topPill}
-        >
-          <View style={styles.profileTopRow}>
+        <View style={styles.topPill}>
+          <View style={[styles.profileTopRow, isRTL && styles.rowReverse]}>
             <View style={styles.avatarContainer}>
               {userData?.photoURL || getAuth().currentUser?.photoURL ? (
                 <Image
@@ -126,15 +130,13 @@ export default function ProfileScreen() {
               )}
             </View>
             <View style={styles.badge}>
-              <PhonkText style={[{ color: '#FFFFFF' }, styles.badgeText]}>ROOKIE</PhonkText>
+              <PhonkText style={[{ color: '#FFFFFF' }, styles.badgeText]}>{t('rookie_badge')}</PhonkText>
             </View>
           </View>
         </View>
 
-        <View
-          style={styles.bottomPill}
-        >
-          <View style={styles.profileBottomRow}>
+        <View style={styles.bottomPill}>
+          <View style={[styles.profileBottomRow, isRTL && styles.rowReverse]}>
             <View style={styles.userInfo}>
               <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.userName]}>
                 {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
@@ -145,49 +147,70 @@ export default function ProfileScreen() {
               onPress={() => router.push('/profile-details')}
             >
               <Ionicons name="create-outline" size={16} color="#8E8E93" />
-              <PhonkText style={[{ color: Colors.light.text }, styles.editButtonText]}>PROFILE</PhonkText>
+              <PhonkText style={[{ color: Colors.light.text }, styles.editButtonText]}>
+                {t('profile')}
+              </PhonkText>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.sectionHeader}>
-          <PhonkText style={[{ color: Colors.light.text }, styles.sectionTitle]}>SAVINGS TRACKER</PhonkText>
+          <PhonkText
+            style={[
+              { color: Colors.light.text },
+              styles.sectionTitle,
+              { textTransform: isRTL ? 'none' : 'uppercase' },
+            ]}
+          >
+            {t('savings_tracker')}
+          </PhonkText>
         </View>
 
         <View style={styles.savingsCard}>
-          <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.savingsLabel]}>All time you&apos;ve saved</Text>
-          <View style={styles.savingsAmountContainer}>
+          <Text
+            style={[
+              { color: Colors.light.text, fontFamily: Typography.poppins.medium },
+              styles.savingsLabel,
+              { textAlign: isRTL ? 'right' : 'left' },
+            ]}
+          >
+            {t('all_time_saved')}
+          </Text>
+          <View style={[styles.savingsAmountContainer, isRTL && styles.rowReverse]}> 
             <PhonkText style={[{ color: '#1AD04F' }, styles.savingsAmountGreen]}>
               {(userData?.savings ?? 0).toFixed(2)}
             </PhonkText>
-            <PhonkText style={[{ color: Colors.light.text }, styles.savingsCurrency]}> QAR</PhonkText>
+            <PhonkText style={[{ color: Colors.light.text }, styles.savingsCurrency]}> {t('currency_qar')}</PhonkText>
           </View>
         </View>
 
         <View style={styles.menuContainer}>
-          <MenuItem icon="time-outline" label={t('redemption_history')} onPress={() => router.push('/redemption-history' as any)} />
-          <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} />
+          <MenuItem icon="time-outline" label={t('redemption_history')} onPress={() => router.push('/redemption-history' as any)} isRTL={isRTL} />
+          <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} isRTL={isRTL} />
           <MenuItem
             icon="mail-outline"
             label={t('contact_us')}
             onPress={() => Linking.openURL('mailto:info@realx.qa')}
+            isRTL={isRTL}
           />
           <MenuItem
             icon="document-text-outline"
             label={t('terms_and_conditions')}
             onPress={() => router.push('/terms')}
+            isRTL={isRTL}
           />
           <MenuItem
             icon="shield-checkmark-outline"
             label={t('privacy_policy')}
             onPress={() => router.push('/privacy')}
+            isRTL={isRTL}
           />
           <TouchableOpacity
             style={styles.logoutPill}
             onPress={handleLogout}
             activeOpacity={0.7}
           >
-            <View style={styles.logoutContent}>
+            <View style={[styles.logoutContent, isRTL && styles.rowReverse]}> 
               <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
               <PhonkText style={styles.logoutText}>{t('log_out').toUpperCase()}</PhonkText>
             </View>
@@ -203,24 +226,38 @@ function MenuItem({
   label,
   onPress,
   color,
-  bgColor
+  bgColor,
+  isRTL,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress?: () => void;
   color?: string;
   bgColor?: string;
+  isRTL: boolean;
 }) {
 
   return (
     <TouchableOpacity
-      style={[styles.menuItem, { backgroundColor: bgColor || '#F5F5F7' }]}
+      style={[
+        styles.menuItem,
+        { backgroundColor: bgColor || '#F5F5F7' },
+        { flexDirection: isRTL ? 'row-reverse' : 'row' },
+      ]}
       activeOpacity={0.7}
       onPress={onPress}
     >
       <View style={styles.menuItemLeft}>
         <Ionicons name={icon} size={24} color={color || "#000"} />
-        <Text style={[{ color: color || Colors.light.text, fontFamily: Typography.poppins.medium }, styles.menuItemLabel]}>{label}</Text>
+        <Text
+          style={[
+            { color: color || Colors.light.text, fontFamily: Typography.poppins.medium },
+            styles.menuItemLabel,
+            { textAlign: isRTL ? 'right' : 'left' },
+          ]}
+        >
+          {label}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -344,6 +381,9 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     gap: 12,
+  },
+  rowReverse: {
+    flexDirection: 'row-reverse',
   },
   menuItem: {
     flexDirection: 'row',

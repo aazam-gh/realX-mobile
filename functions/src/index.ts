@@ -23,6 +23,22 @@ const fromCents = (cents: number) => cents / 100;
 
 const verifyPin = (inputPin: string, storedPin: string) => inputPin === storedPin;
 
+const normalizeDigits = (input: string | number | undefined | null): string => {
+  if (input === null || input === undefined) return '';
+
+  const str = String(input);
+
+  const arabic = '٠١٢٣٤٥٦٧٨٩';
+  const persian = '۰۱۲۳۴۵۶۷۸۹';
+
+  return str.replace(/[٠-٩۰-۹]/g, (d) => {
+    const index = arabic.indexOf(d);
+    if (index > -1) return index.toString();
+    return persian.indexOf(d).toString();
+  });
+};
+
+
 /**
  * =============================
  * Creator Code Helpers
@@ -31,7 +47,7 @@ const verifyPin = (inputPin: string, storedPin: string) => inputPin === storedPi
 const validateCreatorCode = async (tx, creatorCode: string | null) => {
   if (!creatorCode) return null;
 
-  const code = creatorCode.trim().toUpperCase();
+  const code = normalizeDigits(creatorCode).trim().toUpperCase();
   const codeRef = db.collection('creator_codes').doc(code);
   const codeDoc = await tx.get(codeRef);
 
@@ -128,6 +144,18 @@ const processTransaction = async (options) => {
     creatorCode = null,
   } = options;
 
+  const normalizedTotalAmount = parseFloat(normalizeDigits(totalAmount));
+  const normalizedGiftCardAmount = parseFloat(normalizeDigits(giftCardAmount));
+  const normalizedPin = normalizeDigits(pin);
+
+  if (isNaN(normalizedTotalAmount) || normalizedTotalAmount <= 0) {
+    throw new HttpsError('invalid-argument', 'Invalid total amount');
+  }
+
+  if (!normalizedPin || normalizedPin.length !== 4) {
+    throw new HttpsError('invalid-argument', 'Invalid PIN');
+  }
+
   const userRef = db.collection('students').doc(uid);
   const vendorRef = db.collection('vendors').doc(vendorId);
   const transactionRef = db.collection('transactions').doc();
@@ -154,7 +182,7 @@ const processTransaction = async (options) => {
      * 2. PIN VALIDATION
      * =============================
      */
-    if (!verifyPin(pin, vendorData.pin)) {
+    if (!verifyPin(normalizedPin, vendorData.pin)) {
       throw new HttpsError('permission-denied', 'Invalid PIN');
     }
 
@@ -163,7 +191,7 @@ const processTransaction = async (options) => {
      * 3. AMOUNTS
      * =============================
      */
-    const totalCents = toCents(totalAmount);
+    const totalCents = toCents(normalizedTotalAmount);
     let discountCents = 0;
     let finalCents = totalCents;
     let giftcardSavingsCents = 0;
@@ -189,7 +217,7 @@ const processTransaction = async (options) => {
      */
     if (type === 'giftcard') {
       const balance = toCents(userData.cashback || 0);
-      const redeemCents = toCents(giftCardAmount);
+      const redeemCents = toCents(normalizedGiftCardAmount || 0);
       giftcardSavingsCents = redeemCents;
 
       if (balance < redeemCents) {
@@ -225,7 +253,7 @@ const processTransaction = async (options) => {
       userId: uid,
       vendorId,
       vendorName,
-      totalAmount,
+      totalAmount: normalizedTotalAmount,
       discountAmount: fromCents(discountCents),
       finalAmount: fromCents(finalCents),
       creatorCode: creatorData?.code || null,

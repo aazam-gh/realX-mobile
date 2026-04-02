@@ -3,14 +3,14 @@ import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Updates from 'expo-updates';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dimensions, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Updates from 'expo-updates';
+import PhonkText from '../../components/PhonkText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
-import { useTranslation } from 'react-i18next';
 import { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
 
@@ -319,7 +319,6 @@ const styles = StyleSheet.create({
     roleCard: {
         backgroundColor: '#FFFFFF',
         borderRadius: 45,
-        paddingRight: 8,
         paddingVertical: 8,
         flexDirection: 'row',
         alignItems: 'center',
@@ -339,8 +338,7 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     roleTextContainer: {
-        flex: 1,
-        marginLeft: 4,
+        flex: 1
     },
     roleTitle: {
         fontSize: 20,

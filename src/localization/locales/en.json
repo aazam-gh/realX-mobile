@@ -189,5 +189,8 @@
   "offer_redeemed_label": "Offer Redeemed",
   "redeem_again": "Redeem Again",
   "redeemed_on": "Redeemed on {{date}}",
-  "no_redemptions_found": "No redemptions found."
+  "no_redemptions_found": "No redemptions found.",
+  "filter_all": "All",
+  "filter_cash": "Cash",
+  "filter_top": "Top"
 }

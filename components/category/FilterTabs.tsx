@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 
 // Assuming these exist in your project, otherwise replace with hex strings
@@ -19,23 +20,31 @@ interface FilterTabsProps {
     filters?: FilterOption[];
 }
 
-const defaultFilters: FilterOption[] = [
-    { id: 'all', label: 'All', icon: 'apps-outline' },
-    { id: 'cashbacks', label: 'Cash', icon: 'cash-outline' },
-    { id: 'trending', label: 'Top', icon: 'flame' },
-];
+export default function FilterTabs({ selectedFilter, onFilterChange, filters }: FilterTabsProps) {
+    const { t } = useTranslation();
+    const isRTL = I18nManager.isRTL;
 
-export default function FilterTabs({ selectedFilter, onFilterChange, filters = defaultFilters }: FilterTabsProps) {
+    const currentFilters = filters || [
+        { id: 'all', label: t('filter_all'), icon: 'apps-outline' },
+        { id: 'cashbacks', label: t('filter_cash'), icon: 'cash-outline' },
+        { id: 'trending', label: t('filter_top'), icon: 'flame' },
+    ];
+
     const containerWidth = Dimensions.get('window').width - 40; // Adjust based on your padding
-    const tabWidth = containerWidth / filters.length;
+    const tabWidth = containerWidth / currentFilters.length;
 
     // Initial position based on selectedFilter
-    const initialIndex = filters.findIndex(f => f.id === selectedFilter);
+    const initialIndex = currentFilters.findIndex(f => f.id === selectedFilter);
+    // If we want to keep positions SAME (All on left), then for RTL we need to handle the mirroring.
+    // In LTR: tab 0 is at 0.
+    // In RTL: tab 0 is at 0 (which is right side), so we want it to be at 'tabWidth * (length - 1)'? 
+    // Wait, the simplest way is to disable RTL mirroring for the container and children.
+    
     const translateX = useRef(new Animated.Value(initialIndex !== -1 ? initialIndex * tabWidth : 0)).current;
     const opacity = useRef(new Animated.Value(selectedFilter ? 1 : 0)).current;
 
     useEffect(() => {
-        const index = filters.findIndex(f => f.id === selectedFilter);
+        const index = currentFilters.findIndex(f => f.id === selectedFilter);
         const hasSelection = index !== -1;
 
         if (hasSelection) {
@@ -58,7 +67,7 @@ export default function FilterTabs({ selectedFilter, onFilterChange, filters = d
                 useNativeDriver: true,
             }).start();
         }
-    }, [selectedFilter, filters, tabWidth, translateX, opacity]);
+    }, [selectedFilter, currentFilters, tabWidth, translateX, opacity]);
 
     return (
         <View style={styles.outerContainer}>
@@ -72,7 +81,7 @@ export default function FilterTabs({ selectedFilter, onFilterChange, filters = d
                 />
 
                 {/* Content Overlay */}
-                {filters.map((filter) => {
+                {currentFilters.map((filter) => {
                     const isSelected = selectedFilter === filter.id;
 
                     return (
@@ -110,6 +119,8 @@ const styles = StyleSheet.create({
         position: 'relative',
         height: 48,
         alignItems: 'center',
+        // Force LTR layout to keep tab positions same in Arabic
+        direction: 'ltr',
     },
     slider: {
         position: 'absolute',
@@ -129,7 +140,9 @@ const styles = StyleSheet.create({
         zIndex: 1, // Ensures text is above the slider
     },
     filterText: {
-        fontSize: 16,
+        fontSize: 14,
         fontFamily: Typography.poppins.semiBold,
+        // Ensure Arabic text looks good
+        marginTop: I18nManager.isRTL ? -2 : 0,
     },
 });

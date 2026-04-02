@@ -181,5 +181,8 @@
   "offer_redeemed_label": "تم استرداد العرض",
   "redeem_again": "استرد مجدداً",
   "redeemed_on": "تم الاسترداد في {{date}}",
-  "no_redemptions_found": "لم يتم العثور على عمليات استرداد."
+  "no_redemptions_found": "لم يتم العثور على عمليات استرداد.",
+  "filter_all": "الكل",
+  "filter_cash": "كاش",
+  "filter_top": "الأفضل"
 }

@@ -215,7 +215,7 @@ export default function CategoryScreen() {
     const [loadingOffers, setLoadingOffers] = useState(false);
     const lastDocRef = useRef<any>(null);
     const [isListEnd, setIsListEnd] = useState(false);
-    const flashListRef = useRef<FlashList<any> | null>(null);
+    const flashListRef = useRef<any>(null);
     const scrollOffsetRef = useRef(0);
     const shouldRestoreScrollRef = useRef(false);
 

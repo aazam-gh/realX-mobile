@@ -2,7 +2,7 @@ import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, Text, TextStyle, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -24,7 +24,6 @@ export default function BrandGrid() {
     const displayedBrands = useMemo(() => (isRTL ? [...brands].reverse() : brands), [brands, isRTL]);
     const brandLabelPrefix = t('brand_header_prefix');
     const brandLabelHighlight = t('brand_header_highlight');
-    const headerTextAlign = { textAlign: isRTL ? 'right' : 'left' };
 
     useEffect(() => {
         const fetchBrands = async () => {
@@ -75,10 +74,14 @@ export default function BrandGrid() {
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
-                <Text style={[styles.headerTitle, headerTextAlign]}>
-                    <PhonkText style={styles.shopByText}>{brandLabelPrefix}</PhonkText>
-                    <PhonkText style={styles.brandText}>{brandLabelHighlight}</PhonkText>
-                </Text>
+                <View style={styles.headerTitle}>
+                    <PhonkText style={[styles.shopByText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                        {brandLabelPrefix}
+                    </PhonkText>
+                    <PhonkText style={[styles.brandText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                        {brandLabelHighlight}
+                    </PhonkText>
+                </View>
             </View>
             <ScrollView
                 horizontal
@@ -114,13 +117,16 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     headerTitle: {
-        fontSize: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     shopByText: {
+        fontSize: 20,
         color: Colors.light.text,
         letterSpacing: 1,
     },
     brandText: {
+        fontSize: 20,
         color: Colors.brandGreen,
         fontStyle: 'italic',
         letterSpacing: 1,

@@ -1,11 +1,14 @@
 import { StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import PhonkText from '../PhonkText';
 
 export default function XCardHeader() {
+    const { t } = useTranslation();
+
     return (
         <View style={styles.container}>
-            <PhonkText style={styles.titleX}>X</PhonkText>
-            <PhonkText style={styles.titleCard}>CARD</PhonkText>
+            <PhonkText style={styles.titleX}>{t('xcard_title_x')}</PhonkText>
+            <PhonkText style={styles.titleCard}>{t('xcard_title_card')}</PhonkText>
         </View>
     );
 }
@@ -13,10 +16,10 @@ export default function XCardHeader() {
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
-        alignItems: 'center',
         paddingHorizontal: 20,
         paddingTop: 16,
         paddingBottom: 12,
+        gap: 4,
     },
     titleX: {
         fontSize: 28,

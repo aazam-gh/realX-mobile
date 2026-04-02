@@ -81,8 +81,8 @@ export default function XAcademyScreen() {
         </TouchableOpacity>
 
         <PhonkText style={styles.headerTitle}>
-          <Text style={{ color: Colors.brandGreen }}>X</Text>
-          <Text style={{ color: Colors.light.text }}>ACADEMY</Text>
+          <Text style={{ color: Colors.brandGreen }}>{t('x_academy_title_x')} </Text>
+          <Text style={{ color: Colors.light.text }}>{t('x_academy_title_academy')}</Text>
         </PhonkText>
       </View>
 

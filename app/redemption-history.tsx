@@ -37,6 +37,7 @@ interface Transaction {
   type: string;
   vendorId: string;
   vendorName: string;
+  vendorNameAr?: string;
   totalAmount: number;
   discountValue?: number;
   discountType?: string;
@@ -157,7 +158,7 @@ export default function RedemptionHistoryScreen() {
               </View>
               <View style={styles.vendorTextContainer}>
                 <PhonkText style={styles.vendorName} numberOfLines={1}>
-                  {item.vendorName || 'VENDOR'}
+                  {isArabic ? (item.vendorNameAr || item.vendorName || 'VENDOR') : (item.vendorName || 'VENDOR')}
                 </PhonkText>
                 <Text style={[styles.savingsText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                   {t('estimated_savings', {

@@ -426,13 +426,13 @@ export default function RedeemScreen() {
                                 </View>
                             )}
 
-                            {/* Spacer to push button to bottom */}
-                            <View style={{ flex: 1, minHeight: 20 }} />
+
 
                             {/* Action Button */}
                             <TouchableOpacity
                                 style={[
                                     styles.redeemButton,
+                                    { flexDirection: isArabic ? 'row-reverse' : 'row' },
                                     step === 'pin' && !canRedeem && styles.redeemButtonDisabled,
                                 ]}
                                 activeOpacity={0.9}
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
-        marginBottom: 10,
+        margin: 12,
         shadowColor: Colors.brandGreen,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,

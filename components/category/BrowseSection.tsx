@@ -7,6 +7,7 @@ import RestaurantCard from './RestaurantCard';
 type Restaurant = {
     id: string;
     name: string;
+    nameAr?: string;
     cashbackText?: string;
     discountText?: string;
     isTrending?: boolean;
@@ -58,6 +59,7 @@ export default function BrowseSection({
                         key={restaurant.id}
                         id={restaurant.id}
                         name={restaurant.name}
+                        nameAr={restaurant.nameAr}
                         cashbackText={restaurant.cashbackText}
                         discountText={restaurant.discountText}
                         isTrending={restaurant.isTrending}

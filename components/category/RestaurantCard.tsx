@@ -8,6 +8,7 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 type Props = {
     id: string;
     name: string;
+    nameAr?: string;
     cashbackText?: string;
     discountText?: string;
     isTrending?: boolean;
@@ -21,6 +22,7 @@ type Props = {
 
 export default function RestaurantCard({
     name,
+    nameAr,
     cashbackText = 'Cashbacks',
     discountText = '60% DISCOUNT',
     isTrending = false,
@@ -95,7 +97,7 @@ export default function RestaurantCard({
                   { color: '#000', fontFamily: Typography.poppins.medium }, 
                   styles.name,
                   { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }
-                ]} numberOfLines={1}>{name}</Text>
+                ]} numberOfLines={1}>{isArabic ? (nameAr || name) : name}</Text>
 
                 {/* Discount Tag */}
                 <View style={[

@@ -13,8 +13,9 @@ const LOGO_COLORS = ['#3D5A80', '#C41E3A', '#8B4513', '#2A9D8F', '#E76F51', '#E9
 export default function RecentRedemptions() {
     const [redemptions, setRedemptions] = useState<RedemptionData[]>([]);
     const [loading, setLoading] = useState(true);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const isRTL = I18nManager.isRTL;
+    const isArabic = i18n.language === 'ar' || isRTL;
 
     useEffect(() => {
         const auth = getAuth();
@@ -47,26 +48,34 @@ export default function RecentRedemptions() {
                     dateStr = `${day}/${month}/${year}`;
                 }
 
-                const vendorName = data.vendorName || t('unknown_vendor');
-                const charCode = vendorName.charCodeAt(0) || 0;
-                const color = LOGO_COLORS[charCode % LOGO_COLORS.length];
-
                 let logoUrl = null;
+                let vendorDocNameAr = null;
+                let vendorDocName = null;
                 if (data.vendorId) {
                     try {
                         const vendorDoc = await getDoc(doc(db, 'vendors', data.vendorId));
                         if (vendorDoc.exists()) {
                             const vendorData = vendorDoc.data();
                             logoUrl = vendorData?.profilePicture || vendorData?.logoUrl || vendorData?.imageUrl || null;
+                            vendorDocNameAr = vendorData?.nameAr || vendorData?.vendorNameAr || null;
+                            vendorDocName = vendorData?.name || vendorData?.vendorName || null;
                         }
                     } catch (error) {
                         console.warn(`Error fetching vendor logo for ${data.vendorId}:`, error);
                     }
                 }
 
+                const vendorNameFallback = data.vendorName || t('unknown_vendor');
+                const finalEnglishName = vendorDocName || vendorNameFallback;
+                const finalArabicName = vendorDocNameAr || data.vendorNameAr || finalEnglishName;
+                const resolvedVendorName = isArabic ? finalArabicName : finalEnglishName;
+
+                const charCode = resolvedVendorName.charCodeAt(0) || 0;
+                const color = LOGO_COLORS[charCode % LOGO_COLORS.length];
+
                 return {
                     id: snapshotDoc.id,
-                    merchantName: vendorName,
+                    merchantName: resolvedVendorName,
                     date: dateStr,
                     offerType: t('gift_card'),
                     savedAmount: data.finalAmount || 0,

@@ -482,8 +482,8 @@ export default function CategoryScreen() {
                         ]}>
                             <RestaurantCard
                                 id={item.id}
-                                name={item.titleEn || item.titleAr || 'Untitled Offer'}
-                                cashbackText={item.descriptionEn || item.descriptionAr || 'Special Offer'}
+                                name={isArabic ? (item.titleAr || item.titleEn || 'Untitled Offer') : (item.titleEn || item.titleAr || 'Untitled Offer')}
+                                cashbackText={isArabic ? (item.descriptionAr || item.descriptionEn || 'Special Offer') : (item.descriptionEn || item.descriptionAr || 'Special Offer')}
                                 discountText={`${item.discountValue}${item.discountType === 'percentage' ? '%' : ''} OFF`}
                                 isTrending={item.isTrending}
                                 isTopRated={item.isTopRated}

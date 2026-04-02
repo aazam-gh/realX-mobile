@@ -82,7 +82,6 @@ const styles = StyleSheet.create({
     },
     earningsRow: {
         flexDirection: 'row',
-        alignItems: 'center',
     },
     earningsAmount: {
         fontSize: 28,

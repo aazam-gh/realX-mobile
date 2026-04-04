@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 
 // Assuming these exist in your project, otherwise replace with hex strings
-const BRAND_GREEN = '#58B368';
+const BRAND_GREEN = '#18B852';
 const BG_LIGHT = '#F5F5F5';
 
 type FilterOption = {

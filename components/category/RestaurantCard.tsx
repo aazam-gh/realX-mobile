@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     },
 
     content: {
-        padding: 12,
+        paddingLeft: 0
     },
     name: {
         fontSize: 16,

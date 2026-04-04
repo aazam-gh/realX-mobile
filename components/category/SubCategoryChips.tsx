@@ -55,7 +55,7 @@ const SubCategoryChip = memo(({
         <TouchableOpacity
             style={styles.chip}
             onPress={() => onPress(item)}
-            activeOpacity={0.7}
+            activeOpacity={1}
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={`Select ${item.name} category`}

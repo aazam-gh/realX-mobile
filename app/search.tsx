@@ -23,18 +23,18 @@ export default function SearchScreen() {
     const router = useRouter();
 
     const [searchQuery, setSearchQuery] = useState(q || '');
-    const [offers, setOffers] = useState<any[]>([]);
+    const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const lastDocRef = useRef<any>(null);
     const [isListEnd, setIsListEnd] = useState(false);
 
-    // Fetch offers with pagination — only when user has typed a query
-    const fetchOffers = useCallback(async (isNew = false, currentQuery?: string) => {
+    // Fetch vendors with pagination — only when user has typed a query
+    const fetchVendors = useCallback(async (isNew = false, currentQuery?: string) => {
         const trimmedQuery = (currentQuery ?? searchQuery).trim().toLowerCase();
 
         if (!trimmedQuery) {
-            setOffers([]);
+            setResults([]);
             lastDocRef.current = null;
             setIsListEnd(true);
             setLoading(false);
@@ -54,36 +54,61 @@ export default function SearchScreen() {
 
         try {
             const db = getFirestore();
-            const offersRef = collection(db, 'offers');
+            const vendorsRef = collection(db, 'vendors');
             const PAGE_SIZE = 20;
 
             const constraints: any[] = [
-                where('status', '==', 'active'),
                 where('searchTokens', 'array-contains', trimmedQuery),
             ];
 
             let q;
             if (isNew) {
-                q = query(offersRef, ...constraints, limit(PAGE_SIZE) as any);
+                q = query(vendorsRef, ...constraints, limit(PAGE_SIZE) as any);
             } else {
                 const startAfterDoc = lastDocRef.current;
                 q = startAfterDoc
-                    ? query(offersRef, ...constraints, startAfter(startAfterDoc) as any, limit(PAGE_SIZE) as any)
-                    : query(offersRef, ...constraints, limit(PAGE_SIZE) as any);
+                    ? query(vendorsRef, ...constraints, startAfter(startAfterDoc) as any, limit(PAGE_SIZE) as any)
+                    : query(vendorsRef, ...constraints, limit(PAGE_SIZE) as any);
             }
 
             const snapshot = await getDocs(q);
 
-            const fetched = snapshot.docs.map((doc: any) => ({
-                id: doc.id,
-                ...doc.data(),
-                xcard: doc.data().xcard || false
-            }));
+            // Flatten vendors into searchable result items (one per offer + vendors without offers)
+            const fetched: any[] = [];
+            snapshot.docs.forEach((docSnap: any) => {
+                const vendorData = docSnap.data();
+                const vendorOffers = vendorData.offers || [];
+
+                if (vendorOffers.length > 0) {
+                    vendorOffers.forEach((offer: any, index: number) => {
+                        fetched.push({
+                            id: `${docSnap.id}_offer_${index}`,
+                            vendorId: docSnap.id,
+                            ...offer,
+                            vendorName: vendorData.name,
+                            vendorNameAr: vendorData.nameAr,
+                            vendorProfilePicture: vendorData.profilePicture,
+                            xcard: vendorData.xcard || false,
+                        });
+                    });
+                } else {
+                    fetched.push({
+                        id: docSnap.id,
+                        vendorId: docSnap.id,
+                        titleEn: vendorData.name,
+                        titleAr: vendorData.nameAr,
+                        vendorName: vendorData.name,
+                        vendorNameAr: vendorData.nameAr,
+                        vendorProfilePicture: vendorData.profilePicture,
+                        xcard: vendorData.xcard || false,
+                    });
+                }
+            });
 
             if (isNew) {
-                setOffers(fetched);
+                setResults(fetched);
             } else {
-                setOffers(prev => [...prev, ...fetched]);
+                setResults(prev => [...prev, ...fetched]);
             }
 
             if (snapshot.docs.length > 0) {
@@ -93,29 +118,26 @@ export default function SearchScreen() {
                 setIsListEnd(true);
             }
         } catch (error) {
-            console.error('Error fetching offers for search:', error);
+            console.error('Error fetching vendors for search:', error);
         } finally {
             setLoading(false);
             setLoadingMore(false);
         }
     }, [loading, loadingMore, isListEnd, searchQuery]);
 
-    const fetchOffersRef = useRef(fetchOffers);
+    const fetchVendorsRef = useRef(fetchVendors);
     useEffect(() => {
-        fetchOffersRef.current = fetchOffers;
-    }, [fetchOffers]);
+        fetchVendorsRef.current = fetchVendors;
+    }, [fetchVendors]);
 
     // Debounced search effect
     useEffect(() => {
         const timer = setTimeout(() => {
-            fetchOffersRef.current(true, searchQuery);
+            fetchVendorsRef.current(true, searchQuery);
         }, 300); // 300ms debounce
 
         return () => clearTimeout(timer);
     }, [searchQuery]);
-
-    // No client-side filtering needed — Firestore array-contains handles exact token matching
-    const filteredOffers = offers;
 
     const handleOfferPress = useCallback(
         (offer: any) => {
@@ -128,7 +150,7 @@ export default function SearchScreen() {
 
     const handleLoadMore = () => {
         if (!isListEnd && !loadingMore && !loading) {
-            fetchOffers(false);
+            fetchVendors(false);
         }
     };
 
@@ -147,11 +169,11 @@ export default function SearchScreen() {
                     id={item.id}
                     name={item.titleEn || item.titleAr || 'Untitled Offer'}
                     cashbackText={item.descriptionEn || item.descriptionAr || 'Special Offer'}
-                    discountText={`${item.discountValue}${item.discountType === 'percentage' ? '%' : ''} OFF`}
+                    discountText={item.discountValue ? `${item.discountValue}${item.discountType === 'percentage' ? '%' : ''} OFF` : ''}
                     isTrending={item.isTrending}
                     isTopRated={item.isTopRated}
-                    imageUri={item.bannerImage}
-                    logoUri={item.vendorProfilePicture}
+                    imageUri={item.bannerImage || item.coverImage}
+                    logoUri={item.vendorProfilePicture || item.profilePicture}
                     xcardEnabled={item.xcard}
                     onPress={() => handleOfferPress(item)}
                 />
@@ -216,7 +238,7 @@ export default function SearchScreen() {
                 <View style={styles.centeredContainer}>
                     <ActivityIndicator size="large" color={Colors.brandGreen} />
                 </View>
-            ) : filteredOffers.length === 0 ? (
+            ) : results.length === 0 ? (
                 <View style={styles.centeredContainer}>
                     <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.emptyEmoji]}>🔍</Text>
                     <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.emptyTitle]}>
@@ -230,7 +252,7 @@ export default function SearchScreen() {
                 </View>
             ) : (
                 <FlatList
-                    data={filteredOffers}
+                    data={results}
                     keyExtractor={(item) => item.id}
                     numColumns={2}
                     renderItem={renderItem}
@@ -241,7 +263,7 @@ export default function SearchScreen() {
                     ListFooterComponent={renderFooter}
                     ListHeaderComponent={
                         <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.resultCount]}>
-                            {filteredOffers.length} {filteredOffers.length === 1 ? 'result' : 'results'}
+                            {results.length} {results.length === 1 ? 'result' : 'results'}
                         </Text>
                     }
                 />

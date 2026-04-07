@@ -186,15 +186,15 @@ export default function RedemptionHistoryScreen() {
               </Text>
             </View>
 
-            {item.offerId && (
+            {item.vendorId && (
               <TouchableOpacity
                 style={styles.redeemButton}
                 activeOpacity={0.8}
                 onPress={() => {
                   triggerSubtleHaptic();
                   router.push({
-                    pathname: '/redeem/[id]',
-                    params: { id: item.offerId!, vendorId: item.vendorId },
+                    pathname: '/vendor/[id]',
+                    params: { id: item.vendorId },
                   });
                 }}
               >

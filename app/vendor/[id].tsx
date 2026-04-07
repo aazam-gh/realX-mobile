@@ -205,15 +205,8 @@ export default function VendorScreen() {
                                         <TouchableOpacity
                                             style={[styles.pillButton, styles.redeemPill]}
                                             onPress={() => {
-                                                const offerData = JSON.stringify({
-                                                    titleEn: offer.titleEn,
-                                                    titleAr: offer.titleAr,
-                                                    descriptionEn: offer.descriptionEn,
-                                                    descriptionAr: offer.descriptionAr,
-                                                    discountValue: offer.discountValue,
-                                                    discountType: offer.discountType,
-                                                });
-                                                router.push(`/redeem/${offer.id}?vendorId=${actualVendorId || id}&offerData=${encodeURIComponent(offerData)}`);
+                                                const offerIndex = offers.indexOf(offer);
+                                                router.push(`/redeem/${actualVendorId || id}?vendorId=${actualVendorId || id}&offerIndex=${offerIndex}`);
                                             }}
                                         >
                                             <Ionicons name="flash" size={18} color="#FFF" />

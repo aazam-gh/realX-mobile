@@ -1,4 +1,4 @@
-import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import { collection, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, View } from 'react-native';
@@ -23,24 +23,29 @@ export default function TrendingOffers() {
         const fetchTrendingOffers = async () => {
             try {
                 const db = getFirestore();
-                const cmsDocRef = doc(db, 'cms', 'trending-offers');
-                const cmsSnap = await getDoc(cmsDocRef);
+                const q = query(collection(db, 'vendors'), where('isTrending', '==', true));
+                const snapshot = await getDocs(q);
 
-                if (cmsSnap.exists()) {
-                    const data = cmsSnap.data();
-                    const offerIds = data?.offerIds || [];
-
-                    const offersPromises = offerIds.map(async (id: string) => {
-                        const offerDoc = await getDoc(doc(db, 'offers', id));
-                        if (offerDoc.exists()) {
-                            return { id: offerDoc.id, ...offerDoc.data() };
-                        }
-                        return null;
+                const fetchedResults: any[] = [];
+                snapshot.docs.forEach((docSnap: any) => {
+                    const vendorData = docSnap.data();
+                    const vendorOffers = vendorData.offers || [];
+                    vendorOffers.forEach((offer: any, index: number) => {
+                        fetchedResults.push({
+                            id: `${docSnap.id}_offer_${index}`,
+                            vendorId: docSnap.id,
+                            ...offer,
+                            vendorName: vendorData.name,
+                            vendorNameAr: vendorData.nameAr,
+                            vendorProfilePicture: vendorData.profilePicture,
+                            coverImage: vendorData.coverImage,
+                            xcard: vendorData.xcard || false,
+                            isTrending: true,
+                        });
                     });
+                });
 
-                    const fetchedOffers = (await Promise.all(offersPromises)).filter(o => o !== null);
-                    setOffers(fetchedOffers);
-                }
+                setOffers(fetchedResults);
             } catch (error) {
                 console.error('Error fetching trending offers:', error);
             } finally {
@@ -132,8 +137,8 @@ export default function TrendingOffers() {
                             discountText={discountText}
                             isTrending={offer.isTrending}
                             isTopRated={offer.isTopRated}
-                            imageUri={offer.bannerImage}
-                            logoUri={offer.vendorProfilePicture}
+                            imageUri={offer.coverImage || offer.bannerImage}
+                            logoUri={offer.vendorProfilePicture || offer.profilePicture}
                             xcardEnabled={offer.xcard}
                             onPress={() => handleOfferPress(offer)}
                             style={styles.offerCard}

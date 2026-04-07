@@ -49,7 +49,7 @@ interface OfferData {
 }
 
 export default function RedeemScreen() {
-    const { id, vendorId, offerData: offerDataParam } = useLocalSearchParams<{ id: string; vendorId: string; offerData: string }>();
+    const { id, vendorId, offerIndex: offerIndexParam } = useLocalSearchParams<{ id: string; vendorId: string; offerIndex: string }>();
     const router = useRouter();
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === 'ar';
@@ -57,7 +57,6 @@ export default function RedeemScreen() {
     const [offer, setOffer] = useState<OfferData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isRedeeming, setIsRedeeming] = useState(false);
-    const [resolvedVendorId, setResolvedVendorId] = useState<string>('');
 
     // Step: 'creator' only shown for xcard vendors, otherwise start at 'pin'
     const [step, setStep] = useState<'creator' | 'pin'>('pin');
@@ -72,36 +71,28 @@ export default function RedeemScreen() {
         let isMounted = true;
 
         const fetchData = async () => {
-            if (!id) return;
+            const currentVendorId = vendorId || id;
+            if (!currentVendorId) return;
             try {
                 const db = getFirestore();
 
-                let currentVendorId = vendorId;
+                // Fetch Vendor document (offers are now embedded)
+                const vendorRef = doc(db, 'vendors', currentVendorId);
+                const vendorSnap = await getDoc(vendorRef);
+                if (vendorSnap.exists() && isMounted) {
+                    const vendorData = vendorSnap.data() as VendorData;
+                    setVendor(vendorData);
 
-                // Use offer data passed from vendor page (embedded offers)
-                if (offerDataParam && isMounted) {
-                    try {
-                        const parsedOffer = JSON.parse(decodeURIComponent(offerDataParam)) as OfferData;
-                        setOffer(parsedOffer);
-                    } catch (e) {
-                        console.error("Error parsing offer data from params:", e);
+                    // Extract offer from vendor's offers array by index
+                    const offerIdx = offerIndexParam != null ? parseInt(offerIndexParam, 10) : 0;
+                    const vendorOffers = vendorData.offers || [];
+                    if (vendorOffers[offerIdx]) {
+                        setOffer(vendorOffers[offerIdx] as OfferData);
                     }
-                }
 
-                if (currentVendorId) {
-                    setResolvedVendorId(currentVendorId);
-
-                    // Fetch Vendor
-                    const vendorRef = doc(db, 'vendors', currentVendorId);
-                    const vendorSnap = await getDoc(vendorRef);
-                    if (vendorSnap.exists() && isMounted) {
-                        const vendorData = vendorSnap.data() as VendorData;
-                        setVendor(vendorData);
-
-                        // If vendor has xcard enabled, start with creator code step
-                        if (vendorData.xcard === true) {
-                            setStep('creator');
-                        }
+                    // If vendor has xcard enabled, start with creator code step
+                    if (vendorData.xcard === true) {
+                        setStep('creator');
                     }
                 }
             } catch (error) {
@@ -116,7 +107,7 @@ export default function RedeemScreen() {
         return () => {
             isMounted = false;
         };
-    }, [id, vendorId]);
+    }, [id, vendorId, offerIndexParam]);
 
     // Discount calculation
     const totalAmount = parseFloat(normalizeDigits(amount)) || 0;
@@ -150,7 +141,7 @@ export default function RedeemScreen() {
 
             const result = await redeemOffer({
                 offerId: id,
-                vendorId: resolvedVendorId,
+                vendorId: vendorId || id,
                 vendorName: (isArabic ? (vendor?.nameAr || vendor?.name) : vendor?.name) || '',
                 totalAmount,
                 pin: normalizeDigits(pin),

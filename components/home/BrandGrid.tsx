@@ -59,6 +59,66 @@ export default function BrandGrid() {
         router.push(`/vendor/${brand.name}`);
     };
 
+    // Split brands into rows: ≤4 = 1 row, 5-8 = 2 rows, >8 = 2 scrollable rows
+    const { row1, row2, needsScroll, isSingleRow } = useMemo(() => {
+        const count = displayedBrands.length;
+        if (count <= 4) {
+            return { row1: displayedBrands, row2: [], needsScroll: false, isSingleRow: true };
+        }
+        if (count <= 8) {
+            const mid = Math.ceil(count / 2);
+            return {
+                row1: displayedBrands.slice(0, mid),
+                row2: displayedBrands.slice(mid),
+                needsScroll: false,
+                isSingleRow: false,
+            };
+        }
+        // >8: evenly distribute across 2 scrollable rows
+        const mid = Math.ceil(count / 2);
+        return {
+            row1: displayedBrands.slice(0, mid),
+            row2: displayedBrands.slice(mid),
+            needsScroll: true,
+            isSingleRow: false,
+        };
+    }, [displayedBrands]);
+
+    const renderBrand = (brand: BrandItem) => (
+        <TouchableOpacity
+            key={brand.id}
+            style={styles.brandItem}
+            activeOpacity={0.7}
+            onPress={() => handlePress(brand)}
+        >
+            <Image
+                source={{ uri: brand.logoUrl }}
+                style={styles.imageContainer}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+            />
+        </TouchableOpacity>
+    );
+
+    const renderRow = (items: BrandItem[], scrollable: boolean) => {
+        if (scrollable) {
+            return (
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={[styles.scrollContent, { flexDirection: 'row' }]}
+                >
+                    {items.map(renderBrand)}
+                </ScrollView>
+            );
+        }
+        return (
+            <View style={styles.staticRow}>
+                {items.map(renderBrand)}
+            </View>
+        );
+    };
+
     if (loading) {
         return (
             <View style={[styles.container, styles.loaderContainer]}>
@@ -68,7 +128,7 @@ export default function BrandGrid() {
     }
 
     if (displayedBrands.length === 0) {
-        return null; // Or show a default state
+        return null;
     }
 
     return (
@@ -83,27 +143,8 @@ export default function BrandGrid() {
                     </PhonkText>
                 </View>
             </View>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={[styles.scrollContent, { flexDirection: 'row' }]}
-            >
-                {displayedBrands.map((brand) => (
-                    <TouchableOpacity
-                        key={brand.id}
-                        style={styles.brandItem}
-                        activeOpacity={0.7}
-                        onPress={() => handlePress(brand)}
-                    >
-                        <Image
-                            source={{ uri: brand.logoUrl }}
-                            style={styles.imageContainer}
-                            contentFit="contain"
-                            cachePolicy="memory-disk"
-                        />
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+            {renderRow(row1, needsScroll)}
+            {!isSingleRow && renderRow(row2, needsScroll)}
         </View>
     );
 }
@@ -138,23 +179,22 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: 20,
-        gap: 16,
+        gap: 14,
+    },
+    staticRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        paddingHorizontal: 20,
+        gap: 14,
     },
     brandItem: {
         alignItems: 'center',
     },
     imageContainer: {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
+        width: 64,
+        height: 64,
+        borderRadius: 14,
         backgroundColor: '#FFFFFF',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
         borderWidth: 1,
         borderColor: '#F0F0F0',
     },

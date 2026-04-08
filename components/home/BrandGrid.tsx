@@ -121,7 +121,7 @@ export default function BrandGrid() {
 
     if (loading) {
         return (
-            <View style={[styles.container, styles.loaderContainer]}>
+            <View style={[ styles.loaderContainer]}>
                 <ActivityIndicator size="small" color={Colors.brandGreen} />
             </View>
         );
@@ -132,7 +132,7 @@ export default function BrandGrid() {
     }
 
     return (
-        <View style={styles.container}>
+        <View>
             <View style={styles.headerContainer}>
                 <View style={styles.headerTitle}>
                     <PhonkText style={[styles.shopByText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
@@ -150,9 +150,6 @@ export default function BrandGrid() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        paddingVertical: 16,
-    },
     headerContainer: {
         paddingHorizontal: 20,
         marginBottom: 16,

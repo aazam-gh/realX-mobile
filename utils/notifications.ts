@@ -4,7 +4,6 @@ import {
   getMessaging,
   requestPermission,
   AuthorizationStatus,
-  registerDeviceForRemoteMessages,
   getToken,
   onTokenRefresh,
   onMessage,
@@ -17,6 +16,7 @@ import {
   setNotificationChannelAsync,
   AndroidImportance,
   presentNotificationAsync,
+  requestPermissionsAsync,
 } from 'expo-notifications';
 
 /**
@@ -32,6 +32,8 @@ export const setupNotificationChannels = async () => {
       name: 'Creator Earnings',
       importance: AndroidImportance.HIGH,
     });
+  } else if (Platform.OS === 'ios') {
+    await requestPermissionsAsync();
   }
 };
 
@@ -56,11 +58,6 @@ export const registerPushToken = async () => {
     if (!enabled) {
       console.log('Notification permission denied');
       return;
-    }
-
-    // On iOS, register for APNS before fetching FCM token
-    if (Platform.OS === 'ios') {
-      await registerDeviceForRemoteMessages(messaging);
     }
 
     // Get the FCM token

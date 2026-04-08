@@ -18,6 +18,35 @@ import {
   presentNotificationAsync,
   requestPermissionsAsync,
 } from 'expo-notifications';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
+
+const DEFAULT_TOPIC = 'all-users';
+
+/**
+ * Subscribe an FCM token to a topic via the backend callable function.
+ */
+const subscribeTokenToTopic = async (token: string, topic: string = DEFAULT_TOPIC) => {
+  try {
+    const functions = getFunctions(undefined, 'me-central1');
+    const subscribe = httpsCallable(functions, 'subscribeToTopic');
+    await subscribe({ token, topic });
+  } catch (error) {
+    console.error('Error subscribing to topic:', error);
+  }
+};
+
+/**
+ * Unsubscribe an FCM token from a topic via the backend callable function.
+ */
+const unsubscribeTokenFromTopic = async (token: string, topic: string = DEFAULT_TOPIC) => {
+  try {
+    const functions = getFunctions(undefined, 'me-central1');
+    const unsubscribe = httpsCallable(functions, 'unsubscribeFromTopic');
+    await unsubscribe({ token, topic });
+  } catch (error) {
+    console.error('Error unsubscribing from topic:', error);
+  }
+};
 
 /**
  * Register Android notification channels (required for Android 8.0+)
@@ -38,8 +67,7 @@ export const setupNotificationChannels = async () => {
 };
 
 /**
- * Request notification permissions (iOS) and register the FCM token
- * in the user's Firestore document.
+ * Request notification permissions, get FCM token, and subscribe to topic.
  */
 export const registerPushToken = async () => {
   const auth = getAuth();
@@ -63,7 +91,7 @@ export const registerPushToken = async () => {
     // Get the FCM token
     const token = await getToken(messaging);
 
-    // Store in Firestore
+    // Store in Firestore for debugging / 1:1 notifications
     const db = getFirestore();
     const userRef = doc(db, 'students', user.uid);
     await updateDoc(userRef, {
@@ -71,13 +99,16 @@ export const registerPushToken = async () => {
       fcmTokenUpdatedAt: serverTimestamp(),
       platform: Platform.OS,
     });
+
+    // Subscribe to the default broadcast topic
+    await subscribeTokenToTopic(token, DEFAULT_TOPIC);
   } catch (error) {
     console.error('Error registering push token:', error);
   }
 };
 
 /**
- * Listen for FCM token refresh events and update Firestore.
+ * Listen for FCM token refresh events: update Firestore and re-subscribe to topic.
  * Returns an unsubscribe function.
  */
 export const onTokenRefreshListener = () => {
@@ -94,6 +125,9 @@ export const onTokenRefreshListener = () => {
         fcmToken: token,
         fcmTokenUpdatedAt: serverTimestamp(),
       });
+
+      // Re-subscribe to topic with the new token
+      await subscribeTokenToTopic(token, DEFAULT_TOPIC);
     } catch (error) {
       console.error('Error refreshing push token:', error);
     }
@@ -101,7 +135,7 @@ export const onTokenRefreshListener = () => {
 };
 
 /**
- * Clear the FCM token from Firestore (call before logout).
+ * Unsubscribe from topic and clear the FCM token from Firestore (call before logout).
  */
 export const clearPushToken = async () => {
   const auth = getAuth();
@@ -109,6 +143,13 @@ export const clearPushToken = async () => {
   if (!user) return;
 
   try {
+    // Unsubscribe from topic before clearing the token
+    const messaging = getMessaging();
+    const token = await getToken(messaging);
+    if (token) {
+      await unsubscribeTokenFromTopic(token, DEFAULT_TOPIC);
+    }
+
     const db = getFirestore();
     const userRef = doc(db, 'students', user.uid);
     await updateDoc(userRef, {

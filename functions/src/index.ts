@@ -533,7 +533,52 @@ export const checkStudentExistsLogin = onCall(async (request: CallableRequest) =
 
 /**
  * =============================
- * Admin Send Notification (Callable)
+ * Topic Subscription (Callable)
+ * =============================
+ */
+export const subscribeToTopic = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Login required');
+  }
+
+  const { token, topic } = request.data;
+
+  if (!token || !topic) {
+    throw new HttpsError('invalid-argument', 'Token and topic are required');
+  }
+
+  try {
+    await admin.messaging().subscribeToToken(token, topic);
+    return { success: true };
+  } catch (error) {
+    console.error('Error subscribing to topic:', error);
+    throw new HttpsError('internal', 'Failed to subscribe to topic');
+  }
+});
+
+export const unsubscribeFromTopic = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Login required');
+  }
+
+  const { token, topic } = request.data;
+
+  if (!token || !topic) {
+    throw new HttpsError('invalid-argument', 'Token and topic are required');
+  }
+
+  try {
+    await admin.messaging().unsubscribeFromToken(token, topic);
+    return { success: true };
+  } catch (error) {
+    console.error('Error unsubscribing from topic:', error);
+    throw new HttpsError('internal', 'Failed to unsubscribe from topic');
+  }
+});
+
+/**
+ * =============================
+ * Admin Send Notification via Topic (Callable)
  * =============================
  */
 export const sendNotification = onCall(async (request: CallableRequest) => {
@@ -541,54 +586,28 @@ export const sendNotification = onCall(async (request: CallableRequest) => {
     throw new HttpsError('unauthenticated', 'Login required');
   }
 
-  // Verify admin role
-  const adminDoc = await db.collection('students').doc(request.auth.uid).get();
-  if (!adminDoc.exists || adminDoc.data()?.admin !== true) {
+  // Verify admin role via custom claim or Firestore admin field
+  const isCustomAdmin = request.auth.token.admin === true;
+  let isFirestoreAdmin = false;
+  if (!isCustomAdmin) {
+    const adminDoc = await db.collection('students').doc(request.auth.uid).get();
+    isFirestoreAdmin = adminDoc.exists && adminDoc.data()?.admin === true;
+  }
+  if (!isCustomAdmin && !isFirestoreAdmin) {
     throw new HttpsError('permission-denied', 'Admin access required');
   }
 
-  const { title, body, imageUrl } = request.data;
+  const { title, body, imageUrl, topic } = request.data;
 
   if (!title || !body) {
     throw new HttpsError('invalid-argument', 'Title and body are required');
   }
 
-  // Fetch all users with FCM tokens from students collection
-  const usersSnapshot = await db
-    .collection('students')
-    .where('fcmToken', '!=', null)
-    .get();
+  const targetTopic = topic || 'all-users';
 
-  const tokens: string[] = [];
-  usersSnapshot.forEach((doc) => {
-    const token = doc.data().fcmToken;
-    if (token) tokens.push(token);
-  });
-
-  const totalRecipients = tokens.length;
-
-  if (tokens.length === 0) {
-    await db.collection('notifications').add({
-      title,
-      body,
-      imageUrl: imageUrl || null,
-      sentBy: request.auth.uid,
-      sentAt: admin.firestore.FieldValue.serverTimestamp(),
-      successCount: 0,
-      failureCount: 0,
-      totalRecipients: 0,
-    });
-
-    return { successCount: 0, failureCount: 0, totalRecipients: 0 };
-  }
-
-  let successCount = 0;
-  let failureCount = 0;
-
-  for (let i = 0; i < tokens.length; i += 500) {
-    const batch = tokens.slice(i, i + 500);
-    const response = await admin.messaging().sendEachForMulticast({
-      tokens: batch,
+  try {
+    const messageId = await admin.messaging().send({
+      topic: targetTopic,
       notification: {
         title,
         body,
@@ -610,46 +629,26 @@ export const sendNotification = onCall(async (request: CallableRequest) => {
       },
     });
 
-    successCount += response.successCount;
-    failureCount += response.failureCount;
-
-    // Clean up invalid tokens
-    response.responses.forEach((resp, idx) => {
-      if (
-        !resp.success &&
-        resp.error &&
-        (resp.error.code === 'messaging/invalid-registration-token' ||
-          resp.error.code === 'messaging/registration-token-not-registered')
-      ) {
-        const failedToken = batch[idx];
-        usersSnapshot.forEach((doc) => {
-          if (doc.data().fcmToken === failedToken) {
-            db.collection('students').doc(doc.id).update({
-              fcmToken: admin.firestore.FieldValue.delete(),
-            });
-          }
-        });
-      }
+    await db.collection('notifications').add({
+      title,
+      body,
+      imageUrl: imageUrl || null,
+      topic: targetTopic,
+      sentBy: request.auth.uid,
+      sentAt: admin.firestore.FieldValue.serverTimestamp(),
+      messageId,
     });
+
+    return { success: true, messageId };
+  } catch (error) {
+    console.error('Error sending topic notification:', error);
+    throw new HttpsError('internal', 'Failed to send notification');
   }
-
-  await db.collection('notifications').add({
-    title,
-    body,
-    imageUrl: imageUrl || null,
-    sentBy: request.auth.uid,
-    sentAt: admin.firestore.FieldValue.serverTimestamp(),
-    successCount,
-    failureCount,
-    totalRecipients,
-  });
-
-  return { successCount, failureCount, totalRecipients };
 });
 
 /**
  * =============================
- * Admin Broadcast Notification (Firestore Trigger)
+ * Admin Broadcast Notification via Topic (Firestore Trigger)
  * =============================
  */
 export const sendAdminNotification = onDocumentCreated(
@@ -664,93 +663,38 @@ export const sendAdminNotification = onDocumentCreated(
     const notification = snap.data();
     if (!notification || notification.status !== 'pending') return;
 
-    // Mark as processing
     await snap.ref.update({ status: 'sending' });
 
     try {
-      // Fetch all users with FCM tokens
-      const usersSnapshot = await db
-        .collection('students')
-        .where('fcmToken', '!=', null)
-        .get();
+      const targetTopic = notification.topic || 'all-users';
 
-      const tokens: string[] = [];
-      usersSnapshot.forEach((doc) => {
-        const token = doc.data().fcmToken;
-        if (token) tokens.push(token);
-      });
-
-      if (tokens.length === 0) {
-        await snap.ref.update({
-          status: 'no_tokens',
-          completedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        return;
-      }
-
-      // Send in batches of 500 (FCM multicast limit)
-      let successCount = 0;
-      let failureCount = 0;
-
-      for (let i = 0; i < tokens.length; i += 500) {
-        const batch = tokens.slice(i, i + 500);
-        const response = await admin.messaging().sendEachForMulticast({
-          tokens: batch,
+      const messageId = await admin.messaging().send({
+        topic: targetTopic,
+        notification: {
+          title: notification.title,
+          body: notification.body,
+        },
+        data: {
+          type: 'admin_broadcast',
+          notificationId: snap.id,
+        },
+        android: {
           notification: {
-            title: notification.title,
-            body: notification.body,
+            channelId: 'reelx_general',
           },
-          data: {
-            type: 'admin_broadcast',
-            notificationId: snap.id,
-          },
-          android: {
-            notification: {
-              channelId: 'reelx_general',
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
             },
           },
-          apns: {
-            payload: {
-              aps: {
-                sound: 'default',
-              },
-            },
-          },
-        });
-
-        successCount += response.successCount;
-        failureCount += response.failureCount;
-
-        // Clean up invalid tokens
-        const invalidTokens: { token: string; uid: string }[] = [];
-        response.responses.forEach((resp, idx) => {
-          if (
-            !resp.success &&
-            resp.error &&
-            (resp.error.code === 'messaging/invalid-registration-token' ||
-              resp.error.code === 'messaging/registration-token-not-registered')
-          ) {
-            const failedToken = batch[idx];
-            usersSnapshot.forEach((doc) => {
-              if (doc.data().fcmToken === failedToken) {
-                invalidTokens.push({ token: failedToken, uid: doc.id });
-              }
-            });
-          }
-        });
-
-        // Remove invalid tokens from Firestore
-        for (const { uid } of invalidTokens) {
-          await db.collection('students').doc(uid).update({
-            fcmToken: admin.firestore.FieldValue.delete(),
-          });
-        }
-      }
+        },
+      });
 
       await snap.ref.update({
         status: 'completed',
-        successCount,
-        failureCount,
+        messageId,
         completedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     } catch (error: any) {

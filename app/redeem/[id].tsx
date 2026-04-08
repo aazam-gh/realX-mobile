@@ -30,6 +30,12 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 import { normalizeDigits } from '../../utils/numbers';
 import { showLocalNotification } from '../../utils/notifications';
 
+interface RedemptionResult {
+    discountAmount: number;
+    cashbackAmount: number;
+    creatorName?: string;
+}
+
 // Types for better type safety
 interface VendorData {
     profilePicture?: string;
@@ -58,6 +64,7 @@ export default function RedeemScreen() {
     const [offer, setOffer] = useState<OfferData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isRedeeming, setIsRedeeming] = useState(false);
+    const [redemptionResult, setRedemptionResult] = useState<RedemptionResult | null>(null);
 
     // Step: 'creator' only shown for xcard vendors, otherwise start at 'pin'
     const [step, setStep] = useState<'creator' | 'pin'>('pin');
@@ -166,16 +173,11 @@ export default function RedeemScreen() {
                 { type: 'redemption_success', transactionId: data.transactionId }
             );
 
-            Alert.alert(
-                t('redemption_successful_title'),
-                message,
-                [
-                    {
-                        text: t('done'),
-                        onPress: () => router.replace('/'),
-                    },
-                ]
-            );
+            setRedemptionResult({
+                discountAmount: data.discountAmount || discountAmount,
+                cashbackAmount: data.cashbackAmount || 0,
+                creatorName: data.creatorName,
+            });
         } catch (error: any) {
             console.error('Offer redemption error:', error);
             Alert.alert(
@@ -233,6 +235,78 @@ export default function RedeemScreen() {
                 >
                     <Text style={styles.backLink}>{t('go_back')}</Text>
                 </TouchableOpacity>
+            </View>
+        );
+    }
+
+    // Success Screen
+    if (redemptionResult) {
+        const savedStr = redemptionResult.discountAmount.toFixed(2);
+        const earnedStr = redemptionResult.cashbackAmount.toFixed(2);
+        const currency = t('currency_qar');
+
+        return (
+            <View style={styles.successContainer}>
+                <StatusBar barStyle="light-content" />
+
+                {/* Close Button */}
+                <TouchableOpacity
+                    style={styles.successCloseButton}
+                    onPress={() => {
+                        triggerSubtleHaptic();
+                        router.replace('/');
+                    }}
+                >
+                    <Ionicons name="close" size={22} color="#666" />
+                </TouchableOpacity>
+
+                {/* Success Card */}
+                <View style={styles.successCard}>
+                    {/* Vendor Logo */}
+                    <View style={styles.successLogoContainer}>
+                        <Image
+                            source={{ uri: vendor.profilePicture }}
+                            style={styles.successLogoImage}
+                            contentFit="contain"
+                        />
+                    </View>
+
+                    {/* Title */}
+                    <Text style={styles.successTitle}>{t('redemption_title_line')}</Text>
+                    <PhonkText style={styles.successTitleGreen}>{t('redemption_successful_exclaim')}</PhonkText>
+
+                    {/* Discount Badge */}
+                    <View style={styles.successBadge}>
+                        <Text style={styles.successBadgeText}>
+                            {t('flat_off_prefix')}{offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}{t('flat_off_suffix')}
+                        </Text>
+                    </View>
+
+                    {/* You Saved Badge */}
+                    <View style={styles.successSavedBadge}>
+                        <Ionicons name="pricetag" size={16} color="#FFF" />
+                        <Text style={styles.successSavedText}>
+                            {t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}
+                        </Text>
+                    </View>
+
+                    {/* Cashback Badge (only if > 0) */}
+                    {redemptionResult.cashbackAmount > 0 && (
+                        <View style={styles.successSavedBadge}>
+                            <Ionicons name="wallet" size={16} color="#FFF" />
+                            <Text style={styles.successSavedText}>
+                                {t('cashback_earned_success_message', { currency, amount: earnedStr })}
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Creator credit */}
+                    {redemptionResult.creatorName && redemptionResult.cashbackAmount > 0 && (
+                        <Text style={styles.successCreatorText}>
+                            {t('thanks_to_creator', { creator: redemptionResult.creatorName })}
+                        </Text>
+                    )}
+                </View>
             </View>
         );
     }
@@ -732,5 +806,92 @@ const styles = StyleSheet.create({
         color: '#888',
         fontFamily: Typography.poppins.medium,
         fontSize: 14,
+    },
+    // Success Screen Styles
+    successContainer: {
+        flex: 1,
+        backgroundColor: Colors.brandGreen,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    successCloseButton: {
+        position: 'absolute',
+        top: 60,
+        right: 24,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#FFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    successCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 35,
+        paddingVertical: 40,
+        paddingHorizontal: 28,
+        alignItems: 'center',
+        width: '100%',
+    },
+    successLogoContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 20,
+        backgroundColor: '#1E2a38',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    successLogoImage: {
+        width: '60%',
+        height: '60%',
+    },
+    successTitle: {
+        fontSize: 28,
+        color: '#000',
+        fontFamily: Typography.poppins.semiBold,
+        textAlign: 'center',
+    },
+    successTitleGreen: {
+        fontSize: 28,
+        color: Colors.brandGreen,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    successBadge: {
+        backgroundColor: Colors.brandGreen,
+        borderRadius: 30,
+        paddingVertical: 10,
+        paddingHorizontal: 24,
+        marginBottom: 20,
+    },
+    successBadgeText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    successSavedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.brandGreen,
+        borderRadius: 30,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        marginBottom: 10,
+        gap: 8,
+    },
+    successSavedText: {
+        color: '#FFF',
+        fontSize: 14,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    successCreatorText: {
+        fontSize: 13,
+        color: '#999',
+        fontFamily: Typography.poppins.medium,
+        textAlign: 'center',
+        marginTop: 12,
     },
 });

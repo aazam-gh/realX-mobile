@@ -172,6 +172,7 @@ export const setupForegroundMessageHandler = () => {
   return onMessage(
     messaging,
     async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
+      console.log('📥 Foreground message received:', JSON.stringify(remoteMessage));
       const { title, body } = remoteMessage.notification ?? {};
 
       if (title || body) {

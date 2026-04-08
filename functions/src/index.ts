@@ -548,7 +548,8 @@ export const subscribeToTopic = onCall(async (request: CallableRequest) => {
   }
 
   try {
-    await admin.messaging().subscribeToToken(token, topic);
+    const result = await admin.messaging().subscribeToTopic(token, topic);
+    console.log('Subscribe result:', JSON.stringify(result));
     return { success: true };
   } catch (error) {
     console.error('Error subscribing to topic:', error);
@@ -568,7 +569,7 @@ export const unsubscribeFromTopic = onCall(async (request: CallableRequest) => {
   }
 
   try {
-    await admin.messaging().unsubscribeFromToken(token, topic);
+    await admin.messaging().unsubscribeFromTopic(token, topic);
     return { success: true };
   } catch (error) {
     console.error('Error unsubscribing from topic:', error);

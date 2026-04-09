@@ -318,6 +318,8 @@ const styles = StyleSheet.create({
     coverImage: {
         width: '100%',
         height: '100%',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
     },
     headerOverlay: {
         position: 'absolute',

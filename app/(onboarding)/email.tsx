@@ -156,11 +156,7 @@ export default function EmailOnboarding() {
           </View>
         </TouchableWithoutFeedback>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={20}
-          style={styles.footer}
-        >
+        <View style={styles.footer}>
           <TouchableOpacity
             style={[styles.button, (isLoading || !email) && styles.buttonDisabled]}
             onPress={handleContinue}
@@ -173,7 +169,7 @@ export default function EmailOnboarding() {
               <Text style={styles.buttonText}>{t('onboarding_continue')}</Text>
             )}
           </TouchableOpacity>
-        </KeyboardAvoidingView>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );

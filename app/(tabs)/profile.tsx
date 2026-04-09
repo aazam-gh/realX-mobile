@@ -91,7 +91,10 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await clearPushToken();
-              await signOut(getAuth());
+              const auth = getAuth();
+              if (auth.currentUser) {
+                await signOut(auth);
+              }
             } catch (error) {
               console.error('Logout error:', error);
               Alert.alert(t('error'), t('logout_failed'));

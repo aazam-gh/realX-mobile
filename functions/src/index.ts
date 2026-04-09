@@ -558,14 +558,14 @@ const MAX_VERIFY_ATTEMPTS = 3;
  */
 export const sendOtp = onCall(async (request: CallableRequest) => {
   const email = request.data?.email?.toLowerCase()?.trim();
-  const purpose = request.data?.purpose; // "signup" | "login"
+  const purpose = request.data?.purpose; // "signup" | "login" | "verification"
 
   if (!email) {
     throw new HttpsError('invalid-argument', 'Email is required');
   }
 
-  if (!purpose || !['signup', 'login'].includes(purpose)) {
-    throw new HttpsError('invalid-argument', 'Purpose must be "signup" or "login"');
+  if (!purpose || !['signup', 'login', 'verification'].includes(purpose)) {
+    throw new HttpsError('invalid-argument', 'Purpose must be "signup", "login", or "verification"');
   }
 
   // Signup: restrict to .edu.qa
@@ -576,6 +576,19 @@ export const sendOtp = onCall(async (request: CallableRequest) => {
     }
 
     // Check if account already exists
+    const snapshot = await db
+      .collection('students')
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+
+    if (!snapshot.empty) {
+      throw new HttpsError('already-exists', 'An account with this email already exists');
+    }
+  }
+
+  // Verification: no .edu.qa restriction, just check no existing account
+  if (purpose === 'verification') {
     const snapshot = await db
       .collection('students')
       .where('email', '==', email)
@@ -715,8 +728,8 @@ export const verifyOtp = onCall(async (request: CallableRequest) => {
     throw new HttpsError('invalid-argument', 'A valid 6-digit code is required');
   }
 
-  if (!purpose || !['signup', 'login'].includes(purpose)) {
-    throw new HttpsError('invalid-argument', 'Purpose must be "signup" or "login"');
+  if (!purpose || !['signup', 'login', 'verification'].includes(purpose)) {
+    throw new HttpsError('invalid-argument', 'Purpose must be "signup", "login", or "verification"');
   }
 
   const now = admin.firestore.Timestamp.now();
@@ -757,6 +770,11 @@ export const verifyOtp = onCall(async (request: CallableRequest) => {
 
   // Mark as verified
   await otpRef.update({ verified: true });
+
+  // Verification: just confirm email is verified, no auth user creation
+  if (purpose === 'verification') {
+    return { success: true, emailVerified: true };
+  }
 
   let uid: string;
 
@@ -970,3 +988,218 @@ export const sendAdminNotification = onDocumentCreated(
     }
   }
 );
+
+/**
+ * =============================
+ * Student ID Verification
+ * =============================
+ */
+const MAX_IMAGE_SIZE = 3 * 1024 * 1024; // 3MB per image
+
+export const submitVerificationRequest = onCall(async (request: CallableRequest) => {
+  const { email, idFrontBase64, idBackBase64 } = request.data || {};
+
+  const normalizedEmail = email?.toLowerCase()?.trim();
+  if (!normalizedEmail || !/^[^@]+@[^@]+\.[^@]+$/.test(normalizedEmail)) {
+    throw new HttpsError('invalid-argument', 'Valid email required');
+  }
+
+  // Reject .edu.qa emails — they should use normal signup
+  if (/^[^@]+@[^@]+\.edu\.qa$/.test(normalizedEmail)) {
+    throw new HttpsError('invalid-argument', 'Please use the regular signup with your .edu.qa email');
+  }
+
+  if (!idFrontBase64 || !idBackBase64) {
+    throw new HttpsError('invalid-argument', 'Both front and back of student ID are required');
+  }
+
+  // Validate image sizes
+  const frontBuffer = Buffer.from(idFrontBase64, 'base64');
+  const backBuffer = Buffer.from(idBackBase64, 'base64');
+
+  if (frontBuffer.length > MAX_IMAGE_SIZE || backBuffer.length > MAX_IMAGE_SIZE) {
+    throw new HttpsError('invalid-argument', 'Each image must be under 3MB');
+  }
+
+  // Check for existing pending request
+  const existingPending = await db
+    .collection('verification_requests')
+    .where('email', '==', normalizedEmail)
+    .where('status', '==', 'pending')
+    .limit(1)
+    .get();
+
+  if (!existingPending.empty) {
+    throw new HttpsError('already-exists', 'You already have a pending verification request');
+  }
+
+  // Check no existing student account
+  const existingStudent = await db
+    .collection('students')
+    .where('email', '==', normalizedEmail)
+    .limit(1)
+    .get();
+
+  if (!existingStudent.empty) {
+    throw new HttpsError('already-exists', 'An account with this email already exists');
+  }
+
+  // Create Firestore doc first to get requestId
+  const requestRef = db.collection('verification_requests').doc();
+  const requestId = requestRef.id;
+
+  // Upload images to Firebase Storage
+  const bucket = admin.storage().bucket();
+  const frontPath = `verification_requests/${requestId}/front.jpg`;
+  const backPath = `verification_requests/${requestId}/back.jpg`;
+
+  await Promise.all([
+    bucket.file(frontPath).save(frontBuffer, { metadata: { contentType: 'image/jpeg' } }),
+    bucket.file(backPath).save(backBuffer, { metadata: { contentType: 'image/jpeg' } }),
+  ]);
+
+  // Create Firestore document
+  await requestRef.set({
+    email: normalizedEmail,
+    status: 'pending',
+    idFrontPath: frontPath,
+    idBackPath: backPath,
+    submittedAt: admin.firestore.FieldValue.serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    rejectionReason: null,
+    authUid: null,
+  });
+
+  return { success: true, requestId };
+});
+
+export const checkVerificationStatus = onCall(async (request: CallableRequest) => {
+  const email = request.data?.email?.toLowerCase()?.trim();
+
+  if (!email) {
+    throw new HttpsError('invalid-argument', 'Email required');
+  }
+
+  const snapshot = await db
+    .collection('verification_requests')
+    .where('email', '==', email)
+    .orderBy('submittedAt', 'desc')
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) {
+    return { status: 'none' };
+  }
+
+  const data = snapshot.docs[0].data();
+  return {
+    status: data.status,
+    requestId: snapshot.docs[0].id,
+    rejectionReason: data.rejectionReason || null,
+  };
+});
+
+export const listPendingVerificationRequests = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Login required');
+  }
+
+  const adminDoc = await db.collection('students').doc(request.auth.uid).get();
+  if (!adminDoc.exists || adminDoc.data()?.admin !== true) {
+    throw new HttpsError('permission-denied', 'Admin access required');
+  }
+
+  const snapshot = await db
+    .collection('verification_requests')
+    .where('status', '==', 'pending')
+    .orderBy('submittedAt', 'asc')
+    .get();
+
+  const bucket = admin.storage().bucket();
+  const requests = [];
+
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+
+    // Generate signed download URLs (valid for 1 hour)
+    const [frontUrl] = await bucket.file(data.idFrontPath).getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 60 * 60 * 1000,
+    });
+    const [backUrl] = await bucket.file(data.idBackPath).getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 60 * 60 * 1000,
+    });
+
+    requests.push({
+      requestId: doc.id,
+      email: data.email,
+      submittedAt: data.submittedAt,
+      frontImageUrl: frontUrl,
+      backImageUrl: backUrl,
+    });
+  }
+
+  return { requests };
+});
+
+export const reviewVerificationRequest = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Login required');
+  }
+
+  const adminDoc = await db.collection('students').doc(request.auth.uid).get();
+  if (!adminDoc.exists || adminDoc.data()?.admin !== true) {
+    throw new HttpsError('permission-denied', 'Admin access required');
+  }
+
+  const { requestId, action, rejectionReason } = request.data || {};
+
+  if (!requestId || !['approve', 'reject'].includes(action)) {
+    throw new HttpsError('invalid-argument', 'requestId and action (approve/reject) required');
+  }
+
+  const requestRef = db.collection('verification_requests').doc(requestId);
+  const requestDoc = await requestRef.get();
+
+  if (!requestDoc.exists) {
+    throw new HttpsError('not-found', 'Verification request not found');
+  }
+
+  const requestData = requestDoc.data();
+  if (requestData.status !== 'pending') {
+    throw new HttpsError('failed-precondition', 'Request already reviewed');
+  }
+
+  if (action === 'approve') {
+    // Create Firebase Auth user
+    let uid: string;
+    try {
+      const existingUser = await admin.auth().getUserByEmail(requestData.email);
+      uid = existingUser.uid;
+    } catch {
+      const newUser = await admin.auth().createUser({
+        email: requestData.email,
+        emailVerified: true,
+      });
+      uid = newUser.uid;
+    }
+
+    await requestRef.update({
+      status: 'approved',
+      reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
+      reviewedBy: request.auth.uid,
+      authUid: uid,
+    });
+  } else {
+    await requestRef.update({
+      status: 'rejected',
+      reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
+      reviewedBy: request.auth.uid,
+      rejectionReason: rejectionReason || null,
+    });
+  }
+
+  return { success: true };
+});

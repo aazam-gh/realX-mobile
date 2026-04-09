@@ -8,6 +8,9 @@ export default function OnboardingLayout() {
             <Stack.Screen name="login" />
             <Stack.Screen name="verify" />
             <Stack.Screen name="details" />
+            <Stack.Screen name="upload-id" />
+            <Stack.Screen name="verify-email" />
+            <Stack.Screen name="pending" />
         </Stack>
     );
 }

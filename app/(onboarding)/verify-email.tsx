@@ -23,34 +23,26 @@ import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import { useTranslation } from 'react-i18next';
 
-// Email normalization (strict identity)
 const normalizeEmail = (email: string): string => {
   const trimmed = email.trim().toLowerCase();
   const [local, domain] = trimmed.split('@');
-
   if (!domain) return trimmed;
-
   if (domain === 'gmail.com' || domain === 'googlemail.com') {
     const cleanLocal = local.split('+')[0].replace(/\./g, '');
     return `${cleanLocal}@gmail.com`;
   }
-
   return trimmed;
 };
 
-export default function EmailOnboarding() {
+export default function VerifyEmailScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ role?: string; mode?: string }>();
-  const { role, mode } = params;
+  const params = useLocalSearchParams<{ mode?: string }>();
   const { t } = useTranslation();
-
   const isRTL = I18nManager.isRTL;
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
   const inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
-  const roleTitle = role === 'creator' ? t('onboarding_email_title_creator') : t('onboarding_email_title_student');
 
   const [email, setEmail] = useState('');
-  const isNewUser = mode === 'signup';
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
@@ -58,33 +50,19 @@ export default function EmailOnboarding() {
     router.back();
   };
 
-  const handleSendOtp = async () => {
+  const handleContinue = async () => {
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail) return;
 
     setIsLoading(true);
     try {
-      // Signup: check if account already exists
-      if (isNewUser) {
-        const fnInstance = getFunctions(undefined, 'me-central1');
-        const checkStudent = httpsCallable(fnInstance, 'checkStudentExists');
-        const result = await checkStudent({ email: normalizedEmail });
-
-        if ((result.data as { exists: boolean }).exists) {
-          Alert.alert(t('onboarding_account_exists_title'), t('onboarding_account_exists_message'));
-          return;
-        }
-      }
-
-      // Send OTP
       const fnInstance = getFunctions(undefined, 'me-central1');
       const sendOtp = httpsCallable(fnInstance, 'sendOtp');
-      await sendOtp({ email: normalizedEmail, purpose: isNewUser ? 'signup' : 'login' });
+      await sendOtp({ email: normalizedEmail, purpose: 'verification' });
 
-      // Navigate to verification screen
       router.replace({
         pathname: '/(onboarding)/verify',
-        params: { email: normalizedEmail, purpose: isNewUser ? 'signup' : 'login', role },
+        params: { email: normalizedEmail, purpose: 'verification' },
       });
     } catch (err: any) {
       console.error(err);
@@ -92,10 +70,6 @@ export default function EmailOnboarding() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleContinue = async () => {
-    await handleSendOtp();
   };
 
   return (
@@ -124,12 +98,10 @@ export default function EmailOnboarding() {
           <View style={styles.card}>
             <View style={styles.textContainer}>
               <PhonkText style={styles.titleLine}>
-                <Text style={styles.greenText}>{t('onboarding_email_title_prefix')}</Text>
+                <Text style={styles.greenText}>{t('onboarding_verify_email_title_prefix')}</Text>
               </PhonkText>
               <PhonkText style={styles.titleLine}>
-                <Text style={styles.blackText}>
-                  {`${roleTitle} ${t('onboarding_email_title_suffix')}`}
-                </Text>
+                <Text style={styles.blackText}>{t('onboarding_verify_email_title_suffix')}</Text>
               </PhonkText>
             </View>
 
@@ -151,10 +123,7 @@ export default function EmailOnboarding() {
               </View>
             </View>
 
-            <Text style={styles.infoText}>{t('onboarding_email_description')}</Text>
-            <TouchableOpacity onPress={() => router.push('/(onboarding)/upload-id' as any)}>
-              <Text style={styles.linkText}>{t('onboarding_no_edu_email_link')}</Text>
-            </TouchableOpacity>
+            <Text style={styles.infoText}>{t('onboarding_verify_email_description')}</Text>
           </View>
         </TouchableWithoutFeedback>
 
@@ -184,31 +153,38 @@ const styles = StyleSheet.create({
   topButtons: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 },
   topButtonsRTL: { flexDirection: 'row-reverse' },
   iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: 'rgba(255, 255, 255, 1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
   },
-  cardContainer: { flex: 1, backgroundColor: 'white', borderTopLeftRadius: 50, borderTopRightRadius: 50, marginTop: -80, paddingHorizontal: 30, paddingTop: 40 },
+  cardContainer: {
+    flex: 1, backgroundColor: 'white',
+    borderTopLeftRadius: 50, borderTopRightRadius: 50,
+    marginTop: -80, paddingHorizontal: 30, paddingTop: 40,
+  },
   card: { flex: 1 },
   textContainer: { marginBottom: 40, alignItems: 'center' },
   titleLine: { fontSize: 32, textAlign: 'center', lineHeight: 38 },
   greenText: { color: Colors.brandGreen },
   blackText: { color: '#000000' },
   inputWrapper: { marginBottom: 20 },
-  singleInputContainer: { backgroundColor: '#F3F3F3', borderRadius: 30, height: 60, justifyContent: 'center', paddingHorizontal: 25 },
+  singleInputContainer: {
+    backgroundColor: '#F3F3F3', borderRadius: 30,
+    height: 60, justifyContent: 'center', paddingHorizontal: 25,
+  },
   input: { fontSize: 16, fontFamily: Typography.poppins.medium, color: '#000' },
-  infoText: { fontSize: 14, color: '#999', textAlign: 'center', lineHeight: 20, paddingHorizontal: 10, fontFamily: Typography.poppins.medium, margin: 8 },
-  linkText: { fontSize: 14, color: Colors.brandGreen, textAlign: 'center', lineHeight: 20, paddingHorizontal: 10, fontFamily: Typography.poppins.semiBold, margin: 8 },
+  infoText: {
+    fontSize: 14, color: '#999', textAlign: 'center',
+    lineHeight: 20, paddingHorizontal: 10,
+    fontFamily: Typography.poppins.medium, margin: 8,
+  },
   footer: { paddingBottom: 40, marginTop: 'auto' },
-  button: { backgroundColor: Colors.brandGreen, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  button: {
+    backgroundColor: Colors.brandGreen, height: 64, borderRadius: 32,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 20,
+  },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#FFFFFF', fontSize: 18, fontFamily: Typography.poppins.medium },
 });

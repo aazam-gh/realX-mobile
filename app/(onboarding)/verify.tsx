@@ -23,6 +23,7 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import { useTranslation } from 'react-i18next';
+import { getVerificationImages, clearVerificationImages } from '../../utils/verificationStore';
 
 const OTP_LENGTH = 6;
 
@@ -114,6 +115,27 @@ export default function VerifyOtpScreen() {
         purpose,
       });
 
+      // Handle verification purpose (student ID verification)
+      if (purpose === 'verification') {
+        const { emailVerified } = result.data as { emailVerified: boolean };
+        if (emailVerified) {
+          // Submit the verification request with stored images
+          const images = getVerificationImages();
+          const submitFn = httpsCallable(fnInstance, 'submitVerificationRequest');
+          await submitFn({
+            email,
+            idFrontBase64: images.frontBase64,
+            idBackBase64: images.backBase64,
+          });
+          clearVerificationImages();
+          router.replace({
+            pathname: '/(onboarding)/pending',
+            params: { email },
+          });
+        }
+        return;
+      }
+
       const { customToken } = result.data as { customToken: string };
 
       // Sign in with custom token
@@ -179,6 +201,8 @@ export default function VerifyOtpScreen() {
 
   const titleText = purpose === 'login'
     ? t('onboarding_otp_check_email_title')
+    : purpose === 'verification'
+    ? t('onboarding_otp_verify_title')
     : t('onboarding_otp_verify_title');
 
   return (

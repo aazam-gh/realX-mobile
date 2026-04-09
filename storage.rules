@@ -1,0 +1,17 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Verification request images - only admin SDK (cloud functions) writes,
+    // only admin users can read from client (admin panel)
+    match /verification_requests/{requestId}/{imageType} {
+      allow write: if false; // Written by admin SDK in cloud functions
+      allow read: if request.auth != null
+        && get(/databases/(default)/documents/students/$(request.auth.uid)).data.admin == true;
+    }
+
+    // Deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

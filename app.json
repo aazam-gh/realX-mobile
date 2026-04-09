@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "reelx",
+    "name": "realX",
     "slug": "reelx",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -61,9 +61,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#18B852",
-          "image": "./assets/images/splash.png",
-          "resize": "cover"
+          "backgroundColor": "#18B852"
         }
       ],
       [

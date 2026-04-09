@@ -12,9 +12,8 @@ import {
   GreetingHeader,
   PromoBanner,
   SearchBar,
-  TrendingOffers
+  TrendingOffers,
 } from '../../components/home';
-
 import { Colors } from '../../constants/Colors';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 

@@ -14,9 +14,19 @@ import { Platform } from 'react-native';
 import {
   scheduleNotificationAsync,
   setNotificationChannelAsync,
+  setNotificationHandler,
   AndroidImportance,
   presentNotificationAsync,
 } from 'expo-notifications';
+
+// Required for scheduleNotificationAsync to display alerts in the foreground
+setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 
 const DEFAULT_TOPIC = 'all-users';
@@ -58,6 +68,10 @@ export const setupNotificationChannels = async () => {
     });
     await setNotificationChannelAsync('reelx_creator', {
       name: 'Creator Earnings',
+      importance: AndroidImportance.HIGH,
+    });
+    await setNotificationChannelAsync('reelx_redemptions', {
+      name: 'Redemptions',
       importance: AndroidImportance.HIGH,
     });
   }
@@ -192,7 +206,8 @@ export const setupForegroundMessageHandler = () => {
 export const showLocalNotification = async (
   title: string,
   body: string,
-  data?: Record<string, any>
+  data?: Record<string, any>,
+  channelId?: string,
 ) => {
   try {
     await scheduleNotificationAsync({
@@ -201,6 +216,7 @@ export const showLocalNotification = async (
         body,
         data: data ?? {},
         sound: 'default',
+        ...(Platform.OS === 'android' && channelId ? { channelId } : {}),
       },
       trigger: null, // immediate
     });

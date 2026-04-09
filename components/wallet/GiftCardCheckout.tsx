@@ -81,16 +81,19 @@ export default function GiftCardCheckout({
                 pin,
             });
 
-            const successMessage = t('redemption_success_message', {
+            const savedAmount = Math.min(selectedAmount, totalBillNum).toFixed(2);
+
+            const successMessage = t('you_saved_success_message', {
                 currency,
-                amount: selectedAmount.toFixed(2),
+                amount: savedAmount,
             });
 
             // Show local notification for the gift card redemption
             showLocalNotification(
                 t('redemption_success_title'),
                 successMessage,
-                { type: 'giftcard_redemption' }
+                { type: 'giftcard_redemption' },
+                'reelx_redemptions'
             );
 
             Alert.alert(

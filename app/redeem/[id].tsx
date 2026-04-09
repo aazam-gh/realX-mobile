@@ -172,7 +172,8 @@ export default function RedeemScreen() {
             showLocalNotification(
                 t('redemption_successful_title'),
                 message,
-                { type: 'redemption_success', transactionId: data.transactionId }
+                { type: 'redemption_success', transactionId: data.transactionId },
+                'reelx_redemptions'
             );
 
             setRedemptionResult({

@@ -995,6 +995,8 @@ export const sendAdminNotification = onDocumentCreated(
  * =============================
  */
 const MAX_IMAGE_SIZE = 3 * 1024 * 1024; // 3MB per image
+const VERIFICATION_MAX_SUBMISSIONS = 3;
+const VERIFICATION_RATE_LIMIT_MS = 60 * 60 * 1000; // 1 hour
 
 export const submitVerificationRequest = onCall(async (request: CallableRequest) => {
   const { email, idFrontBase64, idBackBase64 } = request.data || {};
@@ -1019,6 +1021,21 @@ export const submitVerificationRequest = onCall(async (request: CallableRequest)
 
   if (frontBuffer.length > MAX_IMAGE_SIZE || backBuffer.length > MAX_IMAGE_SIZE) {
     throw new HttpsError('invalid-argument', 'Each image must be under 3MB');
+  }
+
+  // Rate limit: max submissions per time window
+  const cutoff = new Date(Date.now() - VERIFICATION_RATE_LIMIT_MS);
+  const recentSubmissions = await db
+    .collection('verification_requests')
+    .where('email', '==', normalizedEmail)
+    .where('submittedAt', '>=', cutoff)
+    .get();
+
+  if (recentSubmissions.size >= VERIFICATION_MAX_SUBMISSIONS) {
+    throw new HttpsError(
+      'resource-exhausted',
+      'Too many verification requests. Please try again later.'
+    );
   }
 
   // Check for existing pending request

@@ -46,7 +46,7 @@ export default function UploadIdScreen() {
 
     const asset = result.assets[0];
 
-    if (asset.base64 && Buffer.from(asset.base64, 'base64').length > MAX_SIZE_BYTES) {
+    if (asset.base64 && Math.ceil((asset.base64.length * 3) / 4) > MAX_SIZE_BYTES) {
       Alert.alert(t('error'), t('onboarding_upload_image_too_large'));
       return;
     }

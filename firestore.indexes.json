@@ -21,7 +21,7 @@
       "collectionGroup": "vendors",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "subcategory", "arrayConfig": "ARRAY_CONTAINS" },
+        { "fieldPath": "subcategory", "arrayConfig": "CONTAINS" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },

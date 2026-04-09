@@ -224,6 +224,7 @@
   "onboarding_verify_email_description": "سنستخدم هذا البريد الإلكتروني لإشعارك بمجرد التحقق من بطاقتك الجامعية.",
   "onboarding_pending_title": "في انتظار التحقق",
   "onboarding_pending_description": "يتم مراجعة بطاقتك الجامعية. عادة ما يستغرق ذلك 24-48 ساعة. سنرسل لك رمز تسجيل الدخول بمجرد الموافقة.",
+  "onboarding_pending_email_notification": "يتم مراجعة بطاقتك الجامعية. سنرسل لك بريدًا إلكترونيًا بمجرد التحقق منها.",
   "onboarding_pending_check_status": "التحقق من الحالة",
   "onboarding_pending_approved_title": "تم التحقق!",
   "onboarding_pending_approved_message": "تم التحقق من بطاقتك الجامعية. جاري تسجيل الدخول...",

@@ -224,6 +224,7 @@
   "onboarding_verify_email_description": "We'll use this email to notify you once your student ID is verified.",
   "onboarding_pending_title": "VERIFICATION PENDING",
   "onboarding_pending_description": "Your student ID is being reviewed. This usually takes 24-48 hours. We'll send you a login code once approved.",
+  "onboarding_pending_email_notification": "Your student ID is being reviewed. We'll send you an email once it's been verified.",
   "onboarding_pending_check_status": "Check Status",
   "onboarding_pending_approved_title": "VERIFIED!",
   "onboarding_pending_approved_message": "Your student ID has been verified. Logging you in...",

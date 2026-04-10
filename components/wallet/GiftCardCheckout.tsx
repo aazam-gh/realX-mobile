@@ -91,21 +91,24 @@ export default function GiftCardCheckout({
             });
 
             // Show local notification for the gift card redemption
-            showLocalNotification(
+            await showLocalNotification(
                 t('redemption_success_title'),
                 successMessage,
                 { type: 'giftcard_redemption' },
                 'reelx_redemptions'
             );
 
-            setShowSuccess(true);
+            // Delay success screen so notification banner is visible
+            setTimeout(() => {
+                setIsRedeeming(false);
+                setShowSuccess(true);
+            }, 1500);
         } catch (error: any) {
             console.error('Gift card redemption error:', error);
             Alert.alert(
                 t('redemption_failed_title'),
                 error.message || t('redemption_failed_message')
             );
-        } finally {
             setIsRedeeming(false);
         }
     };

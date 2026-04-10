@@ -19,6 +19,7 @@ import {
   setupForegroundMessageHandler,
   setupNotificationChannels,
   registerBackgroundHandler,
+  setupNotificationResponseListener,
 } from '../utils/notifications';
 import CustomSplash from './splash'; // adjust path if needed
 
@@ -105,8 +106,12 @@ export default function RootLayout() {
 
   // Set up foreground message handler (always active)
   useEffect(() => {
-    const unsubscribe = setupForegroundMessageHandler();
-    return () => unsubscribe();
+    const unsubscribeForeground = setupForegroundMessageHandler();
+    const unsubscribeResponse = setupNotificationResponseListener();
+    return () => {
+      unsubscribeForeground();
+      unsubscribeResponse();
+    };
   }, []);
 
 useEffect(() => {
@@ -114,7 +119,7 @@ useEffect(() => {
     i18nReady &&
     (loaded || error) &&
     !initializing &&
-    (user === null || hasProfile !== null) &&
+    (user === null || hasProfile !== null)
   ) {
     setAppReady(true);
   }

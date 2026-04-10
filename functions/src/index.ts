@@ -98,36 +98,34 @@ const sendCreatorNotification = async (
 ) => {
   try {
     const creatorDoc = await db.collection('students').doc(creatorUid).get();
-    const fcmToken = creatorDoc.data()?.fcmToken;
+    const expoPushToken = creatorDoc.data()?.expoPushToken;
 
-    if (!fcmToken) return;
+    if (!expoPushToken) return;
 
-    await admin.messaging().send({
-      token: fcmToken,
-      notification: {
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: expoPushToken,
         title: 'Your code was used!',
         body: `Someone used your code at ${vendorName}. You earned QAR ${cashbackAmount.toFixed(2)} cashback!`,
-      },
-      data: {
-        type: 'creator_code_used',
-        vendorName,
-        cashbackAmount: cashbackAmount.toString(),
-      },
-      android: {
-        notification: {
-          channelId: 'reelx_creator',
+        data: {
+          type: 'creator_code_used',
+          vendorName,
+          cashbackAmount: cashbackAmount.toString(),
         },
-      },
-      apns: {
-        payload: {
-          aps: {
-            sound: 'default',
-          },
-        },
-      },
+      }),
     });
+
+    const result = await response.json();
+    if (result.errors?.length) {
+      console.error('Expo push errors:', result.errors);
+    }
   } catch (error) {
     console.error('Failed to send creator notification:', error);
+  }
   }
 };
 const calculateDiscount = (totalCents: number, discountType, discountValue) => {

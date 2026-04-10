@@ -169,27 +169,30 @@ export default function RedeemScreen() {
             }
 
             // Show local notification for the redemption
-            showLocalNotification(
+            await showLocalNotification(
                 t('redemption_successful_title'),
                 message,
                 { type: 'redemption_success', transactionId: data.transactionId },
                 'reelx_redemptions'
             );
 
-            setRedemptionResult({
-                discountAmount: data.discountAmount || discountAmount,
-                cashbackAmount: data.cashbackAmount || 0,
-                creatorName: data.creatorName,
-                totalAmount,
-                finalAmount: data.finalAmount || finalAmount,
-            });
+            // Delay success screen so notification banner is visible
+            setTimeout(() => {
+                setIsRedeeming(false);
+                setRedemptionResult({
+                    discountAmount: data.discountAmount || discountAmount,
+                    cashbackAmount: data.cashbackAmount || 0,
+                    creatorName: data.creatorName,
+                    totalAmount,
+                    finalAmount: data.finalAmount || finalAmount,
+                });
+            }, 1500);
         } catch (error: any) {
             console.error('Offer redemption error:', error);
             Alert.alert(
                 t('redemption_failed_title'),
                 error.message || t('redemption_failed_message')
             );
-        } finally {
             setIsRedeeming(false);
         }
     };

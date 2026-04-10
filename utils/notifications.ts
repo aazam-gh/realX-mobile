@@ -17,6 +17,10 @@ import {
   setNotificationHandler,
   AndroidImportance,
   presentNotificationAsync,
+  requestPermissionsAsync,
+  getPermissionsAsync,
+  addNotificationResponseReceivedListener,
+  getExpoPushTokenAsync,
 } from 'expo-notifications';
 
 // Required for scheduleNotificationAsync to display alerts in the foreground
@@ -89,7 +93,19 @@ export const registerPushToken = async () => {
   try {
     const messaging = getMessaging();
 
-    // Request permission on iOS (Android grants by default)
+    // Request local notification permissions (expo-notifications)
+    const localPerm = await requestPermissionsAsync();
+    if (localPerm.status !== 'granted') {
+      console.log('Local notification permission denied:', localPerm.status);
+      return;
+    }
+
+    // Get Expo push token for cross-device push (e.g. creator notifications)
+    const expoToken = await getExpoPushTokenAsync({
+      projectId: '462a3cda-e70c-4472-8637-8794ff697f77',
+    });
+
+    // Request push permission on iOS (Android grants by default)
     const authStatus = await requestPermission(messaging);
     console.log('📱 Notification auth status:', authStatus, AuthorizationStatus);
 
@@ -98,18 +114,19 @@ export const registerPushToken = async () => {
       authStatus === AuthorizationStatus.PROVISIONAL;
 
     if (!enabled) {
-      console.log('Notification permission denied. Status:', authStatus);
+      console.log('Push notification permission denied. Status:', authStatus);
       return;
     }
 
     // Get the FCM token
     const token = await getToken(messaging);
 
-    // Store in Firestore for debugging / 1:1 notifications
+    // Store in Firestore for push notifications
     const db = getFirestore();
     const userRef = doc(db, 'students', user.uid);
     await updateDoc(userRef, {
       fcmToken: token,
+      expoPushToken: expoToken.data,
       fcmTokenUpdatedAt: serverTimestamp(),
       platform: Platform.OS,
     });
@@ -194,10 +211,23 @@ export const setupForegroundMessageHandler = () => {
           title: title ?? 'realX',
           body: body ?? '',
           data: remoteMessage.data ?? {},
+          sound: 'default',
+          ...(Platform.OS === 'android' ? { channelId: 'reelx_general' } : {}),
         });
       }
     }
   );
+};
+
+/**
+ * Ensure local notification permission is granted. Returns true if permitted.
+ */
+const ensureNotificationPermission = async (): Promise<boolean> => {
+  const { status } = await getPermissionsAsync();
+  if (status === 'granted') return true;
+
+  const result = await requestPermissionsAsync();
+  return result.status === 'granted';
 };
 
 /**
@@ -208,8 +238,14 @@ export const showLocalNotification = async (
   body: string,
   data?: Record<string, any>,
   channelId?: string,
-) => {
+): Promise<boolean> => {
   try {
+    const hasPermission = await ensureNotificationPermission();
+    if (!hasPermission) {
+      console.warn('Cannot show notification: permission not granted');
+      return false;
+    }
+
     await scheduleNotificationAsync({
       content: {
         title,
@@ -218,10 +254,12 @@ export const showLocalNotification = async (
         sound: 'default',
         ...(Platform.OS === 'android' && channelId ? { channelId } : {}),
       },
-      trigger: null, // immediate
+      trigger: null,
     });
+    return true;
   } catch (error) {
     console.error('Error showing local notification:', error);
+    return false;
   }
 };
 
@@ -239,4 +277,14 @@ export const registerBackgroundHandler = () => {
       console.log('Background message handled:', remoteMessage.messageId);
     }
   );
+};
+
+/**
+ * Listen for notification taps (when user presses a notification).
+ */
+export const setupNotificationResponseListener = () => {
+  return addNotificationResponseReceivedListener((response) => {
+    const { data } = response.notification.request.content;
+    console.log('Notification tapped:', data?.type, data);
+  });
 };

@@ -5,7 +5,6 @@
 
 import * as admin from 'firebase-admin';
 import { CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { setGlobalOptions } from 'firebase-functions';
 import { Resend } from 'resend';
 
@@ -86,48 +85,6 @@ const validateCreatorCode = async (tx, creatorCode: string | null) => {
  * =============================
  */
 
-/**
- * =============================
- * Push Notification Helpers
- * =============================
- */
-const sendCreatorNotification = async (
-  creatorUid: string,
-  cashbackAmount: number,
-  vendorName: string
-) => {
-  try {
-    const creatorDoc = await db.collection('students').doc(creatorUid).get();
-    const expoPushToken = creatorDoc.data()?.expoPushToken;
-
-    if (!expoPushToken) return;
-
-    const response = await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        to: expoPushToken,
-        title: 'Your code was used!',
-        body: `Someone used your code at ${vendorName}. You earned QAR ${cashbackAmount.toFixed(2)} cashback!`,
-        data: {
-          type: 'creator_code_used',
-          vendorName,
-          cashbackAmount: cashbackAmount.toString(),
-        },
-      }),
-    });
-
-    const result = await response.json();
-    if (result.errors?.length) {
-      console.error('Expo push errors:', result.errors);
-    }
-  } catch (error) {
-    console.error('Failed to send creator notification:', error);
-  }
-  }
-};
 const calculateDiscount = (totalCents: number, discountType, discountValue) => {
   let discountCents = 0;
 
@@ -403,15 +360,6 @@ export const redeemGiftCard = onCall(
       ...request.data,
     });
 
-    // Send creator notification outside the transaction
-    if (result.creatorUid && result.creatorCashback > 0) {
-      sendCreatorNotification(
-        result.creatorUid,
-        result.creatorCashback,
-        result.vendorName
-      ).catch((err) => console.error('Creator notification failed:', err));
-    }
-
     return result;
   }
 );
@@ -427,15 +375,6 @@ export const redeemOffer = onCall(
       type: 'offer',
       ...request.data,
     });
-
-    // Send creator notification outside the transaction
-    if (result.creatorUid && result.creatorCashback > 0) {
-      sendCreatorNotification(
-        result.creatorUid,
-        result.creatorCashback,
-        result.vendorName
-      ).catch((err) => console.error('Creator notification failed:', err));
-    }
 
     return result;
   }
@@ -825,191 +764,6 @@ export const verifyOtp = onCall(
     return { success: true, customToken };
   }
 );
-/**
- * =============================
- * Topic Subscription (Callable)
- * =============================
- */
-export const subscribeToTopic = onCall(
-  async (request: CallableRequest) => {
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'Login required');
-    }
-
-    const { token, topic } = request.data;
-
-    if (!token || !topic) {
-      throw new HttpsError('invalid-argument', 'Token and topic are required');
-    }
-
-    try {
-      const result = await admin.messaging().subscribeToTopic(token, topic);
-      console.log('Subscribe result:', JSON.stringify(result));
-      return { success: true };
-    } catch (error) {
-      console.error('Error subscribing to topic:', error);
-      throw new HttpsError('internal', 'Failed to subscribe to topic');
-    }
-  }
-);
-
-export const unsubscribeFromTopic = onCall(
-  async (request: CallableRequest) => {
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'Login required');
-    }
-
-    const { token, topic } = request.data;
-
-    if (!token || !topic) {
-      throw new HttpsError('invalid-argument', 'Token and topic are required');
-    }
-
-    try {
-      await admin.messaging().unsubscribeFromTopic(token, topic);
-      return { success: true };
-    } catch (error) {
-      console.error('Error unsubscribing from topic:', error);
-      throw new HttpsError('internal', 'Failed to unsubscribe from topic');
-    }
-  }
-);
-
-/**
- * =============================
- * Admin Send Notification via Topic (Callable)
- * =============================
- */
-export const sendNotification = onCall(
-  async (request: CallableRequest) => {
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'Login required');
-    }
-
-    // Verify admin role via custom claim or Firestore admin field
-    const isCustomAdmin = request.auth.token.admin === true;
-    let isFirestoreAdmin = false;
-    if (!isCustomAdmin) {
-      const adminDoc = await db.collection('students').doc(request.auth.uid).get();
-      isFirestoreAdmin = adminDoc.exists && adminDoc.data()?.admin === true;
-    }
-    if (!isCustomAdmin && !isFirestoreAdmin) {
-      throw new HttpsError('permission-denied', 'Admin access required');
-    }
-
-    const { title, body, imageUrl, topic } = request.data;
-
-    if (!title || !body) {
-      throw new HttpsError('invalid-argument', 'Title and body are required');
-    }
-
-    const targetTopic = topic || 'all-users';
-
-    try {
-      const messageId = await admin.messaging().send({
-        topic: targetTopic,
-        notification: {
-          title,
-          body,
-        },
-        data: {
-          type: 'admin_broadcast',
-        },
-        android: {
-          notification: {
-            channelId: 'reelx_general',
-          },
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: 'default',
-            },
-          },
-        },
-      });
-
-      await db.collection('notifications').add({
-        title,
-        body,
-        imageUrl: imageUrl || null,
-        topic: targetTopic,
-        sentBy: request.auth.uid,
-        sentAt: admin.firestore.FieldValue.serverTimestamp(),
-        messageId,
-      });
-
-      return { success: true, messageId };
-    } catch (error) {
-      console.error('Error sending topic notification:', error);
-      throw new HttpsError('internal', 'Failed to send notification');
-    }
-  }
-);
-
-/**
- * =============================
- * Admin Broadcast Notification via Topic (Firestore Trigger)
- * =============================
- */
-export const sendAdminNotification = onDocumentCreated(
-  {
-    document: 'notifications/{notificationId}',
-    region: 'me-central1',
-  },
-  async (event) => {
-    const snap = event.data;
-    if (!snap) return;
-
-    const notification = snap.data();
-    if (!notification || notification.status !== 'pending') return;
-
-    await snap.ref.update({ status: 'sending' });
-
-    try {
-      const targetTopic = notification.topic || 'all-users';
-
-      const messageId = await admin.messaging().send({
-        topic: targetTopic,
-        notification: {
-          title: notification.title,
-          body: notification.body,
-        },
-        data: {
-          type: 'admin_broadcast',
-          notificationId: snap.id,
-        },
-        android: {
-          notification: {
-            channelId: 'reelx_general',
-          },
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: 'default',
-            },
-          },
-        },
-      });
-
-      await snap.ref.update({
-        status: 'completed',
-        messageId,
-        completedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-    } catch (error: unknown) {
-      console.error('Error sending broadcast notification:', error);
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      await snap.ref.update({
-        status: 'failed',
-        error: message,
-        completedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-    }
-  }
-);
-
 /**
  * =============================
  * Student ID Verification

@@ -14,17 +14,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { initI18n } from '../src/localization/i18n';
 import { applyRTL } from '../src/localization/rtl';
 import {
-  registerPushToken,
-  onTokenRefreshListener,
-  setupForegroundMessageHandler,
   setupNotificationChannels,
-  registerBackgroundHandler,
-  setupNotificationResponseListener,
 } from '../utils/notifications';
 import CustomSplash from './splash'; // adjust path if needed
-
-// Register background message handler at module level (required by Firebase)
-registerBackgroundHandler();
 
 
 
@@ -94,25 +86,12 @@ export default function RootLayout() {
     }
   }, [user]);
 
-  // Set up push notifications when user is authenticated with a profile
+  // Set up local notification channels when user is authenticated with a profile
   useEffect(() => {
     if (user && hasProfile === true) {
       setupNotificationChannels();
-      registerPushToken();
-      const unsubscribe = onTokenRefreshListener();
-      return () => unsubscribe();
     }
   }, [user, hasProfile]);
-
-  // Set up foreground message handler (always active)
-  useEffect(() => {
-    const unsubscribeForeground = setupForegroundMessageHandler();
-    const unsubscribeResponse = setupNotificationResponseListener();
-    return () => {
-      unsubscribeForeground();
-      unsubscribeResponse();
-    };
-  }, []);
 
 useEffect(() => {
   if (

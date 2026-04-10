@@ -193,8 +193,8 @@ const sendCreatorCodeUsedPush = async ({
   const payload = await response.json();
   const ticketErrors = Array.isArray(payload?.data)
     ? payload.data
-        .map((ticket, index) => ({ ticket, index }))
-        .filter(({ ticket }) => ticket?.status === 'error')
+      .map((ticket, index) => ({ ticket, index }))
+      .filter(({ ticket }) => ticket?.status === 'error')
     : [];
 
   if (ticketErrors.length === 0) return;

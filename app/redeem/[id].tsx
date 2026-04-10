@@ -251,7 +251,7 @@ export default function RedeemScreen() {
         const currency = t('currency_qar');
 
         return (
-            <View style={styles.successContainer}>
+            <SafeAreaView style={styles.successContainer}>
                 <StatusBar barStyle="light-content" />
 
                 {/* Close Button */}
@@ -265,62 +265,65 @@ export default function RedeemScreen() {
                     <Ionicons name="close" size={22} color="#666" />
                 </TouchableOpacity>
 
-                {/* Success Card */}
-                <View style={styles.successCard}>
-                    {/* Vendor Logo */}
-                    <View style={styles.successLogoContainer}>
-                        <Image
-                            source={{ uri: vendor.profilePicture }}
-                            style={styles.successLogoImage}
-                            contentFit="contain"
-                        />
-                    </View>
+                <View style={styles.successPillWrapper}>
+                    {/* Top Pill — Vendor + Title */}
+                    <View style={styles.successTopPill}>
+                        {/* Vendor Logo */}
+                        <View style={styles.successLogoContainer}>
+                            <Image
+                                source={{ uri: vendor.profilePicture }}
+                                style={styles.successLogoImage}
+                                contentFit="contain"
+                            />
+                        </View>
 
-                    {/* Title */}
-                    <Text style={styles.successTitle}>{t('redemption_title_line')}</Text>
-                    <PhonkText style={styles.successTitleGreen}>{t('redemption_successful_exclaim')}</PhonkText>
+                        {/* Title */}
+                        <Text style={styles.successTitle}>{t('redemption_title_line')}</Text>
+                        <PhonkText style={styles.successTitleGreen}>{t('redemption_successful_exclaim')}</PhonkText>
 
-                    {/* Discount Badge */}
-                    <View style={styles.successBadge}>
-                        <Text style={styles.successBadgeText}>
-                            {t('flat_off_prefix')}{offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}{t('flat_off_suffix')}
-                        </Text>
-                    </View>
-
-                    {/* You Saved Badge */}
-                    <View style={styles.successSavedBadge}>
-                        <Ionicons name="pricetag" size={16} color="#FFF" />
-                        <Text style={styles.successSavedText}>
-                            {t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}
-                        </Text>
-                    </View>
-
-                    {/* Amount to Pay */}
-                    <View style={styles.successPayBadge}>
-                        <Ionicons name="card" size={16} color="#000" />
-                        <Text style={styles.successPayText}>
-                            {t('amount_to_pay_label')}: {currency} {redemptionResult.finalAmount.toFixed(2)}
-                        </Text>
-                    </View>
-
-                    {/* Cashback Badge (only if > 0) */}
-                    {redemptionResult.cashbackAmount > 0 && (
-                        <View style={styles.successSavedBadge}>
-                            <Ionicons name="wallet" size={16} color="#FFF" />
-                            <Text style={styles.successSavedText}>
-                                {t('cashback_earned_success_message', { currency, amount: earnedStr })}
+                        {/* Discount Badge */}
+                        <View style={styles.successBadge}>
+                            <Text style={styles.successBadgeText}>
+                                {t('flat_off_prefix')}{offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}{t('flat_off_suffix')}
                             </Text>
                         </View>
-                    )}
+                    </View>
 
-                    {/* Creator credit */}
-                    {redemptionResult.creatorName && redemptionResult.cashbackAmount > 0 && (
-                        <Text style={styles.successCreatorText}>
-                            {t('thanks_to_creator', { creator: redemptionResult.creatorName })}
-                        </Text>
-                    )}
+                    {/* Bottom Pill — Breakdown */}
+                    <View style={styles.successBottomPill}>
+                        {/* You Saved */}
+                        <View style={styles.successSavedRow}>
+                            <Ionicons name="pricetag" size={18} color={Colors.brandGreen} />
+                            <Text style={styles.successSavedLabel}>{t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}</Text>
+                        </View>
+
+                        {/* Amount to Pay */}
+                        <View style={styles.successPayRow}>
+                            <Ionicons name="card" size={18} color="#000" />
+                            <Text style={styles.successPayLabel}>
+                                {t('amount_to_pay_label')}: {currency} {redemptionResult.finalAmount.toFixed(2)}
+                            </Text>
+                        </View>
+
+                        {/* Cashback (only if > 0) */}
+                        {redemptionResult.cashbackAmount > 0 && (
+                            <View style={styles.successCashbackRow}>
+                                <Ionicons name="wallet" size={18} color="#FF9800" />
+                                <Text style={styles.successCashbackLabel}>
+                                    {t('cashback_earned_success_message', { currency, amount: earnedStr })}
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Creator credit */}
+                        {redemptionResult.creatorName && redemptionResult.cashbackAmount > 0 && (
+                            <Text style={styles.successCreatorText}>
+                                {t('thanks_to_creator', { creator: redemptionResult.creatorName })}
+                            </Text>
+                        )}
+                    </View>
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
@@ -826,29 +829,36 @@ const styles = StyleSheet.create({
     successContainer: {
         flex: 1,
         backgroundColor: Colors.brandGreen,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
     },
     successCloseButton: {
         position: 'absolute',
-        top: 60,
+        top: 80,
         right: 24,
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#FFF',
+        backgroundColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 10,
     },
-    successCard: {
+    successPillWrapper: {
+        flex: 1,
+        justifyContent: 'center',
+        paddingHorizontal: 30,
+    },
+    successTopPill: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 35,
-        paddingVertical: 40,
-        paddingHorizontal: 28,
+        borderRadius: 30,
+        paddingVertical: 24,
+        paddingHorizontal: 24,
         alignItems: 'center',
-        width: '100%',
+    },
+    successBottomPill: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 30,
+        paddingVertical: 24,
+        paddingHorizontal: 24,
     },
     successLogoContainer: {
         width: 80,
@@ -857,49 +867,73 @@ const styles = StyleSheet.create({
         backgroundColor: '#1E2a38',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
     },
     successLogoImage: {
         width: '60%',
         height: '60%',
     },
     successTitle: {
-        fontSize: 28,
+        fontSize: 26,
         color: '#000',
         fontFamily: Typography.poppins.semiBold,
         textAlign: 'center',
     },
     successTitleGreen: {
-        fontSize: 28,
+        fontSize: 26,
         color: Colors.brandGreen,
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
     },
     successBadge: {
         backgroundColor: Colors.brandGreen,
         borderRadius: 30,
         paddingVertical: 10,
         paddingHorizontal: 24,
-        marginBottom: 20,
     },
     successBadgeText: {
         color: '#FFF',
         fontSize: 16,
         fontFamily: Typography.poppins.semiBold,
     },
-    successSavedBadge: {
+    successSavedRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.brandGreen,
-        borderRadius: 30,
+        justifyContent: 'center',
+        gap: 10,
         paddingVertical: 10,
-        paddingHorizontal: 20,
-        marginBottom: 10,
-        gap: 8,
     },
-    successSavedText: {
-        color: '#FFF',
-        fontSize: 14,
+    successSavedLabel: {
+        fontSize: 15,
+        color: Colors.brandGreen,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    successPayRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#E8E8E8',
+    },
+    successPayLabel: {
+        fontSize: 15,
+        color: '#000',
+        fontFamily: Typography.poppins.semiBold,
+    },
+    successCashbackRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#E8E8E8',
+    },
+    successCashbackLabel: {
+        fontSize: 15,
+        color: '#FF9800',
         fontFamily: Typography.poppins.semiBold,
     },
     successCreatorText: {
@@ -907,21 +941,6 @@ const styles = StyleSheet.create({
         color: '#999',
         fontFamily: Typography.poppins.medium,
         textAlign: 'center',
-        marginTop: 12,
-    },
-    successPayBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F0F0F0',
-        borderRadius: 30,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        marginBottom: 10,
-        gap: 8,
-    },
-    successPayText: {
-        color: '#000',
-        fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        marginTop: 8,
     },
 });

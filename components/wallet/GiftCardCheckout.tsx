@@ -636,8 +636,7 @@ const styles = StyleSheet.create({
     successPillWrapper: {
         flex: 1,
         justifyContent: 'center',
-        paddingHorizontal: 30,
-        gap: 12,
+        paddingHorizontal: 30
     },
     successTopPill: {
         backgroundColor: '#FFFFFF',

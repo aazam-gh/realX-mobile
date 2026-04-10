@@ -10,6 +10,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TextInput,
@@ -48,6 +49,7 @@ export default function GiftCardCheckout({
     const [pin, setPin] = useState('');
     const [totalBill, setTotalBill] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
     const pinInputRef = useRef<TextInput>(null);
 
     const totalBillNum = parseFloat(totalBill) || 0;
@@ -96,19 +98,7 @@ export default function GiftCardCheckout({
                 'reelx_redemptions'
             );
 
-            Alert.alert(
-                t('redemption_success_title'),
-                t('redemption_success_message', {
-                    currency,
-                    amount: selectedAmount.toFixed(2),
-                }),
-                [
-                    {
-                        text: t('done'),
-                        onPress: () => onSuccess?.(),
-                    },
-                ]
-            );
+            setShowSuccess(true);
         } catch (error: any) {
             console.error('Gift card redemption error:', error);
             Alert.alert(
@@ -119,6 +109,72 @@ export default function GiftCardCheckout({
             setIsRedeeming(false);
         }
     };
+
+    // Success Screen
+    if (showSuccess) {
+        const savedStr = Math.min(selectedAmount, totalBillNum).toFixed(2);
+
+        return (
+            <View style={styles.successContainer}>
+                <StatusBar barStyle="light-content" />
+
+                {/* Close Button */}
+                <TouchableOpacity
+                    style={styles.successCloseButton}
+                    onPress={() => {
+                        triggerSubtleHaptic();
+                        onSuccess?.();
+                    }}
+                >
+                    <Ionicons name="close" size={22} color="#666" />
+                </TouchableOpacity>
+
+                <View style={styles.successPillWrapper}>
+                    {/* Top Pill — Brand + Title */}
+                    <View style={styles.successTopPill}>
+                        {/* Brand Logo */}
+                        <View style={[styles.successLogoContainer, { backgroundColor: brand.backgroundColor || '#1E2A38' }]}>
+                            {brand.logo ? (
+                                <Image source={{ uri: brand.logo }} style={styles.successLogoImage} contentFit="contain" />
+                            ) : (
+                                <Text style={styles.successLogoPlaceholder}>{brand.name.charAt(0)}</Text>
+                            )}
+                        </View>
+
+                        {/* Title */}
+                        <Text style={styles.successTitle}>{t('redemption_title_line')}</Text>
+                        <PhonkText style={styles.successTitleGreen}>{t('redemption_successful_exclaim')}</PhonkText>
+
+                        {/* Gift Card Amount Badge */}
+                        <View style={styles.successBadge}>
+                            <Text style={styles.successBadgeText}>
+                                {currency} {selectedAmount.toFixed(2)} {t('gift_card_text')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Bottom Pill — Breakdown */}
+                    <View style={styles.successBottomPill}>
+                        {/* You Saved */}
+                        <View style={styles.successSavedRow}>
+                            <Ionicons name="pricetag" size={18} color={Colors.brandGreen} />
+                            <Text style={styles.successSavedLabel}>
+                                {t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}
+                            </Text>
+                        </View>
+
+                        {/* Amount to Pay */}
+                        <View style={styles.successPayRow}>
+                            <Ionicons name="card" size={18} color="#000" />
+                            <Text style={styles.successPayLabel}>
+                                {t('amount_to_pay_label')}: {currency} {remainingAmount.toFixed(2)}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <KeyboardAvoidingView
@@ -556,5 +612,108 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 22,
         letterSpacing: 1,
+    },
+    // Success Screen Styles
+    successContainer: {
+        flex: 1,
+        backgroundColor: Colors.brandGreen,
+    },
+    successCloseButton: {
+        position: 'absolute',
+        top: 80,
+        right: 24,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    successPillWrapper: {
+        flex: 1,
+        justifyContent: 'center',
+        paddingHorizontal: 30,
+        gap: 12,
+    },
+    successTopPill: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 30,
+        paddingVertical: 24,
+        paddingHorizontal: 24,
+        alignItems: 'center',
+    },
+    successBottomPill: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 30,
+        paddingVertical: 24,
+        paddingHorizontal: 24,
+    },
+    successLogoContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+        overflow: 'hidden',
+    },
+    successLogoImage: {
+        width: '60%',
+        height: '60%',
+    },
+    successLogoPlaceholder: {
+        fontSize: 32,
+        fontFamily: Typography.poppins.semiBold,
+        color: '#FFFFFF',
+    },
+    successTitle: {
+        fontSize: 26,
+        color: '#000',
+        fontFamily: Typography.poppins.semiBold,
+        textAlign: 'center',
+    },
+    successTitleGreen: {
+        fontSize: 26,
+        color: Colors.brandGreen,
+        textAlign: 'center',
+        marginBottom: 16,
+    },
+    successBadge: {
+        backgroundColor: Colors.brandGreen,
+        borderRadius: 30,
+        paddingVertical: 10,
+        paddingHorizontal: 24,
+    },
+    successBadgeText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    successSavedRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        paddingVertical: 10,
+    },
+    successSavedLabel: {
+        fontSize: 15,
+        color: Colors.brandGreen,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    successPayRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#E8E8E8',
+    },
+    successPayLabel: {
+        fontSize: 15,
+        color: '#000',
+        fontFamily: Typography.poppins.semiBold,
     },
 });

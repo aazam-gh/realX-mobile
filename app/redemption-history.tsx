@@ -131,16 +131,17 @@ export default function RedemptionHistoryScreen() {
 
   const renderItem = ({ item }: { item: Transaction }) => {
     const logoUri = vendorLogos[item.vendorId];
-    const savings = (item.offerAmount || 0) - (item.paidAmount || 0);
-    const paid = item.paidAmount || 0;
+    const savings = item.discountAmount || 0;
+    const paid = item.finalAmount || 0;
 
     const discountText =
       item.offer?.discountType && item.offer?.discountValue
         ? `${item.offer.discountValue}${item.offer.discountType === 'percentage' ? '%' : ''} OFF`
         : t('offer_redeemed_label');
 
-    const dateStr = item.timestamp
-      ? new Date(item.timestamp).toLocaleDateString(isArabic ? 'ar-QA' : 'en-US', {
+    const dateValue = item.createdAt?.toDate ? item.createdAt.toDate() : item.createdAt;
+    const dateStr = dateValue
+      ? new Date(dateValue).toLocaleDateString(isArabic ? 'ar-QA' : 'en-US', {
           day: 'numeric',
           month: 'short',
           year: 'numeric',

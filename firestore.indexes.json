@@ -26,6 +26,14 @@
       ]
     },
     {
+      "collectionGroup": "vendors",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "geohash", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "verification_requests",
       "queryScope": "COLLECTION",
       "fields": [

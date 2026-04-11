@@ -162,9 +162,27 @@ export default function VendorScreen() {
 
                     <View style={styles.metaRow}>
                         <TouchableOpacity style={styles.locationButton} onPress={() => {
+                            const lat = vendor?.lat;
+                            const lng = vendor?.lng;
+
+                            if (typeof lat === 'number' && typeof lng === 'number') {
+                                const rawLabel = isArabic ? (vendor.nameAr || vendor.name || 'Vendor') : (vendor.name || vendor.nameAr || 'Vendor');
+                                const label = encodeURIComponent(rawLabel);
+                                const appleMapsUrl = `http://maps.apple.com/?ll=${lat},${lng}&q=${label}`;
+                                const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+                                Linking.openURL(appleMapsUrl).catch(() => {
+                                    Linking.openURL(googleMapsUrl).catch(() => {
+                                        const fallback = encodeURIComponent(`${rawLabel} Qatar`);
+                                        void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${fallback}`);
+                                    });
+                                });
+                                return;
+                            }
+
                             const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
                             const query = encodeURIComponent(vendorName + " Qatar");
-                            Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
+                            void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
                         }} activeOpacity={0.7}>
                             <Ionicons name="location-outline" size={18} color={Colors.brandGreen} />
                             <Text style={[styles.locationText, { fontFamily: Typography.poppins.medium }]}>{t('location')}</Text>

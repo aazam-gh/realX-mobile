@@ -1,3 +1,4 @@
+import 'react-native-reanimated';
 import '@react-native-firebase/app';
 import {
   getAuth,

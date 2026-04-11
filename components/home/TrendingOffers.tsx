@@ -141,7 +141,6 @@ export default function TrendingOffers() {
                             id={offer.id}
                             name={name}
                             cashbackText={cashbackText}
-                            discountText={discountText}
                             isTrending={offer.isTrending}
                             isTopRated={offer.isTopRated}
                             imageUri={offer.coverImage || offer.bannerImage}

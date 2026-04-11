@@ -16,7 +16,8 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "associatedDomains": [],
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "realX uses your location to show nearby vendors and discounts on the map."
       },
       "appleTeamId": "2396PCT42P"
     },
@@ -31,7 +32,11 @@
         "monochromeImage": "./assets/images/icon.png"
       },
       "intentFilters": [],
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -55,6 +60,12 @@
         }
       ],
       "expo-notifications",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow location access to show nearby vendors"
+        }
+      ],
       [
         "react-native-bottom-tabs"
       ],

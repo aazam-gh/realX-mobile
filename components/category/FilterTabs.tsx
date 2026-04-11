@@ -1,10 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { Dimensions, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 
-// Assuming these exist in your project, otherwise replace with hex strings
 const BRAND_GREEN = '#18B852';
 const BG_LIGHT = '#F5F5F5';
 
@@ -22,7 +22,6 @@ interface FilterTabsProps {
 
 export default function FilterTabs({ selectedFilter, onFilterChange, filters }: FilterTabsProps) {
     const { t } = useTranslation();
-    const isRTL = I18nManager.isRTL;
 
     const currentFilters = filters || [
         { id: 'all', label: t('filter_all'), icon: 'apps-outline' },
@@ -30,57 +29,37 @@ export default function FilterTabs({ selectedFilter, onFilterChange, filters }: 
         { id: 'trending', label: t('filter_top'), icon: 'flame' },
     ];
 
-    const containerWidth = Dimensions.get('window').width - 40; // Adjust based on your padding
+    const containerWidth = Dimensions.get('window').width - 40;
     const tabWidth = containerWidth / currentFilters.length;
 
-    // Initial position based on selectedFilter
     const initialIndex = currentFilters.findIndex(f => f.id === selectedFilter);
-    // If we want to keep positions SAME (All on left), then for RTL we need to handle the mirroring.
-    // In LTR: tab 0 is at 0.
-    // In RTL: tab 0 is at 0 (which is right side), so we want it to be at 'tabWidth * (length - 1)'? 
-    // Wait, the simplest way is to disable RTL mirroring for the container and children.
-    
-    const translateX = useRef(new Animated.Value(initialIndex !== -1 ? initialIndex * tabWidth : 0)).current;
-    const opacity = useRef(new Animated.Value(selectedFilter ? 1 : 0)).current;
+    const translateX = useSharedValue(initialIndex !== -1 ? initialIndex * tabWidth : 0);
+    const opacity = useSharedValue(selectedFilter ? 1 : 0);
 
     useEffect(() => {
         const index = currentFilters.findIndex(f => f.id === selectedFilter);
         const hasSelection = index !== -1;
 
         if (hasSelection) {
-            Animated.parallel([
-                Animated.spring(translateX, {
-                    toValue: index * tabWidth,
-                    useNativeDriver: true,
-                    bounciness: 4,
-                }),
-                Animated.timing(opacity, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                })
-            ]).start();
+            translateX.value = withSpring(index * tabWidth, { damping: 15, stiffness: 150 });
+            opacity.value = withTiming(1, { duration: 200 });
         } else {
-            Animated.timing(opacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
+            opacity.value = withTiming(0, { duration: 200 });
         }
-    }, [selectedFilter, currentFilters, tabWidth, translateX, opacity]);
+    }, [selectedFilter, currentFilters, tabWidth]);
+
+    const sliderStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: translateX.value }],
+        opacity: opacity.value,
+    }));
 
     return (
         <View style={styles.outerContainer}>
             <View style={styles.container}>
-                {/* Sliding Background */}
                 <Animated.View
-                    style={[
-                        styles.slider,
-                        { width: tabWidth, transform: [{ translateX }], opacity }
-                    ]}
+                    style={[styles.slider, { width: tabWidth }, sliderStyle]}
                 />
 
-                {/* Content Overlay */}
                 {currentFilters.map((filter) => {
                     const isSelected = selectedFilter === filter.id;
 

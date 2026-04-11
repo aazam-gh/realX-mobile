@@ -30,6 +30,18 @@ export default function TabLayout() {
             }}
         />,
         <Tabs.Screen
+            key="map"
+            name="map"
+            options={{
+                title: t('map'),
+                headerShown: false,
+                tabBarIcon: (props: any) =>
+                    Platform.OS === 'ios'
+                        ? ({ sfSymbol: 'map.fill' } as any)
+                        : <Ionicons name={props.focused ? 'map' : 'map-outline'} size={24} color={props.color} />,
+            }}
+        />,
+        <Tabs.Screen
             key="wallet"
             name="wallet"
             options={{

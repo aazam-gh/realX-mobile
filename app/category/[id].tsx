@@ -222,7 +222,7 @@ export default function CategoryScreen() {
         if (!shouldRestoreScrollRef.current) return;
         shouldRestoreScrollRef.current = false;
         requestAnimationFrame(() => {
-            flashListRef.current?.scrollToOffset({ offset: scrollOffsetRef.current, animated: false });
+            flashListRef.current?.scrollToOffset({ offset: scrollOffsetRef.current, animated: true });
         });
     }, []);
 

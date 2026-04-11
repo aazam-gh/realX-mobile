@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
+import { getAuth, signInWithCustomToken } from '@react-native-firebase/auth';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useRef, useState } from 'react';
@@ -63,7 +64,14 @@ export default function LoginScreen() {
     try {
       const fnInstance = getFunctions(undefined, 'me-central1');
       const sendOtp = httpsCallable(fnInstance, 'sendOtp');
-      await sendOtp({ email: normalizedEmail, purpose: 'login' });
+      const result = await sendOtp({ email: normalizedEmail, purpose: 'login' });
+      const data = result.data as { success?: boolean; customToken?: string };
+
+      if (data.customToken) {
+        const authInstance = getAuth();
+        await signInWithCustomToken(authInstance, data.customToken);
+        return;
+      }
 
       router.replace({
         pathname: '/(onboarding)/verify',

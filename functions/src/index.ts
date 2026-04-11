@@ -20,6 +20,7 @@ function getResend(): Resend {
 }
 
 const db = admin.firestore();
+const REVIEW_EMAIL = (process.env.APPLE_REVIEW_EMAIL || '').toLowerCase().trim();
 
 /**
  * =============================
@@ -648,6 +649,35 @@ export const sendOtp = onCall(
       if (snapshot.empty) {
         throw new HttpsError('not-found', 'No account found with this email');
       }
+    }
+
+    // App Store Review Bypass
+    if (REVIEW_EMAIL && email === REVIEW_EMAIL && purpose === 'login') {
+      let uid: string;
+      try {
+        uid = (await admin.auth().getUserByEmail(email)).uid;
+      } catch {
+        uid = (await admin.auth().createUser({ email, emailVerified: true })).uid;
+      }
+
+      const studentRef = db.collection('students').doc(uid);
+      if (!(await studentRef.get()).exists) {
+        await studentRef.set({
+          email,
+          firstName: 'Apple',
+          lastName: 'Review',
+          dob: '2000-01-01',
+          gender: 'Male',
+          role: 'student',
+          cashback: 0,
+          uid,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      const customToken = await admin.auth().createCustomToken(uid);
+      return { success: true, customToken };
     }
 
     // Rate limiting

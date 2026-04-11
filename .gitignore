@@ -41,3 +41,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# sensitive files
+assets/adi-registration.properties
+reelx-backend-5bee361c4cbe.json

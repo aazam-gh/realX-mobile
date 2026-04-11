@@ -27,8 +27,14 @@ const REVIEW_EMAIL = (process.env.APPLE_REVIEW_EMAIL || '').toLowerCase().trim()
  * Utils
  * =============================
  */
-const generateCode = () =>
-  Math.random().toString(36).substring(2, 8).toUpperCase();
+const generateCode = () => {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const l1 = letters[Math.floor(Math.random() * 26)];
+  const l2 = letters[Math.floor(Math.random() * 26)];
+  const d1 = Math.floor(Math.random() * 10);
+  const d2 = Math.floor(Math.random() * 10);
+  return `${l1}${l2}${d1}${d2}`;
+};
 
 const toCents = (amount: number) => Math.round(amount * 100);
 const fromCents = (cents: number) => cents / 100;

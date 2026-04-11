@@ -200,6 +200,11 @@ export default function RedeemScreen() {
     const handleAction = () => {
         triggerSubtleHaptic();
         if (step === 'creator') {
+            const code = normalizeDigits(creatorCode).trim().toUpperCase();
+            if (code && !/^[A-Z]{2}[0-9]{2}$/.test(code)) {
+                Alert.alert(t('hold_on'), t('invalid_creator_code_format'));
+                return;
+            }
             setStep('pin');
             setTimeout(() => {
                 pinInputRef.current?.focus();
@@ -397,7 +402,7 @@ export default function RedeemScreen() {
                                             placeholder={t('creator_code_placeholder')}
                                             placeholderTextColor="#CCC"
                                             autoCapitalize="characters"
-                                            maxLength={6}
+                                            maxLength={4}
                                             returnKeyType="next"
                                             onSubmitEditing={handleAction}
                                             autoCorrect={false}
@@ -462,7 +467,7 @@ export default function RedeemScreen() {
                                                 const filtered = normalized.replace(/[^0-9.]/g, '');
                                                 // Ensure only one dot
                                                 const parts = filtered.split('.');
-                                                const integerPart = parts[0].slice(0, 3);
+                                                const integerPart = parts[0].slice(0, 4);
                                                 const decimalPart = parts.length > 1 ? `.${parts.slice(1).join('')}` : '';
                                                 const final = integerPart + decimalPart;
                                                 setAmount(final);

@@ -29,6 +29,7 @@ export default function TabLayout() {
                         : <Ionicons name={props.focused ? 'home' : 'home-outline'} size={24} color={props.color} />,
             }}
         />,
+        ...Platform.OS === 'ios' ? [
         <Tabs.Screen
             key="map"
             name="map"
@@ -40,7 +41,8 @@ export default function TabLayout() {
                         ? ({ sfSymbol: 'map.fill' } as any)
                         : <Ionicons name={props.focused ? 'map' : 'map-outline'} size={24} color={props.color} />,
             }}
-        />,
+        />
+        ] : [],
         <Tabs.Screen
             key="wallet"
             name="wallet"

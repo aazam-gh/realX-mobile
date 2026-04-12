@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '@react-native-firebase/auth';
+import { Platform } from 'react-native';
 import {
   collection,
   getDocs,
@@ -80,6 +81,11 @@ export default function MapScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const isArabic = i18n.language === 'ar';
+
+  if (Platform.OS === 'android') {
+    router.replace('/(tabs)');
+    return null;
+  }
 
   const mapRef = useRef<MapView>(null);
   const superclusterRef = useRef<Supercluster>(new Supercluster({ radius: 52, maxZoom: 14 }));

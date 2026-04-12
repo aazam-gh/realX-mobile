@@ -35,8 +35,10 @@ import {
 function clampRegion(region: Region): Region {
   const minLatDelta = 0.05;
   const minLngDelta = 0.05;
-  const latDelta = Math.max(region.latitudeDelta, minLatDelta);
-  const lngDelta = Math.max(region.longitudeDelta, minLngDelta);
+  const maxLatDelta = 0.5;   // prevents zooming too far out
+  const maxLngDelta = 0.5;
+  const latDelta = Math.min(Math.max(region.latitudeDelta, minLatDelta), maxLatDelta);
+  const lngDelta = Math.min(Math.max(region.longitudeDelta, minLngDelta), maxLngDelta);
 
   const halfLat = latDelta / 2;
   const halfLng = lngDelta / 2;
@@ -103,8 +105,8 @@ export default function MapScreen() {
   const [currentRegion, setCurrentRegion] = useState<Region>({
     latitude: DOHA_CENTER.latitude,
     longitude: DOHA_CENTER.longitude,
-    latitudeDelta: 0.6,
-    longitudeDelta: 0.6,
+    latitudeDelta: 0.08,
+    longitudeDelta: 0.08,
   });
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
@@ -452,8 +454,8 @@ export default function MapScreen() {
           initialRegion={{
             latitude: DOHA_CENTER.latitude,
             longitude: DOHA_CENTER.longitude,
-            latitudeDelta: 0.6,
-            longitudeDelta: 0.6,
+            latitudeDelta: 0.03,
+            longitudeDelta: 0.03,
           }}
           showsUserLocation={true}
           showsMyLocationButton={false}

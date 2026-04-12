@@ -39,7 +39,7 @@ export async function initI18n() {
 
   // eslint-disable-next-line import/no-named-as-default-member
   await i18next.use(initReactI18next).init({
-    compatibilityJSON: 'v3',
+    compatibilityJSON: 'v4',
     resources,
     lng: initialLanguage,
     fallbackLng: 'en',

@@ -10,6 +10,7 @@ type Props = {
   name: string;
   nameAr?: string;
   cashbackText?: string;
+  discountText?: string;
   isTrending?: boolean;
   isTopRated?: boolean;
   imageUri?: string;
@@ -23,6 +24,7 @@ export default function RestaurantCard({
   name,
   nameAr,
   cashbackText = '',
+  discountText = '',
   isTrending = false,
   isTopRated = false,
   imageUri,
@@ -104,12 +106,12 @@ export default function RestaurantCard({
           { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }
         ]} numberOfLines={1}>{isArabic ? (nameAr || name) : name}</Text>
 
-        {cashbackText ? (
+        {cashbackText || discountText ? (
           <Text style={[
             { color: '#666666', fontFamily: Typography.poppins.medium },
             styles.descriptionText,
             { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }
-          ]} numberOfLines={2}>{cashbackText}</Text>
+          ]} numberOfLines={2}>{discountText || cashbackText}</Text>
         ) : null}
       </View>
     </TouchableOpacity>

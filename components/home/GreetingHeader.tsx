@@ -12,7 +12,7 @@ const USER_NAME_PLACEHOLDER = '__USER_NAME__';
 export default function GreetingHeader({ userName }: Props) {
     const { t } = useTranslation();
     const isRTL = I18nManager.isRTL;
-    const textAlignStyle = { textAlign: isRTL ? 'right' : 'left' };
+    const textAlignStyle = { textAlign: (isRTL ? 'right' : 'left') as 'right' | 'left' };
     const rawGreeting = t('greeting_line', { name: USER_NAME_PLACEHOLDER });
     const [prefix, suffix] = rawGreeting.split(USER_NAME_PLACEHOLDER);
 

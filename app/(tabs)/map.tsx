@@ -8,7 +8,7 @@ import {
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import MapView, { Marker, Region } from 'react-native-maps';
-import Supercluster from 'supercluster';
+import Supercluster, { PointFeature, ClusterFeature } from 'supercluster';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -122,7 +122,7 @@ export default function MapScreen() {
   );
 
   // Build GeoJSON points from vendors and load into supercluster
-  const vendorPoints: ClusterPoint[] = useMemo(
+  const vendorPoints: PointFeature[] = useMemo(
     () =>
       vendors.map((vendor) => ({
         type: 'Feature' as const,
@@ -142,15 +142,21 @@ export default function MapScreen() {
 
   // Get clusters for current viewport
   const clusters = useMemo(() => {
-    superclusterRef.current.load(vendorPoints);
     const { longitudeDelta } = currentRegion;
-    const zoom = Math.round(Math.log2(360 / longitudeDelta));
+    const safeLongitudeDelta =
+      Number.isFinite(longitudeDelta) && longitudeDelta > 0 ? longitudeDelta : 0.05;
+    const zoom = Math.max(0, Math.round(Math.log2(360 / safeLongitudeDelta)));
     const bounds: [number, number, number, number] = [
       currentRegion.longitude - currentRegion.longitudeDelta / 2,
       currentRegion.latitude - currentRegion.latitudeDelta / 2,
       currentRegion.longitude + currentRegion.longitudeDelta / 2,
       currentRegion.latitude + currentRegion.latitudeDelta / 2,
     ];
+
+    // Load points before querying so supercluster has an initialized index.
+    superclusterRef.current.load(vendorPoints);
+
+    if (!vendorPoints.length) return [];
     return superclusterRef.current.getClusters(bounds, zoom);
   }, [currentRegion, vendorPoints]);
 
@@ -321,12 +327,12 @@ export default function MapScreen() {
     setVendors((previous) => sortVendorsByDistance(previous, userLocation));
   }, [userLocation]);
 
-  const handleClusterPress = (cluster: any) => {
+  const handleClusterPress = (cluster: ClusterFeature) => {
     const leaves = superclusterRef.current.getLeaves(cluster.properties.cluster_id, Infinity);
     if (!leaves.length) return;
 
     // Zoom to fit all children
-    const coords = leaves.map((l: any) => ({
+    const coords = leaves.map((l) => ({
       latitude: l.geometry.coordinates[1],
       longitude: l.geometry.coordinates[0],
     }));
@@ -405,17 +411,17 @@ export default function MapScreen() {
           showsMyLocationButton={false}
           onRegionChangeComplete={onRegionChangeComplete}
         >
-          {clusters.map((cluster: any) => {
+          {clusters.map((cluster) => {
             const [lng, lat] = cluster.geometry.coordinates;
-            const isCluster = cluster.properties.cluster;
-            const pointCount = cluster.properties.point_count || 0;
+            const isCluster = 'cluster' in cluster.properties && cluster.properties.cluster;
+            const pointCount = ('point_count' in cluster.properties && cluster.properties.point_count) || 0;
 
             if (isCluster) {
               return (
                 <Marker
                   key={`cluster-${cluster.id}`}
                   coordinate={{ latitude: lat, longitude: lng }}
-                  onPress={() => handleClusterPress(cluster)}
+                  onPress={() => handleClusterPress(cluster as ClusterFeature)}
                 >
                   <View style={[styles.clusterBubble, pointCount > 20 && styles.clusterBubbleLarge]}>
                     <Text style={styles.clusterText}>{pointCount}</Text>
@@ -424,12 +430,14 @@ export default function MapScreen() {
               );
             }
 
+            const vendorId = cluster.properties.id;
+
             return (
               <Marker
-                key={cluster.properties.id}
+                key={vendorId}
                 coordinate={{ latitude: lat, longitude: lng }}
                 onPress={() =>
-                  router.push({ pathname: '/vendor/[id]', params: { id: cluster.properties.id } })
+                  router.push({ pathname: '/vendor/[id]', params: { id: vendorId } })
                 }
               >
                 <View style={styles.vendorDot} />

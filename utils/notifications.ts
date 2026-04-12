@@ -2,7 +2,6 @@ import { Platform } from 'react-native';
 import {
   AndroidImportance,
   getPermissionsAsync,
-  presentNotificationAsync,
   requestPermissionsAsync,
   scheduleNotificationAsync,
   setNotificationChannelAsync,
@@ -14,6 +13,8 @@ setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -85,11 +86,14 @@ export const presentForegroundNotification = async (
 ) => {
   if (!title && !body) return;
 
-  await presentNotificationAsync({
-    title: title ?? 'realX',
-    body: body ?? '',
-    data: data ?? {},
-    sound: 'default',
-    ...(Platform.OS === 'android' ? { channelId: 'reelx_general' } : {}),
+  await scheduleNotificationAsync({
+    content: {
+      title: title ?? 'realX',
+      body: body ?? '',
+      data: data ?? {},
+      sound: 'default',
+      ...(Platform.OS === 'android' ? { channelId: 'reelx_general' } : {}),
+    },
+    trigger: null,
   });
 };

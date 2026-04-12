@@ -1,7 +1,5 @@
-import { getAuth } from '@react-native-firebase/auth';
-import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -17,30 +15,14 @@ import {
 
 import { Colors } from '../../constants/Colors';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import { useStudent } from '../../context/StudentContext';
 
 export default function HomeScreen() {
-  const [userName, setUserName] = useState<string>('');
+  const { studentData } = useStudent();
+  const userName = studentData?.firstName || '';
   const [searchQuery, setSearchQuery] = useState('');
   const { t } = useTranslation();
   const router = useRouter();
-
-  useEffect(() => {
-    const authInstance = getAuth();
-    const user = authInstance.currentUser;
-    if (!user) return;
-
-    const db = getFirestore();
-    const studentDocRef = doc(db, 'students', user.uid);
-
-    const unsubscribe = onSnapshot(studentDocRef, (docSnap) => {
-      if (docSnap && docSnap.exists()) {
-        const data = docSnap.data();
-        setUserName(data?.firstName || '');
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const handleSearch = useCallback(() => {
     const trimmed = searchQuery.trim();

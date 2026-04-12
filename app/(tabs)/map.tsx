@@ -3,8 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '@react-native-firebase/auth';
 import {
   collection,
-  doc,
-  getDoc,
   getDocs,
   getFirestore,
   query,
@@ -262,57 +260,67 @@ export default function MapScreen() {
       }
 
       const db = getFirestore();
-      const locationsRef = doc(db, 'maps', 'locations');
-      const locationsSnap = await getDoc(locationsRef);
-      const locationsData = locationsSnap.data() as Record<string, any> | undefined;
+      const mapsRef = collection(db, 'maps');
+      const mapsSnapshot = await getDocs(mapsRef);
 
-      if (!locationsData) {
-        console.warn('[Map] No data in maps/locations document');
+      if (mapsSnapshot.empty) {
+        console.warn('[Map] No documents found in maps collection');
         setVendors([]);
         setLoading(false);
         setSearchingNearby(false);
         return;
       }
 
-      const vendorKeys = Object.keys(locationsData);
-      console.log('[Map] Found', vendorKeys.length, 'vendors in maps/locations');
-
       const byId = new Map<string, VendorMapItem>();
-      vendorKeys.forEach((vendorId) => {
-        const data = locationsData[vendorId];
-        if (!data || typeof data !== 'object') return;
+      let totalVendors = 0;
 
-        // Handle string coordinates from Firestore
-        const rawLat = data?.latitude;
-        const rawLng = data?.longitude;
-        const latitude = typeof rawLat === 'string' ? parseFloat(rawLat) : rawLat;
-        const longitude = typeof rawLng === 'string' ? parseFloat(rawLng) : rawLng;
+      mapsSnapshot.docs.forEach((mapDoc) => {
+        if (!mapDoc.id.startsWith('locations')) return;
 
-        if (!isValidLatLng(latitude, longitude)) {
-          console.warn('[Map] Skipping', vendorId, '- invalid lat/lng:', rawLat, rawLng);
-          return;
-        }
-        if (!isInQatar(latitude, longitude)) {
-          console.warn('[Map] Skipping', vendorId, '- outside Qatar bounds:', latitude, longitude);
-          return;
-        }
+        const locationsData = mapDoc.data() as Record<string, any>;
+        if (!locationsData) return;
 
-        // Auto-generate geohash if missing
-        const geohash = (data?.geohash && typeof data.geohash === 'string')
-          ? data.geohash
-          : toGeohash(latitude, longitude, MAP_GEOHASH_PRECISION);
+        const vendorKeys = Object.keys(locationsData);
+        totalVendors += vendorKeys.length;
 
-        byId.set(vendorId, {
-          id: vendorId,
-          name: data?.vendorName,
-          nameAr: data?.vendorNameAr,
-          address: data?.address,
-          addressAr: data?.addressAr,
-          latitude,
-          longitude,
-          geohash,
+        vendorKeys.forEach((vendorId) => {
+          const data = locationsData[vendorId];
+          if (!data || typeof data !== 'object') return;
+
+          // Handle string coordinates from Firestore
+          const rawLat = data?.latitude;
+          const rawLng = data?.longitude;
+          const latitude = typeof rawLat === 'string' ? parseFloat(rawLat) : rawLat;
+          const longitude = typeof rawLng === 'string' ? parseFloat(rawLng) : rawLng;
+
+          if (!isValidLatLng(latitude, longitude)) {
+            console.warn('[Map] Skipping', vendorId, '- invalid lat/lng:', rawLat, rawLng);
+            return;
+          }
+          if (!isInQatar(latitude, longitude)) {
+            console.warn('[Map] Skipping', vendorId, '- outside Qatar bounds:', latitude, longitude);
+            return;
+          }
+
+          // Auto-generate geohash if missing
+          const geohash = (data?.geohash && typeof data.geohash === 'string')
+            ? data.geohash
+            : toGeohash(latitude, longitude, MAP_GEOHASH_PRECISION);
+
+          byId.set(vendorId, {
+            id: vendorId,
+            name: data?.vendorName,
+            nameAr: data?.vendorNameAr,
+            address: data?.address,
+            addressAr: data?.addressAr,
+            latitude,
+            longitude,
+            geohash,
+          });
         });
       });
+
+      console.log('[Map] Found', totalVendors, 'vendor entries across', mapsSnapshot.docs.length, 'documents, parsed', byId.size, 'valid vendors');
 
       // Merge new vendors into in-memory cache
       byId.forEach((v, id) => vendorCacheRef.current.set(id, v));

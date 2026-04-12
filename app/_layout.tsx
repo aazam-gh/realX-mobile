@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
   type FirebaseAuthTypes
 } from '@react-native-firebase/auth';
-import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
+import { StudentProvider, useStudent } from '../context/StudentContext';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -20,7 +20,7 @@ import {
   setupNotificationChannels,
 } from '../utils/notifications';
 import { syncExpoPushTokenForUser } from '../utils/pushNotifications';
-import CustomSplash from './splash'; // adjust path if needed
+import CustomSplash from './splash';
 
 
 
@@ -37,10 +37,7 @@ export default function RootLayout() {
   const [i18nReady, setI18nReady] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
-  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
-  const [appReady, setAppReady] = useState(false);
-  const router = useRouter();
-  const segments = useSegments();
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     const setupLocalization = async () => {
@@ -65,32 +62,55 @@ export default function RootLayout() {
     return subscriber;
   }, []);
 
+  return (
+    <SafeAreaProvider>
+      <StudentProvider>
+        <LayoutContent
+          user={user}
+          loaded={loaded}
+          error={error}
+          i18nReady={i18nReady}
+          initializing={initializing}
+          showSplash={showSplash}
+          onSplashFinish={() => setShowSplash(false)}
+        />
+      </StudentProvider>
+    </SafeAreaProvider>
+  );
+}
+
+function LayoutContent({
+  user,
+  loaded,
+  error,
+  i18nReady,
+  initializing,
+  showSplash,
+  onSplashFinish,
+}: {
+  user: FirebaseAuthTypes.User | null;
+  loaded: boolean;
+  error: Error | null;
+  i18nReady: boolean;
+  initializing: boolean;
+  showSplash: boolean;
+  onSplashFinish: () => void;
+}) {
+  const { docExists: hasProfile } = useStudent();
+  const router = useRouter();
+  const segments = useSegments();
+  const [appReady, setAppReady] = useState(false);
+
   useEffect(() => {
-    if (user) {
-      const db = getFirestore();
-      const studentDocRef = doc(db, 'students', user.uid);
-
-      const unsubscribe = onSnapshot(
-        studentDocRef,
-        async (docSnap) => {
-          if (docSnap.exists()) {
-            setHasProfile(true);
-          } else {
-            // Profile not found by UID
-            setHasProfile(false);
-          }
-        },
-        (snapshotError) => {
-          console.error('Error fetching student profile:', snapshotError);
-          setHasProfile(false);
-        }
-      );
-
-      return () => unsubscribe();
-    } else {
-      setHasProfile(null);
+    if (
+      i18nReady &&
+      (loaded || error) &&
+      !initializing &&
+      (user === null || hasProfile !== null)
+    ) {
+      setAppReady(true);
     }
-  }, [user]);
+  }, [i18nReady, loaded, error, initializing, user, hasProfile]);
 
   // Set up local notification channels when user is authenticated with a profile
   useEffect(() => {
@@ -121,17 +141,6 @@ export default function RootLayout() {
       cancelled = true;
     };
   }, [user, hasProfile]);
-
-useEffect(() => {
-  if (
-    i18nReady &&
-    (loaded || error) &&
-    !initializing &&
-    (user === null || hasProfile !== null)
-  ) {
-    setAppReady(true);
-  }
-}, [i18nReady, loaded, error, initializing, user, hasProfile]);
 
   useEffect(() => {
     if (initializing || !loaded || !i18nReady) return;
@@ -170,32 +179,28 @@ useEffect(() => {
     return () => subscription.remove();
   }, [router]);
 
-const [showSplash, setShowSplash] = useState(true);
-
-if (!appReady || showSplash) {
-  return (
-    <CustomSplash
-      onFinish={() => setShowSplash(false)}
-    />
-  );
-}
+  if (!appReady || showSplash) {
+    return (
+      <CustomSplash
+        onFinish={onSplashFinish}
+      />
+    );
+  }
 
   return (
-    <SafeAreaProvider>
-      <Stack>
-        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="category" options={{ headerShown: false }} />
-        <Stack.Screen name="search" options={{ headerShown: false }} />
-        <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="redemption-history" options={{ headerShown: false }} />
-        <Stack.Screen name="profile-details" options={{ headerShown: false }} />
-        <Stack.Screen name="terms" options={{ headerShown: false }} />
-        <Stack.Screen name="privacy" options={{ headerShown: false }} />
-        <Stack.Screen name="x-academy" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
-      </Stack>
-    </SafeAreaProvider>
+    <Stack>
+      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="category" options={{ headerShown: false }} />
+      <Stack.Screen name="search" options={{ headerShown: false }} />
+      <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="redemption-history" options={{ headerShown: false }} />
+      <Stack.Screen name="profile-details" options={{ headerShown: false }} />
+      <Stack.Screen name="terms" options={{ headerShown: false }} />
+      <Stack.Screen name="privacy" options={{ headerShown: false }} />
+      <Stack.Screen name="x-academy" options={{ headerShown: false }} />
+      <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
+    </Stack>
   );
 }

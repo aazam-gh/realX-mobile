@@ -656,6 +656,8 @@ export const checkStudentExists = onCall(
       );
     }
 
+    await checkAccountRateLimit(`check_student_${email}`);
+
     const snapshot = await db
       .collection('students')
       .where('email', '==', email)
@@ -673,6 +675,8 @@ export const checkStudentExistsLogin = onCall(
     if (!email) {
       throw new HttpsError('invalid-argument', 'Email required');
     }
+
+    await checkAccountRateLimit(`check_login_${email}`);
 
     const snapshot = await db
       .collection('students')
@@ -694,6 +698,53 @@ const MAX_OTP_SENDS_PER_WINDOW = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const COOLDOWN_MS = 60 * 1000; // 60 seconds
 const MAX_VERIFY_ATTEMPTS = 3;
+
+/**
+ * =============================
+ * Account Check Rate Limiting
+ * =============================
+ */
+const ACCOUNT_CHECK_RATE_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_ACCOUNT_CHECKS_PER_WINDOW = 20;
+
+async function checkAccountRateLimit(key: string): Promise<void> {
+  const now = admin.firestore.Timestamp.now();
+  const rateRef = db.collection('rate_limits').doc(key);
+  const rateDoc = await rateRef.get();
+
+  if (rateDoc.exists) {
+    const data = rateDoc.data();
+    const windowStart = data?.windowStart?.toMillis() ?? 0;
+    const windowAge = now.toMillis() - windowStart;
+
+    if (windowAge < ACCOUNT_CHECK_RATE_LIMIT_MS) {
+      const checkCount = data?.checkCount ?? 0;
+      if (checkCount >= MAX_ACCOUNT_CHECKS_PER_WINDOW) {
+        throw new HttpsError(
+          'resource-exhausted',
+          'Too many requests. Please try again later.'
+        );
+      }
+    }
+  }
+
+  // Update rate limit counter
+  let checkCount = 1;
+  let windowStart = now;
+
+  if (rateDoc.exists) {
+    const data = rateDoc.data();
+    const existingWindowStart = data?.windowStart?.toMillis() ?? 0;
+    const windowAge = now.toMillis() - existingWindowStart;
+
+    if (windowAge < ACCOUNT_CHECK_RATE_LIMIT_MS) {
+      checkCount = (data?.checkCount ?? 0) + 1;
+      windowStart = data?.windowStart ?? now;
+    }
+  }
+
+  await rateRef.set({ checkCount, windowStart });
+}
 
 /**
  * =============================

@@ -1,6 +1,4 @@
-import { getAuth } from '@react-native-firebase/auth';
-import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -12,41 +10,17 @@ import {
   XCard,
   XCardHeader,
 } from '../../components/wallet';
+import { useStudent } from '../../context/StudentContext';
 
 export default function WalletScreen() {
   const insets = useSafeAreaInsets();
-  const [isHelpDrawerVisible, setIsHelpDrawerVisible] = useState(false);
-  const [isSpendDrawerVisible, setIsSpendDrawerVisible] = useState(false);
-  const [balance, setBalance] = useState(0);
-  const [creatorCode, setCreatorCode] = useState<string | undefined>(undefined);
+  const { studentData } = useStudent();
+  const balance = typeof studentData?.cashback === 'number' ? studentData.cashback : 0;
+  const creatorCode = studentData?.creatorCode;
   const currency = 'QAR';
 
-  useEffect(() => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const db = getFirestore();
-    const studentRef = doc(db, 'students', user.uid);
-
-    const unsubscribe = onSnapshot(
-      studentRef,
-      (docSnap) => {
-        if (docSnap && docSnap.exists()) {
-          const data = docSnap.data();
-          if (data) {
-            setBalance(typeof data.cashback === 'number' ? data.cashback : 0);
-            setCreatorCode(data.creatorCode);
-          }
-        }
-      },
-      (error) => {
-        console.warn('Wallet snapshot error:', error);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
+  const [isHelpDrawerVisible, setIsHelpDrawerVisible] = useState(false);
+  const [isSpendDrawerVisible, setIsSpendDrawerVisible] = useState(false);
 
   const handleSpendPress = () => {
     setIsSpendDrawerVisible(true);

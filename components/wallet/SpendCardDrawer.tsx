@@ -1,7 +1,7 @@
-import { collection, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore';
+import { collection, getDocs, getFirestore, limit, orderBy, query, startAfter, where } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     I18nManager,
@@ -85,47 +85,86 @@ export default function SpendCardDrawer({
     balance,
     currency,
 }: Props) {
+    const PAGE_SIZE = 10;
     const insets = useSafeAreaInsets();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
     const [brands, setBrands] = useState<BrandItem[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const lastDocRef = useRef<any>(null);
+    const [isListEnd, setIsListEnd] = useState(false);
     const { t } = useTranslation();
     const isRTL = I18nManager.isRTL;
 
-    useEffect(() => {
-        if (!visible) return;
+    const fetchBrands = useCallback(async (isNew: boolean) => {
+        if (loading || (loadingMore && !isNew) || (isListEnd && !isNew)) return;
 
-        const fetchBrands = async () => {
+        if (isNew) {
             setLoading(true);
-            try {
-                const db = getFirestore();
-                const q = query(
-                    collection(db, 'vendors'),
-                    where('xcard', '==', true)
-                );
-                const snapshot = await getDocs(q);
+            lastDocRef.current = null;
+            setIsListEnd(false);
+        } else {
+            setLoadingMore(true);
+        }
 
-                const items: BrandItem[] = snapshot.docs.map((doc: any) => {
-                    const data = doc.data();
-                    return {
-                        id: doc.id,
-                        name: data.name || 'Unknown',
-                        logo: data.profilePicture || data.logoUrl || data.imageUrl || null,
-                        backgroundColor: '#F0F0F0',
-                        loyalty: data.loyalty || [],
-                    };
-                });
+        try {
+            const db = getFirestore();
+            const constraints: any[] = [
+                where('xcard', '==', true),
+                orderBy('name', 'asc'),
+            ];
 
-                setBrands(items);
-            } catch (error) {
-                console.error('Error fetching vendors for XCard:', error);
-            } finally {
-                setLoading(false);
+            let q;
+            if (isNew || !lastDocRef.current) {
+                q = query(collection(db, 'vendors'), ...constraints, limit(PAGE_SIZE) as any);
+            } else {
+                q = query(collection(db, 'vendors'), ...constraints, startAfter(lastDocRef.current) as any, limit(PAGE_SIZE) as any);
             }
-        };
 
-        fetchBrands();
+            const snapshot = await getDocs(q);
+
+            const items: BrandItem[] = snapshot.docs.map((doc: any) => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    name: data.name || 'Unknown',
+                    logo: data.profilePicture || data.logoUrl || data.imageUrl || null,
+                    backgroundColor: '#F0F0F0',
+                    loyalty: data.loyalty || [],
+                };
+            });
+
+            if (isNew) {
+                setBrands(items);
+            } else {
+                setBrands(prev => [...prev, ...items]);
+            }
+
+            if (snapshot.docs.length > 0) {
+                lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
+                setIsListEnd(snapshot.docs.length < PAGE_SIZE);
+            } else {
+                setIsListEnd(true);
+            }
+        } catch (error) {
+            console.error('Error fetching vendors for XCard:', error);
+        } finally {
+            setLoading(false);
+            setLoadingMore(false);
+        }
+    }, [loading, loadingMore, isListEnd]);
+
+    const fetchBrandsRef = useRef(fetchBrands);
+    useEffect(() => { fetchBrandsRef.current = fetchBrands; }, [fetchBrands]);
+
+    useEffect(() => {
+        if (visible) {
+            setBrands([]);
+            setSearchQuery('');
+            setSelectedBrandId(null);
+            fetchBrandsRef.current(true);
+        }
     }, [visible]);
 
     const filteredBrands = brands.filter((brand) =>
@@ -215,6 +254,15 @@ export default function SpendCardDrawer({
                                     { paddingBottom: insets.bottom + 20 },
                                 ]}
                                 showsVerticalScrollIndicator={false}
+                                onEndReached={() => {
+                                    if (!loadingMore && !isListEnd) {
+                                        fetchBrands(false);
+                                    }
+                                }}
+                                onEndReachedThreshold={0.5}
+                                ListFooterComponent={loadingMore ? (
+                                    <ActivityIndicator size="small" color={Colors.brandGreen} style={{ paddingVertical: 16 }} />
+                                ) : null}
                             />
                         )}
                     </>

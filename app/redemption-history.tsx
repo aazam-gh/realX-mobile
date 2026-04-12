@@ -101,14 +101,16 @@ export default function RedemptionHistoryScreen() {
           setTransactions(fetchedTransactions);
         }
 
-        // Fetch vendor details (for logos)
+        // Fetch vendor details (for logos) in parallel
         const logos: Record<string, string> = {};
-        for (const vendorId of Array.from(uniqueVendorIds)) {
-          const vSnap = await getDoc(doc(db, 'vendors', vendorId));
-          if (vSnap.exists()) {
-            logos[vendorId] = vSnap.data()?.profilePicture || '';
-          }
-        }
+        await Promise.all(
+          Array.from(uniqueVendorIds).map(async (vendorId) => {
+            const vSnap = await getDoc(doc(db, 'vendors', vendorId));
+            if (vSnap.exists()) {
+              logos[vendorId] = vSnap.data()?.profilePicture || '';
+            }
+          })
+        );
 
         if (isMounted) {
           setVendorLogos(logos);

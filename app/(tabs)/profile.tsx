@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { getAuth, signOut } from '@react-native-firebase/auth';
-import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
+import { signOut } from '@react-native-firebase/auth';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, I18nManager, ImageBackground, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,38 +13,13 @@ import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import i18n, { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
+import { useStudent } from '../../context/StudentContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const isRTL = I18nManager.isRTL;
-
-  const [userData, setUserData] = useState<{
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    photoURL?: string;
-    role?: string;
-    creatorCode?: string;
-    savings?: number;
-  } | null>(null);
-
-  useEffect(() => {
-    const authInstance = getAuth();
-    const user = authInstance.currentUser;
-    if (!user) return;
-
-    const db = getFirestore();
-    const studentDocRef = doc(db, 'students', user.uid);
-
-    const unsubscribe = onSnapshot(studentDocRef, (docSnap) => {
-      if (docSnap && docSnap.exists()) {
-        setUserData(docSnap.data() as any);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const { studentData: userData } = useStudent();
 
   const changeLanguage = async (language: 'en' | 'ar') => {
     if (i18n.language === language) {

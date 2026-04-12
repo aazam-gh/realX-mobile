@@ -36,7 +36,23 @@ export default function RecentRedemptions() {
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
             const db = getFirestore();
-            const formattedData: RedemptionData[] = await Promise.all(snapshot.docs.map(async (snapshotDoc: any) => {
+
+            // Deduplicate vendor IDs and batch fetch
+            const vendorIds = [...new Set(snapshot.docs.map((d: any) => d.data()?.vendorId).filter(Boolean))];
+            const vendorMap = new Map<string, any>();
+
+            await Promise.all(vendorIds.map(async (vid: string) => {
+                try {
+                    const vDoc = await getDoc(doc(db, 'vendors', vid));
+                    if (vDoc.exists()) {
+                        vendorMap.set(vid, vDoc.data());
+                    }
+                } catch (e) {
+                    console.warn(`Error fetching vendor ${vid}:`, e);
+                }
+            }));
+
+            const formattedData: RedemptionData[] = snapshot.docs.map((snapshotDoc: any) => {
                 const data = snapshotDoc.data();
 
                 let dateStr = '';
@@ -51,18 +67,11 @@ export default function RecentRedemptions() {
                 let logoUrl = null;
                 let vendorDocNameAr = null;
                 let vendorDocName = null;
-                if (data.vendorId) {
-                    try {
-                        const vendorDoc = await getDoc(doc(db, 'vendors', data.vendorId));
-                        if (vendorDoc.exists()) {
-                            const vendorData = vendorDoc.data();
-                            logoUrl = vendorData?.profilePicture || vendorData?.logoUrl || vendorData?.imageUrl || null;
-                            vendorDocNameAr = vendorData?.nameAr || vendorData?.vendorNameAr || null;
-                            vendorDocName = vendorData?.name || vendorData?.vendorName || null;
-                        }
-                    } catch (error) {
-                        console.warn(`Error fetching vendor logo for ${data.vendorId}:`, error);
-                    }
+                const vendorData = data.vendorId ? vendorMap.get(data.vendorId) : null;
+                if (vendorData) {
+                    logoUrl = vendorData?.profilePicture || vendorData?.logoUrl || vendorData?.imageUrl || null;
+                    vendorDocNameAr = vendorData?.nameAr || vendorData?.vendorNameAr || null;
+                    vendorDocName = vendorData?.name || vendorData?.vendorName || null;
                 }
 
                 const vendorNameFallback = data.vendorName || t('unknown_vendor');
@@ -85,7 +94,7 @@ export default function RecentRedemptions() {
                     logoBackgroundColor: color,
                     logoUrl: logoUrl,
                 };
-            }));
+            });
 
             setRedemptions(formattedData);
             setLoading(false);

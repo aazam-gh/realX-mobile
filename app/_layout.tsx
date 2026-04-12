@@ -5,8 +5,9 @@ import {
   onAuthStateChanged,
   type FirebaseAuthTypes
 } from '@react-native-firebase/auth';
-import { doc, getDoc, getFirestore, onSnapshot, setDoc } from '@react-native-firebase/firestore';
+import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 import { useFonts } from 'expo-font';
+import * as Notifications from 'expo-notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
@@ -17,7 +18,7 @@ import { applyRTL } from '../src/localization/rtl';
 import {
   setupNotificationChannels,
 } from '../utils/notifications';
-import { registerForExpoPushNotificationsAsync } from '../utils/pushNotifications';
+import { syncExpoPushTokenForUser } from '../utils/pushNotifications';
 import CustomSplash from './splash'; // adjust path if needed
 
 
@@ -102,25 +103,10 @@ export default function RootLayout() {
 
     const registerToken = async () => {
       try {
-        const token = await registerForExpoPushNotificationsAsync();
-        if (!token || cancelled) return;
-
-        const db = getFirestore();
-        const studentDocRef = doc(db, 'students', user.uid);
-        const currentDoc = await getDoc(studentDocRef);
-
-        // Prefer array storage so a single creator can receive notifications on multiple devices.
-        const existingTokens = ((currentDoc.data()?.expoPushTokens || currentDoc.data()?.pushTokens || []) as string[]);
-        if (existingTokens.includes(token)) return;
-
-        await setDoc(
-          studentDocRef,
-          {
-            expoPushTokens: [...existingTokens, token],
-            updatedAt: new Date(),
-          },
-          { merge: true }
-        );
+        if (cancelled) return;
+        await user.getIdToken();
+        if (cancelled) return;
+        await syncExpoPushTokenForUser(user.uid);
       } catch (error) {
         console.error('Error registering push token:', error);
       }
@@ -167,6 +153,19 @@ useEffect(() => {
       }
     }
   }, [user, initializing, loaded, i18nReady, segments, hasProfile, router]);
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as { path?: unknown } | undefined;
+      const path = data?.path;
+
+      if (typeof path === 'string' && path.startsWith('/')) {
+        router.push(path as any);
+      }
+    });
+
+    return () => subscription.remove();
+  }, [router]);
 
 const [showSplash, setShowSplash] = useState(true);
 

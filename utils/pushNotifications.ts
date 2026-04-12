@@ -1,6 +1,9 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+import { getAuth } from '@react-native-firebase/auth';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 
 export const getExpoProjectId = () => {
   return (
@@ -37,4 +40,74 @@ export const registerForExpoPushNotificationsAsync = async () => {
 
   const token = await Notifications.getExpoPushTokenAsync({ projectId });
   return token.data;
+};
+
+const registerPushTokenViaCallable = async (token: string) => {
+  const regions = ['me-central1', 'us-central1'] as const;
+  let lastError: unknown;
+
+  for (const region of regions) {
+    try {
+      const functions = getFunctions(undefined, region);
+      const registerPushToken = httpsCallable(functions, 'registerPushToken');
+      await registerPushToken({
+        token,
+        platform: Platform.OS,
+      });
+      return;
+    } catch (error: any) {
+      lastError = error;
+      const code = String(error?.code || '').toLowerCase();
+      const message = String(error?.message || '').toLowerCase();
+      const isNotFound = code.includes('not-found') || message.includes('not found');
+
+      if (!isNotFound) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+};
+
+const isUnauthenticatedError = (error: unknown) => {
+  const code = String((error as any)?.code || '').toLowerCase();
+  const message = String((error as any)?.message || '').toLowerCase();
+  return code.includes('unauthenticated') || message.includes('unauthenticated');
+};
+
+export const syncExpoPushTokenForUser = async (uid: string) => {
+  const token = await registerForExpoPushNotificationsAsync();
+  if (!token) return null;
+
+  try {
+    await registerPushTokenViaCallable(token);
+  } catch (error) {
+    if (isUnauthenticatedError(error)) {
+      try {
+        const currentUser = getAuth().currentUser;
+        if (!currentUser) {
+          throw error;
+        }
+
+        await currentUser.getIdToken(true);
+        await registerPushTokenViaCallable(token);
+        return token;
+      } catch (retryError) {
+        console.warn('registerPushToken callable retry failed after token refresh', {
+          uid,
+          error: retryError,
+        });
+        return null;
+      }
+    }
+
+    console.warn('registerPushToken callable failed; token was not synced', {
+      uid,
+      error,
+    });
+    return null;
+  }
+
+  return token;
 };

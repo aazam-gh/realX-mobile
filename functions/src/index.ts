@@ -1229,3 +1229,51 @@ export const reviewVerificationRequest = onCall(
     return { success: true };
   }
 );
+
+export const registerPushToken = onCall(
+  async (request: CallableRequest) => {
+    const { auth, data } = request;
+
+    if (!auth) {
+      throw new HttpsError('unauthenticated', 'User not authenticated');
+    }
+
+    const token = data?.token;
+    const platform = data?.platform;
+
+    if (!token || typeof token !== 'string') {
+      throw new HttpsError('invalid-argument', 'token is required');
+    }
+
+    if (!token.startsWith('ExponentPushToken[') && !token.startsWith('ExpoPushToken[')) {
+      throw new HttpsError('invalid-argument', 'Invalid Expo push token');
+    }
+
+    const pushTokensRef = db.collection('pushTokens');
+
+    const existing = await pushTokensRef
+      .where('token', '==', token)
+      .limit(1)
+      .get();
+
+    if (!existing.empty) {
+      await existing.docs[0].ref.update({
+        userId: auth.uid,
+        platform: typeof platform === 'string' ? platform : null,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { success: true, action: 'updated' };
+    }
+
+    await pushTokensRef.add({
+      token,
+      userId: auth.uid,
+      platform: typeof platform === 'string' ? platform : null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log('Push token registered', { userId: auth.uid });
+    return { success: true, action: 'created' };
+  }
+);

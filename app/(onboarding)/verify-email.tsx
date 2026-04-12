@@ -36,7 +36,7 @@ const normalizeEmail = (email: string): string => {
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
-  useLocalSearchParams<{ mode?: string }>();
+  const { mode, role } = useLocalSearchParams<{ mode?: string; role?: string }>();
   const { t } = useTranslation();
   const isRTL = I18nManager.isRTL;
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
@@ -62,7 +62,7 @@ export default function VerifyEmailScreen() {
 
       router.replace({
         pathname: '/(onboarding)/verify',
-        params: { email: normalizedEmail, purpose: 'verification' },
+        params: { email: normalizedEmail, purpose: 'verification', role },
       });
     } catch (err: any) {
       console.error(err);

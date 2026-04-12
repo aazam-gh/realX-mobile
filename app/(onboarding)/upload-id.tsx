@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
@@ -29,6 +29,7 @@ export default function UploadIdScreen() {
   const { t } = useTranslation();
   const isRTL = I18nManager.isRTL;
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
+  const { role } = useLocalSearchParams<{ role?: string }>();
 
   const [frontImage, setFrontImage] = useState<{ uri: string; base64: string } | null>(null);
   const [backImage, setBackImage] = useState<{ uri: string; base64: string } | null>(null);
@@ -71,7 +72,7 @@ export default function UploadIdScreen() {
       setVerificationImages(frontImage.base64, backImage.base64);
       router.push({
         pathname: '/(onboarding)/verify-email',
-        params: { mode: 'verification' },
+        params: { mode: 'verification', role },
       } as any);
     } catch (err: any) {
       Alert.alert(t('error'), err.message || t('onboarding_generic_error_message'));

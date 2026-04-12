@@ -159,7 +159,7 @@ export default function EmailOnboarding() {
               </View>
 
               <Text style={styles.infoText}>{t('onboarding_email_description')}</Text>
-              <TouchableOpacity onPress={() => router.push('/(onboarding)/upload-id' as any)} style={styles.linkButton}>
+              <TouchableOpacity onPress={() => router.push({ pathname: '/(onboarding)/upload-id', params: { role } } as any)} style={styles.linkButton}>
                 <Text style={styles.linkText}>{t('onboarding_no_edu_email_link')}</Text>
               </TouchableOpacity>
             </View>

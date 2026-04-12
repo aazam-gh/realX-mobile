@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   type FirebaseAuthTypes
 } from '@react-native-firebase/auth';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { StudentProvider, useStudent } from '../context/StudentContext';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
@@ -160,7 +161,28 @@ function LayoutContent({
       } else if (hasProfile === false) {
         const currentPath = segments.join('/');
         if (!currentPath.includes('details')) {
-          router.replace('/(onboarding)/details' as any);
+          // Fetch role from verification request for users who came through ID verification
+          const fetchRoleAndNavigate = async () => {
+            let role: string | undefined;
+            try {
+              if (user.email) {
+                const fnInstance = getFunctions(undefined, 'me-central1');
+                const checkStatus = httpsCallable(fnInstance, 'checkVerificationStatus');
+                const result = await checkStatus({ email: user.email });
+                const data = result.data as { status: string; role?: string };
+                if (data.status !== 'none') {
+                  role = data.role;
+                }
+              }
+            } catch {
+              // Fall through with no role — details.tsx defaults to 'student'
+            }
+            router.replace({
+              pathname: '/(onboarding)/details',
+              params: role ? { role } : undefined,
+            } as any);
+          };
+          fetchRoleAndNavigate();
         }
       }
     }

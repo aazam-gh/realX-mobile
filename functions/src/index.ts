@@ -1052,7 +1052,9 @@ const VERIFICATION_RATE_LIMIT_MS = 60 * 60 * 1000; // 1 hour
 
 export const submitVerificationRequest = onCall(
   async (request: CallableRequest) => {
-    const { email, idFrontBase64, idBackBase64 } = request.data || {};
+    const { email, idFrontBase64, idBackBase64, role } = request.data || {};
+
+    const normalizedRole = ['student', 'creator'].includes(role) ? role : 'student';
 
     const normalizedEmail = email?.toLowerCase()?.trim();
     if (!normalizedEmail || !/^[^@]+@[^@]+\.[^@]+$/.test(normalizedEmail)) {
@@ -1119,7 +1121,7 @@ export const submitVerificationRequest = onCall(
     const requestId = requestRef.id;
 
     // Upload images to Firebase Storage
-    const bucket = admin.storage().bucket();
+    const bucket = admin.storage().bucket('reelx-backend');
     const frontPath = `verification_requests/${requestId}/front.jpg`;
     const backPath = `verification_requests/${requestId}/back.jpg`;
 
@@ -1132,6 +1134,7 @@ export const submitVerificationRequest = onCall(
     await requestRef.set({
       email: normalizedEmail,
       status: 'pending',
+      role: normalizedRole,
       idFrontPath: frontPath,
       idBackPath: backPath,
       submittedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1169,6 +1172,7 @@ export const checkVerificationStatus = onCall(
       status: data.status,
       requestId: snapshot.docs[0].id,
       rejectionReason: data.rejectionReason || null,
+      role: data.role || 'student',
     };
   }
 );
@@ -1190,7 +1194,7 @@ export const listPendingVerificationRequests = onCall(
       .orderBy('submittedAt', 'asc')
       .get();
 
-    const bucket = admin.storage().bucket();
+    const bucket = admin.storage().bucket('reelx-backend');
     const requests = [];
 
     for (const doc of snapshot.docs) {

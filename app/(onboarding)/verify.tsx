@@ -125,6 +125,7 @@ export default function VerifyOtpScreen() {
             email,
             idFrontBase64: images.frontBase64,
             idBackBase64: images.backBase64,
+            role: role || 'student',
           });
           clearVerificationImages();
           router.replace({

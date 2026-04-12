@@ -95,7 +95,7 @@ export default function RecentRedemptions() {
         });
 
         return () => unsubscribe();
-    }, [t]);
+    }, [t, isArabic]);
 
     const renderItem = ({ item }: { item: RedemptionData }) => (
         <RedemptionItem item={item} />

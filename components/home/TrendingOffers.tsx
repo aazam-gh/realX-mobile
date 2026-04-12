@@ -133,7 +133,8 @@ export default function TrendingOffers() {
                     const cashbackText = isRTL
                         ? (offer.shortDescriptionAr || offer.shortDescriptionAR || offer.descriptionAr || offer.brandDescription || '')
                         : (offer.shortDescription || offer.brandDescription || offer.descriptionEn || '');
-                    const discountText = `${offer.discountValue || ''}${offer.discountType === 'percentage' ? '%' : ''} OFF`;
+                    const _discountText = `${offer.discountValue || ''}${offer.discountType === 'percentage' ? '%' : ''} OFF`;
+                    void _discountText;
 
                     return (
                         <RestaurantCard

@@ -2,7 +2,7 @@ import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, Text, TextStyle, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
 import { triggerSubtleHaptic } from '../../utils/haptics';

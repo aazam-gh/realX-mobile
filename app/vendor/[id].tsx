@@ -83,7 +83,7 @@ export default function VendorScreen() {
         };
 
         fetchData();
-    }, [id]);
+    }, [id, isArabic]);
 
     if (loading) {
         return (

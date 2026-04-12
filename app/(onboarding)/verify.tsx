@@ -33,7 +33,8 @@ export default function VerifyOtpScreen() {
 
   const isRTL = I18nManager.isRTL;
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
-  const inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
+  const _inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
+  void _inputTextAlign;
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [isLoading, setIsLoading] = useState(false);
@@ -170,7 +171,7 @@ export default function VerifyOtpScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [otp, email, purpose, role, isLoading, router, t]);
+  }, [otp, email, purpose, role, isLoading, router, t, isOtpComplete]);
 
   const handleResend = async () => {
     if (cooldownSeconds > 0 || resendLoading || !email || !purpose) return;

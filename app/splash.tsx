@@ -29,7 +29,7 @@ export default function CustomSplash({ onFinish }: { onFinish: () => void }) {
     }
 
     start();
-  }, []);
+  }, [onFinish, opacity, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

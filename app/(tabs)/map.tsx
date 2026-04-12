@@ -57,7 +57,8 @@ function clampRegion(region: Region): Region {
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const MAP_GEOHASH_PRECISION = 5;
-const DEFAULT_ZOOM = 11.5;
+const _DEFAULT_ZOOM = 11.5;
+void _DEFAULT_ZOOM;
 
 type VendorMapItem = {
   id: string;
@@ -76,21 +77,6 @@ type RegionCachePayload = {
   vendors: VendorMapItem[];
 };
 
-type ClusterPoint = {
-  type: 'Feature';
-  properties: {
-    cluster: boolean;
-    id: string;
-    name?: string;
-    nameAr?: string;
-    vendorId?: string;
-    point_count?: number;
-  };
-  geometry: {
-    type: 'Point';
-    coordinates: [number, number];
-  };
-};
 
 export default function MapScreen() {
   const { t, i18n } = useTranslation();
@@ -111,7 +97,8 @@ export default function MapScreen() {
   });
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
-  const [searchingNearby, setSearchingNearby] = useState(false);
+  const [_searchingNearby, setSearchingNearby] = useState(false);
+  void _searchingNearby;
   const [searchQuery, setSearchQuery] = useState('');
   const [searchedVendorIds, setSearchedVendorIds] = useState<Set<string> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -446,10 +433,10 @@ export default function MapScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
 
-      <View style={styles.header}>
-        <PhonkText style={styles.headerTitle}>
-          <Text style={{ color: Colors.brandGreen }}>X </Text>
-          <Text style={{ color: Colors.light.text }}>MAP</Text>
+      <View style={[styles.header, isArabic && { alignItems: 'flex-start' }]}>
+        <PhonkText style={[styles.headerTitle]}>
+          <Text style={{ color: Colors.brandGreen }}>{isArabic ? 'إكس ' : 'X '}</Text>
+          <Text style={{ color: Colors.light.text }}>{isArabic ? 'الخريطة' : 'MAP'}</Text>
         </PhonkText>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.searchIcon} />
@@ -571,6 +558,7 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     backgroundColor: Colors.light.background,
+    flexDirection: 'column',
   },
   headerTitle: {
     fontSize: 28,

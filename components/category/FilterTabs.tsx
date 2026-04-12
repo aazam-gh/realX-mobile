@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useEffect, useMemo } from 'react';
 import { Dimensions, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 
@@ -23,11 +23,11 @@ interface FilterTabsProps {
 export default function FilterTabs({ selectedFilter, onFilterChange, filters }: FilterTabsProps) {
     const { t } = useTranslation();
 
-    const currentFilters = filters || [
+    const currentFilters = useMemo(() => filters || [
         { id: 'all', label: t('filter_all'), icon: 'apps-outline' },
         { id: 'cashbacks', label: t('filter_cash'), icon: 'cash-outline' },
         { id: 'trending', label: t('filter_top'), icon: 'flame' },
-    ];
+    ], [filters, t]);
 
     const containerWidth = Dimensions.get('window').width - 40;
     const tabWidth = containerWidth / currentFilters.length;
@@ -46,7 +46,7 @@ export default function FilterTabs({ selectedFilter, onFilterChange, filters }: 
         } else {
             opacity.value = withTiming(0, { duration: 200 });
         }
-    }, [selectedFilter, currentFilters, tabWidth]);
+    }, [selectedFilter, currentFilters, tabWidth, translateX, opacity]);
 
     const sliderStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: translateX.value }],

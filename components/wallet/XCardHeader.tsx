@@ -8,6 +8,7 @@ export default function XCardHeader() {
     return (
         <View style={styles.container}>
             <PhonkText style={styles.titleX}>{t('xcard_title_x')}</PhonkText>
+            
             <PhonkText style={styles.titleCard}>{t('xcard_title_card')}</PhonkText>
         </View>
     );

@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    I18nManager,
     Keyboard,
     KeyboardAvoidingView,
     Platform,

@@ -16,6 +16,7 @@
   "map_loading": "Loading map offers...",
   "map_refreshing": "Refreshing nearby offers...",
   "no_nearby_vendors": "No vendors found in this area.",
+  "no_search_results": "No results matched your search.",
   "map_load_error": "Couldn't load map vendors. Please try again.",
   "profile_details_title": "Profile Details",
   "save": "Save",

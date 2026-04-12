@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   collection,
   doc,
@@ -11,12 +11,12 @@ import {
 } from '@react-native-firebase/firestore';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import MapView, { Marker, Region } from 'react-native-maps';
-import Supercluster, { PointFeature, ClusterFeature } from 'supercluster';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import MapView, { Marker, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Supercluster, { ClusterFeature, PointFeature } from 'supercluster';
 import PhonkText from '../../components/PhonkText';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -27,10 +27,9 @@ import {
   isValidLatLng,
   LatLng,
   QATAR_BOUNDS,
-  radiusMetersForZoom,
   regionCacheKey,
   rememberRegionCacheKey,
-  toGeohash,
+  toGeohash
 } from '../../utils/mapGeo';
 
 function clampRegion(region: Region): Region {
@@ -112,32 +111,59 @@ export default function MapScreen() {
   const [searchingNearby, setSearchingNearby] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchedVendorIds, setSearchedVendorIds] = useState<Set<string> | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
+    let active = true;
     const trimmedQuery = searchQuery.trim().toLowerCase();
-    
+
     if (!trimmedQuery) {
       setSearchedVendorIds(null);
+      setIsSearching(false);
       return;
     }
-    
+
+    setIsSearching(true);
     const timer = setTimeout(async () => {
       try {
         const db = getFirestore();
         const vendorsRef = collection(db, 'vendors');
         const q = query(vendorsRef, where('searchTokens', 'array-contains', trimmedQuery));
         const snapshot = await getDocs(q);
-        
+
+        if (!active) return;
+
         const ids = new Set<string>();
-        snapshot.forEach(docSnap => ids.add(docSnap.id));
+        snapshot.forEach((docSnap: any) => ids.add(docSnap.id));
         setSearchedVendorIds(ids);
+
+        // Animate map to show results
+        if (ids.size > 0) {
+          const matchedCoords = vendors
+            .filter((v) => ids.has(v.id))
+            .map((v) => ({ latitude: v.latitude, longitude: v.longitude }));
+
+          if (matchedCoords.length > 0) {
+            mapRef.current?.fitToCoordinates(matchedCoords, {
+              edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
+              animated: true,
+            });
+          }
+        }
       } catch (err) {
         console.error('Error fetching vendors for map search:', err);
+      } finally {
+        if (active) {
+          setIsSearching(false);
+        }
       }
     }, 300);
-    
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, vendors]);
 
   // In-memory vendor cache — accumulates across fetches so panning back is instant
   const vendorCacheRef = useRef<Map<string, VendorMapItem>>(new Map());
@@ -154,6 +180,7 @@ export default function MapScreen() {
 
     return filteredVendors.map((vendor) => ({
       type: 'Feature' as const,
+      id: vendor.id,
       properties: {
         cluster: false,
         id: vendor.id,
@@ -256,39 +283,39 @@ export default function MapScreen() {
 
       const byId = new Map<string, VendorMapItem>();
       vendorKeys.forEach((vendorId) => {
-          const data = locationsData[vendorId];
-          if (!data || typeof data !== 'object') return;
+        const data = locationsData[vendorId];
+        if (!data || typeof data !== 'object') return;
 
-          // Handle string coordinates from Firestore
-          const rawLat = data?.latitude;
-          const rawLng = data?.longitude;
-          const latitude = typeof rawLat === 'string' ? parseFloat(rawLat) : rawLat;
-          const longitude = typeof rawLng === 'string' ? parseFloat(rawLng) : rawLng;
+        // Handle string coordinates from Firestore
+        const rawLat = data?.latitude;
+        const rawLng = data?.longitude;
+        const latitude = typeof rawLat === 'string' ? parseFloat(rawLat) : rawLat;
+        const longitude = typeof rawLng === 'string' ? parseFloat(rawLng) : rawLng;
 
-          if (!isValidLatLng(latitude, longitude)) {
-            console.warn('[Map] Skipping', vendorId, '- invalid lat/lng:', rawLat, rawLng);
-            return;
-          }
-          if (!isInQatar(latitude, longitude)) {
-            console.warn('[Map] Skipping', vendorId, '- outside Qatar bounds:', latitude, longitude);
-            return;
-          }
+        if (!isValidLatLng(latitude, longitude)) {
+          console.warn('[Map] Skipping', vendorId, '- invalid lat/lng:', rawLat, rawLng);
+          return;
+        }
+        if (!isInQatar(latitude, longitude)) {
+          console.warn('[Map] Skipping', vendorId, '- outside Qatar bounds:', latitude, longitude);
+          return;
+        }
 
-          // Auto-generate geohash if missing
-          const geohash = (data?.geohash && typeof data.geohash === 'string')
-            ? data.geohash
-            : toGeohash(latitude, longitude, MAP_GEOHASH_PRECISION);
+        // Auto-generate geohash if missing
+        const geohash = (data?.geohash && typeof data.geohash === 'string')
+          ? data.geohash
+          : toGeohash(latitude, longitude, MAP_GEOHASH_PRECISION);
 
-          byId.set(vendorId, {
-            id: vendorId,
-            name: data?.vendorName,
-            nameAr: data?.vendorNameAr,
-            address: data?.address,
-            addressAr: data?.addressAr,
-            latitude,
-            longitude,
-            geohash,
-          });
+        byId.set(vendorId, {
+          id: vendorId,
+          name: data?.vendorName,
+          nameAr: data?.vendorNameAr,
+          address: data?.address,
+          addressAr: data?.addressAr,
+          latitude,
+          longitude,
+          geohash,
+        });
       });
 
       // Merge new vendors into in-memory cache
@@ -408,7 +435,9 @@ export default function MapScreen() {
             onChangeText={setSearchQuery}
             returnKeyType="search"
           />
-          {searchQuery.length > 0 && (
+          {isSearching ? (
+            <ActivityIndicator size="small" color={Colors.brandGreen} />
+          ) : searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Ionicons name="close-circle" size={18} color="#AAA" />
             </TouchableOpacity>
@@ -434,11 +463,12 @@ export default function MapScreen() {
             const [lng, lat] = cluster.geometry.coordinates;
             const isCluster = 'cluster' in cluster.properties && cluster.properties.cluster;
             const pointCount = ('point_count' in cluster.properties && cluster.properties.point_count) || 0;
+            const clusterId = isCluster ? (cluster as any).id : (cluster as any).id || cluster.properties.id;
 
             if (isCluster) {
               return (
                 <Marker
-                  key={`cluster-${cluster.id}`}
+                  key={`cluster-${clusterId}`}
                   coordinate={{ latitude: lat, longitude: lng }}
                   onPress={() => handleClusterPress(cluster as ClusterFeature)}
                 >
@@ -476,6 +506,13 @@ export default function MapScreen() {
           </View>
         )}
 
+        {searchQuery.length > 0 && !isSearching && searchedVendorIds?.size === 0 && (
+          <View style={styles.overlayCard}>
+            <Ionicons name="search-outline" size={18} color={Colors.light.tabIconDefault} />
+            <Text style={styles.overlayText}>{t('no_search_results')}</Text>
+          </View>
+        )}
+
         {!loading && error && (
           <View style={styles.overlayError}>
             <Text style={styles.overlayErrorText}>{error}</Text>
@@ -506,20 +543,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    padding: 20,
     backgroundColor: Colors.light.background,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     color: Colors.light.text,
-    fontFamily: Typography.poppins.semiBold,
   },
   headerMeta: {
     marginTop: 4,
-    fontSize: 13,
     color: Colors.light.subtitle,
-    fontFamily: Typography.poppins.medium,
   },
   searchContainer: {
     flexDirection: 'row',

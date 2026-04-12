@@ -2,6 +2,7 @@ import 'react-native-reanimated';
 import '@react-native-firebase/app';
 import {
   getAuth,
+  getIdToken,
   onAuthStateChanged,
   type FirebaseAuthTypes
 } from '@react-native-firebase/auth';
@@ -104,7 +105,7 @@ export default function RootLayout() {
     const registerToken = async () => {
       try {
         if (cancelled) return;
-        await user.getIdToken();
+        await getIdToken(user);
         if (cancelled) return;
         await syncExpoPushTokenForUser(user.uid);
       } catch (error) {

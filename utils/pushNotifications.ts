@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { getAuth } from '@react-native-firebase/auth';
+import { getAuth, getIdToken } from '@react-native-firebase/auth';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 
 export const getExpoProjectId = () => {
@@ -90,7 +90,7 @@ export const syncExpoPushTokenForUser = async (uid: string) => {
           throw error;
         }
 
-        await currentUser.getIdToken(true);
+        await getIdToken(currentUser, true);
         await registerPushTokenViaCallable(token);
         return token;
       } catch (retryError) {

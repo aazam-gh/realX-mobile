@@ -197,7 +197,7 @@ const sendCreatorCodeUsedPush = async ({
     headers: {
       Accept: 'application/json',
       'Accept-Encoding': 'gzip, deflate',
-      'Content-Type': 'application/json',
+      'Content-type': 'application/json',
     },
     body: JSON.stringify(messages),
   });
@@ -1249,31 +1249,17 @@ export const registerPushToken = onCall(
       throw new HttpsError('invalid-argument', 'Invalid Expo push token');
     }
 
-    const pushTokensRef = db.collection('pushTokens');
+    // Use token as doc ID so duplicate writes are idempotent
+    const tokenDocRef = db.collection('pushTokens').doc(token);
 
-    const existing = await pushTokensRef
-      .where('token', '==', token)
-      .limit(1)
-      .get();
-
-    if (!existing.empty) {
-      await existing.docs[0].ref.update({
-        userId: auth.uid,
-        platform: typeof platform === 'string' ? platform : null,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      return { success: true, action: 'updated' };
-    }
-
-    await pushTokensRef.add({
+    await tokenDocRef.set({
       token,
       userId: auth.uid,
       platform: typeof platform === 'string' ? platform : null,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    }, { merge: true });
 
-    console.log('Push token registered', { userId: auth.uid });
-    return { success: true, action: 'created' };
+    return { success: true };
   }
 );

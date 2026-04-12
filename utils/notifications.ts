@@ -9,12 +9,18 @@ import {
 } from 'expo-notifications';
 
 setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async (notification) => {
+    // Remote push notifications are already displayed by the OS.
+    // Only show a banner for local notifications to avoid double-display.
+    const isRemote = notification.request.trigger?.type === 'push';
+
+    return {
+      shouldPlaySound: !isRemote,
+      shouldSetBadge: false,
+      shouldShowBanner: !isRemote,
+      shouldShowList: true,
+    };
+  },
 });
 
 /**

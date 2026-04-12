@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuth } from '@react-native-firebase/auth';
 import {
   collection,
   doc,
@@ -246,6 +247,12 @@ export default function MapScreen() {
   }, []);
 
   const fetchVendorsForVisibleRegion = useCallback(async (center: LatLng, zoom: number) => {
+    if (!getAuth().currentUser) {
+      console.warn('[Map] Skipping fetch — user not authenticated yet');
+      setLoading(false);
+      return;
+    }
+
     setSearchingNearby(true);
     setError(null);
 
@@ -368,14 +375,31 @@ export default function MapScreen() {
     []
   );
 
-  // Initial fetch on mount so vendors appear immediately
+  // Initial fetch on mount — wait for auth to be ready
   useEffect(() => {
     if (hasFetchedOnceRef.current) return;
-    hasFetchedOnceRef.current = true;
-    const zoom = Math.round(Math.log2(360 / 0.6));
-    const center = { latitude: DOHA_CENTER.latitude, longitude: DOHA_CENTER.longitude };
-    lastFetchedKeyRef.current = `${toGeohash(center.latitude, center.longitude, MAP_GEOHASH_PRECISION)}-${zoom}`;
-    void fetchVendorsForVisibleRegion(center, zoom);
+
+    const doFetch = () => {
+      if (!getAuth().currentUser) return false;
+      hasFetchedOnceRef.current = true;
+      const zoom = Math.round(Math.log2(360 / 0.6));
+      const center = { latitude: DOHA_CENTER.latitude, longitude: DOHA_CENTER.longitude };
+      lastFetchedKeyRef.current = `${toGeohash(center.latitude, center.longitude, MAP_GEOHASH_PRECISION)}-${zoom}`;
+      void fetchVendorsForVisibleRegion(center, zoom);
+      return true;
+    };
+
+    // Try immediately in case auth is already restored
+    if (doFetch()) return;
+
+    // Otherwise listen for auth readiness
+    const unsubscribe = getAuth().onAuthStateChanged((user) => {
+      if (user && !hasFetchedOnceRef.current) {
+        doFetch();
+        unsubscribe();
+      }
+    });
+    return unsubscribe;
   }, [fetchVendorsForVisibleRegion]);
 
   useEffect(() => {

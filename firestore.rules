@@ -88,6 +88,14 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/students/$(userId)).data.admin == true;
     }
 
+    // ─── maps collection ──────────────────────────────────────────────────
+    match /maps/{mapId} {
+      // Allow authenticated users to read map data
+      allow read: if request.auth != null;
+      // Only admin can write to maps
+      allow write: if request.auth != null && isAdmin(request.auth.uid);
+    }
+
     // ─── notifications collection ──────────────────────────────────────────
     match /notifications/{notificationId} {
       // Only admin can write notification records

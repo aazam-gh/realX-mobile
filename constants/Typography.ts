@@ -1,10 +1,14 @@
+import { I18nManager } from 'react-native';
+
+const isArabic = I18nManager.isRTL;
+
 export const Typography = {
     phonk: {
-        bold: 'Phonk',
+        bold: isArabic ? 'Noto' : 'Phonk',
     },
     poppins: {
-        medium: 'Poppins',
-        semiBold: 'Poppins',
+        medium: isArabic ? 'Tajawal' : 'Poppins',
+        semiBold: isArabic ? 'Tajawal' : 'Poppins',
     }
 };
 

@@ -84,7 +84,9 @@
         {
           "fonts": [
             "./assets/fonts/phonk.otf",
-            "./assets/fonts/poppins.ttf"
+            "./assets/fonts/poppins.ttf",
+            "./assets/fonts/tajawal-medium.ttf",
+            "./assets/fonts/noto.ttf"
           ]
         }
       ],

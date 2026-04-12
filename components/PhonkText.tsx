@@ -14,7 +14,7 @@ export default function PhonkText({ children, style, ...props }: TextProps) {
 
   const renderSymbolicText = (text: string) => {
     // Split by symbols but keep them in the array
-    const parts = text.split(/([^A-Za-z0-9\s])/g);
+    const parts = text.split(/([^A-Za-z0-9\s]+)/g);
     return parts.map((part, index) => {
       if (isSymbol(part)) {
         return (

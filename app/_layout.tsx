@@ -30,6 +30,8 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     Phonk: require('../assets/fonts/phonk.otf'),
     Poppins: require('../assets/fonts/poppins.ttf'),
+    Tajawal: require('../assets/fonts/tajawal-medium.ttf'),
+    Noto: require('../assets/fonts/noto.ttf'),
   });
 
   const [i18nReady, setI18nReady] = useState(false);

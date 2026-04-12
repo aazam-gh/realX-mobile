@@ -1,9 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import {
+  collection,
   doc,
   getDoc,
+  getDocs,
   getFirestore,
+  query,
+  where,
 } from '@react-native-firebase/firestore';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
@@ -52,7 +56,6 @@ function clampRegion(region: Region): Region {
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const MAP_GEOHASH_PRECISION = 5;
 const DEFAULT_ZOOM = 11.5;
-const NEARBY_DISTANCE_KM = 20;
 
 type VendorMapItem = {
   id: string;
@@ -108,6 +111,33 @@ export default function MapScreen() {
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
   const [searchingNearby, setSearchingNearby] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchedVendorIds, setSearchedVendorIds] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+    
+    if (!trimmedQuery) {
+      setSearchedVendorIds(null);
+      return;
+    }
+    
+    const timer = setTimeout(async () => {
+      try {
+        const db = getFirestore();
+        const vendorsRef = collection(db, 'vendors');
+        const q = query(vendorsRef, where('searchTokens', 'array-contains', trimmedQuery));
+        const snapshot = await getDocs(q);
+        
+        const ids = new Set<string>();
+        snapshot.forEach(docSnap => ids.add(docSnap.id));
+        setSearchedVendorIds(ids);
+      } catch (err) {
+        console.error('Error fetching vendors for map search:', err);
+      }
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // In-memory vendor cache — accumulates across fetches so panning back is instant
   const vendorCacheRef = useRef<Map<string, VendorMapItem>>(new Map());
@@ -115,30 +145,27 @@ export default function MapScreen() {
   const isClampingRef = useRef(false);
   const hasFetchedOnceRef = useRef(false);
 
-  const visibleCount = vendors.length;
-  const nearbyCount = useMemo(
-    () => vendors.filter((vendor) => (vendor.distanceKm ?? Number.POSITIVE_INFINITY) <= NEARBY_DISTANCE_KM).length,
-    [vendors]
-  );
-
   // Build GeoJSON points from vendors and load into supercluster
-  const vendorPoints: PointFeature[] = useMemo(
-    () =>
-      vendors.map((vendor) => ({
-        type: 'Feature' as const,
-        properties: {
-          cluster: false,
-          id: vendor.id,
-          name: vendor.name,
-          nameAr: vendor.nameAr,
-        },
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [vendor.longitude, vendor.latitude] as [number, number],
-        },
-      })),
-    [vendors]
-  );
+  const vendorPoints: PointFeature[] = useMemo(() => {
+    let filteredVendors = vendors;
+    if (searchedVendorIds) {
+      filteredVendors = vendors.filter((v) => searchedVendorIds.has(v.id));
+    }
+
+    return filteredVendors.map((vendor) => ({
+      type: 'Feature' as const,
+      properties: {
+        cluster: false,
+        id: vendor.id,
+        name: vendor.name,
+        nameAr: vendor.nameAr,
+      },
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [vendor.longitude, vendor.latitude] as [number, number],
+      },
+    }));
+  }, [vendors, searchedVendorIds]);
 
   // Get clusters for current viewport
   const clusters = useMemo(() => {
@@ -371,9 +398,6 @@ export default function MapScreen() {
           <Text style={{ color: Colors.brandGreen }}>X </Text>
           <Text style={{ color: Colors.light.text }}>MAP</Text>
         </PhonkText>
-        <Text style={styles.headerMeta}>
-          {locationEnabled ? t('nearby_count', { count: nearbyCount }) : t('visible_count', { count: visibleCount })}
-        </Text>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.searchIcon} />
           <TextInput
@@ -383,11 +407,6 @@ export default function MapScreen() {
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
-            onSubmitEditing={() => {
-              if (searchQuery.trim()) {
-                router.push({ pathname: '/search', params: { q: searchQuery.trim() } });
-              }
-            }}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -460,12 +479,6 @@ export default function MapScreen() {
         {!loading && error && (
           <View style={styles.overlayError}>
             <Text style={styles.overlayErrorText}>{error}</Text>
-          </View>
-        )}
-
-        {!loading && !error && vendors.length === 0 && (
-          <View style={styles.overlayError}>
-            <Text style={styles.overlayErrorText}>{t('no_nearby_vendors')}</Text>
           </View>
         )}
       </View>

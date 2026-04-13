@@ -241,5 +241,6 @@
   "onboarding_pending_rejected_title": "تم رفض التحقق",
   "onboarding_pending_rejected_default": "تعذر التحقق من بطاقتك الجامعية. يرجى المحاولة مرة أخرى بصورة أوضح.",
   "onboarding_pending_rejection_reason": "السبب: {{reason}}",
-  "onboarding_pending_try_again": "حاول مرة أخرى"
+  "onboarding_pending_try_again": "حاول مرة أخرى",
+  "onboarding_pending_last_checked": "آخر تحقق: {{time}}"
 }

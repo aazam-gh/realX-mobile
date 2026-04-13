@@ -21,6 +21,11 @@ import {
   setupNotificationChannels,
 } from '../utils/notifications';
 import { syncExpoPushTokenForUser } from '../utils/pushNotifications';
+import {
+  getPendingVerification,
+  clearPendingVerification,
+  type PendingVerificationData,
+} from '../utils/verificationPending';
 import CustomSplash from './splash';
 
 
@@ -101,17 +106,27 @@ function LayoutContent({
   const router = useRouter();
   const segments = useSegments();
   const [appReady, setAppReady] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState<PendingVerificationData | null>(null);
+  const [pendingCheckDone, setPendingCheckDone] = useState(false);
+
+  useEffect(() => {
+    getPendingVerification().then((data) => {
+      setPendingVerification(data);
+      setPendingCheckDone(true);
+    });
+  }, []);
 
   useEffect(() => {
     if (
       i18nReady &&
       (loaded || error) &&
       !initializing &&
-      (user === null || hasProfile !== null)
+      (user === null || hasProfile !== null) &&
+      pendingCheckDone
     ) {
       setAppReady(true);
     }
-  }, [i18nReady, loaded, error, initializing, user, hasProfile]);
+  }, [i18nReady, loaded, error, initializing, user, hasProfile, pendingCheckDone]);
 
   // Set up local notification channels when user is authenticated with a profile
   useEffect(() => {
@@ -144,13 +159,22 @@ function LayoutContent({
   }, [user, hasProfile]);
 
   useEffect(() => {
-    if (initializing || !loaded || !i18nReady) return;
+    if (initializing || !loaded || !i18nReady || !pendingCheckDone) return;
     if (user && hasProfile === null) return;
 
     const inAuthGroup = (segments as string[]).indexOf('(onboarding)') !== -1;
 
     if (!user) {
-      if (!inAuthGroup) {
+      if (pendingVerification) {
+        // Has a pending verification request — show pending screen
+        const currentPath = segments.join('/');
+        if (!currentPath.includes('pending')) {
+          router.replace({
+            pathname: '/(onboarding)/pending',
+            params: { email: pendingVerification.email, role: pendingVerification.role },
+          } as any);
+        }
+      } else if (!inAuthGroup) {
         router.replace('/(onboarding)' as any);
       }
     } else {
@@ -186,7 +210,15 @@ function LayoutContent({
         }
       }
     }
-  }, [user, initializing, loaded, i18nReady, segments, hasProfile, router]);
+  }, [user, initializing, loaded, i18nReady, pendingCheckDone, segments, hasProfile, pendingVerification, router]);
+
+  // Clear pending verification once user authenticates
+  useEffect(() => {
+    if (user && pendingVerification) {
+      clearPendingVerification();
+      setPendingVerification(null);
+    }
+  }, [user, pendingVerification]);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { getAuth, signInWithCustomToken } from '@react-native-firebase/auth';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useRef, useState } from 'react';
 import {
@@ -46,7 +46,8 @@ export default function LoginScreen() {
   const isRTL = I18nManager.isRTL;
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
   const inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
-  const [email, setEmail] = useState('');
+  const { prefillEmail } = useLocalSearchParams<{ prefillEmail?: string }>();
+  const [email, setEmail] = useState(prefillEmail || '');
   const [isLoading, setIsLoading] = useState(false);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const inputRef = useRef<TextInput>(null);

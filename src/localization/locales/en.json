@@ -241,5 +241,6 @@
   "onboarding_pending_rejected_title": "VERIFICATION DECLINED",
   "onboarding_pending_rejected_default": "Your student ID could not be verified. Please try again with a clearer photo.",
   "onboarding_pending_rejection_reason": "Reason: {{reason}}",
-  "onboarding_pending_try_again": "Try Again"
+  "onboarding_pending_try_again": "Try Again",
+  "onboarding_pending_last_checked": "Last checked: {{time}}"
 }

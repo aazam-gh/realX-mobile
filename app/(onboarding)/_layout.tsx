@@ -10,7 +10,7 @@ export default function OnboardingLayout() {
             <Stack.Screen name="details" />
             <Stack.Screen name="upload-id" />
             <Stack.Screen name="verify-email" />
-            <Stack.Screen name="pending" />
+            <Stack.Screen name="pending" options={{ gestureEnabled: false }} />
         </Stack>
     );
 }

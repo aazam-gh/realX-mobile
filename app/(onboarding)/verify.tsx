@@ -22,6 +22,7 @@ import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import { useTranslation } from 'react-i18next';
 import { getVerificationImages, clearVerificationImages } from '../../utils/verificationStore';
+import { savePendingVerification } from '../../utils/verificationPending';
 
 const OTP_LENGTH = 6;
 
@@ -128,6 +129,7 @@ export default function VerifyOtpScreen() {
             role: role || 'student',
           });
           clearVerificationImages();
+          await savePendingVerification(email, role || 'student');
           router.replace({
             pathname: '/(onboarding)/pending',
             params: { email },

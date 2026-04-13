@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   I18nManager,
   StyleSheet,
   Text,
@@ -18,8 +19,6 @@ import PhonkText from '../../components/PhonkText';
 import { useTranslation } from 'react-i18next';
 import { clearPendingVerification } from '../../utils/verificationPending';
 
-const POLL_INTERVAL_MS = 30_000;
-
 export default function PendingVerificationScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string; role?: string }>();
@@ -31,17 +30,10 @@ export default function PendingVerificationScreen() {
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [checking, setChecking] = useState(false);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const stopPolling = useCallback(() => {
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
-  }, []);
+  const appStateRef = useRef(AppState.currentState);
 
   const checkStatus = useCallback(async () => {
-    if (!email) return;
+    if (!email || status !== 'pending') return;
     setChecking(true);
     try {
       const fnInstance = getFunctions(undefined, 'me-central1');
@@ -53,7 +45,6 @@ export default function PendingVerificationScreen() {
 
       if (data.status === 'approved') {
         setStatus('approved');
-        stopPolling();
         await clearPendingVerification();
         setTimeout(() => {
           router.replace({
@@ -64,21 +55,28 @@ export default function PendingVerificationScreen() {
       } else if (data.status === 'rejected') {
         setStatus('rejected');
         setRejectionReason(data.rejectionReason || null);
-        stopPolling();
         await clearPendingVerification();
       }
     } catch (err) {
-      console.error('Polling error:', err);
+      console.error('Status check error:', err);
     } finally {
       setChecking(false);
     }
-  }, [email, router, stopPolling]);
+  }, [email, router, status]);
 
+  // Check on mount + whenever app comes back to foreground
   useEffect(() => {
     checkStatus();
-    pollIntervalRef.current = setInterval(checkStatus, POLL_INTERVAL_MS);
-    return () => stopPolling();
-  }, [checkStatus, stopPolling]);
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+        checkStatus();
+      }
+      appStateRef.current = nextState;
+    });
+
+    return () => subscription.remove();
+  }, [checkStatus]);
 
   const handleCheckNow = () => {
     if (status !== 'pending') return;

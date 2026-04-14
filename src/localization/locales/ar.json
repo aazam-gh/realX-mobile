@@ -1,4 +1,4 @@
-{
+﻿{
   "home": "الرئيسية",
   "wallet": "المحفظة",
   "home_title": "العروض",
@@ -58,7 +58,7 @@
   "restart_message": "يرجى إعادة تحميل التطبيق حتى يتم تحديث اتجاه الواجهة بشكل صحيح.",
   "profile_load_failed": "فشل حمل بيانات الملف الشخصي",
   "success": "نجاح",
-  "profile_update_success": "تم تحديد الملف الشخصي بنجاح",
+  "profile_update_success": "تم تحديث الملف الشخصي بنجاح",
   "profile_update_failure": "فشل تحديد الملف الشخصي",
   "delete_account": "حذف الحساب",
   "delete_account_confirmation": "هل أنت متأكد أنك تريد حذف حسابك؟ هذا الإجراء لا يمكن التراجع عن هذا الأجراء وسيتم حذف جميع بياناتك نهائياً.",
@@ -162,7 +162,7 @@
   "onboarding_details_title_suffix": "تفاصيلك",
   "onboarding_no_authenticated_user_message": "لم يتم العثور على مستخدم مصدق.",
   "onboarding_saving": "جارٍ الحفظ...",
-  "apply_to_universities": "قدم للجامعات في قطر",
+  "apply_to_universities": "قدّم للجامعات في قطر",
   "only_on_realx": "فقط على ريل إكس",
   "apply_now": "قدم الآن",
   "x_academy": "أكاديمية إكس",
@@ -244,3 +244,5 @@
   "onboarding_pending_try_again": "حاول مرة أخرى",
   "onboarding_pending_last_checked": "آخر تحقق: {{time}}"
 }
+
+

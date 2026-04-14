@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { getAuth, signOut } from '@react-native-firebase/auth';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -422,9 +422,10 @@ const styles = StyleSheet.create({
   universityBannerTitle: {
     color: '#FFF',
     fontSize: 22,
+    marginTop: 12,
     marginBottom: 8,
     lineHeight: 24,
-  },
+  `n    marginTop: 12,},
   universityBannerButton: {
     backgroundColor: '#FFF',
     paddingVertical: 12,
@@ -476,3 +477,5 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
   },
 });
+
+

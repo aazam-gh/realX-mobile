@@ -22,6 +22,7 @@ import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 import PhonkText from '../components/PhonkText';
 import { triggerSubtleHaptic } from '../utils/haptics';
+import { logger } from '../utils/logger';
 
 /*
   UI Format based on design specs:
@@ -117,7 +118,7 @@ export default function RedemptionHistoryScreen() {
           setLoading(false);
         }
       } catch (error) {
-        console.error('Error fetching redemptions:', error);
+        logger.error('Error fetching redemptions:', error);
         if (isMounted) {
           setLoading(false);
         }

@@ -18,6 +18,7 @@ import MapView, { Marker, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Supercluster, { ClusterFeature, PointFeature } from 'supercluster';
 import PhonkText from '../../components/PhonkText';
+import { logger } from '../../utils/logger';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import {
@@ -145,7 +146,7 @@ export default function MapScreen() {
           }
         }
       } catch (err) {
-        console.error('Error fetching vendors for map search:', err);
+        logger.error('Error fetching vendors for map search:', err);
       } finally {
         if (active) {
           setIsSearching(false);
@@ -230,7 +231,7 @@ export default function MapScreen() {
           zoom: 15,
         });
       } catch (locationError) {
-        console.warn('Unable to read location permissions:', locationError);
+        logger.warn('Unable to read location permissions:', locationError);
       }
     };
 
@@ -239,7 +240,7 @@ export default function MapScreen() {
 
   const fetchVendorsForVisibleRegion = useCallback(async (center: LatLng, zoom: number) => {
     if (!getAuth().currentUser) {
-      console.warn('[Map] Skipping fetch — user not authenticated yet');
+      logger.warn('[Map] Skipping fetch — user not authenticated yet');
       setLoading(false);
       return;
     }
@@ -270,7 +271,7 @@ export default function MapScreen() {
       const mapsSnapshot = await getDocs(mapsRef);
 
       if (mapsSnapshot.empty) {
-        console.warn('[Map] No documents found in maps collection');
+        logger.warn('[Map] No documents found in maps collection');
         setVendors([]);
         setLoading(false);
         setSearchingNearby(false);
@@ -300,11 +301,11 @@ export default function MapScreen() {
           const longitude = typeof rawLng === 'string' ? parseFloat(rawLng) : rawLng;
 
           if (!isValidLatLng(latitude, longitude)) {
-            console.warn('[Map] Skipping', vendorId, '- invalid lat/lng:', rawLat, rawLng);
+            logger.warn('[Map] Skipping', vendorId, '- invalid lat/lng:', rawLat, rawLng);
             return;
           }
           if (!isInQatar(latitude, longitude)) {
-            console.warn('[Map] Skipping', vendorId, '- outside Qatar bounds:', latitude, longitude);
+            logger.warn('[Map] Skipping', vendorId, '- outside Qatar bounds:', latitude, longitude);
             return;
           }
 
@@ -326,7 +327,7 @@ export default function MapScreen() {
         });
       });
 
-      console.log('[Map] Found', totalVendors, 'vendor entries across', mapsSnapshot.docs.length, 'documents, parsed', byId.size, 'valid vendors');
+      logger.log('[Map] Found', totalVendors, 'vendor entries across', mapsSnapshot.docs.length, 'documents, parsed', byId.size, 'valid vendors');
 
       // Merge new vendors into in-memory cache
       byId.forEach((v, id) => vendorCacheRef.current.set(id, v));
@@ -342,7 +343,7 @@ export default function MapScreen() {
 
       setVendors(allVendors);
     } catch (fetchError) {
-      console.error('Failed loading map vendors:', fetchError);
+      logger.error('Failed loading map vendors:', fetchError);
       setError(t('map_load_error'));
     } finally {
       setLoading(false);

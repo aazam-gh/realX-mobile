@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { logger } from '../utils/logger';
 import {
   ActivityIndicator,
   Dimensions,
@@ -55,7 +56,7 @@ export default function XAcademyScreen() {
           }
         }
       } catch (error) {
-        console.error('XAcademyScreen: Error fetching universities:', error);
+        logger.error('XAcademyScreen: Error fetching universities:', error);
       } finally {
         setLoading(false);
       }

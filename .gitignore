@@ -45,3 +45,5 @@ app-example
 # sensitive files
 assets/adi-registration.properties
 reelx-backend-5bee361c4cbe.json
+google-services.json
+GoogleService-Info.plist

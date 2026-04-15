@@ -9,6 +9,7 @@ import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, StatusBar, St
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
+import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 
@@ -76,7 +77,7 @@ export default function VendorScreen() {
                     setOffers(vendorOffers);
                 }
             } catch (error) {
-                console.error("Error fetching vendor data:", error);
+                logger.error("Error fetching vendor data:", error);
             } finally {
                 setLoading(false);
             }

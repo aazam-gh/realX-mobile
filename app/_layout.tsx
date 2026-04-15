@@ -26,6 +26,8 @@ import {
   clearPendingVerification,
   type PendingVerificationData,
 } from '../utils/verificationPending';
+import { logger } from '../utils/logger';
+
 import CustomSplash from './splash';
 
 
@@ -51,7 +53,7 @@ export default function RootLayout() {
         const language = await initI18n();
         applyRTL(language as 'en' | 'ar');
       } catch (err) {
-        console.error('Error initializing localization:', err);
+        logger.error('Error initializing localization:', err);
       } finally {
         setI18nReady(true);
       }
@@ -147,7 +149,7 @@ function LayoutContent({
         if (cancelled) return;
         await syncExpoPushTokenForUser(user.uid);
       } catch (error) {
-        console.error('Error registering push token:', error);
+        logger.error('Error registering push token:', error);
       }
     };
 

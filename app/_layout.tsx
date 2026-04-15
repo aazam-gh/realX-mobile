@@ -36,8 +36,8 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     Phonk: require('../assets/fonts/phonk.otf'),
     Poppins: require('../assets/fonts/poppins.ttf'),
-    Tajawal: require('../assets/fonts/tajawal-medium.ttf'),
-    Noto: require('../assets/fonts/noto.ttf'),
+    JaliArabicRegular: require('../assets/fonts/jali-arabic-regular.ttf'),
+    JaliArabicBold: require('../assets/fonts/jali-arabic-bold.ttf'),
   });
 
   const [i18nReady, setI18nReady] = useState(false);
@@ -258,3 +258,4 @@ function LayoutContent({
     </Stack>
   );
 }
+

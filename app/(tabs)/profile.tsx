@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 8,
     lineHeight: 24,
-  `n    marginTop: 12,},
+  },
   universityBannerButton: {
     backgroundColor: '#FFF',
     paddingVertical: 12,

@@ -193,9 +193,14 @@ export default function VendorScreen() {
                     {/* Offers List */}
                     <View style={styles.offersList}>
                         {offers.map((offer) => {
-                            const offerTitle = isArabic
-                                ? (offer.titleAr || offer.titleEn)
-                                : (offer.titleEn || offer.titleAr);
+                            const percentValue =
+    offer.discountType === 'percentage' && offer.discountValue
+        ? ${offer.discountValue}%
+        : '';
+
+const offerTitle = isArabic
+    ? (offer.titleAr || (percentValue ? خصم  : offer.titleEn))
+    : (offer.titleEn || offer.titleAr);
 
                             return (
                                 <View key={offer.id} style={styles.offerCard}>
@@ -583,3 +588,4 @@ const styles = StyleSheet.create({
         color: '#666',
     },
 });
+

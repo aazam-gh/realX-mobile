@@ -4,11 +4,11 @@ const isArabic = I18nManager.isRTL;
 
 export const Typography = {
     phonk: {
-        bold: isArabic ? 'Noto' : 'Phonk',
+        bold: isArabic ? 'JaliArabicBold' : 'Phonk',
     },
     poppins: {
-        medium: isArabic ? 'Tajawal' : 'Poppins',
-        semiBold: isArabic ? 'Tajawal' : 'Poppins',
+        medium: isArabic ? 'JaliArabicRegular' : 'Poppins',
+        semiBold: isArabic ? 'JaliArabicBold' : 'Poppins',
     }
 };
 

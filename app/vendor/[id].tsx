@@ -195,11 +195,11 @@ export default function VendorScreen() {
                         {offers.map((offer) => {
                             const percentValue =
     offer.discountType === 'percentage' && offer.discountValue
-        ? ${offer.discountValue}%
+        ? `${offer.discountValue}%`
         : '';
 
 const offerTitle = isArabic
-    ? (offer.titleAr || (percentValue ? خصم  : offer.titleEn))
+    ? (offer.titleAr || (percentValue ? 'خصم' : offer.titleEn))
     : (offer.titleEn || offer.titleAr);
 
                             return (

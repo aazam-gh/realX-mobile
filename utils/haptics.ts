@@ -1,9 +1,10 @@
 import * as Haptics from 'expo-haptics';
+import { logger } from './logger';
 
 export function triggerSubtleHaptic() {
   try {
     void Haptics.selectionAsync();
   } catch (error) {
-    console.warn('Haptic feedback failed', error);
+    logger.warn('Haptic feedback failed', error);
   }
 }

@@ -8,6 +8,7 @@ import { Alert, I18nManager, ImageBackground, Linking, ScrollView, StyleSheet, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Updates from 'expo-updates';
 
+import { logger } from '../../utils/logger';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
@@ -32,7 +33,7 @@ export default function ProfileScreen() {
       applyRTL(language);
       await Updates.reloadAsync();
     } catch (error) {
-      console.error('Language change error:', error);
+      logger.error('Language change error:', error);
       Alert.alert(t('restart_required'), t('restart_message'));
     }
   };
@@ -68,7 +69,7 @@ export default function ProfileScreen() {
                 await signOut(auth);
               }
             } catch (error) {
-              console.error('Logout error:', error);
+              logger.error('Logout error:', error);
               Alert.alert(t('error'), t('logout_failed'));
             }
           },

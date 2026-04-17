@@ -3,6 +3,7 @@ import { collection, getDocs, getFirestore, query, where, limit, startAfter } fr
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { logger } from '../utils/logger';
 import {
     ActivityIndicator,
     FlatList,
@@ -95,7 +96,7 @@ export default function SearchScreen() {
                 setIsListEnd(true);
             }
         } catch (error) {
-            console.error('Error fetching vendors for search:', error);
+            logger.error('Error fetching vendors for search:', error);
         } finally {
             setLoading(false);
             setLoadingMore(false);

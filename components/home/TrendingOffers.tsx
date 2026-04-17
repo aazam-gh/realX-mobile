@@ -6,6 +6,7 @@ import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
 import RestaurantCard from '../category/RestaurantCard';
 import { useTranslation } from 'react-i18next';
+import { logger } from '../../utils/logger';
 
 export default function TrendingOffers() {
     const { t } = useTranslation();
@@ -54,7 +55,7 @@ export default function TrendingOffers() {
 
                 setOffers(fetchedResults);
             } catch (error) {
-                console.error('Error fetching trending offers:', error);
+                logger.error('Error fetching trending offers:', error);
             } finally {
                 setLoading(false);
             }

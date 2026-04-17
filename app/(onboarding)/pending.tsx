@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 import { clearPendingVerification } from '../../utils/verificationPending';
 
@@ -58,7 +59,7 @@ export default function PendingVerificationScreen() {
         await clearPendingVerification();
       }
     } catch (err) {
-      console.error('Status check error:', err);
+      logger.error('Status check error:', err);
     } finally {
       setChecking(false);
     }

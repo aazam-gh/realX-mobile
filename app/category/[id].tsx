@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, ImageSourcePropType, Keyboard, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { logger } from '../../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     BrowseSection,
@@ -238,7 +239,7 @@ export default function CategoryScreen() {
                     setCategoryData(docSnap.data());
                 }
             } catch (error) {
-                console.error("Error fetching category:", error);
+                logger.error("Error fetching category:", error);
             } finally {
                 setLoading(false);
             }
@@ -313,7 +314,7 @@ export default function CategoryScreen() {
                 }
             }
         } catch (error) {
-            console.error("Error fetching vendors:", error);
+            logger.error("Error fetching vendors:", error);
         } finally {
             setLoadingVendors(false);
         }
@@ -364,7 +365,7 @@ export default function CategoryScreen() {
     }, []);
 
     const handleRestaurantPress = useCallback((restaurant: { id: string; name: string }) => {
-        console.log('Restaurant pressed:', restaurant.name);
+        logger.log('Restaurant pressed:', restaurant.name);
     }, []);
 
 

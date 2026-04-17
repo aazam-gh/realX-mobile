@@ -3,6 +3,7 @@ import { getAuth } from '@react-native-firebase/auth';
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { Image } from 'expo-image';
+import { logger } from '../../utils/logger';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -105,7 +106,7 @@ export default function RedeemScreen() {
                     }
                 }
             } catch (error) {
-                console.error("Error fetching data:", error);
+                logger.error("Error fetching data:", error);
             } finally {
                 if (isMounted) setLoading(false);
             }
@@ -187,7 +188,7 @@ export default function RedeemScreen() {
                 });
             }, 1500);
         } catch (error: any) {
-            console.error('Offer redemption error:', error);
+            logger.error('Offer redemption error:', error);
             Alert.alert(
                 t('redemption_failed_title'),
                 error.message || t('redemption_failed_message')

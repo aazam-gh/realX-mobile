@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { logger } from './logger';
 import {
   AndroidImportance,
   getPermissionsAsync,
@@ -59,7 +60,7 @@ export const showLocalNotification = async (
   try {
     const hasPermission = await ensureNotificationPermission();
     if (!hasPermission) {
-      console.warn('Cannot show notification: permission not granted');
+      logger.warn('Cannot show notification: permission not granted');
       return false;
     }
 
@@ -75,7 +76,7 @@ export const showLocalNotification = async (
     });
     return true;
   } catch (error) {
-    console.error('Error showing local notification:', error);
+    logger.error('Error showing local notification:', error);
     return false;
   }
 };

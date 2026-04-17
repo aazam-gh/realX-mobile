@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { logger } from '../utils/logger';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 import PhonkText from '../components/PhonkText';
@@ -72,12 +73,12 @@ export default function ProfileDetailsScreen() {
                                 setDob(new Date(year, month - 1, day));
                             }
                         } catch (e) {
-                            console.error('Date parsing error:', e);
+                            logger.error('Date parsing error:', e);
                         }
                     }
                 }
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                logger.error('Error fetching user data:', error);
             Alert.alert(t('error'), t('profile_load_failed'));
             } finally {
                 setIsLoading(false);
@@ -130,7 +131,7 @@ export default function ProfileDetailsScreen() {
             setIsEditing(false);
             Alert.alert(t('success'), t('profile_update_success'));
         } catch (error) {
-            console.error('Error updating profile:', error);
+            logger.error('Error updating profile:', error);
             Alert.alert(t('error'), t('profile_update_failure'));
         } finally {
             setIsSaving(false);
@@ -167,7 +168,7 @@ export default function ProfileDetailsScreen() {
                             Alert.alert(t('delete_account_success_title'), t('delete_account_success_message'));
                             router.replace('/(onboarding)');
                         } catch (error: any) {
-                            console.error('Error deleting account:', error);
+                            logger.error('Error deleting account:', error);
                             if (error.code === 'auth/requires-recent-login') {
                                 Alert.alert(t('security_reauth_required'), t('security_reauth_message'), [
                                     { text: t('ok') },

@@ -4,18 +4,20 @@ import { getAuth } from '@react-native-firebase/auth';
 import { Platform } from 'react-native';
 import {
   collection,
+  doc,
+  getDoc,
   getDocs,
   getFirestore,
   query,
   where,
 } from '@react-native-firebase/firestore';
 import * as Location from 'expo-location';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Linking, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import MapView, { Marker, Polyline, Region } from 'react-native-maps';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Supercluster, { ClusterFeature, PointFeature } from 'supercluster';
 import PhonkText from '../../components/PhonkText';
 import { logger } from '../../utils/logger';
@@ -82,6 +84,7 @@ export default function MapScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const isArabic = i18n.language === 'ar';
+  const insets = useSafeAreaInsets();
 
   if (Platform.OS === 'android') {
     router.replace('/(tabs)');
@@ -107,6 +110,12 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchedVendorIds, setSearchedVendorIds] = useState<Set<string> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedMapVendor, setSelectedMapVendor] = useState<VendorMapItem | null>(null);
+  const [vendorDetail, setVendorDetail] = useState<any>(null);
+  const [fetchingDetail, setFetchingDetail] = useState(false);
+  const [navigationTarget, setNavigationTarget] = useState<{ lat: number; lng: number; vendorId: string } | null>(null);
+  const pendingSelectVendorIdRef = useRef<string | null>(null);
+  const params = useLocalSearchParams<{ vendorId?: string; lat?: string; lng?: string }>();
 
   useEffect(() => {
     let active = true;
@@ -409,6 +418,52 @@ export default function MapScreen() {
     setVendors((previous) => sortVendorsByDistance(previous, userLocation));
   }, [userLocation]);
 
+  // Handle navigation from vendor page
+  useEffect(() => {
+    if (!params.lat || !params.lng) return;
+    const lat = parseFloat(params.lat);
+    const lng = parseFloat(params.lng);
+    if (!isValidLatLng(lat, lng)) return;
+
+    setNavigationTarget({ lat, lng, vendorId: params.vendorId || '' });
+    pendingSelectVendorIdRef.current = params.vendorId || null;
+
+    setTimeout(() => {
+      mapRef.current?.animateCamera({
+        center: { latitude: lat, longitude: lng },
+        zoom: 15,
+      });
+    }, 300);
+  }, [params.lat, params.lng, params.vendorId]);
+
+  // Auto-select vendor when data loads after navigation
+  useEffect(() => {
+    const vendorId = pendingSelectVendorIdRef.current;
+    if (!vendorId || !vendors.length) return;
+    const vendor = vendors.find((v) => v.id === vendorId);
+    if (vendor) {
+      pendingSelectVendorIdRef.current = null;
+      setSelectedMapVendor(vendor);
+      fetchVendorDetail(vendor.id);
+    }
+  }, [vendors]);
+
+  const fetchVendorDetail = async (vendorId: string) => {
+    setFetchingDetail(true);
+    try {
+      const db = getFirestore();
+      const vendorRef = doc(db, 'vendors', vendorId);
+      const vendorSnap = await getDoc(vendorRef);
+      if (vendorSnap.exists()) {
+        setVendorDetail(vendorSnap.data());
+      }
+    } catch (err) {
+      logger.error('Error fetching vendor detail for callout:', err);
+    } finally {
+      setFetchingDetail(false);
+    }
+  };
+
   const handleClusterPress = (cluster: ClusterFeature) => {
     const leaves = superclusterRef.current.getLeaves(cluster.properties.cluster_id, Infinity);
     if (!leaves.length) return;
@@ -513,19 +568,122 @@ export default function MapScreen() {
               <Marker
                 key={vendorId}
                 coordinate={{ latitude: lat, longitude: lng }}
-                onPress={() =>
-                  router.push({ pathname: '/vendor/[id]', params: { id: vendorId } })
-                }
+                onPress={() => {
+                  const vendor = vendors.find((v) => v.id === vendorId);
+                  if (vendor) {
+                    setSelectedMapVendor(vendor);
+                    setVendorDetail(null);
+                    fetchVendorDetail(vendor.id);
+                  }
+                }}
               >
                 <View style={styles.vendorDot} />
               </Marker>
             );
           })}
+          {navigationTarget && userLocation && isValidLatLng(navigationTarget.lat, navigationTarget.lng) && (
+            <Polyline
+              coordinates={[
+                { latitude: userLocation.latitude, longitude: userLocation.longitude },
+                { latitude: navigationTarget.lat, longitude: navigationTarget.lng },
+              ]}
+              strokeColor={Colors.brandGreen}
+              strokeWidth={3}
+              lineDashPattern={[8, 4]}
+            />
+          )}
         </MapView>
 
         <Pressable style={styles.locationButton} onPress={() => void centerOnUser()}>
           <Ionicons name="locate" size={18} color={Colors.brandGreen} />
         </Pressable>
+
+        {navigationTarget && (
+          <TouchableOpacity
+            style={styles.cancelNavButton}
+            onPress={() => setNavigationTarget(null)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="close" size={16} color={Colors.brandGreen} />
+          </TouchableOpacity>
+        )}
+
+        {selectedMapVendor && (
+          <Pressable
+            style={[styles.calloutOverlay, { bottom: insets.bottom + 50 }]}
+            onPress={() => {
+              setSelectedMapVendor(null);
+              setVendorDetail(null);
+            }}
+          >
+            <Pressable style={styles.calloutCard} onPress={(e) => e.stopPropagation()}>
+              <View style={styles.calloutHeader}>
+                <PhonkText style={styles.calloutVendorName} numberOfLines={1}>
+                  {isArabic
+                    ? (vendorDetail?.nameAr || selectedMapVendor.nameAr || selectedMapVendor.name)
+                    : selectedMapVendor.name}
+                </PhonkText>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedMapVendor(null);
+                    setVendorDetail(null);
+                  }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="close" size={20} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              {!fetchingDetail && vendorDetail?.offers?.length > 0 && (
+                <View style={styles.calloutOfferPill}>
+                  <Ionicons name="pricetag" size={14} color={Colors.brandGreen} />
+                  <PhonkText style={styles.calloutOfferText} numberOfLines={1}>
+                    {isArabic
+                      ? (vendorDetail.offers[0].titleAr || vendorDetail.offers[0].titleEn || '')
+                      : (vendorDetail.offers[0].titleEn || vendorDetail.offers[0].titleAr || '')}
+                  </PhonkText>
+                </View>
+              )}
+
+              {userLocation && (
+                <View style={styles.calloutDistanceRow}>
+                  <Ionicons name="navigate-outline" size={14} color="#8E8E93" />
+                  <Text style={styles.calloutDistanceText}>
+                    {haversineDistanceKm(userLocation, { latitude: selectedMapVendor.latitude, longitude: selectedMapVendor.longitude }).toFixed(1)} km
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.calloutActions}>
+                <TouchableOpacity
+                  style={styles.calloutViewBtn}
+                  onPress={() => router.push({ pathname: '/vendor/[id]', params: { id: selectedMapVendor.id } })}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="storefront-outline" size={16} color={Colors.light.text} />
+                  <Text style={[styles.calloutBtnText, { color: Colors.light.text }]}>{t('map_callout_view')}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.calloutDirectionsBtn}
+                  onPress={() => {
+                    const lat = selectedMapVendor.latitude;
+                    const lng = selectedMapVendor.longitude;
+                    const rawLabel = isArabic ? (selectedMapVendor.nameAr || selectedMapVendor.name || '') : (selectedMapVendor.name || '');
+                    const label = encodeURIComponent(rawLabel);
+                    void Linking.openURL(`http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d&q=${label}`).catch(() => {
+                      void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+                    });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="navigate" size={16} color="#FFF" />
+                  <Text style={[styles.calloutBtnText, { color: '#FFF' }]}>{t('map_callout_directions')}</Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </Pressable>
+        )}
 
         {loading && (
           <View style={styles.overlayCard}>
@@ -684,5 +842,105 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: Typography.poppins.medium,
     fontSize: 13,
+  },
+  cancelNavButton: {
+    position: 'absolute',
+    right: 16,
+    bottom: 80,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  calloutOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  calloutCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  calloutHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  calloutVendorName: {
+    fontSize: 20,
+    color: Colors.light.text,
+    flex: 1,
+    marginRight: 12,
+  },
+  calloutOfferPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  calloutOfferText: {
+    fontSize: 14,
+    color: Colors.brandGreen,
+  },
+  calloutDistanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 12,
+  },
+  calloutDistanceText: {
+    fontSize: 13,
+    fontFamily: Typography.poppins.medium,
+    color: '#8E8E93',
+  },
+  calloutActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  calloutViewBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#F5F5F5',
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  calloutDirectionsBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: Colors.brandGreen,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  calloutBtnText: {
+    fontSize: 14,
+    fontFamily: Typography.poppins.semiBold,
   },
 });

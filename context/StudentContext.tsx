@@ -1,6 +1,7 @@
 import { getAuth, onAuthStateChanged, type FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { logger } from '../utils/logger';
 
 type StudentData = {
   firstName?: string;
@@ -60,7 +61,7 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
         },
         (error) => {
-          console.error('StudentContext snapshot error:', error);
+          logger.error('StudentContext snapshot error:', error);
           setStudentData(null);
           setDocExists(false);
           setLoading(false);

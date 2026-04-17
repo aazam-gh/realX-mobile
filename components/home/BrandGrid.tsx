@@ -7,6 +7,7 @@ import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
+import { logger } from '../../utils/logger';
 
 type BrandItem = {
     id: string;
@@ -47,7 +48,7 @@ export default function BrandGrid() {
                     setBrands(activeBrands);
                 }
             } catch (error) {
-                console.error('Error fetching brands:', error);
+                logger.error('Error fetching brands:', error);
             } finally {
                 setLoading(false);
             }

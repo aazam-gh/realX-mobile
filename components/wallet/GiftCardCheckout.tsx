@@ -18,6 +18,7 @@ import {
     View,
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
+import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -104,7 +105,7 @@ export default function GiftCardCheckout({
                 setShowSuccess(true);
             }, 1500);
         } catch (error: any) {
-            console.error('Gift card redemption error:', error);
+            logger.error('Gift card redemption error:', error);
             Alert.alert(
                 t('redemption_failed_title'),
                 error.message || t('redemption_failed_message')

@@ -13,6 +13,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { logger } from '../../utils/logger';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
@@ -153,7 +154,7 @@ export default function SpendCardDrawer({
                 setIsListEnd(true);
             }
         } catch (error) {
-            console.error('Error fetching vendors for XCard:', error);
+            logger.error('Error fetching vendors for XCard:', error);
         } finally {
             setLoading(false);
             setLoadingMore(false);

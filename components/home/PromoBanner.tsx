@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import { logger } from '../../utils/logger';
 
 const { width: screenWidth } = Dimensions.get('window');
 const BANNER_WIDTH = screenWidth - 48;
@@ -42,7 +43,7 @@ export default function PromoBanner() {
                     setBanners(activeBanners);
                 }
             } catch (error) {
-                console.error('Error fetching banners:', error);
+                logger.error('Error fetching banners:', error);
             } finally {
                 setLoading(false);
             }

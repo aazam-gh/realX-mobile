@@ -104,6 +104,9 @@ const calculateDiscount = (totalCents: number, discountType, discountValue) => {
     discountCents = Math.round(totalCents * (discountValue / 100));
   } else if (discountType === 'amount') {
     discountCents = toCents(discountValue);
+  } else if (discountType === 'buy1get1') {
+    // discountValue is the item price in cents (passed from processTransaction)
+    discountCents = discountValue;
   } else {
     throw new HttpsError('invalid-argument', 'Invalid discount type');
   }
@@ -246,6 +249,7 @@ const processTransaction = async (options) => {
     giftCardAmount = 0,
     offerIndex = null,
     creatorCode = null,
+    itemPrice = null,
   } = options;
 
   const normalizedTotalAmount = parseFloat(normalizeDigits(totalAmount));
@@ -254,6 +258,11 @@ const processTransaction = async (options) => {
 
   if (isNaN(normalizedTotalAmount) || normalizedTotalAmount <= 0) {
     throw new HttpsError('invalid-argument', 'Invalid total amount');
+  }
+
+  const normalizedItemPrice = itemPrice ? parseFloat(normalizeDigits(itemPrice)) : null;
+  if (normalizedItemPrice !== null && (isNaN(normalizedItemPrice) || normalizedItemPrice <= 0)) {
+    throw new HttpsError('invalid-argument', 'Invalid item price');
   }
 
   if (!normalizedPin || normalizedPin.length !== 4) {
@@ -315,10 +324,16 @@ const processTransaction = async (options) => {
           throw new HttpsError('not-found', 'Offer not found for this vendor');
         }
         appliedOffer = vendorOffers[offerIndex];
+
+        // For buy1get1, the discount value is the item price in cents
+        const discountArg = appliedOffer.discountType === 'buy1get1'
+          ? toCents(normalizedItemPrice || 0)
+          : appliedOffer.discountValue;
+
         discountCents = calculateDiscount(
           totalCents,
           appliedOffer.discountType,
-          appliedOffer.discountValue
+          discountArg
         );
         finalCents = totalCents - discountCents;
       }

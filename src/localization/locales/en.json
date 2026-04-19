@@ -183,6 +183,8 @@
   "no_specific_terms": "No specific terms provided for this offer.",
   "flat_off_prefix": "FLAT ",
   "flat_off_suffix": " OFF",
+  "buy1get1_label": "BUY 1 GET 1 FREE",
+  "item_price_label": "Item Price",
   "have_creator_code": "Have a creator code?",
   "optional": "(Optional)",
   "creator_code_placeholder": "AB12",

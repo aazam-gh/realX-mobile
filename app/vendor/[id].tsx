@@ -193,7 +193,9 @@ export default function VendorScreen() {
                             const percentValue =
     offer.discountType === 'percentage' && offer.discountValue
         ? `${offer.discountValue}%`
-        : '';
+        : offer.discountType === 'buy1get1'
+            ? 'BUY 1 GET 1'
+            : '';
 
 const offerTitle = isArabic
     ? (offer.titleAr || (percentValue ? 'خصم' : offer.titleEn))

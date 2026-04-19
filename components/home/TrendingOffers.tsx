@@ -134,7 +134,9 @@ export default function TrendingOffers() {
                     const cashbackText = isRTL
                         ? (offer.shortDescriptionAr || offer.shortDescriptionAR || offer.descriptionAr || offer.brandDescription || '')
                         : (offer.shortDescription || offer.brandDescription || offer.descriptionEn || '');
-                    const _discountText = `${offer.discountValue || ''}${offer.discountType === 'percentage' ? '%' : ''} OFF`;
+                    const _discountText = offer.discountType === 'buy1get1'
+                        ? 'BUY 1 GET 1 FREE'
+                        : `${offer.discountValue || ''}${offer.discountType === 'percentage' ? '%' : ''} OFF`;
                     void _discountText;
 
                     return (

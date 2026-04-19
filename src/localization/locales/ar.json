@@ -177,6 +177,8 @@
   "browse_food_fallback": "يلا! تصفح الطعام",
   "flat_off_prefix": "خصم ",
   "flat_off_suffix": " ثابت",
+  "buy1get1_label": "اشترِ واحصل على واحد مجاناً",
+  "item_price_label": "سعر المنتج",
   "have_creator_code": "هل لديك رمز صانع محتوى؟",
   "optional": "(اختياري)",
   "creator_code_placeholder": "AB12",

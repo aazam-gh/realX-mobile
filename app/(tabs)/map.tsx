@@ -503,29 +503,11 @@ export default function MapScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
 
-      <View style={[styles.header, isArabic && { alignItems: 'flex-start' }]}>
+      <View style={[styles.titleBar, isArabic && { alignItems: 'flex-start' }]}>
         <PhonkText style={[styles.headerTitle]}>
           <Text style={{ color: Colors.brandGreen }}>{isArabic ? 'إكس ' : 'X '}</Text>
           <Text style={{ color: Colors.light.text }}>{isArabic ? 'الخريطة' : 'MAP'}</Text>
         </PhonkText>
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('search_placeholder')}
-            placeholderTextColor={Colors.light.tabIconDefault}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-          />
-          {isSearching ? (
-            <ActivityIndicator size="small" color={Colors.brandGreen} />
-          ) : searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="close-circle" size={18} color="#AAA" />
-            </TouchableOpacity>
-          )}
-        </View>
       </View>
 
       <View style={styles.mapContainer}>
@@ -593,6 +575,27 @@ export default function MapScreen() {
             />
           )}
         </MapView>
+
+        <View style={styles.floatingSearch} pointerEvents="box-none">
+          <View style={styles.searchContainer} pointerEvents="auto">
+            <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('search_placeholder')}
+              placeholderTextColor={Colors.light.tabIconDefault}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            {isSearching ? (
+              <ActivityIndicator size="small" color={Colors.brandGreen} />
+            ) : searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="close-circle" size={18} color="#AAA" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
 
         <Pressable style={styles.locationButton} onPress={() => void centerOnUser()}>
           <Ionicons name="locate" size={18} color={Colors.brandGreen} />
@@ -728,10 +731,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
-  header: {
-    padding: 20,
+  titleBar: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 4,
     backgroundColor: Colors.light.background,
     flexDirection: 'column',
+  },
+  floatingSearch: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    zIndex: 10,
   },
   headerTitle: {
     fontSize: 28,
@@ -751,6 +763,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
     marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
   },
   searchIcon: {
     marginRight: 10,

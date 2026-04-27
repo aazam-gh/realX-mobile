@@ -280,27 +280,41 @@ export default function RedeemScreen() {
                     <Ionicons name="close" size={22} color="#666" />
                 </TouchableOpacity>
 
+                {/* Watermark Background */}
+                <View style={styles.watermarkOverlay} pointerEvents="none">
+                    {Array.from({ length: 14 }).map((_, i) => (
+                        <View key={i} style={[styles.watermarkRow, { marginTop: i % 2 === 0 ? 0 : -20 }]}>
+                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
+                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
+                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
+                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
+                        </View>
+                    ))}
+                </View>
+
                 <View style={styles.successPillWrapper}>
                     {/* Top Pill — Vendor + Title */}
-                    <View style={styles.successTopPill}>
-                        {/* Vendor Logo */}
-                        <View style={styles.successLogoContainer}>
+                    <View style={styles.successTopPillWrapper}>
+                        <View style={styles.successTopPill}>
+                            {/* Title */}
+                            <Text style={styles.successTitle}>{t('redemption_title_line')}</Text>
+                            <PhonkText style={styles.successTitleGreen}>{t('redemption_successful_exclaim')}</PhonkText>
+
+                            {/* Discount Badge */}
+                            <View style={styles.successBadge}>
+                                <Text style={styles.successBadgeText}>
+                                    {t('flat_off_prefix')}{offer.discountType === 'buy1get1' ? t('buy1get1_label') : `${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ''}`}{t('flat_off_suffix')}
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Vendor Logo — half in, half out */}
+                        <View style={styles.successLogoOverlay}>
                             <Image
                                 source={{ uri: vendor.profilePicture }}
                                 style={styles.successLogoImage}
                                 contentFit="contain"
                             />
-                        </View>
-
-                        {/* Title */}
-                        <Text style={styles.successTitle}>{t('redemption_title_line')}</Text>
-                        <PhonkText style={styles.successTitleGreen}>{t('redemption_successful_exclaim')}</PhonkText>
-
-                        {/* Discount Badge */}
-                        <View style={styles.successBadge}>
-                            <Text style={styles.successBadgeText}>
-                                {t('flat_off_prefix')}{offer.discountType === 'buy1get1' ? t('buy1get1_label') : `${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ''}`}{t('flat_off_suffix')}
-                            </Text>
                         </View>
                     </View>
 
@@ -890,11 +904,18 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         paddingHorizontal: 30,
+        gap: 16,
+        zIndex: 1,
+    },
+    successTopPillWrapper: {
+        position: 'relative',
+        marginTop: 40,
     },
     successTopPill: {
         backgroundColor: '#FFFFFF',
         borderRadius: 30,
-        paddingVertical: 24,
+        paddingTop: 50,
+        paddingBottom: 24,
         paddingHorizontal: 24,
         alignItems: 'center',
     },
@@ -904,14 +925,17 @@ const styles = StyleSheet.create({
         paddingVertical: 24,
         paddingHorizontal: 24,
     },
-    successLogoContainer: {
+    successLogoOverlay: {
+        position: 'absolute',
+        top: -40,
+        alignSelf: 'center',
         width: 80,
         height: 80,
         borderRadius: 20,
         backgroundColor: '#1E2a38',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        zIndex: 2,
     },
     successLogoImage: {
         width: '60%',
@@ -986,5 +1010,26 @@ const styles = StyleSheet.create({
         fontFamily: Typography.poppins.medium,
         textAlign: 'center',
         marginTop: 8,
+    },
+    watermarkOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: -80,
+        right: -80,
+        bottom: 0,
+        justifyContent: 'space-around',
+        overflow: 'hidden',
+        zIndex: 0,
+    },
+    watermarkRow: {
+        flexDirection: 'row',
+        transform: [{ rotate: '-25deg' }],
+    },
+    watermarkText: {
+        color: 'rgba(255,255,255,0.07)',
+        fontSize: 13,
+        fontFamily: Typography.poppins.semiBold,
+        letterSpacing: 2,
+        marginHorizontal: 15,
     },
 });

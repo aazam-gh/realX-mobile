@@ -884,8 +884,7 @@ const styles = StyleSheet.create({
   },
   calloutCard: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 24,
     paddingHorizontal: 20,
     paddingVertical: 16,
     shadowColor: '#000',

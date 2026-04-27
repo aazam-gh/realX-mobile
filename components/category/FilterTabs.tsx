@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useEffect, useMemo } from 'react';
 import { Dimensions, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 
@@ -41,10 +41,13 @@ export default function FilterTabs({ selectedFilter, onFilterChange, filters }: 
         const hasSelection = index !== -1;
 
         if (hasSelection) {
-            translateX.value = withSpring(index * tabWidth, { damping: 15, stiffness: 150 });
-            opacity.value = withTiming(1, { duration: 200 });
+            translateX.value = withTiming(index * tabWidth, {
+                duration: 250,
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            });
+            opacity.value = withTiming(1, { duration: 150 });
         } else {
-            opacity.value = withTiming(0, { duration: 200 });
+            opacity.value = withTiming(0, { duration: 150 });
         }
     }, [selectedFilter, currentFilters, tabWidth, translateX, opacity]);
 

@@ -186,7 +186,7 @@ const sendCreatorCodeUsedPush = async ({
     to,
     sound: 'default',
     title: 'Your code was used!',
-    body: `Someone used your code at ${vendorName}. You earned QAR ${cashbackAmount.toFixed(2)} XPoints!`,
+    body: `Someone used your code at ${vendorName}. You earned XP ${cashbackAmount.toFixed(2)} XPoints!`,
     data: {
       type: 'creator_code_used',
       transactionId,

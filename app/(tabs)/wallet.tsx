@@ -17,7 +17,7 @@ export default function WalletScreen() {
   const { studentData } = useStudent();
   const balance = typeof studentData?.cashback === 'number' ? studentData.cashback : 0;
   const creatorCode = studentData?.creatorCode;
-  const currency = 'QAR';
+  const currency = 'XP';
 
   const [isHelpDrawerVisible, setIsHelpDrawerVisible] = useState(false);
   const [isSpendDrawerVisible, setIsSpendDrawerVisible] = useState(false);

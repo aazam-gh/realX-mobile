@@ -16,7 +16,7 @@ type Props = {
     creatorCode?: string;
 };
 
-export default function AZxXCard({ earnings = 0, currency = 'QAR', creatorCode }: Props) {
+export default function AZxXCard({ earnings = 0, currency = 'XP', creatorCode }: Props) {
     const { t } = useTranslation();
     const isRTL = I18nManager.isRTL;
     return (

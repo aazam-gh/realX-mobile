@@ -213,8 +213,8 @@ export default function CategoryScreen() {
     const isCategoryActive = categoryData ? categoryData.isActive !== false : true;
 
     // Determine if we should show the "Coming Soon" UI
-    // It shows if the category is explicitly inactive OR if we've finished the initial fetch and found no vendors
-    const showComingSoon = !isCategoryActive || (isListEnd && vendors.length === 0 && !loadingVendors);
+    // Only show for inactive categories, not when a filter/subcategory returns no results
+    const showComingSoon = !isCategoryActive;
     const englishCategoryName = useMemo(() => {
         return categoryData?.nameEnglish || englishName || name || config.title || undefined;
     }, [categoryData?.nameEnglish, config.title, englishName, name]);
@@ -346,6 +346,9 @@ export default function CategoryScreen() {
 
     const handleFilterChange = useCallback((filterId: string) => {
         setSelectedFilter(filterId);
+        requestAnimationFrame(() => {
+            flashListRef.current?.scrollToOffset({ offset: 0, animated: false });
+        });
     }, []);
 
     const handleSearch = useCallback(() => {
@@ -401,14 +404,11 @@ export default function CategoryScreen() {
         });
     }, [vendors, searchQuery]);
 
-    const renderFooter = () => {
-        if (!loadingVendors) return <View style={{ height: 20 }} />;
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color={Colors.brandGreen} />
-            </View>
-        );
-    };
+    const renderFooter = () => (
+        <View style={{ height: 40, alignItems: 'center', justifyContent: 'center' }}>
+            {loadingVendors && <ActivityIndicator size="small" color={Colors.brandGreen} />}
+        </View>
+    );
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -438,6 +438,7 @@ export default function CategoryScreen() {
                     data={filteredVendors}
                     keyExtractor={(item) => item.id}
                     numColumns={2}
+                    estimatedItemSize={200}
                     contentContainerStyle={styles.contentContainer}
                     showsVerticalScrollIndicator={false}
                     onScroll={handleFlashListScroll}

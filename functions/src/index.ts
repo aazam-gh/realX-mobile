@@ -186,7 +186,7 @@ const sendCreatorCodeUsedPush = async ({
     to,
     sound: 'default',
     title: 'Your code was used!',
-    body: `Someone used your code at ${vendorName}. You earned QAR ${cashbackAmount.toFixed(2)} cashback!`,
+    body: `Someone used your code at ${vendorName}. You earned QAR ${cashbackAmount.toFixed(2)} XPoints!`,
     data: {
       type: 'creator_code_used',
       transactionId,
@@ -767,6 +767,7 @@ async function checkAccountRateLimit(key: string): Promise<void> {
  * =============================
  */
 export const sendOtp = onCall(
+  { secrets: ['RESEND_API_KEY'] },
   async (request: CallableRequest) => {
     const email = request.data?.email?.toLowerCase()?.trim();
     const purpose = request.data?.purpose; // "signup" | "login" | "verification"

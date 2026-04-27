@@ -345,13 +345,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 30,
     gap: 6,
   },
   editButtonText: {
-    fontSize: 10,
+    fontSize: 16,
     color: '#8E8E93',
   },
   sectionHeader: {
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   universityBannerTitle: {
     color: '#FFF',
     fontSize: 22,
-    marginTop: 12,
+    marginTop: -16,
     marginBottom: 8,
     lineHeight: 24,
   },

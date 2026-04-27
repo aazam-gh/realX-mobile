@@ -62,7 +62,12 @@
           }
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": ["./assets/sound.wav"]
+        }
+      ],
       [
         "expo-location",
         {

@@ -10,18 +10,12 @@ import {
 } from 'expo-notifications';
 
 setNotificationHandler({
-  handleNotification: async (notification) => {
-    // Remote push notifications are already displayed by the OS.
-    // Only show a banner for local notifications to avoid double-display.
-    const isRemote = notification.request.trigger?.type === 'push';
-
-    return {
-      shouldPlaySound: !isRemote,
-      shouldSetBadge: false,
-      shouldShowBanner: !isRemote,
-      shouldShowList: true,
-    };
-  },
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
 });
 
 /**
@@ -33,10 +27,12 @@ export const setupNotificationChannels = async () => {
   await setNotificationChannelAsync('reelx_general', {
     name: 'General',
     importance: AndroidImportance.HIGH,
+    sound: 'sound.wav',
   });
   await setNotificationChannelAsync('reelx_redemptions', {
     name: 'Redemptions',
     importance: AndroidImportance.HIGH,
+    sound: 'sound.wav',
   });
 };
 
@@ -69,7 +65,7 @@ export const showLocalNotification = async (
         title,
         body,
         data: data ?? {},
-        sound: 'default',
+        sound: 'sound.wav',
         ...(Platform.OS === 'android' && channelId ? { channelId } : {}),
       },
       trigger: null,
@@ -97,7 +93,7 @@ export const presentForegroundNotification = async (
       title: title ?? 'realX',
       body: body ?? '',
       data: data ?? {},
-      sound: 'default',
+      sound: 'sound.wav',
       ...(Platform.OS === 'android' ? { channelId: 'reelx_general' } : {}),
     },
     trigger: null,

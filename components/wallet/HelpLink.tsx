@@ -23,6 +23,7 @@ export default function HelpLink({ onPress }: Props) {
                     {t('help_link_text')}
                 </Text>
             </TouchableOpacity>
+            <Text style={styles.conversionText}>1XP = 1 QAR</Text>
         </View>
     );
 }
@@ -53,5 +54,10 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
         color: '#666666',
+    },
+    conversionText: {
+        fontSize: 14,
+        fontFamily: Typography.poppins.medium,
+        color: '#28A745',
     },
 });

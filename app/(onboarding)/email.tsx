@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F0',
   },
   inputIcon: { marginRight: 10 },
-  input: { fontSize: 16, fontFamily: Typography.poppins.medium, color: '#000' },
+  input: { fontSize: 16, fontFamily: Typography.poppins.medium, color: '#000', paddingVertical: 0, includeFontPadding: false },
   infoText: {
     fontSize: 14, color: '#999', textAlign: 'center',
     lineHeight: 20, paddingHorizontal: 10,

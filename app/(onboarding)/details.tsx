@@ -379,6 +379,8 @@ const styles = StyleSheet.create({
     inputIcon: { marginRight: 10 },
     input: {
         fontSize: 16, fontFamily: Typography.poppins.medium,
+        paddingVertical: 0,
+        includeFontPadding: false,
     },
     genderContainer: { marginTop: 8 },
     label: {

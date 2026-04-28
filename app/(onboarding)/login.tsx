@@ -286,6 +286,8 @@ const styles = StyleSheet.create({
   input: {
     fontSize: 16,
     fontFamily: Typography.poppins.medium,
+    paddingVertical: 0,
+    includeFontPadding: false,
   },
   infoText: {
     fontSize: 14,

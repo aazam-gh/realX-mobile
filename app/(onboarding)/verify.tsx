@@ -417,6 +417,8 @@ const styles = StyleSheet.create({
     color: '#000',
     textAlign: 'center',
     backgroundColor: 'transparent',
+    paddingVertical: 0,
+    includeFontPadding: false,
   },
   errorContainer: {
     flexDirection: 'row',

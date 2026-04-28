@@ -28,6 +28,11 @@
       "package": "com.reelx.app",
       "versionCode": 6,
       "googleServicesFile": "./google-services.json",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAZzzmsBPiXDGSRF3HOGgWXXRQsEurm19I"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/icon.png",

@@ -86,11 +86,6 @@ export default function MapScreen() {
   const isArabic = i18n.language === 'ar';
   const insets = useSafeAreaInsets();
 
-  if (Platform.OS === 'android') {
-    router.replace('/(tabs)');
-    return null;
-  }
-
   const mapRef = useRef<MapView>(null);
   const superclusterRef = useRef<Supercluster>(new Supercluster({ radius: 52, maxZoom: 14 }));
 
@@ -672,11 +667,15 @@ export default function MapScreen() {
                   onPress={() => {
                     const lat = selectedMapVendor.latitude;
                     const lng = selectedMapVendor.longitude;
-                    const rawLabel = isArabic ? (selectedMapVendor.nameAr || selectedMapVendor.name || '') : (selectedMapVendor.name || '');
-                    const label = encodeURIComponent(rawLabel);
-                    void Linking.openURL(`http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d&q=${label}`).catch(() => {
+                    if (Platform.OS === 'android') {
                       void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
-                    });
+                    } else {
+                      const rawLabel = isArabic ? (selectedMapVendor.nameAr || selectedMapVendor.name || '') : (selectedMapVendor.name || '');
+                      const label = encodeURIComponent(rawLabel);
+                      void Linking.openURL(`http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d&q=${label}`).catch(() => {
+                        void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+                      });
+                    }
                   }}
                   activeOpacity={0.7}
                 >

@@ -500,8 +500,17 @@ export default function MapScreen() {
 
       <View style={[styles.titleBar, isArabic && { alignItems: 'flex-start' }]}>
         <PhonkText style={[styles.headerTitle]}>
-          <Text style={{ color: Colors.brandGreen }}>{isArabic ? 'إكس ' : 'X '}</Text>
-          <Text style={{ color: Colors.light.text }}>{isArabic ? 'الخريطة' : 'MAP'}</Text>
+          {isArabic ? (
+            <>
+              <Text style={{ color: Colors.light.text }}>الخريطة </Text>
+              <Text style={{ color: Colors.brandGreen }}>إكس</Text>
+            </>
+          ) : (
+            <>
+              <Text style={{ color: Colors.brandGreen }}>X </Text>
+              <Text style={{ color: Colors.light.text }}>MAP</Text>
+            </>
+          )}
         </PhonkText>
       </View>
 

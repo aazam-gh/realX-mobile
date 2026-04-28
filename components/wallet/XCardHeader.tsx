@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import PhonkText from '../PhonkText';
 
 export default function XCardHeader() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const isArabic = i18n.language === 'ar';
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, isArabic && { flexDirection: 'row-reverse' }]}>
             <PhonkText style={styles.titleX}>{t('xcard_title_x')}</PhonkText>
-            
             <PhonkText style={styles.titleCard}>{t('xcard_title_card')}</PhonkText>
         </View>
     );

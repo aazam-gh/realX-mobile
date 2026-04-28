@@ -8,6 +8,7 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import RedemptionItem, { RedemptionData } from './RedemptionItem';
 import { logger } from '../../utils/logger';
+import { toArabicDigits } from '../../utils/numbers';
 
 const LOGO_COLORS = ['#3D5A80', '#C41E3A', '#8B4513', '#2A9D8F', '#E76F51', '#E9C46A'];
 
@@ -62,7 +63,7 @@ export default function RecentRedemptions() {
                     const day = String(date.getDate()).padStart(2, '0');
                     const month = String(date.getMonth() + 1).padStart(2, '0');
                     const year = date.getFullYear();
-                    dateStr = `${day}/${month}/${year}`;
+                    dateStr = isArabic ? toArabicDigits(`${day}/${month}/${year}`) : `${day}/${month}/${year}`;
                 }
 
                 let logoUrl = null;

@@ -23,6 +23,7 @@ import { Typography } from '../constants/Typography';
 import PhonkText from '../components/PhonkText';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
+import { toArabicDigits } from '../utils/numbers';
 
 /*
   UI Format based on design specs:
@@ -59,6 +60,7 @@ export default function RedemptionHistoryScreen() {
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === 'ar';
   const currency = t('currency_qar');
+  const fmt = (n: number, decimals = 0) => isArabic ? toArabicDigits(n.toFixed(decimals)) : n.toFixed(decimals);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -169,7 +171,7 @@ export default function RedemptionHistoryScreen() {
                 </Text>
                 <Text style={[styles.savingsText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                   {t('estimated_savings', {
-                    amount: t('amount_with_currency', { amount: savings.toFixed(0), currency }),
+                    amount: t('amount_with_currency', { amount: fmt(savings), currency }),
                   })}
                 </Text>
               </View>
@@ -178,7 +180,7 @@ export default function RedemptionHistoryScreen() {
             <View style={styles.paidInfo}>
               <Text style={styles.paidLabel}>{t('total_paid')}</Text>
               <PhonkText style={[styles.paidAmount, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
-                {t('amount_with_currency', { amount: paid.toFixed(0), currency })}
+                {t('amount_with_currency', { amount: fmt(paid), currency })}
               </PhonkText>
             </View>
           </View>

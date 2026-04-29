@@ -104,6 +104,9 @@ const calculateDiscount = (totalCents: number, discountType, discountValue) => {
     discountCents = Math.round(totalCents * (discountValue / 100));
   } else if (discountType === 'amount') {
     discountCents = toCents(discountValue);
+  } else if (discountType === 'buy1get1') {
+    // No discount for buy1get1 - user pays full amount
+    discountCents = 0;
   } else {
     throw new HttpsError('invalid-argument', 'Invalid discount type');
   }
@@ -183,7 +186,7 @@ const sendCreatorCodeUsedPush = async ({
     to,
     sound: 'default',
     title: 'Your code was used!',
-    body: `Someone used your code at ${vendorName}. You earned QAR ${cashbackAmount.toFixed(2)} cashback!`,
+    body: `Someone used your code at ${vendorName}. You earned XP ${cashbackAmount.toFixed(2)} XPoints!`,
     data: {
       type: 'creator_code_used',
       transactionId,
@@ -246,6 +249,7 @@ const processTransaction = async (options) => {
     giftCardAmount = 0,
     offerIndex = null,
     creatorCode = null,
+    itemPrice = null,
   } = options;
 
   const normalizedTotalAmount = parseFloat(normalizeDigits(totalAmount));
@@ -254,6 +258,11 @@ const processTransaction = async (options) => {
 
   if (isNaN(normalizedTotalAmount) || normalizedTotalAmount <= 0) {
     throw new HttpsError('invalid-argument', 'Invalid total amount');
+  }
+
+  const normalizedItemPrice = itemPrice ? parseFloat(normalizeDigits(itemPrice)) : null;
+  if (normalizedItemPrice !== null && (isNaN(normalizedItemPrice) || normalizedItemPrice <= 0)) {
+    throw new HttpsError('invalid-argument', 'Invalid item price');
   }
 
   if (!normalizedPin || normalizedPin.length !== 4) {
@@ -315,10 +324,16 @@ const processTransaction = async (options) => {
           throw new HttpsError('not-found', 'Offer not found for this vendor');
         }
         appliedOffer = vendorOffers[offerIndex];
+
+        // For buy1get1, no discount value needed
+        const discountArg = appliedOffer.discountType === 'buy1get1'
+          ? 0
+          : appliedOffer.discountValue;
+
         discountCents = calculateDiscount(
           totalCents,
           appliedOffer.discountType,
-          appliedOffer.discountValue
+          discountArg
         );
         finalCents = totalCents - discountCents;
       }
@@ -752,6 +767,7 @@ async function checkAccountRateLimit(key: string): Promise<void> {
  * =============================
  */
 export const sendOtp = onCall(
+  { secrets: ['RESEND_API_KEY'] },
   async (request: CallableRequest) => {
     const email = request.data?.email?.toLowerCase()?.trim();
     const purpose = request.data?.purpose; // "signup" | "login" | "verification"

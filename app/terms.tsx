@@ -28,7 +28,7 @@ export default function TermsScreen() {
                 contentContainerStyle={styles.scrollContent}
             >
                 <Text style={[styles.lastUpdated, isRTL && styles.textRTL]}>
-                    {isRTL ? 'آخر تحديث: أكتوبر 2023' : 'Last updated: October 2023'}
+                    {isRTL ? 'آخر تحديث: أبريل 2026' : 'Last updated: April 2026'}
                 </Text>
 
                 <View style={styles.section}>

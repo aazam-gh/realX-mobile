@@ -24,6 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 
 
@@ -78,10 +79,10 @@ export default function DetailsOnboarding() {
                 await assignCode();
             }
 
-            console.log('Student details saved successfully!');
+            logger.log('Student details saved successfully!');
             router.replace('/(tabs)');
         } catch (error: any) {
-            console.error('Error saving student details:', error);
+            logger.error('Error saving student details:', error);
             Alert.alert(t('error'), error.message || t('onboarding_generic_error_message'));
         } finally {
             setIsLoading(false);
@@ -378,6 +379,8 @@ const styles = StyleSheet.create({
     inputIcon: { marginRight: 10 },
     input: {
         fontSize: 16, fontFamily: Typography.poppins.medium,
+        paddingVertical: 0,
+        includeFontPadding: false,
     },
     genderContainer: { marginTop: 8 },
     label: {

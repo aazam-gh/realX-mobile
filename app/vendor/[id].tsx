@@ -5,10 +5,11 @@ import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, Share, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
+import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 
@@ -76,7 +77,7 @@ export default function VendorScreen() {
                     setOffers(vendorOffers);
                 }
             } catch (error) {
-                console.error("Error fetching vendor data:", error);
+                logger.error("Error fetching vendor data:", error);
             } finally {
                 setLoading(false);
             }
@@ -129,6 +130,12 @@ export default function VendorScreen() {
                             <TouchableOpacity
                                 style={styles.roundButton}
                                 activeOpacity={0.8}
+                                onPress={() => {
+                                    const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
+                                    Share.share({
+                                        message: `${t('share_vendor_message', { name: vendorName })}\nhttps://reelx.app/vendor/${actualVendorId || id}`,
+                                    });
+                                }}
                             >
                                 <Ionicons name="share-outline" size={24} color="#000" />
                             </TouchableOpacity>
@@ -161,45 +168,61 @@ export default function VendorScreen() {
                     </View>
 
                     <View style={styles.metaRow}>
+                        <View style={styles.metaLeft}>
                         <TouchableOpacity style={styles.locationButton} onPress={() => {
                             const lat = vendor?.lat;
                             const lng = vendor?.lng;
 
                             if (typeof lat === 'number' && typeof lng === 'number') {
-                                const rawLabel = isArabic ? (vendor.nameAr || vendor.name || 'Vendor') : (vendor.name || vendor.nameAr || 'Vendor');
-                                const label = encodeURIComponent(rawLabel);
-                                const appleMapsUrl = `http://maps.apple.com/?ll=${lat},${lng}&q=${label}`;
-                                const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-
-                                Linking.openURL(appleMapsUrl).catch(() => {
-                                    Linking.openURL(googleMapsUrl).catch(() => {
-                                        const fallback = encodeURIComponent(`${rawLabel} Qatar`);
-                                        void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${fallback}`);
-                                    });
+                                router.push({
+                                    pathname: '/(tabs)/map',
+                                    params: {
+                                        vendorId: actualVendorId || id,
+                                        lat: String(lat),
+                                        lng: String(lng),
+                                    },
                                 });
                                 return;
                             }
 
                             const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
-                            const query = encodeURIComponent(vendorName + " Qatar");
-                            void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
+                            const q = encodeURIComponent(vendorName + " Qatar");
+                            void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
                         }} activeOpacity={0.7}>
                             <Ionicons name="location-outline" size={18} color={Colors.brandGreen} />
                             <Text style={[styles.locationText, { fontFamily: Typography.poppins.medium }]}>{t('location')}</Text>
                         </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.tagsRow}>
+                            {vendor.trending && (
+                                <View style={styles.tagChip}>
+                                    <Ionicons name="trending-up" size={14} color="#FFF" />
+                                    <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]}>{t('trending')}</Text>
+                                </View>
+                            )}
+                            {vendor.xcard && (
+                                <View style={[styles.tagChip, { backgroundColor: Colors.brandGreen }]}>
+                                    <Ionicons name="cash-outline" size={14} color="#FFF" />
+                                    <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]}>{t('cashback')}</Text>
+                                </View>
+                            )}
+                        </View>
                     </View>
 
                     {/* Offers List */}
                     <View style={styles.offersList}>
                         {offers.map((offer) => {
-                                                        const percentValue =
-                                offer.discountType === 'percentage' && offer.discountValue
-                                    ? `${offer.discountValue}%`
-                                    : '';
+const percentValue =
+    offer.discountType === 'percentage' && offer.discountValue
+        ? `${offer.discountValue}%`
+        : offer.discountType === 'buy1get1'
+            ? 'BUY 1 GET 1'
+            : '';
 
-                            const offerTitle = isArabic
-                                ? (percentValue ? `خصم ${percentValue}` : (offer.titleAr || offer.titleEn))
-                                : (offer.titleEn || offer.titleAr);
+const offerTitle = isArabic
+    ? (offer.titleAr || (percentValue ? 'خصم' : offer.titleEn))
+    : (offer.titleEn || offer.titleAr);
 
                             return (
                                 <View key={offer.id} style={styles.offerCard}>
@@ -421,8 +444,32 @@ const styles = StyleSheet.create({
     metaRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        justifyContent: 'space-between',
         marginTop: 8,
+    },
+    metaLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    tagsRow: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    tagChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#000000',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 20,
+        gap: 4,
+    },
+    tagText: {
+        fontSize: 12,
+        color: '#FFF',
+        textTransform: 'uppercase',
+        letterSpacing: 0.3,
     },
     locationButton: {
         flexDirection: 'row',

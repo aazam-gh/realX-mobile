@@ -6,6 +6,7 @@ import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
 import RestaurantCard from '../category/RestaurantCard';
 import { useTranslation } from 'react-i18next';
+import { logger } from '../../utils/logger';
 
 export default function TrendingOffers() {
     const { t } = useTranslation();
@@ -54,7 +55,7 @@ export default function TrendingOffers() {
 
                 setOffers(fetchedResults);
             } catch (error) {
-                console.error('Error fetching trending offers:', error);
+                logger.error('Error fetching trending offers:', error);
             } finally {
                 setLoading(false);
             }
@@ -133,7 +134,9 @@ export default function TrendingOffers() {
                     const cashbackText = isRTL
                         ? (offer.shortDescriptionAr || offer.shortDescriptionAR || offer.descriptionAr || offer.brandDescription || '')
                         : (offer.shortDescription || offer.brandDescription || offer.descriptionEn || '');
-                    const _discountText = `${offer.discountValue || ''}${offer.discountType === 'percentage' ? '%' : ''} OFF`;
+                    const _discountText = offer.discountType === 'buy1get1'
+                        ? 'BUY 1 GET 1 FREE'
+                        : `${offer.discountValue || ''}${offer.discountType === 'percentage' ? '%' : ''} OFF`;
                     void _discountText;
 
                     return (

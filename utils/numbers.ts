@@ -5,6 +5,14 @@
  * @param input The string containing digits to normalize.
  * @returns A string with only Western digits and optionally a decimal point.
  */
+/**
+ * Converts Western (0-9) digits to Arabic-Indic (٠-٩) digits.
+ */
+export function toArabicDigits(input: string): string {
+    if (!input) return '';
+    return input.replace(/[0-9]/g, (d) => String.fromCharCode(d.charCodeAt(0) + 1584));
+}
+
 export function normalizeDigits(input: string): string {
     if (!input) return '';
 

@@ -35,9 +35,10 @@ type StepItemProps = {
 function StepItem({ step, isRTL }: StepItemProps) {
     return (
         <View style={[styles.stepItem, isRTL && styles.stepItemRTL]}>
-            <PhonkText style={[styles.stepNumber, isRTL && styles.stepNumberRTL]}>
+            <PhonkText style={styles.stepNumber}>
                 {step.number}
             </PhonkText>
+            <View style={styles.stepNumberSpacer} />
             <Text style={[styles.stepText, { textAlign: isRTL ? 'right' : 'left' }]}>
                 {step.text}
                 {step.emoji && ` ${step.emoji}`}
@@ -86,9 +87,9 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                         bounces={false}
                     >
                         {/* Logo */}
-                        <View style={styles.logoContainer}>
-                            <PhonkText style={styles.logoX}>X</PhonkText>
-                            <PhonkText style={styles.logoCard}>CARD</PhonkText>
+                        <View style={[styles.logoContainer, isRTL && styles.logoContainerRTL]}>
+                            <PhonkText style={styles.logoX}>{t('xcard_title_x')}</PhonkText>
+                            <PhonkText style={styles.logoCard}>{t('xcard_title_card')}</PhonkText>
                         </View>
 
                         {/* Divider */}
@@ -152,6 +153,9 @@ const styles = StyleSheet.create({
         paddingTop: 20,
         paddingBottom: 24,
     },
+    logoContainerRTL: {
+        flexDirection: 'row-reverse',
+    },
     logoX: {
         fontSize: 28,
         color: '#18B852',
@@ -197,16 +201,16 @@ const styles = StyleSheet.create({
     },
     stepItemRTL: {
         flexDirection: 'row-reverse',
+        paddingLeft: 12,
     },
     stepNumber: {
         fontSize: 22,
         color: '#18B852',
-        marginRight: 16,
-        minWidth: 24,
     },
     stepNumberRTL: {
-        marginRight: 0,
-        marginLeft: 16,
+    },
+    stepNumberSpacer: {
+        width: 12,
     },
     stepText: {
         fontSize: 16,

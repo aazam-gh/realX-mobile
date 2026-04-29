@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 
 const normalizeEmail = (email: string): string => {
@@ -65,7 +66,7 @@ export default function VerifyEmailScreen() {
         params: { email: normalizedEmail, purpose: 'verification', role },
       });
     } catch (err: any) {
-      console.error(err);
+      logger.error(err);
       Alert.alert(t('error'), err.message || t('onboarding_generic_error_message'));
     } finally {
       setIsLoading(false);
@@ -193,7 +194,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F0',
   },
   inputIcon: { marginRight: 10 },
-  input: { fontSize: 16, fontFamily: Typography.poppins.medium, color: '#000' },
+  input: { fontSize: 16, fontFamily: Typography.poppins.medium, color: '#000', paddingVertical: 0, includeFontPadding: false },
   infoText: {
     fontSize: 14, color: '#999', textAlign: 'center',
     lineHeight: 20, paddingHorizontal: 10,

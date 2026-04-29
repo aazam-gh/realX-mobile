@@ -8,6 +8,8 @@ import { Alert, I18nManager, ImageBackground, Linking, ScrollView, StyleSheet, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Updates from 'expo-updates';
 
+import { logger } from '../../utils/logger';
+import { toArabicDigits } from '../../utils/numbers';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
@@ -32,7 +34,7 @@ export default function ProfileScreen() {
       applyRTL(language);
       await Updates.reloadAsync();
     } catch (error) {
-      console.error('Language change error:', error);
+      logger.error('Language change error:', error);
       Alert.alert(t('restart_required'), t('restart_message'));
     }
   };
@@ -68,7 +70,7 @@ export default function ProfileScreen() {
                 await signOut(auth);
               }
             } catch (error) {
-              console.error('Logout error:', error);
+              logger.error('Logout error:', error);
               Alert.alert(t('error'), t('logout_failed'));
             }
           },
@@ -157,7 +159,7 @@ export default function ProfileScreen() {
           </Text>
           <View style={[styles.savingsAmountContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}> 
             <PhonkText style={[{ color: '#1AD04F', textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }, styles.savingsAmountGreen]}>
-              {t('amount_with_currency', { amount: (userData?.savings ?? 0).toFixed(2), currency: t('currency_qar') })}
+              {t('amount_with_currency', { amount: isRTL ? toArabicDigits((userData?.savings ?? 0).toFixed(2)) : (userData?.savings ?? 0).toFixed(2), currency: t('currency_qar') })}
             </PhonkText>
           </View>
         </View>
@@ -344,13 +346,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 30,
     gap: 6,
   },
   editButtonText: {
-    fontSize: 10,
+    fontSize: 16,
     color: '#8E8E93',
   },
   sectionHeader: {
@@ -422,7 +424,7 @@ const styles = StyleSheet.create({
   universityBannerTitle: {
     color: '#FFF',
     fontSize: 22,
-    marginTop: 12,
+    marginTop: -16,
     marginBottom: 8,
     lineHeight: 24,
   },

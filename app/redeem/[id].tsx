@@ -3,6 +3,7 @@ import { getAuth } from '@react-native-firebase/auth';
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { Image } from 'expo-image';
+import { logger } from '../../utils/logger';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -105,7 +106,7 @@ export default function RedeemScreen() {
                     }
                 }
             } catch (error) {
-                console.error("Error fetching data:", error);
+                logger.error("Error fetching data:", error);
             } finally {
                 if (isMounted) setLoading(false);
             }
@@ -126,6 +127,8 @@ export default function RedeemScreen() {
     let discountAmount = 0;
     if (discountType === 'percentage') {
         discountAmount = totalAmount * (discountValue / 100);
+    } else if (discountType === 'buy1get1') {
+        discountAmount = 0; // No discount shown for buy1get1
     } else {
         discountAmount = Math.min(discountValue, totalAmount);
     }
@@ -187,7 +190,7 @@ export default function RedeemScreen() {
                 });
             }, 1500);
         } catch (error: any) {
-            console.error('Offer redemption error:', error);
+            logger.error('Offer redemption error:', error);
             Alert.alert(
                 t('redemption_failed_title'),
                 error.message || t('redemption_failed_message')
@@ -272,37 +275,53 @@ export default function RedeemScreen() {
                     <Ionicons name="close" size={22} color="#666" />
                 </TouchableOpacity>
 
+                {/* Watermark Background */}
+                <View style={styles.watermarkOverlay} pointerEvents="none">
+                    {Array.from({ length: 14 }).map((_, i) => (
+                        <View key={i} style={[styles.watermarkRow, { marginTop: i % 2 === 0 ? 0 : -20 }]}>
+                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
+                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
+                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
+                            <Text style={styles.watermarkText}>REDEMPTION SUCCESSFUL</Text>
+                        </View>
+                    ))}
+                </View>
+
                 <View style={styles.successPillWrapper}>
                     {/* Top Pill — Vendor + Title */}
-                    <View style={styles.successTopPill}>
-                        {/* Vendor Logo */}
-                        <View style={styles.successLogoContainer}>
+                    <View style={styles.successTopPillWrapper}>
+                        <View style={styles.successTopPill}>
+                            {/* Title */}
+                            <Text style={styles.successTitle}>{t('redemption_title_line')}</Text>
+                            <PhonkText style={styles.successTitleGreen}>{t('redemption_successful_exclaim')}</PhonkText>
+
+                            {/* Discount Badge */}
+                            <View style={styles.successBadge}>
+                                <Text style={styles.successBadgeText}>
+                                    {t('flat_off_prefix')}{offer.discountType === 'buy1get1' ? t('buy1get1_label') : `${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ''}`}{t('flat_off_suffix')}
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Vendor Logo — half in, half out */}
+                        <View style={styles.successLogoOverlay}>
                             <Image
                                 source={{ uri: vendor.profilePicture }}
                                 style={styles.successLogoImage}
                                 contentFit="contain"
                             />
                         </View>
-
-                        {/* Title */}
-                        <Text style={styles.successTitle}>{t('redemption_title_line')}</Text>
-                        <PhonkText style={styles.successTitleGreen}>{t('redemption_successful_exclaim')}</PhonkText>
-
-                        {/* Discount Badge */}
-                        <View style={styles.successBadge}>
-                            <Text style={styles.successBadgeText}>
-                                {t('flat_off_prefix')}{offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}{t('flat_off_suffix')}
-                            </Text>
-                        </View>
                     </View>
 
                     {/* Bottom Pill — Breakdown */}
                     <View style={styles.successBottomPill}>
-                        {/* You Saved */}
+                        {/* You Saved (only for non-buy1get1) */}
+                        {offer.discountType !== 'buy1get1' && (
                         <View style={styles.successSavedRow}>
                             <Ionicons name="pricetag" size={18} color={Colors.brandGreen} />
                             <Text style={styles.successSavedLabel}>{t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}</Text>
                         </View>
+                        )}
 
                         {/* Amount to Pay */}
                         <View style={styles.successPayRow}>
@@ -372,7 +391,7 @@ export default function RedeemScreen() {
                                 <View style={styles.offerCard}>
                                     <PhonkText style={[styles.offerTitle, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                         {t('flat_off_prefix')}<Text style={styles.greenText}>
-                                            {offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''}
+                                            {offer.discountType === 'buy1get1' ? t('buy1get1_label') : `${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ''}`}
                                         </Text>{t('flat_off_suffix')}
                                     </PhonkText>
                                 </View>
@@ -488,14 +507,16 @@ export default function RedeemScreen() {
                                                     {t('amount_with_currency', { amount: totalAmount.toFixed(2), currency: t('currency_qar') })}
                                                 </Text>
                                             </View>
+                                            {offer.discountType !== 'buy1get1' && (
                                             <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                                 <Text style={[styles.breakdownLabelGreen, { textAlign: isArabic ? 'right' : 'left' }]}>
-                                                    {t('home_title')} ({offer.discountValue}{offer.discountType === 'percentage' ? '%' : ''})
+                                                    {t('home_title')} ({offer.discountType === 'buy1get1' ? t('buy1get1_label') : `${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ''}`})
                                                 </Text>
                                                 <Text style={[styles.breakdownValueGreen, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                                     {t('amount_with_currency_negative', { amount: discountAmount.toFixed(2), currency: t('currency_qar') })}
                                                 </Text>
                                             </View>
+                                            )}
                                             <View style={styles.breakdownDivider} />
                                             <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                                 <Text style={[styles.breakdownLabelBold, { textAlign: isArabic ? 'right' : 'left' }]}>{t('amount_to_pay_label')}</Text>
@@ -853,11 +874,18 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         paddingHorizontal: 30,
+        gap: 16,
+        zIndex: 1,
+    },
+    successTopPillWrapper: {
+        position: 'relative',
+        marginTop: 40,
     },
     successTopPill: {
         backgroundColor: '#FFFFFF',
         borderRadius: 30,
-        paddingVertical: 24,
+        paddingTop: 50,
+        paddingBottom: 24,
         paddingHorizontal: 24,
         alignItems: 'center',
     },
@@ -867,14 +895,17 @@ const styles = StyleSheet.create({
         paddingVertical: 24,
         paddingHorizontal: 24,
     },
-    successLogoContainer: {
+    successLogoOverlay: {
+        position: 'absolute',
+        top: -40,
+        alignSelf: 'center',
         width: 80,
         height: 80,
         borderRadius: 20,
         backgroundColor: '#1E2a38',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        zIndex: 2,
     },
     successLogoImage: {
         width: '60%',
@@ -949,5 +980,26 @@ const styles = StyleSheet.create({
         fontFamily: Typography.poppins.medium,
         textAlign: 'center',
         marginTop: 8,
+    },
+    watermarkOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: -80,
+        right: -80,
+        bottom: 0,
+        justifyContent: 'space-around',
+        overflow: 'hidden',
+        zIndex: 0,
+    },
+    watermarkRow: {
+        flexDirection: 'row',
+        transform: [{ rotate: '-25deg' }],
+    },
+    watermarkText: {
+        color: 'rgba(255,255,255,0.07)',
+        fontSize: 13,
+        fontFamily: Typography.poppins.semiBold,
+        letterSpacing: 2,
+        marginHorizontal: 15,
     },
 });

@@ -2,7 +2,7 @@
   "expo": {
     "name": "realX",
     "slug": "reelx",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -14,7 +14,7 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.reelx.app",
       "googleServicesFile": "./GoogleService-Info.plist",
       "associatedDomains": [],
@@ -28,6 +28,11 @@
       "package": "com.reelx.app",
       "versionCode": 6,
       "googleServicesFile": "./google-services.json",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAZzzmsBPiXDGSRF3HOGgWXXRQsEurm19I"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/icon.png",
@@ -62,7 +67,12 @@
           }
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": ["./assets/sound.wav"]
+        }
+      ],
       [
         "expo-location",
         {
@@ -85,8 +95,8 @@
           "fonts": [
             "./assets/fonts/phonk.otf",
             "./assets/fonts/poppins.ttf",
-            "./assets/fonts/tajawal-medium.ttf",
-            "./assets/fonts/noto.ttf"
+            "./assets/fonts/jali-arabic-regular.ttf",
+            "./assets/fonts/jali-arabic-bold.ttf"
           ]
         }
       ],

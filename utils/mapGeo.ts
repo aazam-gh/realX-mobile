@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { geohashForLocation } from 'geofire-common';
+import { logger } from './logger';
 
 export type LatLng = {
   latitude: number;
@@ -90,7 +91,7 @@ export async function rememberRegionCacheKey(regionGeohash: string, maxRegions =
 
     await AsyncStorage.setItem(REGION_CACHE_INDEX, JSON.stringify(next.slice(0, maxRegions)));
   } catch (error) {
-    console.warn('Unable to persist region cache index:', error);
+    logger.warn('Unable to persist region cache index:', error);
   }
 }
 

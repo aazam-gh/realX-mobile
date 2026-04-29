@@ -13,6 +13,7 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { logger } from '../../utils/logger';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
@@ -29,6 +30,7 @@ type Props = {
 type BrandItem = {
     id: string;
     name: string;
+    nameAr?: string;
     logo: string | null; // null for placeholder
     backgroundColor?: string;
     loyalty?: number[];
@@ -41,11 +43,13 @@ function BrandListItem({
     isSelected,
     onSelect,
     isRTL,
+    isArabic,
 }: {
     brand: BrandItem;
     isSelected: boolean;
     onSelect: () => void;
     isRTL: boolean;
+    isArabic: boolean;
 }) {
     return (
         <TouchableOpacity
@@ -68,12 +72,12 @@ function BrandListItem({
                     <Image source={{ uri: brand.logo }} style={styles.brandLogoImage} />
                 ) : (
                     <Text style={styles.brandLogoPlaceholder}>
-                        {brand.name.charAt(0)}
+                        {(isArabic && brand.nameAr ? brand.nameAr : brand.name).charAt(0)}
                     </Text>
                 )}
             </View>
             <Text style={[styles.brandName, { textAlign: isRTL ? 'right' : 'left' }]}>
-                {brand.name}
+                {isArabic && brand.nameAr ? brand.nameAr : brand.name}
             </Text>
         </TouchableOpacity>
     );
@@ -94,8 +98,9 @@ export default function SpendCardDrawer({
     const [loadingMore, setLoadingMore] = useState(false);
     const lastDocRef = useRef<any>(null);
     const [isListEnd, setIsListEnd] = useState(false);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const isRTL = I18nManager.isRTL;
+    const isArabic = i18n.language === 'ar' || isRTL;
 
     const fetchBrands = useCallback(async (isNew: boolean) => {
         if (loading || (loadingMore && !isNew) || (isListEnd && !isNew)) return;
@@ -128,7 +133,8 @@ export default function SpendCardDrawer({
                 const data = doc.data();
                 return {
                     id: doc.id,
-                    name: data.name || 'Unknown',
+                    name: data.name || t('unknown'),
+                    nameAr: data.nameAr || undefined,
                     logo: data.profilePicture || data.logoUrl || data.imageUrl || null,
                     backgroundColor: '#F0F0F0',
                     loyalty: data.loyalty || [],
@@ -148,7 +154,7 @@ export default function SpendCardDrawer({
                 setIsListEnd(true);
             }
         } catch (error) {
-            console.error('Error fetching vendors for XCard:', error);
+            logger.error('Error fetching vendors for XCard:', error);
         } finally {
             setLoading(false);
             setLoadingMore(false);
@@ -168,7 +174,8 @@ export default function SpendCardDrawer({
     }, [visible]);
 
     const filteredBrands = brands.filter((brand) =>
-        brand.name.toLowerCase().includes(searchQuery.toLowerCase())
+        brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (brand.nameAr && brand.nameAr.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     const handleBrandSelect = (brandId: string) => {
@@ -205,8 +212,8 @@ export default function SpendCardDrawer({
                             <Text style={styles.backArrow}>{isRTL ? '→' : '←'}</Text>
                         </TouchableOpacity>
                             <View style={styles.logoContainer}>
-                                <PhonkText style={styles.logoX}>X</PhonkText>
-                                <PhonkText style={styles.logoCard}>CARD</PhonkText>
+                                <PhonkText style={styles.logoX}>{t('xcard_title_x')}</PhonkText>
+                                <PhonkText style={styles.logoCard}>{t('xcard_title_card')}</PhonkText>
                             </View>
                             <View style={styles.headerSpacer} />
                         </View>
@@ -246,6 +253,7 @@ export default function SpendCardDrawer({
                                         isSelected={selectedBrandId === item.id}
                                         onSelect={() => handleBrandSelect(item.id)}
                                         isRTL={isRTL}
+                                        isArabic={isArabic}
                                     />
                                 )}
                                 style={styles.brandList}

@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { getAuth, getIdToken } from '@react-native-firebase/auth';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
+import { logger } from './logger';
 
 export const getExpoProjectId = () => {
   return (
@@ -15,7 +16,7 @@ export const getExpoProjectId = () => {
 
 export const registerForExpoPushNotificationsAsync = async () => {
   if (!Device.isDevice) {
-    console.warn('Push notifications require a physical device');
+    logger.warn('Push notifications require a physical device');
     return null;
   }
 
@@ -28,13 +29,13 @@ export const registerForExpoPushNotificationsAsync = async () => {
   }
 
   if (finalStatus !== 'granted') {
-    console.warn('Push notification permissions not granted');
+    logger.warn('Push notification permissions not granted');
     return null;
   }
 
   const projectId = getExpoProjectId();
   if (!projectId) {
-    console.warn('Missing Expo projectId for push notification registration');
+    logger.warn('Missing Expo projectId for push notification registration');
     return null;
   }
 
@@ -94,7 +95,7 @@ export const syncExpoPushTokenForUser = async (uid: string) => {
         await registerPushTokenViaCallable(token);
         return token;
       } catch (retryError) {
-        console.warn('registerPushToken callable retry failed after token refresh', {
+        logger.warn('registerPushToken callable retry failed after token refresh', {
           uid,
           error: retryError,
         });
@@ -102,7 +103,7 @@ export const syncExpoPushTokenForUser = async (uid: string) => {
       }
     }
 
-    console.warn('registerPushToken callable failed; token was not synced', {
+    logger.warn('registerPushToken callable failed; token was not synced', {
       uid,
       error,
     });

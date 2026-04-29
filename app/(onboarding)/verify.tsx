@@ -20,9 +20,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
-import { getVerificationImages, clearVerificationImages } from '../../utils/verificationStore';
 import { savePendingVerification } from '../../utils/verificationPending';
+import { getVerificationImages, clearVerificationImages } from '../../utils/verificationStore';
 
 const OTP_LENGTH = 6;
 
@@ -153,7 +154,7 @@ export default function VerifyOtpScreen() {
       }
       // Login: _layout.tsx auto-routes to (tabs) via onAuthStateChanged
     } catch (err: any) {
-      console.error(err);
+      logger.error(err);
 
       const code = err.code || '';
       const message = err.message || t('onboarding_otp_generic_error');
@@ -190,7 +191,7 @@ export default function VerifyOtpScreen() {
       setCooldownSeconds(60);
       inputRefs.current[0]?.focus();
     } catch (err: any) {
-      console.error(err);
+      logger.error(err);
       Alert.alert(t('error'), err.message || t('onboarding_otp_send_failed'));
     } finally {
       setResendLoading(false);
@@ -416,6 +417,8 @@ const styles = StyleSheet.create({
     color: '#000',
     textAlign: 'center',
     backgroundColor: 'transparent',
+    paddingVertical: 0,
+    includeFontPadding: false,
   },
   errorContainer: {
     flexDirection: 'row',

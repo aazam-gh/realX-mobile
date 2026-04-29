@@ -8,6 +8,7 @@ import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, StyleSheet
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import { logger } from '../../utils/logger';
 
 type CategoryItem = {
     id: string;
@@ -59,7 +60,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
 
                 setFetchedCategories(items);
             } catch (error) {
-                console.error('Error fetching categories:', error);
+                logger.error('Error fetching categories:', error);
             } finally {
                 setLoading(false);
             }

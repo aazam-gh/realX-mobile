@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useTranslation } from 'react-i18next';
+import { toArabicDigits } from '../../utils/numbers';
 
 export type RedemptionData = {
     id: string;
@@ -24,7 +25,9 @@ type Props = {
 
 export default function RedemptionItem({ item }: Props) {
     const isRTL = I18nManager.isRTL;
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const isArabic = i18n.language === 'ar';
+    const fmt = (n: number) => isArabic ? toArabicDigits(n.toFixed(2)) : n.toFixed(2);
 
     return (
         <View style={[styles.container, isRTL && styles.containerRTL]}>
@@ -59,11 +62,11 @@ export default function RedemptionItem({ item }: Props) {
             {/* Saved Amount */}
             <View style={[styles.savedContainer, isRTL && { alignItems: 'flex-start' }]}> 
                 <Text style={styles.savedLabel}>
-                    {item.savedAmount.toFixed(2)} {item.currency}
+                    {fmt(item.savedAmount)} {item.currency}
                 </Text>
                 <Text style={[styles.totalBillText, { textAlign: isRTL ? 'right' : 'left' }]}>
                     {t('instead_of', {
-                        total: item.totalBill.toFixed(2),
+                        total: fmt(item.totalBill),
                         currency: item.currency,
                     })}
                 </Text>

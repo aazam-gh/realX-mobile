@@ -23,6 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 
 // Email normalization
@@ -79,7 +80,7 @@ export default function LoginScreen() {
         params: { email: normalizedEmail, purpose: 'login' },
       });
     } catch (err: any) {
-      console.error(err);
+      logger.error(err);
 
       // If account not found, show signup modal
       if (err.code === 'not-found') {
@@ -285,6 +286,8 @@ const styles = StyleSheet.create({
   input: {
     fontSize: 16,
     fontFamily: Typography.poppins.medium,
+    paddingVertical: 0,
+    includeFontPadding: false,
   },
   infoText: {
     fontSize: 14,

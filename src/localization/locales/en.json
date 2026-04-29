@@ -18,6 +18,8 @@
   "no_nearby_vendors": "No vendors found in this area.",
   "no_search_results": "No results matched your search.",
   "map_load_error": "Couldn't load map vendors. Please try again.",
+  "map_callout_view": "View",
+  "map_callout_directions": "Directions",
   "profile_details_title": "Profile Details",
   "save": "Save",
   "edit": "Edit",
@@ -39,7 +41,7 @@
   "all_time_saved": "All time you've saved",
   "rookie_badge": "Rookie",
   "currency_qar": "QAR",
-  "your_cashback_balance": "Your cashback balance",
+  "your_cashback_balance": "Your XPoints balance",
   "creator_code": "Creator Code",
   "your_creator_code": "Your Creator Code",
   "redemption_history": "Redemption History",
@@ -89,12 +91,13 @@
   "how_it_works_step_4": "Show the gift card at checkout",
   "how_it_works_step_5": "Enjoy your savings 🎉",
   "spend_button_text": "SPEND THE CARD",
-  "xcard_cashback_label": "Cashback:",
+  "xcard_cashback_label": "XPoints:",
   "xcard_creator_code_label": "Creator Code",
   "xcard_title_x": "X",
   "xcard_title_card": "CARD",
   "available_balance": "Available Balance:",
   "search_brands_placeholder": "Search for brands...",
+  "unknown": "Unknown",
   "brand_header_prefix": "TOP ",
   "brand_header_highlight": "BRANDS",
   "in_store_badge": "In-store",
@@ -117,12 +120,12 @@
   "instead_of": "Instead of {{total}} {{currency}}"
   ,"onboarding_headline_broke": "BROKE?"
   ,"onboarding_headline_not_anymore": "NOT ANYMORE."
-  ,"onboarding_student_subtext": "Student-only deals + cashback that actually hits different."
+  ,"onboarding_student_subtext": "Student-only deals + XPoints that actually hits different."
   ,"onboarding_get_started": "GET STARTED"
   ,"onboarding_join_as_student": "JOIN AS STUDENT"
   ,"onboarding_join_as_creator": "JOIN AS CREATOR"
-  ,"onboarding_student_role_description": "Get exclusive discounts on 50+ brands + 1% cashback on every purchase"
-  ,"onboarding_creator_role_description": "Share your personal code and earn double cashback when others use it"
+  ,"onboarding_student_role_description": "Get exclusive discounts on 50+ brands + 1% XPoints on every purchase"
+  ,"onboarding_creator_role_description": "Share your personal code and earn double XPoints when others use it"
   ,"onboarding_login_prompt": "Already have an account?"
   ,"onboarding_login_action": "Login"
   ,"onboarding_email_title_prefix": "CREATE YOUR"
@@ -180,11 +183,13 @@
   "no_specific_terms": "No specific terms provided for this offer.",
   "flat_off_prefix": "FLAT ",
   "flat_off_suffix": " OFF",
+  "buy1get1_label": "BUY 1 GET 1 FREE",
+  "item_price_label": "Item Price",
   "have_creator_code": "Have a creator code?",
   "optional": "(Optional)",
   "creator_code_placeholder": "AB12",
   "invalid_creator_code_format": "Creator code must be 2 letters followed by 2 numbers (e.g. AB12)",
-  "cashback_label_formatted": "💰 Cashback ({{percentage}}%)",
+  "cashback_label_formatted": "💰 XPoints ({{percentage}}%)",
   "redemption_info_not_found": "Information not found",
   "go_back": "Go Back",
   "hold_on": "Hold on",
@@ -195,7 +200,7 @@
   "redemption_successful_exclaim": "SUCCESSFUL!",
   "thanks_to_creator": "Thanks to {{creator}} you earned more!",
   "you_saved_success_message": "You saved {{currency}} {{amount}}!",
-  "cashback_earned_success_message": "Cashback earned: {{currency}} {{amount}}",
+  "cashback_earned_success_message": "XPoints earned: {{currency}} {{amount}}",
   "continue_caps": "CONTINUE",
   "amount_with_currency": "{{amount}} {{currency}}",
   "amount_with_currency_negative": "- {{amount}} {{currency}}",
@@ -211,7 +216,7 @@
   "filter_cash": "Cash",
   "filter_top": "Top",
   "notification_creator_code_used_title": "Your code was used!",
-  "notification_creator_code_used_body": "Someone used your code at {{vendor}}. You earned {{currency}} {{amount}} cashback!",
+  "notification_creator_code_used_body": "Someone used your code at {{vendor}}. You earned {{currency}} {{amount}} XPoints!",
   "onboarding_otp_verify_title": "VERIFY YOUR EMAIL",
   "onboarding_otp_check_email_title": "CHECK YOUR EMAIL",
   "onboarding_otp_subtitle": "We sent a 6-digit code to {{email}}",

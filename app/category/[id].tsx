@@ -345,11 +345,30 @@ export default function CategoryScreen() {
     }, [router]);
 
     const handleFilterChange = useCallback((filterId: string) => {
+        if (filterId === selectedFilter) {
+            return;
+        }
+
+        lastDocRef.current = null;
+        setIsListEnd(false);
+        setVendors([]);
+        flashListRef.current?.scrollToOffset({ offset: 0, animated: false });
         setSelectedFilter(filterId);
-        requestAnimationFrame(() => {
-            flashListRef.current?.scrollToOffset({ offset: 0, animated: false });
-        });
-    }, []);
+const handleFilterChange = useCallback((filterId: string) => {
+    if (filterId === selectedFilter) {
+        return;
+    }
+
+    lastDocRef.current = null;
+    setIsListEnd(false);
+    setVendors([]);
+
+    requestAnimationFrame(() => {
+        flashListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    });
+
+    setSelectedFilter(filterId);
+}, [selectedFilter]);
 
     const handleSearch = useCallback(() => {
         Keyboard.dismiss();
@@ -582,3 +601,4 @@ const styles = StyleSheet.create({
         width: '100%',
     },
 });
+

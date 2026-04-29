@@ -5,7 +5,7 @@ import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, Share, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -130,6 +130,12 @@ export default function VendorScreen() {
                             <TouchableOpacity
                                 style={styles.roundButton}
                                 activeOpacity={0.8}
+                                onPress={() => {
+                                    const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
+                                    Share.share({
+                                        message: `${t('share_vendor_message', { name: vendorName })}\nhttps://reelx.app/vendor/${actualVendorId || id}`,
+                                    });
+                                }}
                             >
                                 <Ionicons name="share-outline" size={24} color="#000" />
                             </TouchableOpacity>
@@ -162,6 +168,7 @@ export default function VendorScreen() {
                     </View>
 
                     <View style={styles.metaRow}>
+                        <View style={styles.metaLeft}>
                         <TouchableOpacity style={styles.locationButton} onPress={() => {
                             const lat = vendor?.lat;
                             const lng = vendor?.lng;
@@ -185,6 +192,22 @@ export default function VendorScreen() {
                             <Ionicons name="location-outline" size={18} color={Colors.brandGreen} />
                             <Text style={[styles.locationText, { fontFamily: Typography.poppins.medium }]}>{t('location')}</Text>
                         </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.tagsRow}>
+                            {vendor.trending && (
+                                <View style={styles.tagChip}>
+                                    <Ionicons name="trending-up" size={14} color="#FFF" />
+                                    <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]}>{t('trending')}</Text>
+                                </View>
+                            )}
+                            {vendor.xcard && (
+                                <View style={[styles.tagChip, { backgroundColor: Colors.brandGreen }]}>
+                                    <Ionicons name="cash-outline" size={14} color="#FFF" />
+                                    <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]}>{t('cashback')}</Text>
+                                </View>
+                            )}
+                        </View>
                     </View>
 
                     {/* Offers List */}
@@ -421,8 +444,32 @@ const styles = StyleSheet.create({
     metaRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        justifyContent: 'space-between',
         marginTop: 8,
+    },
+    metaLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    tagsRow: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    tagChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#000000',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 20,
+        gap: 4,
+    },
+    tagText: {
+        fontSize: 12,
+        color: '#FFF',
+        textTransform: 'uppercase',
+        letterSpacing: 0.3,
     },
     locationButton: {
         flexDirection: 'row',

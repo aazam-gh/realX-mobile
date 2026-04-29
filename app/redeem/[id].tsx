@@ -73,11 +73,9 @@ export default function RedeemScreen() {
     const [creatorCode, setCreatorCode] = useState('');
     const [pin, setPin] = useState('');
     const [amount, setAmount] = useState('');
-    const [itemPrice, setItemPrice] = useState('');
 
     const pinInputRef = useRef<TextInput>(null);
     const amountInputRef = useRef<TextInput>(null);
-    const itemPriceInputRef = useRef<TextInput>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -130,15 +128,13 @@ export default function RedeemScreen() {
     if (discountType === 'percentage') {
         discountAmount = totalAmount * (discountValue / 100);
     } else if (discountType === 'buy1get1') {
-        const itemPriceNum = parseFloat(normalizeDigits(itemPrice)) || 0;
-        discountAmount = Math.min(itemPriceNum, totalAmount);
+        discountAmount = 0; // No discount shown for buy1get1
     } else {
         discountAmount = Math.min(discountValue, totalAmount);
     }
     const finalAmount = Math.max(0, totalAmount - discountAmount);
 
-    const canRedeem = pin.length === 4 && totalAmount > 0
-        && (discountType !== 'buy1get1' || (parseFloat(normalizeDigits(itemPrice)) || 0) > 0);
+    const canRedeem = pin.length === 4 && totalAmount > 0;
 
     const handleRedeem = async () => {
         if (!canRedeem) return;
@@ -162,7 +158,6 @@ export default function RedeemScreen() {
                 totalAmount,
                 pin: normalizeDigits(pin),
                 creatorCode: creatorCode ? normalizeDigits(creatorCode).trim() : undefined,
-                itemPrice: discountType === 'buy1get1' ? parseFloat(normalizeDigits(itemPrice)) || 0 : undefined,
             });
 
             const data = result.data as any;
@@ -320,11 +315,13 @@ export default function RedeemScreen() {
 
                     {/* Bottom Pill — Breakdown */}
                     <View style={styles.successBottomPill}>
-                        {/* You Saved */}
+                        {/* You Saved (only for non-buy1get1) */}
+                        {offer.discountType !== 'buy1get1' && (
                         <View style={styles.successSavedRow}>
                             <Ionicons name="pricetag" size={18} color={Colors.brandGreen} />
                             <Text style={styles.successSavedLabel}>{t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}</Text>
                         </View>
+                        )}
 
                         {/* Amount to Pay */}
                         <View style={styles.successPayRow}>
@@ -501,35 +498,6 @@ export default function RedeemScreen() {
                                         />
                                     </View>
 
-                                    {/* Item Price Input (buy1get1 only) */}
-                                    {offer?.discountType === 'buy1get1' && (
-                                        <View>
-                                            <Text style={[styles.inputLabel, { textAlign: isArabic ? 'right' : 'left' }]}>{t('item_price_label')}:</Text>
-                                            <View style={[styles.amountInputContainer, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                                <Text style={[styles.currencyPrefix, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('currency_qar')}</Text>
-                                                <TextInput
-                                                    ref={itemPriceInputRef}
-                                                    style={[styles.amountInput, { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
-                                                    value={itemPrice}
-                                                    onChangeText={(text) => {
-                                                        const normalized = normalizeDigits(text);
-                                                        const filtered = normalized.replace(/[^0-9.]/g, '');
-                                                        const parts = filtered.split('.');
-                                                        const integerPart = parts[0].slice(0, 4);
-                                                        const decimalPart = parts.length > 1 ? `.${parts.slice(1).join('')}` : '';
-                                                        const final = integerPart + decimalPart;
-                                                        setItemPrice(final);
-                                                    }}
-                                                    keyboardType="decimal-pad"
-                                                    placeholder="0"
-                                                    placeholderTextColor="#CCC"
-                                                    returnKeyType="done"
-                                                    onSubmitEditing={handleAction}
-                                                />
-                                            </View>
-                                        </View>
-                                    )}
-
                                     {/* Breakdown */}
                                     {totalAmount > 0 && (
                                         <View style={styles.breakdownContainer}>
@@ -539,6 +507,7 @@ export default function RedeemScreen() {
                                                     {t('amount_with_currency', { amount: totalAmount.toFixed(2), currency: t('currency_qar') })}
                                                 </Text>
                                             </View>
+                                            {offer.discountType !== 'buy1get1' && (
                                             <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                                 <Text style={[styles.breakdownLabelGreen, { textAlign: isArabic ? 'right' : 'left' }]}>
                                                     {t('home_title')} ({offer.discountType === 'buy1get1' ? t('buy1get1_label') : `${offer.discountValue}${offer.discountType === 'percentage' ? '%' : ''}`})
@@ -547,6 +516,7 @@ export default function RedeemScreen() {
                                                     {t('amount_with_currency_negative', { amount: discountAmount.toFixed(2), currency: t('currency_qar') })}
                                                 </Text>
                                             </View>
+                                            )}
                                             <View style={styles.breakdownDivider} />
                                             <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                                 <Text style={[styles.breakdownLabelBold, { textAlign: isArabic ? 'right' : 'left' }]}>{t('amount_to_pay_label')}</Text>

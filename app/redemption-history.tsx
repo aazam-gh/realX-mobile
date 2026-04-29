@@ -140,7 +140,9 @@ export default function RedemptionHistoryScreen() {
     const paid = item.finalAmount || 0;
 
     const discountText =
-      item.offer?.discountType && item.offer?.discountValue
+      item.offer?.discountType === 'buy1get1'
+        ? t('buy1get1_label')
+        : item.offer?.discountType && item.offer?.discountValue
         ? `${item.offer.discountValue}${item.offer.discountType === 'percentage' ? '%' : ''} OFF`
         : t('offer_redeemed_label');
 

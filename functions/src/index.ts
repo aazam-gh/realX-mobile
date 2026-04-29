@@ -105,8 +105,8 @@ const calculateDiscount = (totalCents: number, discountType, discountValue) => {
   } else if (discountType === 'amount') {
     discountCents = toCents(discountValue);
   } else if (discountType === 'buy1get1') {
-    // discountValue is the item price in cents (passed from processTransaction)
-    discountCents = discountValue;
+    // No discount for buy1get1 - user pays full amount
+    discountCents = 0;
   } else {
     throw new HttpsError('invalid-argument', 'Invalid discount type');
   }
@@ -325,9 +325,9 @@ const processTransaction = async (options) => {
         }
         appliedOffer = vendorOffers[offerIndex];
 
-        // For buy1get1, the discount value is the item price in cents
+        // For buy1get1, no discount value needed
         const discountArg = appliedOffer.discountType === 'buy1get1'
-          ? toCents(normalizedItemPrice || 0)
+          ? 0
           : appliedOffer.discountValue;
 
         discountCents = calculateDiscount(

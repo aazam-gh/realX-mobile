@@ -163,7 +163,7 @@ export default function VendorScreen() {
                                 contentFit="contain"
                             />
                         ) : (
-                            <PhonkText style={[{ color: Colors.light.text }, styles.vendorName]}>{isArabic ? (vendor.nameAr || vendor.name) : vendor.name}</PhonkText>
+                            <PhonkText style={[{ color: Colors.light.text }, styles.vendorName]}>{vendor.name}</PhonkText>
                         )}
                     </View>
 
@@ -213,7 +213,7 @@ export default function VendorScreen() {
                     {/* Offers List */}
                     <View style={styles.offersList}>
                         {offers.map((offer) => {
-                            const percentValue =
+const percentValue =
     offer.discountType === 'percentage' && offer.discountValue
         ? `${offer.discountValue}%`
         : offer.discountType === 'buy1get1'
@@ -221,9 +221,8 @@ export default function VendorScreen() {
             : '';
 
 const offerTitle = isArabic
-    ? (offer.titleAr || (percentValue ? 'خصم' : offer.titleEn))
+    ? (percentValue ? `خصم ${percentValue}` : (offer.titleAr || offer.titleEn))
     : (offer.titleEn || offer.titleAr);
-
                             return (
                                 <View key={offer.id} style={styles.offerCard}>
                                     {offer.xcard && (

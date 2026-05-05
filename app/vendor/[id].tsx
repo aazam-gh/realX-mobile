@@ -331,6 +331,18 @@ const offerTitle = isArabic
                                         <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
                                         <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
                                     </View>
+                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
+                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
+                                    </View>
+                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
+                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
+                                    </View>
+                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Ionicons name="checkmark-circle" size={18} color={Colors.brandGreen} />
+                                        <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
+                                    </View>
                                 </View>
                             </ScrollView>
                         </View>

@@ -82,6 +82,7 @@
   "coming_soon_subtitle": "We're preparing student discounts for this category.",
   "all": "All",
   "help_link_text": "How does this work?",
+  "xp_conversion_text": "1 XP = 1 QAR value in rewards",
   "how_it_works_title_prefix": "HOW DOES ",
   "how_it_works_title_highlight": "THIS",
   "how_it_works_title_suffix": " WORK?",
@@ -247,5 +248,8 @@
   "onboarding_pending_rejected_default": "Your student ID could not be verified. Please try again with a clearer photo.",
   "onboarding_pending_rejection_reason": "Reason: {{reason}}",
   "onboarding_pending_try_again": "Try Again",
-  "onboarding_pending_last_checked": "Last checked: {{time}}"
+  "onboarding_pending_last_checked": "Last checked: {{time}}",
+  "xp_promotional_reward": "XP is a promotional reward and not legal tender",
+  "xp_no_cash_withdrawal": "XP cannot be withdrawn, exchanged for cash, or transferred",
+  "xp_in_app_only": "XP can only be used within the app with participating partners"
 }

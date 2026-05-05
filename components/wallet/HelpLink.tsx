@@ -23,7 +23,7 @@ export default function HelpLink({ onPress }: Props) {
                     {t('help_link_text')}
                 </Text>
             </TouchableOpacity>
-            <Text style={styles.conversionText}>1XP = 1 QAR</Text>
+            <Text style={styles.conversionText}>{t('xp_conversion_text')}</Text>
         </View>
     );
 }

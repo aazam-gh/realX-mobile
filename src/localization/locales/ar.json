@@ -82,6 +82,7 @@
   "coming_soon_subtitle": "نحن نجهز خصومات الطلاب لهذه الفئة.",
   "all": "الكل",
   "help_link_text": "كيف يعمل هذا؟",
+  "xp_conversion_text": "كل ١ XP يساوي ١ ريال قطري من قيمة المكافآت",
   "how_it_works_title_prefix": "كيف يعمل ",
   "how_it_works_title_highlight": "هذا",
   "how_it_works_title_suffix": "؟",
@@ -247,7 +248,10 @@
   "onboarding_pending_rejected_default": "تعذر التحقق من بطاقتك الجامعية. يرجى المحاولة مرة أخرى بصورة أوضح.",
   "onboarding_pending_rejection_reason": "السبب: {{reason}}",
   "onboarding_pending_try_again": "حاول مرة أخرى",
-  "onboarding_pending_last_checked": "آخر تحقق: {{time}}"
+  "onboarding_pending_last_checked": "آخر تحقق: {{time}}",
+  "xp_promotional_reward": "XP هو مكافأة ترويجية وليس عملة قانونية",
+  "xp_no_cash_withdrawal": "لا يمكن سحب XP أو استبداله نقدًا أو تحويله",
+  "xp_in_app_only": "يمكن استخدام XP فقط داخل التطبيق لدى الشركاء المشاركين"
 }
 
 

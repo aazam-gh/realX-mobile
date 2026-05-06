@@ -184,7 +184,7 @@ const sendCreatorCodeUsedPush = async ({
 
   const messages = tokens.map((to) => ({
     to,
-    sound: 'default',
+    sound: 'sound.wav',
     title: 'Your code was used!',
     body: `Someone used your code at ${vendorName}. You earned XP ${cashbackAmount.toFixed(2)} XPoints!`,
     data: {

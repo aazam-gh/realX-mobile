@@ -96,6 +96,7 @@ interface HeaderContentProps {
     searchQuery: string;
     setSearchQuery: (query: string) => void;
     handleSearch: () => void;
+    onClearSearch: () => void;
     t: any;
     showComingSoon: boolean;
     loadingVendors: boolean;
@@ -118,6 +119,7 @@ const HeaderContent = memo(({
     searchQuery,
     setSearchQuery,
     handleSearch,
+    onClearSearch,
     t,
     showComingSoon,
     loadingVendors,
@@ -135,6 +137,7 @@ const HeaderContent = memo(({
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 onSubmit={handleSearch}
+                onClear={onClearSearch}
             />
         )}
 
@@ -192,6 +195,7 @@ export default function CategoryScreen() {
     const [loading, setLoading] = useState(true);
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [selectedSubCategory, setSelectedSubCategory] = useState('all');
+    const [searchInput, setSearchInput] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
 
     const [vendors, setVendors] = useState<any[]>([]);
@@ -352,7 +356,13 @@ export default function CategoryScreen() {
     }, []);
 
     const handleSearch = useCallback(() => {
+        setSearchQuery(searchInput.trim().toLowerCase());
         Keyboard.dismiss();
+    }, [searchInput]);
+
+    const handleClearSearch = useCallback(() => {
+        setSearchInput('');
+        setSearchQuery('');
     }, []);
 
     const handleSubCategorySelect = useCallback((subCategory: { id: string; name: string; icon: any }) => {
@@ -458,9 +468,10 @@ export default function CategoryScreen() {
                             handleSubCategorySelect={handleSubCategorySelect}
                             config={config}
                             handleRestaurantPress={handleRestaurantPress}
-                            searchQuery={searchQuery}
-                            setSearchQuery={setSearchQuery}
+                            searchQuery={searchInput}
+                            setSearchQuery={setSearchInput}
                             handleSearch={handleSearch}
+                            onClearSearch={handleClearSearch}
                             t={t}
                             showComingSoon={showComingSoon}
                             loadingVendors={loadingVendors}
@@ -510,9 +521,10 @@ export default function CategoryScreen() {
                         handleSubCategorySelect={handleSubCategorySelect}
                         config={config}
                         handleRestaurantPress={handleRestaurantPress}
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
+                        searchQuery={searchInput}
+                        setSearchQuery={setSearchInput}
                         handleSearch={handleSearch}
+                        onClearSearch={handleClearSearch}
                         t={t}
                         showComingSoon={showComingSoon}
                         loadingVendors={loadingVendors}

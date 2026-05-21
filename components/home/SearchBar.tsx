@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -10,9 +10,10 @@ type Props = {
     value?: string;
     onChangeText?: (text: string) => void;
     onSubmit?: () => void;
+    onClear?: () => void;
 };
 
-export default function SearchBar({ placeholder = 'Search for anything...', value, onChangeText, onSubmit }: Props) {
+export default function SearchBar({ placeholder = 'Search for anything...', value, onChangeText, onSubmit, onClear }: Props) {
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -25,19 +26,39 @@ export default function SearchBar({ placeholder = 'Search for anything...', valu
         return unsubscribe;
     }, [navigation, onChangeText]);
 
+    const handleClear = () => {
+        if (onClear) {
+            onClear();
+            return;
+        }
+
+        onChangeText?.('');
+    };
+
     return (
-            <View style={styles.searchContainer}>
-                <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.icon} />
-                <TextInput
-                    style={[styles.input, { color: Colors.light.text }]}
-                    placeholder={placeholder}
-                    placeholderTextColor={Colors.light.tabIconDefault}
-                    value={value}
-                    onChangeText={onChangeText}
-                    returnKeyType="search"
-                    onSubmitEditing={onSubmit}
-                />
-            </View>
+        <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.icon} />
+            <TextInput
+                style={[styles.input, { color: Colors.light.text }]}
+                placeholder={placeholder}
+                placeholderTextColor={Colors.light.tabIconDefault}
+                value={value}
+                onChangeText={onChangeText}
+                returnKeyType="search"
+                onSubmitEditing={onSubmit}
+            />
+            {(value?.length ?? 0) > 0 ? (
+                <TouchableOpacity
+                    onPress={handleClear}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear search"
+                    hitSlop={8}
+                >
+                    <Ionicons name="close-circle" size={18} color={Colors.light.tabIconDefault} />
+                </TouchableOpacity>
+            ) : null}
+        </View>
     );
 }
 

@@ -32,7 +32,6 @@ import type { WalletBrand } from './types';
 import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 10;
-const SEARCH_DEBOUNCE_MS = 300;
 
 type Props = {
     visible: boolean;
@@ -99,6 +98,7 @@ export default function SpendCardDrawer({
     currency,
 }: Props) {
     const insets = useSafeAreaInsets();
+    const [searchInput, setSearchInput] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
     const [brands, setBrands] = useState<WalletBrand[]>([]);
@@ -110,15 +110,10 @@ export default function SpendCardDrawer({
     const isArabic = i18n.language === 'ar' || isRTL;
     const fetchingRef = useRef(false);
     const requestIdRef = useRef(0);
-    const skipNextSearchEffectRef = useRef(false);
     const searchQueryRef = useRef('');
     const lastDocRef = useRef<FirebaseFirestoreTypes.QueryDocumentSnapshot | null>(null);
     const isListEndRef = useRef(false);
     const [isListEnd, setIsListEnd] = useState(false);
-
-    useEffect(() => {
-        searchQueryRef.current = searchQuery;
-    }, [searchQuery]);
 
     const fetchBrands = useCallback(async (isNew: boolean, currentQuery?: string) => {
         if (!isNew && (fetchingRef.current || isListEndRef.current)) return;
@@ -194,28 +189,34 @@ export default function SpendCardDrawer({
     useEffect(() => {
         if (visible) {
             setBrands([]);
+            setSearchInput('');
             setSearchQuery('');
             setSelectedBrandId(null);
             setErrorMessage(null);
-            skipNextSearchEffectRef.current = true;
+            searchQueryRef.current = '';
             void fetchBrands(true, '');
         }
     }, [visible, fetchBrands]);
 
-    useEffect(() => {
-        if (!visible) return;
+    const handleSearchSubmit = () => {
+        const committedQuery = normalizeSearchText(searchInput);
 
-        if (skipNextSearchEffectRef.current) {
-            skipNextSearchEffectRef.current = false;
-            return;
+        setSearchQuery(committedQuery);
+        searchQueryRef.current = committedQuery;
+        void fetchBrands(true, committedQuery);
+    };
+
+    const handleClearSearch = () => {
+        const hadCommittedQuery = searchQueryRef.current.length > 0;
+
+        setSearchInput('');
+        setSearchQuery('');
+        searchQueryRef.current = '';
+
+        if (hadCommittedQuery) {
+            void fetchBrands(true, '');
         }
-
-        const timer = setTimeout(() => {
-            void fetchBrands(true, searchQuery);
-        }, SEARCH_DEBOUNCE_MS);
-
-        return () => clearTimeout(timer);
-    }, [fetchBrands, searchQuery, visible]);
+    };
 
     const handleBrandSelect = (brandId: string) => {
         setSelectedBrandId(brandId);
@@ -288,9 +289,23 @@ export default function SpendCardDrawer({
                                 style={[styles.searchInput, { textAlign: isRTL ? 'right' : 'left' }]}
                                 placeholder={t('search_brands_placeholder')}
                                 placeholderTextColor="#999999"
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
+                                value={searchInput}
+                                onChangeText={setSearchInput}
+                                onSubmitEditing={handleSearchSubmit}
+                                returnKeyType="search"
+                                blurOnSubmit={false}
                             />
+                            {(searchInput.length > 0 || searchQuery.length > 0) ? (
+                                <TouchableOpacity
+                                    style={[styles.clearButton, isRTL && styles.clearButtonRTL]}
+                                    onPress={handleClearSearch}
+                                    activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Clear search"
+                                >
+                                    <Ionicons name="close-circle" size={18} color="#7A7A7A" />
+                                </TouchableOpacity>
+                            ) : null}
                         </View>
 
                         {/* Brand List */}
@@ -324,7 +339,7 @@ export default function SpendCardDrawer({
                                     showsVerticalScrollIndicator={false}
                                     onEndReached={() => {
                                         if (!loadingMore && !isListEnd) {
-                                            void fetchBrands(false, searchQuery);
+                                            void fetchBrands(false, searchQueryRef.current);
                                         }
                                     }}
                                     onEndReachedThreshold={0.2}
@@ -342,7 +357,7 @@ export default function SpendCardDrawer({
                                             </Text>
                                             {errorMessage ? (
                                                 <TouchableOpacity
-                                                    onPress={() => void fetchBrands(searchQuery)}
+                                                    onPress={() => void fetchBrands(true, searchQueryRef.current)}
                                                     activeOpacity={0.8}
                                                     style={styles.retryButton}
                                                 >
@@ -452,6 +467,13 @@ const styles = StyleSheet.create({
         fontFamily: Typography.poppins.medium,
         color: '#000000',
         padding: 0,
+    },
+    clearButton: {
+        marginLeft: 10,
+    },
+    clearButtonRTL: {
+        marginLeft: 0,
+        marginRight: 10,
     },
     brandList: {
         flex: 1,

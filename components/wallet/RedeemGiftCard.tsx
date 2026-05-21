@@ -15,17 +15,10 @@ import PhonkText from '../PhonkText';
 import GiftCardCheckout from './GiftCardCheckout';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
-
-type Brand = {
-    id: string;
-    name: string;
-    logo: string | null;
-    backgroundColor?: string;
-    loyalty?: number[];
-};
+import type { WalletBrand } from './types';
 
 type RedeemGiftCardProps = {
-    brand: Brand;
+    brand: WalletBrand;
     onBack: () => void;
     maxLimit: number;
     currency: string;

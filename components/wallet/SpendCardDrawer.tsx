@@ -1,6 +1,16 @@
-import { collection, getDocs, getFirestore, limit, orderBy, query, startAfter, where } from '@react-native-firebase/firestore';
+import {
+    collection,
+    getDocs,
+    getFirestore,
+    limit,
+    query,
+    startAfter,
+    where,
+    FirebaseFirestoreTypes,
+} from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -18,7 +28,11 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 import RedeemGiftCard from './RedeemGiftCard';
+import type { WalletBrand } from './types';
 import { useTranslation } from 'react-i18next';
+
+const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 300;
 
 type Props = {
     visible: boolean;
@@ -27,14 +41,9 @@ type Props = {
     currency: string;
 };
 
-type BrandItem = {
-    id: string;
-    name: string;
-    nameAr?: string;
-    logo: string | null; // null for placeholder
-    backgroundColor?: string;
-    loyalty?: number[];
-};
+function normalizeSearchText(text: string) {
+    return text.trim().toLowerCase();
+}
 
 // Fetch dynamically instead of using placeholders
 
@@ -45,7 +54,7 @@ function BrandListItem({
     isRTL,
     isArabic,
 }: {
-    brand: BrandItem;
+    brand: WalletBrand;
     isSelected: boolean;
     onSelect: () => void;
     isRTL: boolean;
@@ -89,25 +98,41 @@ export default function SpendCardDrawer({
     balance,
     currency,
 }: Props) {
-    const PAGE_SIZE = 10;
     const insets = useSafeAreaInsets();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
-    const [brands, setBrands] = useState<BrandItem[]>([]);
+    const [brands, setBrands] = useState<WalletBrand[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
-    const lastDocRef = useRef<any>(null);
-    const [isListEnd, setIsListEnd] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const { t, i18n } = useTranslation();
     const isRTL = I18nManager.isRTL;
     const isArabic = i18n.language === 'ar' || isRTL;
+    const fetchingRef = useRef(false);
+    const requestIdRef = useRef(0);
+    const skipNextSearchEffectRef = useRef(false);
+    const searchQueryRef = useRef('');
+    const lastDocRef = useRef<FirebaseFirestoreTypes.QueryDocumentSnapshot | null>(null);
+    const isListEndRef = useRef(false);
+    const [isListEnd, setIsListEnd] = useState(false);
 
-    const fetchBrands = useCallback(async (isNew: boolean) => {
-        if (loading || (loadingMore && !isNew) || (isListEnd && !isNew)) return;
+    useEffect(() => {
+        searchQueryRef.current = searchQuery;
+    }, [searchQuery]);
 
+    const fetchBrands = useCallback(async (isNew: boolean, currentQuery?: string) => {
+        if (!isNew && (fetchingRef.current || isListEndRef.current)) return;
+
+        const trimmedQuery = normalizeSearchText(currentQuery ?? searchQueryRef.current);
+        const isSearchMode = trimmedQuery.length > 0;
+
+        const requestId = ++requestIdRef.current;
+        fetchingRef.current = true;
+        setErrorMessage(null);
         if (isNew) {
             setLoading(true);
             lastDocRef.current = null;
+            isListEndRef.current = false;
             setIsListEnd(false);
         } else {
             setLoadingMore(true);
@@ -115,21 +140,23 @@ export default function SpendCardDrawer({
 
         try {
             const db = getFirestore();
-            const constraints: any[] = [
-                where('xcard', '==', true),
-                orderBy('name', 'asc'),
-            ];
+            const constraints = isSearchMode
+                ? [
+                    where('xcard', '==', true),
+                    where('searchTokens', 'array-contains', trimmedQuery),
+                ]
+                : [
+                    where('xcard', '==', true),
+                ];
 
-            let q;
-            if (isNew || !lastDocRef.current) {
-                q = query(collection(db, 'vendors'), ...constraints, limit(PAGE_SIZE) as any);
-            } else {
-                q = query(collection(db, 'vendors'), ...constraints, startAfter(lastDocRef.current) as any, limit(PAGE_SIZE) as any);
-            }
+            const q = isNew || !lastDocRef.current
+                ? query(collection(db, 'vendors'), ...constraints, limit(PAGE_SIZE))
+                : query(collection(db, 'vendors'), ...constraints, startAfter(lastDocRef.current), limit(PAGE_SIZE));
 
             const snapshot = await getDocs(q);
+            if (requestId !== requestIdRef.current) return;
 
-            const items: BrandItem[] = snapshot.docs.map((doc: any) => {
+            const items: WalletBrand[] = snapshot.docs.map((doc: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
                 const data = doc.data();
                 return {
                     id: doc.id,
@@ -141,48 +168,71 @@ export default function SpendCardDrawer({
                 };
             });
 
-            if (isNew) {
-                setBrands(items);
-            } else {
-                setBrands(prev => [...prev, ...items]);
-            }
+            setBrands((prev) => (isNew ? items : [...prev, ...items]));
 
             if (snapshot.docs.length > 0) {
                 lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
-                setIsListEnd(snapshot.docs.length < PAGE_SIZE);
+                const reachedEnd = snapshot.docs.length < PAGE_SIZE;
+                isListEndRef.current = reachedEnd;
+                setIsListEnd(reachedEnd);
             } else {
+                isListEndRef.current = true;
                 setIsListEnd(true);
             }
         } catch (error) {
+            if (requestId !== requestIdRef.current) return;
             logger.error('Error fetching vendors for XCard:', error);
+            setErrorMessage(t('failed_to_load_brands'));
         } finally {
+            if (requestId !== requestIdRef.current) return;
+            fetchingRef.current = false;
             setLoading(false);
             setLoadingMore(false);
         }
-    }, [loading, loadingMore, isListEnd]);
-
-    const fetchBrandsRef = useRef(fetchBrands);
-    useEffect(() => { fetchBrandsRef.current = fetchBrands; }, [fetchBrands]);
+    }, [t]);
 
     useEffect(() => {
         if (visible) {
             setBrands([]);
             setSearchQuery('');
             setSelectedBrandId(null);
-            fetchBrandsRef.current(true);
+            setErrorMessage(null);
+            skipNextSearchEffectRef.current = true;
+            void fetchBrands(true, '');
         }
-    }, [visible]);
+    }, [visible, fetchBrands]);
 
-    const filteredBrands = brands.filter((brand) =>
-        brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (brand.nameAr && brand.nameAr.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    useEffect(() => {
+        if (!visible) return;
+
+        if (skipNextSearchEffectRef.current) {
+            skipNextSearchEffectRef.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            void fetchBrands(true, searchQuery);
+        }, SEARCH_DEBOUNCE_MS);
+
+        return () => clearTimeout(timer);
+    }, [fetchBrands, searchQuery, visible]);
 
     const handleBrandSelect = (brandId: string) => {
         setSelectedBrandId(brandId);
     };
 
     const selectedBrand = brands.find(b => b.id === selectedBrandId);
+    const searchText = normalizeSearchText(searchQuery);
+    const emptyTitle = errorMessage
+        ? t('failed_to_load_brands')
+        : searchText
+            ? t('no_matching_brands')
+            : t('no_brands_available');
+    const emptyBody = errorMessage
+        ? errorMessage
+        : searchText
+            ? t('no_matching_brands_hint')
+            : t('no_brands_available_hint');
 
     return (
         <Modal
@@ -228,7 +278,12 @@ export default function SpendCardDrawer({
 
                         {/* Search Bar */}
                         <View style={[styles.searchContainer, isRTL && styles.searchContainerRTL]}>
-                            <Text style={[styles.searchIcon, isRTL && styles.searchIconRTL]}>🔍</Text>
+                            <Ionicons
+                                name="search"
+                                size={18}
+                                color="#7A7A7A"
+                                style={[styles.searchIcon, isRTL && styles.searchIconRTL]}
+                            />
                             <TextInput
                                 style={[styles.searchInput, { textAlign: isRTL ? 'right' : 'left' }]}
                                 placeholder={t('search_brands_placeholder')}
@@ -239,39 +294,65 @@ export default function SpendCardDrawer({
                         </View>
 
                         {/* Brand List */}
-                        {loading ? (
+                        {loading && brands.length === 0 ? (
                             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                                 <ActivityIndicator size="large" color={Colors.brandGreen} />
                             </View>
                         ) : (
-                            <FlashList
-                                data={filteredBrands}
-                                keyExtractor={(item) => item.id}
-                                renderItem={({ item }) => (
-                                    <BrandListItem
-                                        brand={item}
-                                        isSelected={selectedBrandId === item.id}
-                                        onSelect={() => handleBrandSelect(item.id)}
-                                        isRTL={isRTL}
-                                        isArabic={isArabic}
-                                    />
-                                )}
-                                style={styles.brandList}
-                                contentContainerStyle={[
-                                    styles.brandListContent,
-                                    { paddingBottom: insets.bottom + 20 },
-                                ]}
-                                showsVerticalScrollIndicator={false}
-                                onEndReached={() => {
-                                    if (!loadingMore && !isListEnd) {
-                                        fetchBrands(false);
+                            <View style={styles.brandList}>
+                                <FlashList
+                                    data={brands}
+                                    keyExtractor={(item) => item.id}
+                                    // Keep FlashList from remeasuring the first visible row while scrolling.
+                                    estimatedItemSize={80}
+                                    maintainVisibleContentPosition={{ disabled: true }}
+                                    renderItem={({ item }) => (
+                                        <BrandListItem
+                                            brand={item}
+                                            isSelected={selectedBrandId === item.id}
+                                            onSelect={() => handleBrandSelect(item.id)}
+                                            isRTL={isRTL}
+                                            isArabic={isArabic}
+                                        />
+                                    )}
+                                    style={styles.brandList}
+                                    contentContainerStyle={[
+                                        styles.brandListContent,
+                                        { paddingBottom: insets.bottom + 20 },
+                                        brands.length === 0 && styles.brandListEmptyContent,
+                                    ]}
+                                    showsVerticalScrollIndicator={false}
+                                    onEndReached={() => {
+                                        if (!loadingMore && !isListEnd) {
+                                            void fetchBrands(false, searchQuery);
+                                        }
+                                    }}
+                                    onEndReachedThreshold={0.2}
+                                    ListFooterComponent={loadingMore ? (
+                                        <ActivityIndicator size="small" color={Colors.brandGreen} style={{ paddingVertical: 16 }} />
+                                    ) : null}
+                                    ListEmptyComponent={
+                                        <View style={styles.emptyState}>
+                                            <Text style={styles.emptyStateEmoji}>🔍</Text>
+                                            <Text style={styles.emptyStateTitle}>
+                                                {emptyTitle}
+                                            </Text>
+                                            <Text style={styles.emptyStateText}>
+                                                {emptyBody}
+                                            </Text>
+                                            {errorMessage ? (
+                                                <TouchableOpacity
+                                                    onPress={() => void fetchBrands(searchQuery)}
+                                                    activeOpacity={0.8}
+                                                    style={styles.retryButton}
+                                                >
+                                                    <Text style={styles.retryButtonText}>{t('retry')}</Text>
+                                                </TouchableOpacity>
+                                            ) : null}
+                                        </View>
                                     }
-                                }}
-                                onEndReachedThreshold={0.5}
-                                ListFooterComponent={loadingMore ? (
-                                    <ActivityIndicator size="small" color={Colors.brandGreen} style={{ paddingVertical: 16 }} />
-                                ) : null}
-                            />
+                                />
+                            </View>
                         )}
                     </>
                 )}
@@ -359,7 +440,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
     },
     searchIcon: {
-        fontSize: 16,
         marginRight: 10,
     },
     searchIconRTL: {
@@ -378,6 +458,9 @@ const styles = StyleSheet.create({
     },
     brandListContent: {
         paddingHorizontal: 16,
+    },
+    brandListEmptyContent: {
+        flexGrow: 1,
     },
     brandItem: {
         flexDirection: 'row',
@@ -420,5 +503,42 @@ const styles = StyleSheet.create({
         fontFamily: Typography.poppins.medium,
         color: '#000000',
         flex: 1,
+    },
+    emptyState: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 24,
+        paddingTop: 32,
+    },
+    emptyStateEmoji: {
+        fontSize: 28,
+        marginBottom: 12,
+    },
+    emptyStateTitle: {
+        fontSize: 16,
+        fontFamily: Typography.poppins.semiBold,
+        color: '#111111',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    emptyStateText: {
+        fontSize: 13,
+        fontFamily: Typography.poppins.medium,
+        color: '#666666',
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+    retryButton: {
+        marginTop: 16,
+        paddingHorizontal: 18,
+        paddingVertical: 10,
+        borderRadius: 999,
+        backgroundColor: Colors.brandGreen,
+    },
+    retryButtonText: {
+        fontSize: 14,
+        fontFamily: Typography.poppins.semiBold,
+        color: '#FFFFFF',
     },
 });

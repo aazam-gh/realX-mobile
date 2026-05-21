@@ -99,6 +99,12 @@
   "available_balance": "الرصيد المتاح:",
   "search_brands_placeholder": "ابحث العلامات التجارية...",
   "unknown": "غير معروف",
+  "failed_to_load_brands": "تعذر تحميل العلامات التجارية. حاول مرة أخرى.",
+  "no_brands_available": "لا توجد علامات XCard التجارية المتاحة.",
+  "no_brands_available_hint": "تحقق لاحقًا من العلامات التجارية المشاركة في XCard.",
+  "no_matching_brands": "لم يتم العثور على علامات تجارية مطابقة.",
+  "no_matching_brands_hint": "جرّب اسمًا أو تهجئة مختلفة.",
+  "retry": "إعادة المحاولة",
   "brand_header_prefix": "أقوى ",
   "brand_header_highlight": "الماركات",
   "in_store_badge": "في المتجر",
@@ -253,5 +259,4 @@
   "xp_no_cash_withdrawal": "لا يمكن سحب XP أو استبداله نقدًا أو تحويله",
   "xp_in_app_only": "يمكن استخدام XP فقط داخل التطبيق لدى الشركاء المشاركين"
 }
-
 

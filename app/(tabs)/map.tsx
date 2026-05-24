@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '@react-native-firebase/auth';
-import { Platform } from 'react-native';
 import {
   collection,
   doc,
@@ -15,7 +14,7 @@ import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Linking, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, Polyline, Region } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Supercluster, { ClusterFeature, PointFeature } from 'supercluster';
@@ -103,6 +102,7 @@ export default function MapScreen() {
   const [_searchingNearby, setSearchingNearby] = useState(false);
   void _searchingNearby;
   const [searchQuery, setSearchQuery] = useState('');
+  const [submittedSearchQuery, setSubmittedSearchQuery] = useState('');
   const [searchedVendorIds, setSearchedVendorIds] = useState<Set<string> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedMapVendor, setSelectedMapVendor] = useState<VendorMapItem | null>(null);
@@ -110,11 +110,16 @@ export default function MapScreen() {
   const [fetchingDetail, setFetchingDetail] = useState(false);
   const [navigationTarget, setNavigationTarget] = useState<{ lat: number; lng: number; vendorId: string } | null>(null);
   const pendingSelectVendorIdRef = useRef<string | null>(null);
+  const vendorsRef = useRef<VendorMapItem[]>([]);
   const params = useLocalSearchParams<{ vendorId?: string; lat?: string; lng?: string }>();
 
   useEffect(() => {
+    vendorsRef.current = vendors;
+  }, [vendors]);
+
+  useEffect(() => {
     let active = true;
-    const trimmedQuery = searchQuery.trim().toLowerCase();
+    const trimmedQuery = submittedSearchQuery.trim().toLowerCase();
 
     if (!trimmedQuery) {
       setSearchedVendorIds(null);
@@ -123,7 +128,7 @@ export default function MapScreen() {
     }
 
     setIsSearching(true);
-    const timer = setTimeout(async () => {
+    const runSearch = async () => {
       try {
         const db = getFirestore();
         const vendorsRef = collection(db, 'vendors');
@@ -136,11 +141,10 @@ export default function MapScreen() {
         snapshot.forEach((docSnap: any) => ids.add(docSnap.id));
         setSearchedVendorIds(ids);
 
-        // Animate map to show results
         if (ids.size > 0) {
-          const matchedCoords = vendors
-            .filter((v) => ids.has(v.id))
-            .map((v) => ({ latitude: v.latitude, longitude: v.longitude }));
+          const matchedCoords = vendorsRef.current
+            .filter((v: VendorMapItem) => ids.has(v.id))
+            .map((v: VendorMapItem) => ({ latitude: v.latitude, longitude: v.longitude }));
 
           if (matchedCoords.length > 0) {
             mapRef.current?.fitToCoordinates(matchedCoords, {
@@ -156,13 +160,14 @@ export default function MapScreen() {
           setIsSearching(false);
         }
       }
-    }, 300);
+    };
+
+    void runSearch();
 
     return () => {
       active = false;
-      clearTimeout(timer);
     };
-  }, [searchQuery, vendors]);
+  }, [submittedSearchQuery]);
 
   // In-memory vendor cache — accumulates across fetches so panning back is instant
   const vendorCacheRef = useRef<Map<string, VendorMapItem>>(new Map());
@@ -285,7 +290,7 @@ export default function MapScreen() {
       const byId = new Map<string, VendorMapItem>();
       let totalVendors = 0;
 
-      mapsSnapshot.docs.forEach((mapDoc) => {
+      mapsSnapshot.docs.forEach((mapDoc: any) => {
         if (!mapDoc.id.startsWith('locations')) return;
 
         const locationsData = mapDoc.data() as Record<string, any>;
@@ -494,6 +499,10 @@ export default function MapScreen() {
     });
   };
 
+  const handleSubmitMapSearch = () => {
+    setSubmittedSearchQuery(searchQuery.trim().toLowerCase());
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.light.background} />
@@ -590,11 +599,15 @@ export default function MapScreen() {
               value={searchQuery}
               onChangeText={setSearchQuery}
               returnKeyType="search"
+              onSubmitEditing={handleSubmitMapSearch}
             />
             {isSearching ? (
               <ActivityIndicator size="small" color={Colors.brandGreen} />
             ) : searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <TouchableOpacity onPress={() => {
+                setSearchQuery('');
+                setSubmittedSearchQuery('');
+              }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="close-circle" size={18} color="#AAA" />
               </TouchableOpacity>
             )}

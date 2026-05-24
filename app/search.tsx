@@ -27,6 +27,7 @@ export default function SearchScreen() {
     const isArabic = i18n.language === 'ar';
 
     const [searchQuery, setSearchQuery] = useState(q || '');
+    const [committedQuery, setCommittedQuery] = useState((q || '').trim().toLowerCase());
     const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -35,7 +36,7 @@ export default function SearchScreen() {
 
     // Fetch vendors with pagination — only when user has typed a query
     const fetchVendors = useCallback(async (isNew = false, currentQuery?: string) => {
-        const trimmedQuery = (currentQuery ?? searchQuery).trim().toLowerCase();
+        const trimmedQuery = (currentQuery ?? committedQuery).trim().toLowerCase();
 
         if (!trimmedQuery) {
             setResults([]);
@@ -101,20 +102,20 @@ export default function SearchScreen() {
             setLoading(false);
             setLoadingMore(false);
         }
-    }, [loading, loadingMore, isListEnd, searchQuery]);
+    }, [loading, loadingMore, isListEnd, committedQuery]);
 
     const fetchVendorsRef = useRef(fetchVendors);
     useEffect(() => {
         fetchVendorsRef.current = fetchVendors;
     }, [fetchVendors]);
 
-    // Debounced search effect
     useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchVendorsRef.current(true, searchQuery);
-        }, 300); // 300ms debounce
+        fetchVendorsRef.current(true, committedQuery);
+    }, [committedQuery]);
 
-        return () => clearTimeout(timer);
+    const handleSubmitSearch = useCallback(() => {
+        const trimmed = searchQuery.trim().toLowerCase();
+        setCommittedQuery(trimmed);
     }, [searchQuery]);
 
     const handleVendorPress = useCallback(
@@ -192,6 +193,7 @@ export default function SearchScreen() {
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         returnKeyType="search"
+                        onSubmitEditing={handleSubmitSearch}
                         autoFocus
                     />
                     {searchQuery.length > 0 && (
@@ -199,6 +201,7 @@ export default function SearchScreen() {
                             onPress={() => {
                                 triggerSubtleHaptic();
                                 setSearchQuery('');
+                                setCommittedQuery('');
                             }}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
@@ -217,11 +220,11 @@ export default function SearchScreen() {
                 <View style={styles.centeredContainer}>
                     <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.emptyEmoji]}>🔍</Text>
                     <Text style={[{ color: Colors.light.text, fontFamily: Typography.poppins.medium }, styles.emptyTitle]}>
-                        {searchQuery.trim() ? 'No offers found' : 'Search for offers'}
+                        {committedQuery ? 'No offers found' : 'Search for offers'}
                     </Text>
                     <Text style={[{ color: Colors.light.tabIconDefault, fontFamily: Typography.poppins.medium }, styles.emptySubtitle]}>
-                        {searchQuery.trim()
-                            ? `We couldn't find any offers matching "${searchQuery.trim()}"`
+                        {committedQuery
+                            ? `We couldn't find any offers matching "${committedQuery}"`
                             : 'Type a keyword to find deals and discounts'}
                     </Text>
                 </View>

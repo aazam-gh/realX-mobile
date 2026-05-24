@@ -4,7 +4,7 @@
 
 
 import * as admin from 'firebase-admin';
-import { CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
+import { CallableRequest, HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { geohashForLocation } from 'geofire-common';
@@ -660,6 +660,58 @@ export const assignCreatorCode = onCall(
  * Student Check
  * =============================
  */
+const WAKTI_API_KEY_HEADER = 'x-wakti-api-key';
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+export const verifyWaktiStudent = onRequest(
+  { secrets: ['WAKTI_API_KEY'] },
+  async (request, response) => {
+    if (request.method !== 'POST') {
+      response.set('Allow', 'POST');
+      response.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+
+    const configuredApiKey = process.env.WAKTI_API_KEY;
+    const requestApiKey = request.get(WAKTI_API_KEY_HEADER);
+
+    if (!configuredApiKey || !requestApiKey || requestApiKey !== configuredApiKey) {
+      console.warn('Wakti student verification rejected: invalid API key');
+      response.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const email = typeof request.body?.email === 'string'
+      ? request.body.email.trim().toLowerCase()
+      : '';
+
+    if (!email || !isValidEmail(email)) {
+      response.status(400).json({ error: 'Valid email required' });
+      return;
+    }
+
+    const snapshot = await db
+      .collection('students')
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+    const isStudent = !snapshot.empty;
+
+    console.info('Wakti student verification completed', {
+      isStudent,
+    });
+
+    await db.collection('wakti_student_verification_requests').add({
+      email,
+      isStudent,
+      status: 'success',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    response.status(200).json({ isStudent });
+  }
+);
+
 export const checkStudentExists = onCall(
   async (request: CallableRequest) => {
     const email = request.data?.email?.toLowerCase()?.trim();

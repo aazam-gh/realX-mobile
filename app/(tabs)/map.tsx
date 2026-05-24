@@ -156,6 +156,8 @@ export default function MapScreen() {
   const [_searchingNearby, setSearchingNearby] = useState(false);
   void _searchingNearby;
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [animatedSearchPlaceholder, setAnimatedSearchPlaceholder] = useState('');
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState('');
   const [searchedVendorIds, setSearchedVendorIds] = useState<Set<string> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -167,6 +169,8 @@ export default function MapScreen() {
   const pendingSelectVendorIdRef = useRef<string | null>(null);
   const vendorsRef = useRef<VendorMapItem[]>([]);
   const params = useLocalSearchParams<{ vendorId?: string; locationId?: string; lat?: string; lng?: string }>();
+  const isSearchActive = isSearchFocused || searchQuery.length > 0;
+  const searchPlaceholder = t('search_placeholder');
 
   useEffect(() => {
     vendorsRef.current = vendors;
@@ -263,6 +267,45 @@ export default function MapScreen() {
       active = false;
     };
   }, [submittedSearchQuery]);
+
+  useEffect(() => {
+    let frame: ReturnType<typeof setTimeout>;
+    let index = 0;
+    let direction: 'typing' | 'deleting' = 'typing';
+
+    setAnimatedSearchPlaceholder('');
+
+    const tick = () => {
+      if (direction === 'typing') {
+        index += 1;
+        setAnimatedSearchPlaceholder(searchPlaceholder.slice(0, index));
+
+        if (index >= searchPlaceholder.length) {
+          direction = 'deleting';
+          frame = setTimeout(tick, 1400);
+          return;
+        }
+
+        frame = setTimeout(tick, 80);
+        return;
+      }
+
+      index -= 1;
+      setAnimatedSearchPlaceholder(searchPlaceholder.slice(0, index));
+
+      if (index <= 0) {
+        direction = 'typing';
+        frame = setTimeout(tick, 450);
+        return;
+      }
+
+      frame = setTimeout(tick, 26);
+    };
+
+    frame = setTimeout(tick, 350);
+
+    return () => clearTimeout(frame);
+  }, [searchPlaceholder]);
 
   // In-memory vendor cache — accumulates across fetches so panning back is instant
   const vendorCacheRef = useRef<Map<string, VendorMapItem>>(new Map());
@@ -730,15 +773,24 @@ export default function MapScreen() {
 
         <View style={styles.floatingSearch} pointerEvents="box-none">
           <View style={styles.searchContainer} pointerEvents="auto">
-            <Ionicons name="search" size={20} color={Colors.brandGreen} style={styles.searchIcon} />
+            <Ionicons
+              name="search"
+              size={20}
+              color={isSearchActive ? Colors.brandGreen : Colors.light.tabIconDefault}
+              style={styles.searchIcon}
+            />
             <TextInput
-              style={styles.searchInput}
-              placeholder={t('search_placeholder')}
+              style={[styles.searchInput, isSearchActive && styles.searchInputActive]}
+              placeholder={isSearchActive ? '' : animatedSearchPlaceholder || searchPlaceholder}
               placeholderTextColor={Colors.light.tabIconDefault}
               value={searchQuery}
               onChangeText={setSearchQuery}
               returnKeyType="search"
               onSubmitEditing={handleSubmitMapSearch}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+              selectionColor={Colors.brandGreen}
+              cursorColor={Colors.brandGreen}
             />
             {isSearching ? (
               <ActivityIndicator size="small" color={Colors.brandGreen} />
@@ -1051,6 +1103,9 @@ const styles = StyleSheet.create({
     fontFamily: Typography.poppins.medium,
     color: Colors.light.text,
     padding: 0,
+  },
+  searchInputActive: {
+    color: Colors.brandGreen,
   },
   mapContainer: {
     flex: 1,

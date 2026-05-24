@@ -3,18 +3,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from '@react-native-firebase/auth';
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
   getFirestore,
   query,
+  serverTimestamp,
+  setDoc,
   where,
 } from '@react-native-firebase/firestore';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Linking, Platform, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, Polyline, Region } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Supercluster, { ClusterFeature, PointFeature } from 'supercluster';
@@ -58,18 +61,35 @@ function clampRegion(region: Region): Region {
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const MAP_GEOHASH_PRECISION = 5;
+const MAP_RECENTS_KEY = 'realx.map.recentPlaces.v1';
 const _DEFAULT_ZOOM = 11.5;
 void _DEFAULT_ZOOM;
 
 type VendorMapItem = {
   id: string;
+  vendorId: string;
+  locationId: string;
   name?: string;
   nameAr?: string;
+  branchName?: string;
+  branchNameAr?: string;
   address?: string;
   addressAr?: string;
   latitude: number;
   longitude: number;
   geohash: string;
+  mainCategory?: string | null;
+  xcard?: boolean;
+  offerTypes?: string[];
+  hasBuyOneGetOne?: boolean;
+  hasStudentDeal?: boolean;
+  openingHours?: any;
+  searchTokens?: string[];
+  firstOffer?: {
+    titleEn?: string;
+    titleAr?: string;
+    discountType?: string;
+  } | null;
   distanceKm?: number;
 };
 
@@ -77,6 +97,40 @@ type RegionCachePayload = {
   fetchedAt: number;
   vendors: VendorMapItem[];
 };
+
+const CATEGORY_COLORS: Record<string, string> = {
+  food: '#FF7A00',
+  restaurant: '#FF7A00',
+  restaurants: '#FF7A00',
+  cafe: '#A66A2C',
+  cafes: '#A66A2C',
+  coffee: '#A66A2C',
+  gym: '#246BFE',
+  gyms: '#246BFE',
+  fitness: '#246BFE',
+  salon: '#D93D8B',
+  salons: '#D93D8B',
+  beauty: '#D93D8B',
+  services: '#5856D6',
+  service: '#5856D6',
+};
+
+function normalizeFilterLabel(value?: string | null) {
+  return (value || '').trim().toLowerCase();
+}
+
+function markerColorForVendor(vendor: VendorMapItem) {
+  if (vendor.hasBuyOneGetOne || vendor.firstOffer?.discountType === 'buy1get1') return '#111111';
+  if (vendor.xcard) return Colors.brandGreen;
+  const category = normalizeFilterLabel(vendor.mainCategory);
+  return CATEGORY_COLORS[category] || '#6C63FF';
+}
+
+function clusterColorForCount(pointCount: number) {
+  if (pointCount >= 40) return '#111111';
+  if (pointCount >= 15) return '#FF7A00';
+  return Colors.brandGreen;
+}
 
 
 export default function MapScreen() {
@@ -106,16 +160,43 @@ export default function MapScreen() {
   const [searchedVendorIds, setSearchedVendorIds] = useState<Set<string> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedMapVendor, setSelectedMapVendor] = useState<VendorMapItem | null>(null);
-  const [vendorDetail, setVendorDetail] = useState<any>(null);
-  const [fetchingDetail, setFetchingDetail] = useState(false);
+  const [savedMapPlaceIds, setSavedMapPlaceIds] = useState<Set<string>>(new Set());
+  const [savingMapPlaceIds, setSavingMapPlaceIds] = useState<Set<string>>(new Set());
+  const [selectedClusterPreview, setSelectedClusterPreview] = useState<VendorMapItem[]>([]);
   const [navigationTarget, setNavigationTarget] = useState<{ lat: number; lng: number; vendorId: string } | null>(null);
   const pendingSelectVendorIdRef = useRef<string | null>(null);
   const vendorsRef = useRef<VendorMapItem[]>([]);
-  const params = useLocalSearchParams<{ vendorId?: string; lat?: string; lng?: string }>();
+  const params = useLocalSearchParams<{ vendorId?: string; locationId?: string; lat?: string; lng?: string }>();
 
   useEffect(() => {
     vendorsRef.current = vendors;
   }, [vendors]);
+
+  useEffect(() => {
+    const loadSavedMapPlaces = async () => {
+      const user = getAuth().currentUser;
+      if (!user) {
+        setSavedMapPlaceIds(new Set());
+        return;
+      }
+
+      try {
+        const db = getFirestore();
+        const savedRef = collection(db, 'students', user.uid, 'savedItems');
+        const savedQuery = query(savedRef, where('type', '==', 'mapPlace'));
+        const snapshot = await getDocs(savedQuery);
+        setSavedMapPlaceIds(new Set(snapshot.docs.map((docSnap: any) => docSnap.id)));
+      } catch (savedError) {
+        logger.error('Error loading saved map places:', savedError);
+      }
+    };
+
+    const unsubscribe = getAuth().onAuthStateChanged(() => {
+      void loadSavedMapPlaces();
+    });
+    void loadSavedMapPlaces();
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -130,20 +211,34 @@ export default function MapScreen() {
     setIsSearching(true);
     const runSearch = async () => {
       try {
-        const db = getFirestore();
-        const vendorsRef = collection(db, 'vendors');
-        const q = query(vendorsRef, where('searchTokens', 'array-contains', trimmedQuery));
-        const snapshot = await getDocs(q);
+        const visibleVendors = Array.isArray(vendorsRef.current) ? vendorsRef.current : [];
+        const matchingVendorIds = new Set<string>();
+
+        visibleVendors.forEach((vendor) => {
+          const haystack = [
+            vendor.name,
+            vendor.nameAr,
+            vendor.branchName,
+            vendor.branchNameAr,
+            vendor.address,
+            vendor.addressAr,
+            ...(vendor.searchTokens || []),
+          ]
+            .filter(Boolean)
+            .map((value) => String(value).toLowerCase());
+
+          if (haystack.some((value) => value.includes(trimmedQuery))) {
+            matchingVendorIds.add(vendor.vendorId);
+          }
+        });
 
         if (!active) return;
 
-        const ids = new Set<string>();
-        snapshot.forEach((docSnap: any) => ids.add(docSnap.id));
-        setSearchedVendorIds(ids);
+        setSearchedVendorIds(matchingVendorIds);
 
-        if (ids.size > 0) {
-          const matchedCoords = vendorsRef.current
-            .filter((v: VendorMapItem) => ids.has(v.id))
+        if (matchingVendorIds.size > 0) {
+          const matchedCoords = visibleVendors
+            .filter((v: VendorMapItem) => matchingVendorIds.has(v.vendorId))
             .map((v: VendorMapItem) => ({ latitude: v.latitude, longitude: v.longitude }));
 
           if (matchedCoords.length > 0) {
@@ -179,7 +274,7 @@ export default function MapScreen() {
   const vendorPoints: PointFeature[] = useMemo(() => {
     let filteredVendors = vendors;
     if (searchedVendorIds) {
-      filteredVendors = vendors.filter((v) => searchedVendorIds.has(v.id));
+      filteredVendors = vendors.filter((v) => searchedVendorIds.has(v.vendorId));
     }
 
     return filteredVendors.map((vendor) => ({
@@ -188,6 +283,7 @@ export default function MapScreen() {
       properties: {
         cluster: false,
         id: vendor.id,
+        vendorId: vendor.vendorId,
         name: vendor.name,
         nameAr: vendor.nameAr,
       },
@@ -276,11 +372,10 @@ export default function MapScreen() {
       }
 
       const db = getFirestore();
-      const mapsRef = collection(db, 'maps');
-      const mapsSnapshot = await getDocs(mapsRef);
+      const locationsSnap = await getDoc(doc(db, 'maps', 'locations'));
 
-      if (mapsSnapshot.empty) {
-        logger.warn('[Map] No documents found in maps collection');
+      if (!locationsSnap.exists()) {
+        logger.warn('[Map] No maps/locations document found');
         setVendors([]);
         setLoading(false);
         setSearchingNearby(false);
@@ -288,55 +383,10 @@ export default function MapScreen() {
       }
 
       const byId = new Map<string, VendorMapItem>();
-      let totalVendors = 0;
+      const locationsData = locationsSnap.data() as Record<string, any>;
+      parseMapLocations(locationsData).forEach((location) => byId.set(location.id, location));
 
-      mapsSnapshot.docs.forEach((mapDoc: any) => {
-        if (!mapDoc.id.startsWith('locations')) return;
-
-        const locationsData = mapDoc.data() as Record<string, any>;
-        if (!locationsData) return;
-
-        const vendorKeys = Object.keys(locationsData);
-        totalVendors += vendorKeys.length;
-
-        vendorKeys.forEach((vendorId) => {
-          const data = locationsData[vendorId];
-          if (!data || typeof data !== 'object') return;
-
-          // Handle string coordinates from Firestore
-          const rawLat = data?.latitude;
-          const rawLng = data?.longitude;
-          const latitude = typeof rawLat === 'string' ? parseFloat(rawLat) : rawLat;
-          const longitude = typeof rawLng === 'string' ? parseFloat(rawLng) : rawLng;
-
-          if (!isValidLatLng(latitude, longitude)) {
-            logger.warn('[Map] Skipping', vendorId, '- invalid lat/lng:', rawLat, rawLng);
-            return;
-          }
-          if (!isInQatar(latitude, longitude)) {
-            logger.warn('[Map] Skipping', vendorId, '- outside Qatar bounds:', latitude, longitude);
-            return;
-          }
-
-          // Auto-generate geohash if missing
-          const geohash = (data?.geohash && typeof data.geohash === 'string')
-            ? data.geohash
-            : toGeohash(latitude, longitude, MAP_GEOHASH_PRECISION);
-
-          byId.set(vendorId, {
-            id: vendorId,
-            name: data?.vendorName,
-            nameAr: data?.vendorNameAr,
-            address: data?.address,
-            addressAr: data?.addressAr,
-            latitude,
-            longitude,
-            geohash,
-          });
-        });
-      });
-
-      logger.log('[Map] Found', totalVendors, 'vendor entries across', mapsSnapshot.docs.length, 'documents, parsed', byId.size, 'valid vendors');
+      logger.log('[Map] Parsed', byId.size, 'valid map locations');
 
       // Merge new vendors into in-memory cache
       byId.forEach((v, id) => vendorCacheRef.current.set(id, v));
@@ -440,33 +490,119 @@ export default function MapScreen() {
   useEffect(() => {
     const vendorId = pendingSelectVendorIdRef.current;
     if (!vendorId || !vendors.length) return;
-    const vendor = vendors.find((v) => v.id === vendorId);
+    const vendor =
+      vendors.find((v) => v.id === vendorId) ||
+      vendors.find((v) => v.vendorId === vendorId && v.locationId === params.locationId) ||
+      vendors
+        .filter((v) => v.vendorId === vendorId)
+        .sort((a, b) => {
+          const targetLat = navigationTarget?.lat;
+          const targetLng = navigationTarget?.lng;
+          if (typeof targetLat !== 'number' || typeof targetLng !== 'number') return 0;
+          const target = { latitude: targetLat, longitude: targetLng };
+          return haversineDistanceKm(target, a) - haversineDistanceKm(target, b);
+        })[0];
     if (vendor) {
       pendingSelectVendorIdRef.current = null;
       setSelectedMapVendor(vendor);
-      fetchVendorDetail(vendor.id);
+      void rememberRecentMapPlace(vendor);
     }
-  }, [vendors]);
+  }, [navigationTarget, params.locationId, vendors]);
 
-  const fetchVendorDetail = async (vendorId: string) => {
-    setFetchingDetail(true);
+  const rememberRecentMapPlace = async (vendor: VendorMapItem) => {
+    try {
+      const raw = await AsyncStorage.getItem(MAP_RECENTS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const previous = Array.isArray(parsed) ? parsed : [];
+      const next = [
+        {
+          id: vendor.id,
+          vendorId: vendor.vendorId,
+          locationId: vendor.locationId,
+          name: vendor.name,
+          nameAr: vendor.nameAr,
+          branchName: vendor.branchName,
+          branchNameAr: vendor.branchNameAr,
+          latitude: vendor.latitude,
+          longitude: vendor.longitude,
+          viewedAt: Date.now(),
+        },
+        ...previous.filter((item: any) => item?.id !== vendor.id),
+      ].slice(0, 20);
+      await AsyncStorage.setItem(MAP_RECENTS_KEY, JSON.stringify(next));
+    } catch (recentError) {
+      logger.warn('Error saving recent map place:', recentError);
+    }
+  };
+
+  const selectMapVendor = (vendor: VendorMapItem) => {
+    setSelectedClusterPreview([]);
+    setSelectedMapVendor(vendor);
+    void rememberRecentMapPlace(vendor);
+  };
+
+  const toggleSavedMapPlace = async (vendor: VendorMapItem) => {
+    const user = getAuth().currentUser;
+    if (!user) {
+      Alert.alert(t('error'), t('login_required_message'));
+      return;
+    }
+
+    const savedId = `${vendor.vendorId}_${vendor.locationId}_map`;
+    if (savingMapPlaceIds.has(savedId)) return;
+
+    setSavingMapPlaceIds((previous) => new Set(previous).add(savedId));
     try {
       const db = getFirestore();
-      const vendorRef = doc(db, 'vendors', vendorId);
-      const vendorSnap = await getDoc(vendorRef);
-      if (vendorSnap.exists()) {
-        setVendorDetail(vendorSnap.data());
+      const savedRef = doc(db, 'students', user.uid, 'savedItems', savedId);
+      if (savedMapPlaceIds.has(savedId)) {
+        await deleteDoc(savedRef);
+        setSavedMapPlaceIds((previous) => {
+          const next = new Set(previous);
+          next.delete(savedId);
+          return next;
+        });
+        return;
       }
-    } catch (err) {
-      logger.error('Error fetching vendor detail for callout:', err);
+
+      await setDoc(savedRef, {
+        type: 'mapPlace',
+        vendorId: vendor.vendorId,
+        locationId: vendor.locationId,
+        vendorName: vendor.name || '',
+        vendorNameAr: vendor.nameAr || '',
+        branchName: vendor.branchName || '',
+        branchNameAr: vendor.branchNameAr || '',
+        address: vendor.address || '',
+        addressAr: vendor.addressAr || '',
+        latitude: vendor.latitude,
+        longitude: vendor.longitude,
+        mainCategory: vendor.mainCategory || '',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      setSavedMapPlaceIds((previous) => new Set(previous).add(savedId));
+    } catch (saveError) {
+      logger.error('Error toggling saved map place:', saveError);
+      Alert.alert(t('error'), t('saved_offer_failed'));
     } finally {
-      setFetchingDetail(false);
+      setSavingMapPlaceIds((previous) => {
+        const next = new Set(previous);
+        next.delete(savedId);
+        return next;
+      });
     }
   };
 
   const handleClusterPress = (cluster: ClusterFeature) => {
     const leaves = superclusterRef.current.getLeaves(cluster.properties.cluster_id, Infinity);
     if (!leaves.length) return;
+    const preview = leaves
+      .map((leaf) => vendors.find((vendor) => vendor.id === leaf.properties.id))
+      .filter((vendor): vendor is VendorMapItem => !!vendor)
+      .slice(0, 4);
+    setSelectedMapVendor(null);
+    setSelectedClusterPreview(preview);
 
     // Zoom to fit all children
     const coords = leaves.map((l) => ({
@@ -544,13 +680,14 @@ export default function MapScreen() {
             const clusterId = isCluster ? (cluster as any).id : (cluster as any).id || cluster.properties.id;
 
             if (isCluster) {
+              const clusterColor = clusterColorForCount(pointCount);
               return (
                 <Marker
                   key={`cluster-${clusterId}`}
                   coordinate={{ latitude: lat, longitude: lng }}
                   onPress={() => handleClusterPress(cluster as ClusterFeature)}
                 >
-                  <View style={[styles.clusterBubble, pointCount > 20 && styles.clusterBubbleLarge]}>
+                  <View style={[styles.clusterBubble, { backgroundColor: clusterColor }, pointCount > 20 && styles.clusterBubbleLarge]}>
                     <Text style={styles.clusterText}>{pointCount}</Text>
                   </View>
                 </Marker>
@@ -566,13 +703,15 @@ export default function MapScreen() {
                 onPress={() => {
                   const vendor = vendors.find((v) => v.id === vendorId);
                   if (vendor) {
-                    setSelectedMapVendor(vendor);
-                    setVendorDetail(null);
-                    fetchVendorDetail(vendor.id);
+                    selectMapVendor(vendor);
                   }
                 }}
               >
-                <View style={styles.vendorDot} />
+                <View style={[styles.vendorDot, { borderColor: markerColorForVendor(vendors.find((v) => v.id === vendorId) || {} as VendorMapItem) }]}>
+                  {(vendors.find((v) => v.id === vendorId)?.xcard || vendors.find((v) => v.id === vendorId)?.hasBuyOneGetOne) && (
+                    <View style={[styles.vendorDotCore, { backgroundColor: markerColorForVendor(vendors.find((v) => v.id === vendorId) || {} as VendorMapItem) }]} />
+                  )}
+                </View>
               </Marker>
             );
           })}
@@ -633,20 +772,27 @@ export default function MapScreen() {
             style={[styles.calloutOverlay, { bottom: insets.bottom + 50 }]}
             onPress={() => {
               setSelectedMapVendor(null);
-              setVendorDetail(null);
             }}
           >
             <Pressable style={styles.calloutCard} onPress={(e) => e.stopPropagation()}>
               <View style={styles.calloutHeader}>
-                <PhonkText style={styles.calloutVendorName} numberOfLines={1}>
-                  {isArabic
-                    ? (vendorDetail?.nameAr || selectedMapVendor.nameAr || selectedMapVendor.name)
-                    : selectedMapVendor.name}
-                </PhonkText>
+                <View style={styles.calloutTitleBlock}>
+                  <PhonkText style={styles.calloutVendorName} numberOfLines={1}>
+                    {isArabic
+                      ? (selectedMapVendor.nameAr || selectedMapVendor.name)
+                      : selectedMapVendor.name}
+                  </PhonkText>
+                  {(selectedMapVendor.branchName || selectedMapVendor.address) && (
+                    <Text style={styles.calloutBranchText} numberOfLines={1}>
+                      {isArabic
+                        ? (selectedMapVendor.branchNameAr || selectedMapVendor.branchName || selectedMapVendor.addressAr || selectedMapVendor.address)
+                        : (selectedMapVendor.branchName || selectedMapVendor.branchNameAr || selectedMapVendor.address || selectedMapVendor.addressAr)}
+                    </Text>
+                  )}
+                </View>
                 <TouchableOpacity
                   onPress={() => {
                     setSelectedMapVendor(null);
-                    setVendorDetail(null);
                   }}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
@@ -654,13 +800,13 @@ export default function MapScreen() {
                 </TouchableOpacity>
               </View>
 
-              {!fetchingDetail && vendorDetail?.offers?.length > 0 && (
+              {selectedMapVendor.firstOffer && (
                 <View style={styles.calloutOfferPill}>
                   <Ionicons name="pricetag" size={14} color={Colors.brandGreen} />
                   <PhonkText style={styles.calloutOfferText} numberOfLines={1}>
                     {isArabic
-                      ? (vendorDetail.offers[0].titleAr || vendorDetail.offers[0].titleEn || '')
-                      : (vendorDetail.offers[0].titleEn || vendorDetail.offers[0].titleAr || '')}
+                      ? (selectedMapVendor.firstOffer.titleAr || selectedMapVendor.firstOffer.titleEn || '')
+                      : (selectedMapVendor.firstOffer.titleEn || selectedMapVendor.firstOffer.titleAr || '')}
                   </PhonkText>
                 </View>
               )}
@@ -676,8 +822,20 @@ export default function MapScreen() {
 
               <View style={styles.calloutActions}>
                 <TouchableOpacity
+                  style={styles.calloutIconBtn}
+                  onPress={() => void toggleSavedMapPlace(selectedMapVendor)}
+                  disabled={savingMapPlaceIds.has(`${selectedMapVendor.vendorId}_${selectedMapVendor.locationId}_map`)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={savedMapPlaceIds.has(`${selectedMapVendor.vendorId}_${selectedMapVendor.locationId}_map`) ? 'bookmark' : 'bookmark-outline'}
+                    size={18}
+                    color={Colors.brandGreen}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={styles.calloutViewBtn}
-                  onPress={() => router.push({ pathname: '/vendor/[id]', params: { id: selectedMapVendor.id } })}
+                  onPress={() => router.push({ pathname: '/vendor/[id]', params: { id: selectedMapVendor.vendorId } })}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="storefront-outline" size={16} color={Colors.light.text} />
@@ -707,6 +865,26 @@ export default function MapScreen() {
               </View>
             </Pressable>
           </Pressable>
+        )}
+
+        {selectedClusterPreview.length > 0 && !selectedMapVendor && (
+          <View style={[styles.clusterPreviewCard, { bottom: insets.bottom + 50 }]}>
+            <View style={styles.clusterPreviewHeader}>
+              <Text style={styles.clusterPreviewTitle}>{selectedClusterPreview.length} nearby places</Text>
+              <TouchableOpacity onPress={() => setSelectedClusterPreview([])}>
+                <Ionicons name="close" size={18} color="#666" />
+              </TouchableOpacity>
+            </View>
+            {selectedClusterPreview.map((vendor) => (
+              <TouchableOpacity key={vendor.id} style={styles.clusterPreviewRow} onPress={() => selectMapVendor(vendor)}>
+                <View style={[styles.clusterPreviewDot, { backgroundColor: markerColorForVendor(vendor) }]} />
+                <Text style={styles.clusterPreviewName} numberOfLines={1}>
+                  {isArabic ? (vendor.nameAr || vendor.name) : vendor.name}
+                </Text>
+                {vendor.distanceKm != null && <Text style={styles.clusterPreviewDistance}>{vendor.distanceKm.toFixed(1)} km</Text>}
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
 
         {loading && (
@@ -745,6 +923,80 @@ function sortVendorsByDistance(vendors: VendorMapItem[], userLocation: LatLng | 
       }),
     }))
     .sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
+}
+
+function parseMapLocations(locationsData: Record<string, any> | undefined): VendorMapItem[] {
+  if (!locationsData || typeof locationsData !== 'object') return [];
+
+  const vendorEntries =
+    locationsData.vendors && typeof locationsData.vendors === 'object'
+      ? locationsData.vendors
+      : locationsData;
+
+  return Object.entries(vendorEntries).flatMap(([vendorId, data]) => {
+    if (!data || typeof data !== 'object') return [];
+
+    const base = data as Record<string, any>;
+    const rawLocations = Array.isArray(base.locations) && base.locations.length > 0
+      ? base.locations
+      : [{
+        id: 'primary',
+        name: base.branchName,
+        nameAr: base.branchNameAr,
+        address: base.address,
+        addressAr: base.addressAr,
+        latitude: base.latitude,
+        longitude: base.longitude,
+        geohash: base.geohash,
+        isPrimary: true,
+      }];
+
+    return rawLocations.flatMap((rawLocation: any, index: number) => {
+      if (!rawLocation || typeof rawLocation !== 'object') return [];
+
+      const rawLat = rawLocation.latitude;
+      const rawLng = rawLocation.longitude;
+      const latitude = typeof rawLat === 'string' ? parseFloat(rawLat) : rawLat;
+      const longitude = typeof rawLng === 'string' ? parseFloat(rawLng) : rawLng;
+
+      if (!isValidLatLng(latitude, longitude)) {
+        logger.warn('[Map] Skipping', vendorId, '- invalid lat/lng:', rawLat, rawLng);
+        return [];
+      }
+      if (!isInQatar(latitude, longitude)) {
+        logger.warn('[Map] Skipping', vendorId, '- outside Qatar bounds:', latitude, longitude);
+        return [];
+      }
+
+      const locationId = String(rawLocation.id || (rawLocation.isPrimary ? 'primary' : `branch-${index + 1}`));
+      const geohash = typeof rawLocation.geohash === 'string' && rawLocation.geohash.length > 0
+        ? rawLocation.geohash
+        : toGeohash(latitude, longitude, MAP_GEOHASH_PRECISION);
+
+      return [{
+        id: `${vendorId}:${locationId}`,
+        vendorId,
+        locationId,
+        name: base.vendorName || base.name,
+        nameAr: base.vendorNameAr || base.nameAr,
+        branchName: rawLocation.name,
+        branchNameAr: rawLocation.nameAr,
+        address: rawLocation.address || base.address,
+        addressAr: rawLocation.addressAr || base.addressAr,
+        latitude,
+        longitude,
+        geohash,
+        mainCategory: base.mainCategory || null,
+        xcard: base.xcard === true,
+        offerTypes: Array.isArray(base.offerTypes) ? base.offerTypes : [],
+        hasBuyOneGetOne: base.hasBuyOneGetOne === true,
+        hasStudentDeal: base.hasStudentDeal === true,
+        openingHours: base.openingHours || null,
+        searchTokens: Array.isArray(base.searchTokens) ? base.searchTokens : [],
+        firstOffer: base.firstOffer || null,
+      }];
+    });
+  });
 }
 
 const styles = StyleSheet.create({
@@ -820,7 +1072,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   clusterBubble: {
-    backgroundColor: Colors.brandGreen,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -840,11 +1091,18 @@ const styles = StyleSheet.create({
   },
   vendorDot: {
     backgroundColor: '#FFFFFF',
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 4,
     borderColor: Colors.brandGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vendorDotCore: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   overlayCard: {
     position: 'absolute',
@@ -923,8 +1181,16 @@ const styles = StyleSheet.create({
   calloutVendorName: {
     fontSize: 20,
     color: Colors.light.text,
+  },
+  calloutTitleBlock: {
     flex: 1,
     marginRight: 12,
+  },
+  calloutBranchText: {
+    marginTop: 2,
+    fontSize: 13,
+    color: '#6E6E73',
+    fontFamily: Typography.poppins.medium,
   },
   calloutOfferPill: {
     flexDirection: 'row',
@@ -956,6 +1222,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
+  calloutIconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
+  },
   calloutViewBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -978,6 +1252,52 @@ const styles = StyleSheet.create({
   },
   calloutBtnText: {
     fontSize: 14,
+    fontFamily: Typography.poppins.semiBold,
+  },
+  clusterPreviewCard: {
+    position: 'absolute',
+    left: 14,
+    right: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  clusterPreviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  clusterPreviewTitle: {
+    fontSize: 14,
+    color: Colors.light.text,
+    fontFamily: Typography.poppins.semiBold,
+  },
+  clusterPreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 34,
+  },
+  clusterPreviewDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  clusterPreviewName: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.light.text,
+    fontFamily: Typography.poppins.medium,
+  },
+  clusterPreviewDistance: {
+    fontSize: 12,
+    color: Colors.brandGreen,
     fontFamily: Typography.poppins.semiBold,
   },
 });

@@ -40,6 +40,41 @@ function isValidSavedOffer() {
     && request.resource.data.updatedAt is timestamp;
 }
 
+function isValidSavedMapPlace() {
+  return request.resource.data.keys().hasOnly([
+      'type',
+      'vendorId',
+      'locationId',
+      'vendorName',
+      'vendorNameAr',
+      'branchName',
+      'branchNameAr',
+      'address',
+      'addressAr',
+      'latitude',
+      'longitude',
+      'mainCategory',
+      'createdAt',
+      'updatedAt'
+    ])
+    && request.resource.data.keys().hasAll([
+      'type',
+      'vendorId',
+      'locationId',
+      'latitude',
+      'longitude',
+      'createdAt',
+      'updatedAt'
+    ])
+    && request.resource.data.type == 'mapPlace'
+    && request.resource.data.vendorId is string
+    && request.resource.data.locationId is string
+    && request.resource.data.latitude is number
+    && request.resource.data.longitude is number
+    && request.resource.data.createdAt is timestamp
+    && request.resource.data.updatedAt is timestamp;
+}
+
 // ─── students collection ───────────────────────────────────────────────
 match /students/{userId} {
 
@@ -67,7 +102,7 @@ match /students/{userId} {
       && (request.auth.uid == userId || isAdmin());
     allow create, update: if request.auth != null
       && request.auth.uid == userId
-      && isValidSavedOffer();
+      && (isValidSavedOffer() || isValidSavedMapPlace());
     allow delete: if request.auth != null
       && (request.auth.uid == userId || isAdmin());
   }
@@ -112,6 +147,12 @@ match /events/{eventId} {
 // ─── vendors collection ───────────────────────────────────────────────
 match /vendors/{vendorId} {
   allow read: if true;
+  allow write: if isAdmin();
+}
+
+// ─── maps collection ──────────────────────────────────────────────────
+match /maps/{mapDocId} {
+  allow read: if request.auth != null;
   allow write: if isAdmin();
 }
 

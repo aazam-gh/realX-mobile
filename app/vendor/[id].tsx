@@ -4,8 +4,9 @@ import { getAuth } from '@react-native-firebase/auth';
 import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where } from '@react-native-firebase/firestore';
 import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
+import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, Share, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +14,49 @@ import { Colors } from '../../constants/Colors';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
+
+type VendorBranch = {
+    id: string;
+    name?: string;
+    nameAr?: string;
+    address?: string;
+    addressAr?: string;
+    latitude?: number;
+    longitude?: number;
+    isPrimary?: boolean;
+    distanceKm?: number;
+};
+
+function getVendorBranches(vendor: any): VendorBranch[] {
+    const rawLocations = Array.isArray(vendor?.locations) && vendor.locations.length > 0
+        ? vendor.locations
+        : [{
+            id: 'primary',
+            address: vendor?.address,
+            addressAr: vendor?.addressAr,
+            latitude: vendor?.latitude ?? vendor?.lat,
+            longitude: vendor?.longitude ?? vendor?.lng,
+            isPrimary: true,
+        }];
+
+    return rawLocations
+        .map((location: any, index: number) => {
+            const latitude = typeof location?.latitude === 'string' ? parseFloat(location.latitude) : location?.latitude;
+            const longitude = typeof location?.longitude === 'string' ? parseFloat(location.longitude) : location?.longitude;
+            return {
+                id: String(location?.id || (location?.isPrimary ? 'primary' : `branch-${index + 1}`)),
+                name: location?.name,
+                nameAr: location?.nameAr,
+                address: location?.address || vendor?.address,
+                addressAr: location?.addressAr || vendor?.addressAr,
+                latitude,
+                longitude,
+                isPrimary: location?.isPrimary === true || index === 0,
+            };
+        })
+        .filter((location: VendorBranch) => isValidLatLng(location.latitude, location.longitude));
+}
 
 export default function VendorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,6 +71,8 @@ export default function VendorScreen() {
     const [actualVendorId, setActualVendorId] = useState<string | null>(null);
     const [savedOfferIds, setSavedOfferIds] = useState<Set<string>>(new Set());
     const [savingOfferIds, setSavingOfferIds] = useState<Set<string>>(new Set());
+    const [branchPickerVisible, setBranchPickerVisible] = useState(false);
+    const [userLocation, setUserLocation] = useState<LatLng | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -111,6 +157,62 @@ export default function VendorScreen() {
 
         void fetchSavedOffers();
     }, [actualVendorId]);
+
+    useEffect(() => {
+        const loadUserLocation = async () => {
+            try {
+                const currentPermission = await Location.getForegroundPermissionsAsync();
+                const finalPermission = currentPermission.granted
+                    ? currentPermission
+                    : await Location.requestForegroundPermissionsAsync();
+
+                if (!finalPermission.granted) return;
+
+                const position = await Location.getCurrentPositionAsync({});
+                setUserLocation({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                });
+            } catch (error) {
+                logger.warn('Unable to load location for nearest branch:', error);
+            }
+        };
+
+        if (vendor) {
+            void loadUserLocation();
+        }
+    }, [vendor]);
+
+    const branches = useMemo(() => {
+        if (!vendor) return [];
+        const parsedBranches = getVendorBranches(vendor);
+        if (!userLocation) return parsedBranches;
+        return parsedBranches
+            .map((branch) => ({
+                ...branch,
+                distanceKm: haversineDistanceKm(userLocation, {
+                    latitude: branch.latitude!,
+                    longitude: branch.longitude!,
+                }),
+            }))
+            .sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
+    }, [userLocation, vendor]);
+
+    const nearestBranch = branches[0] || null;
+
+    const openBranchOnMap = (branch: VendorBranch) => {
+        if (!isValidLatLng(branch.latitude, branch.longitude)) return;
+        router.push({
+            pathname: '/(tabs)/map',
+            params: {
+                vendorId: actualVendorId || id,
+                lat: String(branch.latitude),
+                lng: String(branch.longitude),
+                locationId: branch.id,
+            },
+        });
+        setBranchPickerVisible(false);
+    };
 
     const toggleSavedOffer = async (offer: any, offerIndex: number) => {
         const user = getAuth().currentUser;
@@ -253,18 +355,13 @@ export default function VendorScreen() {
                     <View style={styles.metaRow}>
                         <View style={styles.metaLeft}>
                         <TouchableOpacity style={styles.locationButton} onPress={() => {
-                            const lat = vendor?.lat;
-                            const lng = vendor?.lng;
+                            if (branches.length > 1) {
+                                setBranchPickerVisible(true);
+                                return;
+                            }
 
-                            if (typeof lat === 'number' && typeof lng === 'number') {
-                                router.push({
-                                    pathname: '/(tabs)/map',
-                                    params: {
-                                        vendorId: actualVendorId || id,
-                                        lat: String(lat),
-                                        lng: String(lng),
-                                    },
-                                });
+                            if (branches.length === 1) {
+                                openBranchOnMap(branches[0]);
                                 return;
                             }
 
@@ -273,8 +370,16 @@ export default function VendorScreen() {
                             void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
                         }} activeOpacity={0.7}>
                             <Ionicons name="location-outline" size={18} color={Colors.brandGreen} />
-                            <Text style={[styles.locationText, { fontFamily: Typography.poppins.medium }]}>{t('location')}</Text>
+                            <Text style={[styles.locationText, { fontFamily: Typography.poppins.medium }]}>
+                                {branches.length > 1 ? `${t('location')} (${branches.length})` : t('location')}
+                            </Text>
                         </TouchableOpacity>
+                        {nearestBranch?.distanceKm != null && (
+                            <View style={styles.nearestBranchChip}>
+                                <Ionicons name="navigate-outline" size={13} color={Colors.brandGreen} />
+                                <Text style={styles.nearestBranchText}>{nearestBranch.distanceKm.toFixed(1)} km</Text>
+                            </View>
+                        )}
                         </View>
 
                         <View style={styles.tagsRow}>
@@ -447,6 +552,84 @@ const isSaved = savedOfferIds.has(savedId);
                     </Pressable>
                 </Pressable>
             </Modal>
+
+            <Modal
+                visible={branchPickerVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setBranchPickerVisible(false)}
+            >
+                <Pressable style={styles.modalOverlay} onPress={() => setBranchPickerVisible(false)}>
+                    <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="regular" colorScheme="dark" tintColor="rgba(0,0,0,0.3)" />
+                    <Pressable
+                        style={[
+                            styles.drawerContainer,
+                            {
+                                backgroundColor: '#FFFFFF',
+                                paddingBottom: insets.bottom + 20
+                            }
+                        ]}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <View style={styles.handleContainer}>
+                            <View style={[styles.handle, { backgroundColor: '#E0E0E0' }]} />
+                        </View>
+
+                        <View style={styles.modalContent}>
+                            <View style={styles.modalHeader}>
+                                <PhonkText style={[{ color: Colors.light.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>
+                                    {isArabic ? 'الفروع' : 'BRANCHES'}
+                                </PhonkText>
+                                <TouchableOpacity
+                                    onPress={() => setBranchPickerVisible(false)}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Ionicons name="close-circle" size={28} color="#000" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.branchList}>
+                                {branches.map((branch, index) => {
+                                    const branchName = isArabic
+                                        ? (branch.nameAr || branch.name || `${isArabic ? 'فرع' : 'Branch'} ${index + 1}`)
+                                        : (branch.name || branch.nameAr || `Branch ${index + 1}`);
+                                    const address = isArabic
+                                        ? (branch.addressAr || branch.address || '')
+                                        : (branch.address || branch.addressAr || '');
+
+                                    return (
+                                        <TouchableOpacity
+                                            key={branch.id}
+                                            style={styles.branchRow}
+                                            onPress={() => openBranchOnMap(branch)}
+                                            activeOpacity={0.8}
+                                        >
+                                            <View style={styles.branchIcon}>
+                                                <Ionicons name={index === 0 ? 'navigate' : 'location-outline'} size={18} color={Colors.brandGreen} />
+                                            </View>
+                                            <View style={styles.branchTextBlock}>
+                                                <View style={styles.branchTitleRow}>
+                                                    <Text style={styles.branchName} numberOfLines={1}>{branchName}</Text>
+                                                    {index === 0 && branch.distanceKm != null && (
+                                                        <View style={styles.branchNearestPill}>
+                                                            <Text style={styles.branchNearestText}>Nearest</Text>
+                                                        </View>
+                                                    )}
+                                                </View>
+                                                {address ? <Text style={styles.branchAddress} numberOfLines={2}>{address}</Text> : null}
+                                                {branch.distanceKm != null && (
+                                                    <Text style={styles.branchDistance}>{branch.distanceKm.toFixed(1)} km away</Text>
+                                                )}
+                                            </View>
+                                            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    </Pressable>
+                </Pressable>
+            </Modal>
         </View>
     );
 }
@@ -592,6 +775,20 @@ const styles = StyleSheet.create({
     locationText: {
         fontSize: 14,
         color: '#000',
+    },
+    nearestBranchChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#EAF8EF',
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+        borderRadius: 18,
+    },
+    nearestBranchText: {
+        fontSize: 12,
+        color: Colors.brandGreen,
+        fontFamily: Typography.poppins.semiBold,
     },
     ratingContainer: {
         flexDirection: 'row',
@@ -758,6 +955,63 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
+    },
+    branchList: {
+        gap: 12,
+        paddingBottom: 10,
+    },
+    branchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: '#F7F7F7',
+        borderRadius: 20,
+        padding: 14,
+    },
+    branchIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    branchTextBlock: {
+        flex: 1,
+        gap: 3,
+    },
+    branchTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    branchName: {
+        flex: 1,
+        fontSize: 15,
+        color: Colors.light.text,
+        fontFamily: Typography.poppins.semiBold,
+    },
+    branchNearestPill: {
+        backgroundColor: Colors.brandGreen,
+        borderRadius: 10,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+    },
+    branchNearestText: {
+        fontSize: 10,
+        color: '#FFFFFF',
+        fontFamily: Typography.poppins.semiBold,
+        textTransform: 'uppercase',
+    },
+    branchAddress: {
+        fontSize: 13,
+        color: '#6E6E73',
+        fontFamily: Typography.poppins.medium,
+    },
+    branchDistance: {
+        fontSize: 12,
+        color: Colors.brandGreen,
+        fontFamily: Typography.poppins.semiBold,
     },
     termText: {
         fontSize: 14,

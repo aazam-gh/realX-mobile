@@ -15,6 +15,7 @@ import { logger } from '../utils/logger';
 
 type SavedOffer = {
   id: string;
+  type?: string;
   vendorId: string;
   offerIndex: number;
   vendorName?: string;
@@ -52,10 +53,12 @@ export default function SavedOffersScreen() {
       const savedRef = collection(db, 'students', user.uid, 'savedItems');
       const savedQuery = query(savedRef, orderBy('createdAt', 'desc'), limit(50));
       const snapshot = await getDocs(savedQuery);
-      setSavedOffers(snapshot.docs.map((docSnap: any) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      })) as SavedOffer[]);
+      setSavedOffers(snapshot.docs
+        .map((docSnap: any) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        }))
+        .filter((item: SavedOffer) => !item.type || item.type === 'offer') as SavedOffer[]);
     } catch (error) {
       logger.error('Error loading saved offers:', error);
     } finally {

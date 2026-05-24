@@ -1,11 +1,12 @@
 
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { doc, getDoc, getDocs, getFirestore, query, where, collection } from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
+import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where } from '@react-native-firebase/firestore';
 import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, Pressable, ScrollView, Share, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, Share, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -24,6 +25,8 @@ export default function VendorScreen() {
     const [loading, setLoading] = useState(true);
     const [selectedOfferForTC, setSelectedOfferForTC] = useState<any>(null);
     const [actualVendorId, setActualVendorId] = useState<string | null>(null);
+    const [savedOfferIds, setSavedOfferIds] = useState<Set<string>>(new Set());
+    const [savingOfferIds, setSavingOfferIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const fetchData = async () => {
@@ -71,6 +74,7 @@ export default function VendorScreen() {
                     // Use offers array from vendor document
                     const vendorOffers = (vendorData.offers || []).map((offer: any, index: number) => ({
                         id: `${foundVendorId}_offer_${index}`,
+                        offerIndex: index,
                         ...offer,
                     }));
 
@@ -85,6 +89,85 @@ export default function VendorScreen() {
 
         fetchData();
     }, [id, isArabic]);
+
+    useEffect(() => {
+        const fetchSavedOffers = async () => {
+            const user = getAuth().currentUser;
+            if (!user || !actualVendorId) {
+                setSavedOfferIds(new Set());
+                return;
+            }
+
+            try {
+                const db = getFirestore();
+                const savedRef = collection(db, 'students', user.uid, 'savedItems');
+                const savedQuery = query(savedRef, where('vendorId', '==', actualVendorId));
+                const snapshot = await getDocs(savedQuery);
+                setSavedOfferIds(new Set(snapshot.docs.map((docSnap: any) => docSnap.id)));
+            } catch (error) {
+                logger.error('Error loading saved offers:', error);
+            }
+        };
+
+        void fetchSavedOffers();
+    }, [actualVendorId]);
+
+    const toggleSavedOffer = async (offer: any, offerIndex: number) => {
+        const user = getAuth().currentUser;
+        const vendorId = actualVendorId || id;
+        if (!user || !vendorId) {
+            Alert.alert(t('error'), t('login_required_message'));
+            return;
+        }
+
+        const savedId = `${vendorId}_offer_${offerIndex}`;
+        if (savingOfferIds.has(savedId)) return;
+
+        setSavingOfferIds((previous) => new Set(previous).add(savedId));
+        try {
+            const db = getFirestore();
+            const savedRef = doc(db, 'students', user.uid, 'savedItems', savedId);
+
+            if (savedOfferIds.has(savedId)) {
+                await deleteDoc(savedRef);
+                setSavedOfferIds((previous) => {
+                    const next = new Set(previous);
+                    next.delete(savedId);
+                    return next;
+                });
+                return;
+            }
+
+            await setDoc(savedRef, {
+                type: 'offer',
+                vendorId,
+                offerIndex,
+                vendorName: vendor.name || '',
+                vendorNameAr: vendor.nameAr || '',
+                vendorLogo: vendor.profilePicture || '',
+                vendorCoverImage: vendor.coverImage || '',
+                titleEn: offer.titleEn || '',
+                titleAr: offer.titleAr || '',
+                descriptionEn: offer.descriptionEn || '',
+                descriptionAr: offer.descriptionAr || '',
+                discountType: offer.discountType || '',
+                discountValue: offer.discountValue ?? null,
+                xcard: !!offer.xcard || !!vendor.xcard,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+            setSavedOfferIds((previous) => new Set(previous).add(savedId));
+        } catch (error) {
+            logger.error('Error toggling saved offer:', error);
+            Alert.alert(t('error'), t('saved_offer_failed'));
+        } finally {
+            setSavingOfferIds((previous) => {
+                const next = new Set(previous);
+                next.delete(savedId);
+                return next;
+            });
+        }
+    };
 
     if (loading) {
         return (
@@ -223,6 +306,9 @@ const percentValue =
 const offerTitle = isArabic
     ? (percentValue ? `خصم ${percentValue}` : (offer.titleAr || offer.titleEn))
     : (offer.titleEn || offer.titleAr);
+const offerIndex = offer.offerIndex ?? offers.indexOf(offer);
+const savedId = `${actualVendorId || id}_offer_${offerIndex}`;
+const isSaved = savedOfferIds.has(savedId);
                             return (
                                 <View key={offer.id} style={styles.offerCard}>
                                     {offer.xcard && (
@@ -231,6 +317,18 @@ const offerTitle = isArabic
                                             style={styles.xcardBadge}
                                         />
                                     )}
+                                    <TouchableOpacity
+                                        style={[styles.offerSaveButton, isSaved && styles.offerSaveButtonActive]}
+                                        onPress={() => void toggleSavedOffer(offer, offerIndex)}
+                                        disabled={savingOfferIds.has(savedId)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Ionicons
+                                            name={isSaved ? 'bookmark' : 'bookmark-outline'}
+                                            size={22}
+                                            color={isSaved ? '#FFF' : Colors.brandGreen}
+                                        />
+                                    </TouchableOpacity>
                                     {/* Top Info Pill */}
                                     <View style={[styles.offerInfoContainer, { backgroundColor: '#F5F5F5' }]}>
                                         <View style={styles.offerContent}>
@@ -258,13 +356,13 @@ const offerTitle = isArabic
                                         <TouchableOpacity
                                             style={[styles.pillButton, styles.redeemPill]}
                                             onPress={() => {
-                                                const offerIndex = offers.indexOf(offer);
                                                 router.push(`/redeem/${actualVendorId || id}?vendorId=${actualVendorId || id}&offerIndex=${offerIndex}`);
                                             }}
                                         >
                                             <Ionicons name="flash" size={18} color="#FFF" />
                                             <Text style={[{ color: '#FFF', fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
                                         </TouchableOpacity>
+
                                     </View>
                                 </View>
                             );
@@ -538,6 +636,8 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         paddingHorizontal: 24,
         paddingVertical: 16,
+        paddingEnd: 72,
+        position: 'relative',
     },
     offerContent: {
         gap: 4,
@@ -574,6 +674,26 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     redeemPill: {
+        backgroundColor: Colors.brandGreen,
+    },
+    offerSaveButton: {
+        position: 'absolute',
+        top: 14,
+        right: 18,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.18,
+        shadowRadius: 6,
+        elevation: 8,
+        zIndex: 40,
+    },
+    offerSaveButtonActive: {
         backgroundColor: Colors.brandGreen,
     },
     pillButtonTextSmall: {
@@ -645,4 +765,3 @@ const styles = StyleSheet.create({
         color: '#666',
     },
 });
-

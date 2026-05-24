@@ -252,6 +252,7 @@ function LayoutContent({
       <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="redemption-history" options={{ headerShown: false }} />
+      <Stack.Screen name="saved-offers" options={{ headerShown: false }} />
       <Stack.Screen name="profile-details" options={{ headerShown: false }} />
       <Stack.Screen name="terms" options={{ headerShown: false }} />
       <Stack.Screen name="privacy" options={{ headerShown: false }} />

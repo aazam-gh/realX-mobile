@@ -195,6 +195,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <View style={styles.menuContainer}>
+          <MenuItem icon="bookmark-outline" label={t('saved_offers')} onPress={() => router.push('/saved-offers' as any)} isRTL={isRTL} />
           <MenuItem icon="time-outline" label={t('redemption_history')} onPress={() => router.push('/redemption-history' as any)} isRTL={isRTL} />
           <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} isRTL={isRTL} />
           <MenuItem
@@ -479,5 +480,4 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
   },
 });
-
 

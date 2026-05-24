@@ -266,13 +266,18 @@ export default function CategoryScreen() {
             const db = getFirestore();
             const vendorsRef = collection(db, 'vendors');
             const PAGE_SIZE = 10;
+            const activeSearchQuery = searchQuery.trim().toLowerCase();
 
             const baseConstraints: any[] = [];
 
-            if (selectedSubCategory !== 'all') {
+            if (selectedSubCategory !== 'all' && !activeSearchQuery) {
                 baseConstraints.push(where('subcategory', 'array-contains', selectedSubCategory));
             } else {
                 baseConstraints.push(where('mainCategory', '==', englishCategoryName));
+            }
+
+            if (activeSearchQuery) {
+                baseConstraints.push(where('searchTokens', 'array-contains', activeSearchQuery));
             }
 
             if (selectedFilter === 'trending') {
@@ -322,7 +327,7 @@ export default function CategoryScreen() {
         } finally {
             setLoadingVendors(false);
         }
-    }, [loadingVendors, isListEnd, isCategoryActive, selectedSubCategory, selectedFilter, englishCategoryName, restoreFlashListScroll]);
+    }, [loadingVendors, isListEnd, isCategoryActive, selectedSubCategory, selectedFilter, englishCategoryName, searchQuery, restoreFlashListScroll]);
 
     const fetchVendorsRef = useRef(fetchVendors);
     useEffect(() => {
@@ -336,7 +341,7 @@ export default function CategoryScreen() {
         setIsListEnd(false);
         fetchVendorsRef.current(true);
     }
-}, [selectedSubCategory, selectedFilter, loading, isCategoryActive, englishCategoryName]);
+}, [selectedSubCategory, selectedFilter, loading, isCategoryActive, englishCategoryName, searchQuery]);
 
     const handleLoadMore = () => {
         if (!loadingVendors && !isListEnd) {
@@ -356,12 +361,20 @@ export default function CategoryScreen() {
     }, []);
 
     const handleSearch = useCallback(() => {
-        setSearchQuery(searchInput.trim().toLowerCase());
+        const nextQuery = searchInput.trim().toLowerCase();
+        if (nextQuery) {
+            setSelectedSubCategory('all');
+        }
+        lastDocRef.current = null;
+        setIsListEnd(false);
+        setSearchQuery(nextQuery);
         Keyboard.dismiss();
     }, [searchInput]);
 
     const handleClearSearch = useCallback(() => {
         setSearchInput('');
+        lastDocRef.current = null;
+        setIsListEnd(false);
         setSearchQuery('');
     }, []);
 
@@ -398,22 +411,6 @@ export default function CategoryScreen() {
     const headerTitle = (isArabic ? (categoryData?.nameArabic || categoryData?.nameAr || name) : null) || categoryData?.nameEnglish || name || config.title;
     const headerIcon = categoryData?.imageUrl || config.icon;
 
-    const filteredVendors = useMemo(() => {
-        if (!searchQuery.trim()) return vendors;
-        const lowerQuery = searchQuery.toLowerCase();
-        return vendors.filter((vendor: any) => {
-            const nameEn = vendor.nameEn?.toLowerCase() || vendor.name?.toLowerCase() || '';
-            const nameAr = vendor.nameAr?.toLowerCase() || '';
-            const descEn = vendor.descriptionEn?.toLowerCase() || vendor.brandDescription?.toLowerCase() || '';
-            const descAr = vendor.descriptionAr?.toLowerCase() || '';
-
-            return nameEn.includes(lowerQuery) ||
-                   nameAr.includes(lowerQuery) ||
-                   descEn.includes(lowerQuery) ||
-                   descAr.includes(lowerQuery);
-        });
-    }, [vendors, searchQuery]);
-
     const renderFooter = () => (
         <View style={{ height: 40, alignItems: 'center', justifyContent: 'center' }}>
             {loadingVendors && <ActivityIndicator size="small" color={Colors.brandGreen} />}
@@ -445,7 +442,7 @@ export default function CategoryScreen() {
             {!loading && isCategoryActive ? (
                 <FlashList
                     ref={flashListRef}
-                    data={filteredVendors}
+                    data={vendors}
                     keyExtractor={(item) => item.id}
                     numColumns={2}
                     estimatedItemSize={200}

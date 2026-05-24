@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import {
   BrandGrid,
   CategoryGrid,
+  FeaturedBanner,
   GreetingHeader,
   PromoBanner,
   SearchBar,
@@ -53,6 +54,7 @@ export default function HomeScreen() {
         <CategoryGrid />
         <TrendingOffers />
         <BrandGrid />
+        <FeaturedBanner />
       </ScrollView>
     </SafeAreaView>
   );

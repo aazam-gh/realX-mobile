@@ -109,8 +109,6 @@ export default function AZxXCard({ earnings = 0, currency = 'XP', creatorCode }:
 
             </View>
 
-            <View style={styles.divider} />
-
             <View style={[styles.bottomRow, isRTL && styles.bottomRowRTL]}>
               {creatorCode ? (
                 <View style={[styles.creatorCodeContainer, isRTL && styles.creatorCodeContainerRTL]}>
@@ -216,7 +214,8 @@ const styles = StyleSheet.create({
   cardContent: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingVertical: 22,
+    paddingTop: 22,
+    paddingBottom: 22,
     justifyContent: 'space-between',
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
   },
@@ -287,25 +286,22 @@ const styles = StyleSheet.create({
     textShadowRadius: 10,
     textShadowOffset: { width: 0, height: 3 },
   },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(230, 255, 246, 0.24)',
-    marginVertical: 12,
-  },
   bottomRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     gap: 12,
   },
   bottomRowRTL: {
     flexDirection: 'row-reverse',
   },
   creatorCodeContainer: {
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   creatorCodeContainerRTL: {
-    alignItems: 'flex-start',
+    flexDirection: 'row-reverse',
   },
   creatorCodeSpacer: {
     flex: 1,
@@ -314,11 +310,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Typography.poppins.semiBold,
     color: 'rgba(236, 248, 243, 0.72)',
-    letterSpacing: 2.4,
-    marginBottom: 2,
+    letterSpacing: 1.2,
+    textAlign: 'left',
   },
   creatorCodeText: {
-    fontSize: 28,
+    fontSize: 26,
+    lineHeight: 30,
     color: 'rgba(239, 251, 246, 0.9)',
     textAlign: 'left',
     textShadowColor: 'rgba(0, 0, 0, 0.38)',

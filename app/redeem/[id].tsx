@@ -18,7 +18,6 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    TouchableWithoutFeedback,
     View
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -77,6 +76,7 @@ export default function RedeemScreen() {
 
     const pinInputRef = useRef<TextInput>(null);
     const amountInputRef = useRef<TextInput>(null);
+    const scrollRef = useRef<ScrollView>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -360,8 +360,7 @@ export default function RedeemScreen() {
                 style={styles.keyboardAware}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <View style={styles.innerContainer}>
+                <View style={styles.innerContainer}>
                         {/* Header */}
                         <View style={styles.header}>
                             <TouchableOpacity
@@ -381,10 +380,12 @@ export default function RedeemScreen() {
                         </View>
 
                         <ScrollView
+                            ref={scrollRef}
                             style={{ flex: 1 }}
                             contentContainerStyle={styles.scrollContent}
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled"
+                            keyboardDismissMode="on-drag"
                         >
                             {/* Offer Card */}
                             <View style={styles.offerCardWrapper}>
@@ -467,7 +468,6 @@ export default function RedeemScreen() {
                                             }}
                                             keyboardType="number-pad"
                                             maxLength={4}
-                                            returnKeyType="done"
                                             onSubmitEditing={() => amountInputRef.current?.focus()}
                                         />
                                     </View>
@@ -479,6 +479,11 @@ export default function RedeemScreen() {
                                             ref={amountInputRef}
                                             style={[styles.amountInput, { textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
                                             value={amount}
+                                            onFocus={() => {
+                                                setTimeout(() => {
+                                                    scrollRef.current?.scrollToEnd({ animated: true });
+                                                }, 150);
+                                            }}
                                             onChangeText={(text) => {
                                                 const normalized = normalizeDigits(text);
                                                 // Allow only digits and one decimal point
@@ -493,7 +498,6 @@ export default function RedeemScreen() {
                                             keyboardType="decimal-pad"
                                             placeholder="0"
                                             placeholderTextColor="#CCC"
-                                            returnKeyType="done"
                                             onSubmitEditing={handleAction}
                                         />
                                     </View>
@@ -539,8 +543,6 @@ export default function RedeemScreen() {
                                 </View>
                             )}
 
-
-
                             {/* Action Button */}
                             <TouchableOpacity
                                 style={[
@@ -564,8 +566,7 @@ export default function RedeemScreen() {
                                 )}
                             </TouchableOpacity>
                         </ScrollView>
-                    </View>
-                </TouchableWithoutFeedback>
+                </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );

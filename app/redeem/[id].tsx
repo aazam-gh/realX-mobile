@@ -306,36 +306,83 @@ export default function RedeemScreen() {
                         </View>
 
                         {/* Vendor Logo — half in, half out */}
-                        <View style={styles.successLogoOverlay}>
-                            <Image
-                                source={{ uri: vendor.profilePicture }}
-                                style={styles.successLogoImage}
-                                contentFit="contain"
-                            />
-                        </View>
+                                <View style={styles.successLogoOverlay}>
+                                    <Image
+                                        source={{ uri: vendor.profilePicture }}
+                                        style={styles.successLogoImage}
+                                        contentFit="cover"
+                                    />
+                                </View>
                     </View>
 
                     {/* Bottom Pill — Breakdown */}
                     <View style={styles.successBottomPill}>
                         {/* You Saved */}
-                        <View style={styles.successSavedRow}>
+                        <View
+                            style={[
+                                styles.successSavedRow,
+                                {
+                                    flexDirection: isArabic ? 'row-reverse' : 'row',
+                                    justifyContent: isArabic ? 'flex-end' : 'flex-start',
+                                },
+                            ]}
+                        >
                             <Ionicons name="pricetag" size={18} color={Colors.brandGreen} />
-                            <Text style={styles.successSavedLabel}>{t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}</Text>
+                            <Text
+                                style={[
+                                    styles.successSavedLabel,
+                                    {
+                                        textAlign: isArabic ? 'right' : 'left',
+                                    },
+                                ]}
+                            >
+                                {t('you_saved_success_message', { currency, amount: savedStr }).replace('!', '')}
+                            </Text>
                         </View>
 
                         {/* Amount to Pay */}
-                        <View style={styles.successPayRow}>
+                        <View
+                            style={[
+                                styles.successPayRow,
+                                {
+                                    flexDirection: isArabic ? 'row-reverse' : 'row',
+                                    justifyContent: isArabic ? 'flex-end' : 'flex-start',
+                                },
+                            ]}
+                        >
                             <Ionicons name="card" size={18} color="#000" />
-                            <Text style={styles.successPayLabel}>
+                            <Text
+                                style={[
+                                    styles.successPayLabel,
+                                    {
+                                        textAlign: isArabic ? 'right' : 'left',
+                                    },
+                                ]}
+                            >
                                 {t('amount_to_pay_label')}: {currency} {redemptionResult.finalAmount.toFixed(2)}
                             </Text>
                         </View>
 
                         {/* Cashback (only if > 0) */}
                         {redemptionResult.cashbackAmount > 0 && (
-                            <View style={styles.successCashbackRow}>
+                            <View
+                                style={[
+                                    styles.successCashbackRow,
+                                    {
+                                        flexDirection: isArabic ? 'row-reverse' : 'row',
+                                        justifyContent: isArabic ? 'flex-end' : 'flex-start',
+                                    },
+                                ]}
+                            >
                                 <Ionicons name="wallet" size={18} color="#FF9800" />
-                                <Text style={styles.successCashbackLabel}>
+                                <Text
+                                    style={[
+                                        styles.successCashbackLabel,
+                                        {
+                                            textAlign: isArabic ? 'right' : 'left',
+                                        },
+                                    ]}
+                                >
                                     {t('cashback_earned_success_message', { currency, amount: earnedStr })}
                                 </Text>
                             </View>
@@ -402,7 +449,7 @@ export default function RedeemScreen() {
                                     <Image
                                         source={{ uri: vendor.profilePicture }}
                                         style={styles.logoImage}
-                                        contentFit="contain"
+                                        contentFit="cover"
                                     />
                                 </View>
                             </View>
@@ -531,7 +578,7 @@ export default function RedeemScreen() {
                                             {vendor.xcard === true && (
                                                 <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                                     <Text style={[styles.cashbackLabel, { textAlign: isArabic ? 'right' : 'left' }]}>
-                                                        {t('cashback_label_formatted', { percentage: 1 })}
+                                                        {`${t('xcard_cashback_label')} (${1}%)`}
                                                     </Text>
                                                     <Text style={[styles.cashbackValue, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                                         {t('amount_with_currency_positive', { amount: (finalAmount * 0.01).toFixed(2), currency: t('currency_qar') })}
@@ -662,8 +709,9 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     logoImage: {
-        width: '60%',
-        height: '60%',
+        width: '100%',
+        height: '100%',
+        borderRadius: 21,
     },
     offerTitle: {
         fontSize: 32,
@@ -875,7 +923,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         paddingHorizontal: 30,
-        gap: 16,
+        gap: 0,
         zIndex: 1,
     },
     successTopPillWrapper: {
@@ -895,6 +943,8 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         paddingVertical: 24,
         paddingHorizontal: 24,
+        marginTop: -2,
+        alignItems: 'center',
     },
     successLogoOverlay: {
         position: 'absolute',
@@ -909,8 +959,9 @@ const styles = StyleSheet.create({
         zIndex: 2,
     },
     successLogoImage: {
-        width: '60%',
-        height: '60%',
+        width: '100%',
+        height: '100%',
+        borderRadius: 20,
     },
     successTitle: {
         fontSize: 26,
@@ -938,42 +989,45 @@ const styles = StyleSheet.create({
     successSavedRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
         gap: 10,
         paddingVertical: 10,
+        width: '88%',
     },
     successSavedLabel: {
         fontSize: 15,
         color: Colors.brandGreen,
         fontFamily: Typography.poppins.semiBold,
+        flex: 1,
     },
     successPayRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
         gap: 10,
         paddingVertical: 10,
         borderTopWidth: 1,
         borderTopColor: '#E8E8E8',
+        width: '88%',
     },
     successPayLabel: {
         fontSize: 15,
         color: '#000',
         fontFamily: Typography.poppins.semiBold,
+        flex: 1,
     },
     successCashbackRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
         gap: 10,
         paddingVertical: 10,
         borderTopWidth: 1,
         borderTopColor: '#E8E8E8',
+        width: '88%',
     },
     successCashbackLabel: {
         fontSize: 15,
         color: '#FF9800',
         fontFamily: Typography.poppins.semiBold,
+        flex: 1,
     },
     successCreatorText: {
         fontSize: 13,

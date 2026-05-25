@@ -82,11 +82,8 @@ match /students/{userId} {
   allow read: if request.auth != null
     && (request.auth.uid == userId || isAdmin());
 
-  // Create: user can create their own doc with restrictions
-  allow create: if request.auth != null
-    && request.auth.uid == userId
-    && !('creatorCode' in request.resource.data)
-    && (!('cashback' in request.resource.data) || request.resource.data.cashback == 0);
+  // Create: signup profile creation is server-owned via Cloud Functions.
+  allow create: if false;
 
   // Update: user can update own doc but cannot modify restricted fields
   allow update: if request.auth != null

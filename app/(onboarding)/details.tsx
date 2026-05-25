@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { getAuth } from '@react-native-firebase/auth';
-import { doc, getFirestore, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -56,28 +55,17 @@ export default function DetailsOnboarding() {
             }
 
             const role = params.role || 'student';
+            const functions = getFunctions(undefined, 'me-central1');
+            const completeSignup = httpsCallable(functions, 'completeSignup');
 
-            const studentData: any = {
+            await completeSignup({
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
                 dob: dob ? dob.toISOString().split('T')[0] : '', // Format: YYYY-MM-DD
                 gender,
                 email: params.email || user.email,
                 role: role,
-                cashback: 0,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                uid: user.uid,
-            };
-
-            const db = getFirestore();
-            await setDoc(doc(db, 'students', user.uid), studentData);
-
-            if (role === 'creator') {
-                const functions = getFunctions(undefined, 'me-central1');
-                const assignCode = httpsCallable(functions, 'assignCreatorCode');
-                await assignCode();
-            }
+            });
 
             logger.log('Student details saved successfully!');
             router.replace('/(tabs)');

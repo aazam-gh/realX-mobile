@@ -9,6 +9,7 @@ import { setGlobalOptions } from 'firebase-functions';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { geohashForLocation } from 'geofire-common';
 import { Resend } from 'resend';
+import { createHash, randomInt } from 'crypto';
 
 admin.initializeApp();
 setGlobalOptions({ region: 'me-central1', maxInstances: 10 });
@@ -60,6 +61,9 @@ const normalizeDigits = (input: string | number | undefined | null): string => {
 
 const isValidCoordinate = (value: unknown, min: number, max: number) =>
   typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
+
+const hashDocId = (value: string) =>
+  createHash('sha256').update(value).digest('hex');
 
 const getQatarDateKey = () => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -791,6 +795,29 @@ export const redeemOnlineVendor = onCall(
  * Creator Code Assignment
  * =============================
  */
+const reserveCreatorCode = async (tx, uid: string) => {
+  let attempts = 0;
+
+  while (attempts < 5) {
+    const candidate = generateCode();
+    const codeRef = db.collection('creator_codes').doc(candidate);
+    const codeDoc = await tx.get(codeRef);
+
+    if (!codeDoc.exists) {
+      tx.set(codeRef, {
+        uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return candidate;
+    }
+
+    attempts++;
+  }
+
+  throw new HttpsError('internal', 'Failed to generate code');
+};
+
 export const assignCreatorCode = onCall(
   async (request: CallableRequest) => {
     if (!request.auth) {
@@ -812,30 +839,11 @@ export const assignCreatorCode = onCall(
         return { creatorCode: existingCode };
       }
 
-      let code = null;
-      let attempts = 0;
-
-      while (!code && attempts < 5) {
-        const candidate = generateCode();
-        const codeRef = db.collection('creator_codes').doc(candidate);
-        const codeDoc = await tx.get(codeRef);
-
-        if (!codeDoc.exists) {
-          tx.set(codeRef, {
-            uid,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-
-          tx.update(userRef, { creatorCode: candidate });
-          code = candidate;
-        }
-
-        attempts++;
-      }
-
-      if (!code) {
-        throw new HttpsError('internal', 'Failed to generate code');
-      }
+      const code = await reserveCreatorCode(tx, uid);
+      tx.update(userRef, {
+        creatorCode: code,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
 
       return { creatorCode: code };
     });
@@ -959,6 +967,15 @@ const MAX_OTP_SENDS_PER_WINDOW = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const COOLDOWN_MS = 60 * 1000; // 60 seconds
 const MAX_VERIFY_ATTEMPTS = 3;
+const OTP_PURPOSES = ['signup', 'login', 'verification'];
+
+const isValidOtpPurpose = (purpose: unknown) =>
+  typeof purpose === 'string' && OTP_PURPOSES.includes(purpose);
+
+const getOtpRef = (email: string) =>
+  db.collection('otps').doc(hashDocId(`otp:${email}`));
+
+const generateOtpCode = () => randomInt(100000, 1000000).toString();
 
 /**
  * =============================
@@ -970,41 +987,38 @@ const MAX_ACCOUNT_CHECKS_PER_WINDOW = 20;
 
 async function checkAccountRateLimit(key: string): Promise<void> {
   const now = admin.firestore.Timestamp.now();
-  const rateRef = db.collection('rate_limits').doc(key);
-  const rateDoc = await rateRef.get();
+  const rateRef = db.collection('rate_limits').doc(hashDocId(`account_check:${key}`));
 
-  if (rateDoc.exists) {
-    const data = rateDoc.data();
-    const windowStart = data?.windowStart?.toMillis() ?? 0;
-    const windowAge = now.toMillis() - windowStart;
+  await db.runTransaction(async (tx) => {
+    const rateDoc = await tx.get(rateRef);
+    let checkCount = 1;
+    let windowStart = now;
 
-    if (windowAge < ACCOUNT_CHECK_RATE_LIMIT_MS) {
-      const checkCount = data?.checkCount ?? 0;
-      if (checkCount >= MAX_ACCOUNT_CHECKS_PER_WINDOW) {
-        throw new HttpsError(
-          'resource-exhausted',
-          'Too many requests. Please try again later.'
-        );
+    if (rateDoc.exists) {
+      const data = rateDoc.data();
+      const existingWindowStart = data?.windowStart?.toMillis() ?? 0;
+      const windowAge = now.toMillis() - existingWindowStart;
+
+      if (windowAge < ACCOUNT_CHECK_RATE_LIMIT_MS) {
+        const currentCount = data?.checkCount ?? 0;
+        if (currentCount >= MAX_ACCOUNT_CHECKS_PER_WINDOW) {
+          throw new HttpsError(
+            'resource-exhausted',
+            'Too many requests. Please try again later.'
+          );
+        }
+
+        checkCount = currentCount + 1;
+        windowStart = data?.windowStart ?? now;
       }
     }
-  }
 
-  // Update rate limit counter
-  let checkCount = 1;
-  let windowStart = now;
-
-  if (rateDoc.exists) {
-    const data = rateDoc.data();
-    const existingWindowStart = data?.windowStart?.toMillis() ?? 0;
-    const windowAge = now.toMillis() - existingWindowStart;
-
-    if (windowAge < ACCOUNT_CHECK_RATE_LIMIT_MS) {
-      checkCount = (data?.checkCount ?? 0) + 1;
-      windowStart = data?.windowStart ?? now;
-    }
-  }
-
-  await rateRef.set({ checkCount, windowStart });
+    tx.set(rateRef, {
+      checkCount,
+      windowStart,
+      updatedAt: now,
+    });
+  });
 }
 
 /**
@@ -1018,11 +1032,11 @@ export const sendOtp = onCall(
     const email = request.data?.email?.toLowerCase()?.trim();
     const purpose = request.data?.purpose; // "signup" | "login" | "verification"
 
-    if (!email) {
-      throw new HttpsError('invalid-argument', 'Email is required');
+    if (!email || !isValidEmail(email)) {
+      throw new HttpsError('invalid-argument', 'A valid email is required');
     }
 
-    if (!purpose || !['signup', 'login', 'verification'].includes(purpose)) {
+    if (!isValidOtpPurpose(purpose)) {
       throw new HttpsError('invalid-argument', 'Purpose must be "signup", "login", or "verification"');
     }
 
@@ -1100,70 +1114,69 @@ export const sendOtp = onCall(
       return { success: true, customToken };
     }
 
-    // Rate limiting
     const now = admin.firestore.Timestamp.now();
-    const otpRef = db.collection('otps').doc(email);
-    const otpDoc = await otpRef.get();
+    const otpRef = getOtpRef(email);
+    const { code } = await db.runTransaction(async (tx) => {
+      const otpDoc = await tx.get(otpRef);
 
-    if (otpDoc.exists) {
-      const data = otpDoc.data();
-      if (!data) throw new HttpsError('internal', 'Failed to read OTP data.');
-      const windowStart = data.rateLimit?.windowStart?.toMillis() ?? 0;
-      const windowAge = now.toMillis() - windowStart;
+      if (otpDoc.exists) {
+        const data = otpDoc.data();
+        if (!data) throw new HttpsError('internal', 'Failed to read OTP data.');
+        const rateWindowStart = data.rateLimit?.windowStart?.toMillis() ?? 0;
+        const rateWindowAge = now.toMillis() - rateWindowStart;
 
-      // Check 15-minute window limit
-      if (windowAge < RATE_LIMIT_WINDOW_MS) {
-        const sendCount = data.rateLimit?.sendCount ?? 0;
-        if (sendCount >= MAX_OTP_SENDS_PER_WINDOW) {
-          const retryAfterMinutes = Math.ceil((RATE_LIMIT_WINDOW_MS - windowAge) / 60000);
+        if (rateWindowAge < RATE_LIMIT_WINDOW_MS) {
+          const currentSendCount = data.rateLimit?.sendCount ?? 0;
+          if (currentSendCount >= MAX_OTP_SENDS_PER_WINDOW) {
+            const retryAfterMinutes = Math.ceil((RATE_LIMIT_WINDOW_MS - rateWindowAge) / 60000);
+            throw new HttpsError(
+              'resource-exhausted',
+              `Too many OTP requests. Try again in ${retryAfterMinutes} minutes.`
+            );
+          }
+        }
+
+        const lastSent = data.createdAt?.toMillis() ?? 0;
+        const elapsed = now.toMillis() - lastSent;
+        if (elapsed < COOLDOWN_MS) {
+          const retryAfter = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
           throw new HttpsError(
             'resource-exhausted',
-            `Too many OTP requests. Try again in ${retryAfterMinutes} minutes.`
+            `Please wait ${retryAfter} seconds before requesting a new code.`,
+            { retryAfter }
           );
         }
       }
 
-      // Check 60-second cooldown
-      const lastSent = data.createdAt?.toMillis() ?? 0;
-      const elapsed = now.toMillis() - lastSent;
-      if (elapsed < COOLDOWN_MS) {
-        const retryAfter = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
-        throw new HttpsError(
-          'resource-exhausted',
-          `Please wait ${retryAfter} seconds before requesting a new code.`,
-          { retryAfter }
-        );
+      const nextCode = generateOtpCode();
+      let sendCount = 1;
+      let windowStart = now;
+
+      if (otpDoc.exists) {
+        const data = otpDoc.data();
+        if (!data) throw new HttpsError('internal', 'Failed to read OTP data.');
+        const existingWindowStart = data.rateLimit?.windowStart?.toMillis() ?? 0;
+        const windowAge = now.toMillis() - existingWindowStart;
+
+        if (windowAge < RATE_LIMIT_WINDOW_MS) {
+          sendCount = (data.rateLimit?.sendCount ?? 0) + 1;
+          windowStart = data.rateLimit?.windowStart ?? now;
+        }
       }
-    }
 
-    // Generate 6-digit OTP
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+      tx.set(otpRef, {
+        email,
+        code: nextCode,
+        attempts: 0,
+        createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromMillis(now.toMillis() + OTP_EXPIRY_MINUTES * 60 * 1000),
+        purpose,
+        verified: false,
+        rateLimit: { sendCount, windowStart },
+        updatedAt: now,
+      });
 
-    // Calculate new rate limit values
-    let sendCount = 1;
-    let windowStart = now;
-
-    if (otpDoc.exists) {
-      const data = otpDoc.data();
-      if (!data) throw new HttpsError('internal', 'Failed to read OTP data.');
-      const existingWindowStart = data.rateLimit?.windowStart?.toMillis() ?? 0;
-      const windowAge = now.toMillis() - existingWindowStart;
-
-      if (windowAge < RATE_LIMIT_WINDOW_MS) {
-        sendCount = (data.rateLimit?.sendCount ?? 0) + 1;
-        windowStart = data.rateLimit?.windowStart ?? now;
-      }
-    }
-
-    // Store OTP in Firestore
-    await otpRef.set({
-      code,
-      attempts: 0,
-      createdAt: now,
-      expiresAt: admin.firestore.Timestamp.fromMillis(now.toMillis() + OTP_EXPIRY_MINUTES * 60 * 1000),
-      purpose,
-      verified: false,
-      rateLimit: { sendCount, windowStart },
+      return { code: nextCode };
     });
 
     // Send email via Resend
@@ -1211,57 +1224,76 @@ export const verifyOtp = onCall(
     const code = request.data?.code?.trim();
     const purpose = request.data?.purpose;
 
-    if (!email) {
-      throw new HttpsError('invalid-argument', 'Email is required');
+    if (!email || !isValidEmail(email)) {
+      throw new HttpsError('invalid-argument', 'A valid email is required');
     }
 
     if (!code || !/^\d{6}$/.test(code)) {
       throw new HttpsError('invalid-argument', 'A valid 6-digit code is required');
     }
 
-    if (!purpose || !['signup', 'login', 'verification'].includes(purpose)) {
+    if (!isValidOtpPurpose(purpose)) {
       throw new HttpsError('invalid-argument', 'Purpose must be "signup", "login", or "verification"');
     }
 
     const now = admin.firestore.Timestamp.now();
-    const otpRef = db.collection('otps').doc(email);
-    const otpDoc = await otpRef.get();
+    const otpRef = getOtpRef(email);
+    const verificationResult = await db.runTransaction(async (tx) => {
+      const otpDoc = await tx.get(otpRef);
 
-    if (!otpDoc.exists) {
-      throw new HttpsError('not-found', 'No verification code found. Please request a new one.');
-    }
+      if (!otpDoc.exists) {
+        throw new HttpsError('not-found', 'No verification code found. Please request a new one.');
+      }
 
-    const data = otpDoc.data();
-    if (!data) throw new HttpsError('internal', 'Failed to read OTP data.');
+      const data = otpDoc.data();
+      if (!data) throw new HttpsError('internal', 'Failed to read OTP data.');
 
-    if (data.verified) {
-      throw new HttpsError('permission-denied', 'This code has already been used. Please request a new one.');
-    }
+      if (data.purpose !== purpose) {
+        throw new HttpsError('permission-denied', 'This code is not valid for this action. Please request a new code.');
+      }
 
-    if (data.expiresAt.toMillis() < now.toMillis()) {
-      throw new HttpsError('deadline-exceeded', 'Code has expired. Please request a new one.');
-    }
+      if (data.verified) {
+        throw new HttpsError('permission-denied', 'This code has already been used. Please request a new one.');
+      }
 
-    if (data.attempts >= MAX_VERIFY_ATTEMPTS) {
-      throw new HttpsError('resource-exhausted', 'Too many attempts. Please request a new code.');
-    }
+      if (data.expiresAt.toMillis() < now.toMillis()) {
+        throw new HttpsError('deadline-exceeded', 'Code has expired. Please request a new one.');
+      }
 
-    // Increment attempts
-    await otpRef.update({
-      attempts: admin.firestore.FieldValue.increment(1),
+      const currentAttempts = data.attempts ?? 0;
+      if (currentAttempts >= MAX_VERIFY_ATTEMPTS) {
+        throw new HttpsError('resource-exhausted', 'Too many attempts. Please request a new code.');
+      }
+
+      const nextAttempts = currentAttempts + 1;
+
+      if (data.code !== code) {
+        const remaining = MAX_VERIFY_ATTEMPTS - nextAttempts;
+        tx.update(otpRef, {
+          attempts: nextAttempts,
+          lastAttemptAt: now,
+          updatedAt: now,
+        });
+        return {
+          success: false,
+          code: 'invalid-argument',
+          message: `Incorrect code. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`,
+        };
+      }
+
+      tx.update(otpRef, {
+        attempts: nextAttempts,
+        verified: true,
+        verifiedAt: now,
+        updatedAt: now,
+      });
+
+      return { success: true };
     });
 
-    // Check code match
-    if (data.code !== code) {
-      const remaining = MAX_VERIFY_ATTEMPTS - (data.attempts + 1);
-      throw new HttpsError(
-        'invalid-argument',
-        `Incorrect code. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`
-      );
+    if (!verificationResult.success) {
+      throw new HttpsError(verificationResult.code, verificationResult.message);
     }
-
-    // Mark as verified
-    await otpRef.update({ verified: true });
 
     // Verification: just confirm email is verified, no auth user creation
     if (purpose === 'verification') {
@@ -1275,6 +1307,9 @@ export const verifyOtp = onCall(
       try {
         const userRecord = await admin.auth().getUserByEmail(email);
         uid = userRecord.uid;
+        if (!userRecord.emailVerified) {
+          await admin.auth().updateUser(uid, { emailVerified: true });
+        }
       } catch {
         const userRecord = await admin.auth().createUser({
           email,
@@ -1301,6 +1336,131 @@ export const verifyOtp = onCall(
     const customToken = await admin.auth().createCustomToken(uid);
 
     return { success: true, customToken };
+  }
+);
+
+/**
+ * =============================
+ * Signup Completion
+ * =============================
+ */
+const isValidSignupRole = (role: unknown) =>
+  role === 'student' || role === 'creator';
+
+const isValidSignupGender = (gender: unknown) =>
+  gender === 'Male' || gender === 'Female';
+
+const isValidDob = (dob: unknown) => {
+  if (typeof dob !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+    return false;
+  }
+
+  const parsed = new Date(`${dob}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.getTime() <= Date.now();
+};
+
+export const completeSignup = onCall(
+  async (request: CallableRequest) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Login required');
+    }
+
+    const uid = request.auth.uid;
+    const userRecord = await admin.auth().getUser(uid);
+    const authEmail = userRecord.email?.toLowerCase()?.trim() || '';
+    const requestedEmail = request.data?.email?.toLowerCase()?.trim() || authEmail;
+    const firstName = typeof request.data?.firstName === 'string' ? request.data.firstName.trim() : '';
+    const lastName = typeof request.data?.lastName === 'string' ? request.data.lastName.trim() : '';
+    const dob = request.data?.dob;
+    const gender = request.data?.gender;
+    const role = request.data?.role || 'student';
+
+    if (!authEmail || !requestedEmail || authEmail !== requestedEmail || !isValidEmail(requestedEmail)) {
+      throw new HttpsError('permission-denied', 'Authenticated email does not match signup email');
+    }
+
+    if (!/^[^@]+@[^@]+\.edu\.qa$/.test(requestedEmail)) {
+      throw new HttpsError('permission-denied', 'Only .edu.qa emails can complete self-signup');
+    }
+
+    if (!firstName || !lastName || firstName.length > 80 || lastName.length > 80) {
+      throw new HttpsError('invalid-argument', 'First and last name are required');
+    }
+
+    if (!isValidDob(dob)) {
+      throw new HttpsError('invalid-argument', 'Valid date of birth is required');
+    }
+
+    if (!isValidSignupGender(gender)) {
+      throw new HttpsError('invalid-argument', 'Valid gender is required');
+    }
+
+    if (!isValidSignupRole(role)) {
+      throw new HttpsError('invalid-argument', 'Valid role is required');
+    }
+
+    const existingEmailSnapshot = await db
+      .collection('students')
+      .where('email', '==', requestedEmail)
+      .limit(1)
+      .get();
+
+    if (!existingEmailSnapshot.empty && existingEmailSnapshot.docs[0].id !== uid) {
+      throw new HttpsError('already-exists', 'An account with this email already exists');
+    }
+
+    const studentRef = db.collection('students').doc(uid);
+
+    return db.runTransaction(async (tx) => {
+      const studentDoc = await tx.get(studentRef);
+
+      if (studentDoc.exists) {
+        const existingData = studentDoc.data() || {};
+        const existingEmail = existingData.email?.toLowerCase?.().trim?.() || '';
+
+        if (existingEmail && existingEmail !== requestedEmail) {
+          throw new HttpsError('permission-denied', 'Account email mismatch');
+        }
+
+        if (existingData.role === 'creator' && !existingData.creatorCode) {
+          const creatorCode = await reserveCreatorCode(tx, uid);
+          tx.update(studentRef, {
+            creatorCode,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          return { success: true, alreadyExists: true, creatorCode };
+        }
+
+        return {
+          success: true,
+          alreadyExists: true,
+          creatorCode: existingData.creatorCode || null,
+        };
+      }
+
+      const studentData = {
+        firstName,
+        lastName,
+        dob,
+        gender,
+        email: requestedEmail,
+        role,
+        cashback: 0,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        uid,
+      };
+
+      let creatorCode = null;
+      if (role === 'creator') {
+        creatorCode = await reserveCreatorCode(tx, uid);
+        studentData.creatorCode = creatorCode;
+      }
+
+      tx.create(studentRef, studentData);
+
+      return { success: true, creatorCode };
+    });
   }
 );
 /**

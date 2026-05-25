@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
-  I18nManager,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -25,7 +24,6 @@ export default function PendingVerificationScreen() {
   const params = useLocalSearchParams<{ email?: string; role?: string }>();
   const { email } = params;
   const { t } = useTranslation();
-  const isRTL = I18nManager.isRTL;
 
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);

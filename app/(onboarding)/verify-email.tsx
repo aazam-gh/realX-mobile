@@ -37,7 +37,7 @@ const normalizeEmail = (email: string): string => {
 
 export default function VerifyEmailScreen() {
   const router = useRouter();
-  const { mode, role } = useLocalSearchParams<{ mode?: string; role?: string }>();
+  const { role } = useLocalSearchParams<{ role?: string }>();
   const { t } = useTranslation();
   const isRTL = I18nManager.isRTL;
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';

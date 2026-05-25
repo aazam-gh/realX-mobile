@@ -13,6 +13,7 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 import GiftCardCheckout from './GiftCardCheckout';
+import GiftCardTermsDrawer from './GiftCardTermsDrawer';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
 import type { WalletBrand } from './types';
@@ -36,6 +37,7 @@ export default function RedeemGiftCard({
     const amounts = brand.loyalty && brand.loyalty.length > 0 ? brand.loyalty : [25, 50, 75];
     const [selectedAmount, setSelectedAmount] = useState(amounts[0]);
     const [showCheckout, setShowCheckout] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
     const { t } = useTranslation();
     const isRTL = I18nManager.isRTL;
 
@@ -113,6 +115,17 @@ export default function RedeemGiftCard({
                     </View>
                 </View>
 
+                <TouchableOpacity
+                    style={[styles.tcButton, isRTL && styles.tcButtonRTL]}
+                    onPress={() => {
+                        triggerSubtleHaptic();
+                        setShowTerms(true);
+                    }}
+                >
+                    <Ionicons name="information-circle-outline" size={18} color="#999999" />
+                    <Text style={[styles.tcButtonText, isRTL && styles.tcButtonTextRTL]}>{t('view_tc')}</Text>
+                </TouchableOpacity>
+
                 {/* Amount Selection */}
                 <View style={styles.selectionSection}>
                     {/* MAX LIMIT label removed */}
@@ -168,16 +181,12 @@ export default function RedeemGiftCard({
                     <Ionicons name="flash" size={20} color="#FFFFFF" style={styles.redeemIcon} />
                     <PhonkText style={styles.redeemButtonText}>{t('redeem_button_text')}</PhonkText>
                 </TouchableOpacity>
-
-                {/* T&C */}
-                <TouchableOpacity
-                    style={[styles.tcButton, isRTL && styles.tcButtonRTL]}
-                    onPress={() => triggerSubtleHaptic()}
-                >
-                    <Ionicons name="information-circle-outline" size={18} color="#999999" />
-                    <Text style={[styles.tcButtonText, isRTL && styles.tcButtonTextRTL]}>{t('view_tc')}</Text>
-                </TouchableOpacity>
             </ScrollView>
+
+            <GiftCardTermsDrawer
+                visible={showTerms}
+                onClose={() => setShowTerms(false)}
+            />
         </View>
     );
 }

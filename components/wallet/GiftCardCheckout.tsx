@@ -228,16 +228,6 @@ export default function GiftCardCheckout({
                 {/* Gift Card Display Card */}
                 <View style={styles.offerCardWrapper}>
                     <View style={styles.offerCard}>
-                        <TouchableOpacity
-                            style={[styles.tcButton, isRTL && styles.tcButtonRTL]}
-                            onPress={() => triggerSubtleHaptic()}
-                        >
-                            <Ionicons name="information-circle-outline" size={18} color="#888" />
-                            <Text style={[styles.tcText, isRTL && styles.tcTextRTL]}>
-                                {t('view_tc')}
-                            </Text>
-                        </TouchableOpacity>
-
                         <PhonkText style={styles.offerTitle}>
                             {selectedAmount.toFixed(2)}
                             <Text style={styles.greenText}>{currency}</Text>
@@ -416,28 +406,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    tcButton: {
-        position: 'absolute',
-        top: 20,
-        right: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    tcButtonRTL: {
-        right: undefined,
-        left: 20,
-        flexDirection: 'row-reverse',
-    },
-    tcText: {
-        fontSize: 14,
-        color: '#888',
-        fontFamily: Typography.poppins.semiBold,
-    },
-    tcTextRTL: {
-        marginLeft: 0,
-        marginRight: 4,
     },
     offerTitle: {
         fontSize: 32,

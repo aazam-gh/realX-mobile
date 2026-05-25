@@ -445,7 +445,6 @@ export default function CategoryScreen() {
                     data={vendors}
                     keyExtractor={(item) => item.id}
                     numColumns={2}
-                    estimatedItemSize={200}
                     contentContainerStyle={styles.contentContainer}
                     showsVerticalScrollIndicator={false}
                     onScroll={handleFlashListScroll}

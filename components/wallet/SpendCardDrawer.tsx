@@ -135,18 +135,15 @@ export default function SpendCardDrawer({
 
         try {
             const db = getFirestore();
-            const constraints = isSearchMode
-                ? [
-                    where('xcard', '==', true),
-                    where('searchTokens', 'array-contains', trimmedQuery),
-                ]
-                : [
-                    where('xcard', '==', true),
-                ];
+            let q = collection(db, 'vendors').where('xcard', '==', true);
 
-            const q = isNew || !lastDocRef.current
-                ? query(collection(db, 'vendors'), ...constraints, limit(PAGE_SIZE))
-                : query(collection(db, 'vendors'), ...constraints, startAfter(lastDocRef.current), limit(PAGE_SIZE));
+            if (isSearchMode) {
+                q = q.where('searchTokens', 'array-contains', trimmedQuery);
+            }
+
+            q = isNew || !lastDocRef.current
+                ? q.limit(PAGE_SIZE)
+                : q.startAfter(lastDocRef.current).limit(PAGE_SIZE);
 
             const snapshot = await getDocs(q);
             if (requestId !== requestIdRef.current) return;
@@ -318,8 +315,6 @@ export default function SpendCardDrawer({
                                 <FlashList
                                     data={brands}
                                     keyExtractor={(item) => item.id}
-                                    // Keep FlashList from remeasuring the first visible row while scrolling.
-                                    estimatedItemSize={80}
                                     maintainVisibleContentPosition={{ disabled: true }}
                                     renderItem={({ item }) => (
                                         <BrandListItem

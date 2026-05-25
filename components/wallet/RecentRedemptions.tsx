@@ -40,10 +40,17 @@ export default function RecentRedemptions() {
             const db = getFirestore();
 
             // Deduplicate vendor IDs and batch fetch
-            const vendorIds = [...new Set(snapshot.docs.map((d: any) => d.data()?.vendorId).filter(Boolean))];
+            const vendorIds: string[] = [];
+            snapshot.docs.forEach((d: any) => {
+                const vendorId = d.data()?.vendorId;
+                if (typeof vendorId === 'string' && vendorId.length > 0) {
+                    vendorIds.push(vendorId);
+                }
+            });
+            const uniqueVendorIds = [...new Set(vendorIds)];
             const vendorMap = new Map<string, any>();
 
-            await Promise.all(vendorIds.map(async (vid: string) => {
+            await Promise.all(uniqueVendorIds.map(async (vid) => {
                 try {
                     const vDoc = await getDoc(doc(db, 'vendors', vid));
                     if (vDoc.exists()) {

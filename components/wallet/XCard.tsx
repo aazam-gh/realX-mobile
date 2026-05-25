@@ -75,7 +75,7 @@ export default function AZxXCard({ earnings = 0, currency = 'XP', creatorCode }:
                 animationDuration: 0.35,
               }}
               colorScheme="light"
-              tintColor="rgba(18, 88, 64, 0.48)"
+              tintColor="rgba(8, 56, 44, 0.58)"
               isInteractive
             />
           ) : (
@@ -149,9 +149,9 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     padding: 1.4,
     overflow: 'hidden',
-    backgroundColor: 'rgba(162, 238, 213, 0.42)',
-    shadowColor: '#4DCFA2',
-    shadowOpacity: 0.34,
+    backgroundColor: 'rgba(95, 188, 155, 0.32)',
+    shadowColor: '#1A8D6A',
+    shadowOpacity: 0.4,
     shadowRadius: 22,
     shadowOffset: { width: 0, height: 10 },
     elevation: 18,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT * 0.58,
     borderTopLeftRadius: 30,
     borderBottomRightRadius: 90,
-    backgroundColor: 'rgba(214, 255, 239, 0.18)',
+    backgroundColor: 'rgba(146, 235, 205, 0.14)',
   },
   borderGlowBottomRight: {
     position: 'absolute',
@@ -174,13 +174,13 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT * 0.62,
     borderTopLeftRadius: 110,
     borderBottomRightRadius: 30,
-    backgroundColor: 'rgba(12, 48, 36, 0.56)',
+    backgroundColor: 'rgba(4, 26, 20, 0.72)',
   },
   cardShell: {
     flex: 1,
     borderRadius: 29,
     overflow: 'hidden',
-    backgroundColor: 'rgba(7, 34, 25, 0.78)',
+    backgroundColor: 'rgba(2, 22, 17, 0.9)',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     width: 210,
     height: 210,
     borderRadius: 105,
-    backgroundColor: 'rgba(55, 196, 152, 0.24)',
+    backgroundColor: 'rgba(35, 166, 126, 0.26)',
   },
   greenBloomRight: {
     position: 'absolute',
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     width: 230,
     height: 230,
     borderRadius: 115,
-    backgroundColor: 'rgba(38, 156, 118, 0.24)',
+    backgroundColor: 'rgba(24, 126, 95, 0.28)',
   },
   darkDepth: {
     position: 'absolute',
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: '85%',
-    backgroundColor: 'rgba(8, 30, 23, 0.56)',
+    backgroundColor: 'rgba(2, 18, 14, 0.72)',
   },
   cardContent: {
     flex: 1,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   },
   fallbackGlass: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(67, 118, 101, 0.22)',
+    backgroundColor: 'rgba(26, 92, 71, 0.26)',
   },
   topSheen: {
     position: 'absolute',
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: '44%',
-    backgroundColor: 'rgba(229, 255, 246, 0.13)',
+    backgroundColor: 'rgba(210, 255, 240, 0.1)',
   },
   bottomTint: {
     position: 'absolute',
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: '46%',
-    backgroundColor: 'rgba(32, 109, 83, 0.22)',
+    backgroundColor: 'rgba(14, 80, 61, 0.28)',
   },
   diagonalGloss: {
     position: 'absolute',
@@ -245,13 +245,13 @@ const styles = StyleSheet.create({
     left: CARD_WIDTH * 0.15,
     width: CARD_WIDTH * 0.26,
     height: CARD_HEIGHT + 60,
-    backgroundColor: 'rgba(197, 247, 232, 0.16)',
+    backgroundColor: 'rgba(166, 236, 214, 0.13)',
   },
   innerStroke: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 29,
     borderWidth: 1,
-    borderColor: 'rgba(206, 248, 232, 0.5)',
+    borderColor: 'rgba(173, 234, 210, 0.4)',
   },
   topRow: {
     flexDirection: 'row',

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getAuth } from '@react-native-firebase/auth';
+import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
 import {
   collection,
   deleteDoc,
@@ -195,7 +195,7 @@ export default function MapScreen() {
       }
     };
 
-    const unsubscribe = getAuth().onAuthStateChanged(() => {
+    const unsubscribe = onAuthStateChanged(getAuth(), () => {
       void loadSavedMapPlaces();
     });
     void loadSavedMapPlaces();
@@ -497,7 +497,7 @@ export default function MapScreen() {
     if (doFetch()) return;
 
     // Otherwise listen for auth readiness
-    const unsubscribe = getAuth().onAuthStateChanged((user) => {
+    const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
       if (user && !hasFetchedOnceRef.current) {
         doFetch();
         unsubscribe();

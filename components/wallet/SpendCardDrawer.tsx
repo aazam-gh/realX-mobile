@@ -2,10 +2,6 @@ import {
     collection,
     getDocs,
     getFirestore,
-    limit,
-    query,
-    startAfter,
-    where,
     FirebaseFirestoreTypes,
 } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';

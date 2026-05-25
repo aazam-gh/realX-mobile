@@ -17,7 +17,6 @@ export default function SpendButton({ onPress }: Props) {
                 onPress={onPress}
                 activeOpacity={0.85}
             >
-                <Text style={[styles.lightningIcon, isRTL && styles.lightningIconRTL]}>⚡</Text>
                 <Text style={styles.buttonText}>{t('spend_button_text')}</Text>
             </TouchableOpacity>
         </View>
@@ -45,14 +44,6 @@ const styles = StyleSheet.create({
     },
     buttonRTL: {
         flexDirection: 'row-reverse',
-    },
-    lightningIcon: {
-        fontSize: 18,
-        marginRight: 10,
-    },
-    lightningIconRTL: {
-        marginRight: 0,
-        marginLeft: 10,
     },
     buttonText: {
         fontSize: 16,

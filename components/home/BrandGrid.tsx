@@ -1,8 +1,15 @@
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    I18nManager,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    View,
+} from 'react-native';
 import { Colors } from '../../constants/Colors';
 import PhonkText from '../PhonkText';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -16,6 +23,173 @@ type BrandItem = {
     vendorId: string;
     isActive: boolean;
 };
+
+const BRAND_TILE_SIZE = 64;
+const BRAND_TILE_GAP = 14;
+const BRAND_ROW_SIDE_PADDING = 20;
+const BRAND_SCROLL_SPEED = 18;
+const BRAND_REPEAT_COUNT = 3;
+
+function wrapOffset(offset: number, loopDistance: number) {
+    if (loopDistance === 0) {
+        return offset;
+    }
+
+    if (offset < loopDistance * 0.5) {
+        return offset + loopDistance;
+    }
+
+    if (offset >= loopDistance * 1.5) {
+        return offset - loopDistance;
+    }
+
+    return offset;
+}
+
+function InfiniteBrandRow({
+    items,
+    onPressBrand,
+    direction,
+}: {
+    items: BrandItem[];
+    onPressBrand: (brand: BrandItem) => void;
+    direction: 1 | -1;
+}) {
+    const scrollRef = useRef<ScrollView | null>(null);
+    const currentOffsetRef = useRef(0);
+    const isDraggingRef = useRef(false);
+    const isMomentumRef = useRef(false);
+    const animationFrameRef = useRef<number | null>(null);
+    const lastFrameTimeRef = useRef<number | null>(null);
+    const hasInitializedRef = useRef(false);
+    const shouldLoop = items.length > 1;
+    const loopDistance = useMemo(() => {
+        if (items.length <= 1) {
+            return 0;
+        }
+
+        const singleRunWidth =
+            items.length * BRAND_TILE_SIZE +
+            (items.length - 1) * BRAND_TILE_GAP +
+            BRAND_ROW_SIDE_PADDING * 2;
+
+        return singleRunWidth;
+    }, [items.length]);
+
+    useEffect(() => {
+        if (!shouldLoop || loopDistance === 0) {
+            hasInitializedRef.current = false;
+            currentOffsetRef.current = 0;
+            return;
+        }
+
+        hasInitializedRef.current = false;
+        const id = requestAnimationFrame(() => {
+            scrollRef.current?.scrollTo({ x: loopDistance, animated: false });
+            currentOffsetRef.current = loopDistance;
+            hasInitializedRef.current = true;
+        });
+
+        return () => cancelAnimationFrame(id);
+    }, [loopDistance, shouldLoop, items.length]);
+
+    useEffect(() => {
+        if (!shouldLoop || loopDistance === 0) {
+            return;
+        }
+
+        const tick = (timestamp: number) => {
+            if (lastFrameTimeRef.current == null) {
+                lastFrameTimeRef.current = timestamp;
+            }
+
+            const deltaMs = timestamp - lastFrameTimeRef.current;
+            lastFrameTimeRef.current = timestamp;
+
+            if (hasInitializedRef.current && !isDraggingRef.current && !isMomentumRef.current) {
+                const deltaX = (direction * BRAND_SCROLL_SPEED * deltaMs) / 1000;
+                const nextOffset = wrapOffset(currentOffsetRef.current + deltaX, loopDistance);
+
+                if (nextOffset !== currentOffsetRef.current) {
+                    currentOffsetRef.current = nextOffset;
+                    scrollRef.current?.scrollTo({ x: nextOffset, animated: false });
+                }
+            }
+
+            animationFrameRef.current = requestAnimationFrame(tick);
+        };
+
+        animationFrameRef.current = requestAnimationFrame(tick);
+
+        return () => {
+            if (animationFrameRef.current != null) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
+            lastFrameTimeRef.current = null;
+        };
+    }, [direction, loopDistance, shouldLoop]);
+
+    const renderBrand = (brand: BrandItem, keyPrefix: string) => (
+        <Pressable
+            key={`${keyPrefix}${brand.id}`}
+            style={styles.brandItem}
+            onPress={() => onPressBrand(brand)}
+        >
+            <Image
+                source={{ uri: brand.logoUrl }}
+                style={styles.imageContainer}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+            />
+        </Pressable>
+    );
+
+    return (
+        <View style={styles.rowViewport}>
+            <ScrollView
+                ref={scrollRef}
+                horizontal
+                style={styles.rowScroll}
+                showsHorizontalScrollIndicator={false}
+                bounces={false}
+                overScrollMode="never"
+                nestedScrollEnabled
+                directionalLockEnabled
+                canCancelContentTouches
+                keyboardShouldPersistTaps="handled"
+                scrollEventThrottle={16}
+                onScroll={(event) => {
+                    const nextOffset = wrapOffset(event.nativeEvent.contentOffset.x, loopDistance);
+                    currentOffsetRef.current = nextOffset;
+
+                    if (nextOffset !== event.nativeEvent.contentOffset.x) {
+                        scrollRef.current?.scrollTo({ x: nextOffset, animated: false });
+                    }
+                }}
+                onScrollBeginDrag={() => {
+                    isDraggingRef.current = true;
+                }}
+                onScrollEndDrag={() => {
+                    isDraggingRef.current = false;
+                }}
+                onMomentumScrollBegin={() => {
+                    isMomentumRef.current = true;
+                }}
+                onMomentumScrollEnd={() => {
+                    isMomentumRef.current = false;
+                }}
+                contentContainerStyle={styles.scrollContent}
+            >
+                {Array.from({ length: shouldLoop ? BRAND_REPEAT_COUNT : 1 }).map((_, repeatIndex) => (
+                    <View key={`segment-${repeatIndex}`} style={styles.rowSegment}>
+                        {items.map((brand, index) => renderBrand(brand, `${repeatIndex}-${index}-`))}
+                    </View>
+                ))}
+            </ScrollView>
+        </View>
+    );
+}
 
 export default function BrandGrid() {
     const { t } = useTranslation();
@@ -63,17 +237,16 @@ export default function BrandGrid() {
     };
 
     // Split brands into rows: ≤4 = 1 row, 5-8 = 2 rows, >8 = 2 scrollable rows
-    const { row1, row2, needsScroll, isSingleRow } = useMemo(() => {
+    const { row1, row2, isSingleRow } = useMemo(() => {
         const count = displayedBrands.length;
         if (count <= 4) {
-            return { row1: displayedBrands, row2: [], needsScroll: false, isSingleRow: true };
+            return { row1: displayedBrands, row2: [], isSingleRow: true };
         }
         if (count <= 8) {
             const mid = Math.ceil(count / 2);
             return {
                 row1: displayedBrands.slice(0, mid),
                 row2: displayedBrands.slice(mid),
-                needsScroll: false,
                 isSingleRow: false,
             };
         }
@@ -82,45 +255,9 @@ export default function BrandGrid() {
         return {
             row1: displayedBrands.slice(0, mid),
             row2: displayedBrands.slice(mid),
-            needsScroll: true,
             isSingleRow: false,
         };
     }, [displayedBrands]);
-
-    const renderBrand = (brand: BrandItem) => (
-        <TouchableOpacity
-            key={brand.id}
-            style={styles.brandItem}
-            activeOpacity={0.7}
-            onPress={() => handlePress(brand)}
-        >
-            <Image
-                source={{ uri: brand.logoUrl }}
-                style={styles.imageContainer}
-                contentFit="contain"
-                cachePolicy="memory-disk"
-            />
-        </TouchableOpacity>
-    );
-
-    const renderRow = (items: BrandItem[], scrollable: boolean) => {
-        if (scrollable) {
-            return (
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={[styles.scrollContent, { flexDirection: 'row' }]}
-                >
-                    {items.map(renderBrand)}
-                </ScrollView>
-            );
-        }
-        return (
-            <View style={styles.staticRow}>
-                {items.map(renderBrand)}
-            </View>
-        );
-    };
 
     if (loading) {
         return (
@@ -146,8 +283,12 @@ export default function BrandGrid() {
                     </PhonkText>
                 </View>
             </View>
-            {renderRow(row1, needsScroll)}
-            {!isSingleRow && renderRow(row2, needsScroll)}
+            <InfiniteBrandRow items={row1} onPressBrand={handlePress} direction={1} />
+            {!isSingleRow && (
+                <View style={styles.rowSpacing}>
+                    <InfiniteBrandRow items={row2} onPressBrand={handlePress} direction={-1} />
+                </View>
+            )}
         </View>
     );
 }
@@ -177,15 +318,25 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    scrollContent: {
-        paddingHorizontal: 20,
-        gap: 14,
+    rowViewport: {
+        width: '100%',
+        height: BRAND_TILE_SIZE,
+        overflow: 'hidden',
     },
-    staticRow: {
+    rowScroll: {
+        flex: 1,
+    },
+    scrollContent: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        paddingHorizontal: 20,
-        gap: 14,
+        alignItems: 'center',
+    },
+    rowSegment: {
+        flexDirection: 'row',
+        gap: BRAND_TILE_GAP,
+        paddingHorizontal: BRAND_ROW_SIDE_PADDING,
+    },
+    rowSpacing: {
+        marginTop: 18,
     },
     brandItem: {
         alignItems: 'center',
@@ -194,8 +345,6 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 14,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
+        backgroundColor: 'transparent',
     },
 });

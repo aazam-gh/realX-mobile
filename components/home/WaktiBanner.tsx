@@ -47,10 +47,17 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                 accessibilityRole="link"
                 accessibilityLabel="Download Wakti AI"
             >
-                <View style={styles.glowTop} />
-                <View style={styles.glowBottom} />
 
                 <View style={[styles.content, isRTL && styles.contentRTL]}>
+                    <View style={styles.copy}>
+                        <Text style={[styles.body, isRTL && styles.textRTL]}>
+                            Get help planning, learning, and moving faster with Wakti.
+                        </Text>
+                        <Text style={[styles.title, isRTL && styles.textRTL]}>
+                            Try Wakti AI
+                        </Text>
+                    </View>
+
                     <View style={styles.artPanel}>
                         <Image
                             source={waktiBannerImage}
@@ -58,21 +65,6 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                             contentFit="contain"
                             accessibilityLabel="Wakti AI"
                         />
-                    </View>
-
-                    <View style={[styles.copy, isRTL && styles.copyRTL]}>
-                        <Text style={[styles.kicker, isRTL && styles.textRTL]}>
-                            Study smarter
-                        </Text>
-                        <Text style={[styles.headline, isRTL && styles.textRTL]}>
-                            Meet your AI study companion
-                        </Text>
-                        <Text style={[styles.body, isRTL && styles.textRTL]}>
-                            Get help planning, learning, and moving faster with Wakti.
-                        </Text>
-                        <Text style={[styles.title, isRTL && styles.textRTL]}>
-                            Try Wakti AI
-                        </Text>
                     </View>
                 </View>
             </TouchableOpacity>
@@ -85,65 +77,83 @@ const styles = StyleSheet.create({
         paddingTop: 22,
     },
     card: {
-        minHeight: 232,
         overflow: 'hidden',
         backgroundColor: '#061015',
         borderWidth: 1,
         borderColor: '#102638',
-        paddingVertical: 20,
-        paddingHorizontal: 18,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
         boxShadow: '0 16px 34px rgba(4, 15, 18, 0.18)',
+    },
+  hero: {
+        overflow: 'hidden',
+        backgroundColor: '#09161D',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
     },
     glowTop: {
         position: 'absolute',
-        top: -84,
-        right: -48,
-        width: 210,
-        height: 210,
-        borderRadius: 105,
-        backgroundColor: 'rgba(28, 184, 82, 0.22)',
+        top: -72,
+        right: -40,
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        backgroundColor: 'rgba(28, 184, 82, 0.16)',
     },
     glowBottom: {
         position: 'absolute',
-        bottom: -96,
-        left: -60,
-        width: 220,
-        height: 220,
-        borderRadius: 110,
-        backgroundColor: 'rgba(44, 124, 196, 0.22)',
+        bottom: -88,
+        left: -52,
+        width: 204,
+        height: 204,
+        borderRadius: 102,
+        backgroundColor: 'rgba(44, 124, 196, 0.18)',
+    },
+    heroContent: {
+        position: 'absolute',
+        top: 16,
+        left: 16,
+        right: 16,
+        gap: 8,
+        zIndex: 2,
+    },
+    heroContentRTL: {
+        left: 16,
+        right: 16,
     },
     content: {
-        flex: 1,
+        paddingVertical: 10,
+        paddingHorizontal: 18,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 18,
-        zIndex: 2,
+        justifyContent: 'space-between',
+        gap: 14,
+        backgroundColor: '#071217',
     },
     contentRTL: {
         flexDirection: 'row-reverse',
     },
     artPanel: {
-        width: 132,
-        height: 176,
+        width: 98,
+        height: 98,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
         borderWidth: 1,
-        borderColor: 'rgba(125, 177, 224, 0.16)',
+        borderColor: 'rgba(125, 177, 224, 0.14)',
+        borderRadius: 20,
     },
     artImage: {
-        width: 166,
-        height: 162,
+        width: 128,
+      height: 128,
+      resizeMode: "cover"
     },
     copy: {
         flex: 1,
         gap: 8,
         alignItems: 'flex-start',
         justifyContent: 'center',
-    },
-    copyRTL: {
-        alignItems: 'flex-end',
     },
     kicker: {
         color: Colors.brandGreen,
@@ -159,7 +169,7 @@ const styles = StyleSheet.create({
         lineHeight: 28,
         fontWeight: '900',
         letterSpacing: -0.7,
-        maxWidth: 210,
+        maxWidth: 230,
     },
     body: {
         color: 'rgba(255, 255, 255, 0.74)',

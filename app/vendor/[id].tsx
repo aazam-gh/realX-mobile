@@ -1,4 +1,4 @@
-import { pickLocalizedText } from '@/utils/textFallback';
+import { pickLocalizedText } from '../../utils/textFallback';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where } from '@react-native-firebase/firestore';

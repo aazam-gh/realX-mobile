@@ -1,9 +1,19 @@
+import { useEffect } from 'react';
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import type { GlassStyle } from 'expo-glass-effect';
 import { Platform, StyleSheet, View } from 'react-native';
 import type { ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
-import type { AnimatedStyle } from 'react-native-reanimated';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  type AnimatedStyle,
+} from 'react-native-reanimated';
 import { CARD_RADIUS } from './xCardLayout';
 
 export type XCardGlassPreset = 'subtle' | 'liquid' | 'frosted';
@@ -73,6 +83,42 @@ type Props = {
 };
 
 export default function XCardGlassLayer({ config, strength, touchStyle }: Props) {
+  const loopProgress = useSharedValue(0);
+
+  useEffect(() => {
+    loopProgress.value = withRepeat(
+      withTiming(1, {
+        duration: 4600,
+        easing: Easing.inOut(Easing.cubic),
+      }),
+      -1,
+      false,
+    );
+
+    return () => {
+      cancelAnimation(loopProgress);
+    };
+  }, [loopProgress]);
+
+  const sweepStyle = useAnimatedStyle(() => {
+    const translateX = interpolate(loopProgress.value, [0, 1], [-180, 360], Extrapolation.CLAMP);
+    const opacity = interpolate(
+      loopProgress.value,
+      [0, 0.16, 0.5, 0.8, 1],
+      [0, 0.08, 0.18, 0.08, 0],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      opacity,
+      transform: [
+        { translateX },
+        { translateY: -18 },
+        { rotate: '18deg' },
+      ],
+    };
+  });
+
   if (!config.enabled) {
     return null;
   }
@@ -108,6 +154,20 @@ export default function XCardGlassLayer({ config, strength, touchStyle }: Props)
         />
       )}
       <View style={[styles.glassTint, { backgroundColor: config.tintColor, opacity: strength }]} />
+      <Animated.View pointerEvents="none" style={styles.ambientSweepClip}>
+        <Animated.View
+          style={[
+            styles.ambientSweepSheen,
+            sweepStyle,
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.ambientSweepGlow,
+            sweepStyle,
+          ]}
+        />
+      </Animated.View>
       <Animated.View style={[styles.touchLens, touchStyle]} />
       <View style={[styles.topRim, { opacity: strength * 1.25 }]} />
       <View style={[styles.leftRim, { opacity: strength * 0.82 }]} />
@@ -178,6 +238,31 @@ const styles = StyleSheet.create({
   },
   glassTint: {
     ...StyleSheet.absoluteFillObject,
+  },
+  ambientSweepClip: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+    borderRadius: CARD_RADIUS,
+  },
+  ambientSweepSheen: {
+    position: 'absolute',
+    top: '-28%',
+    left: -18,
+    width: 96,
+    height: '156%',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    boxShadow: '0 0 18px 9px rgba(245, 255, 249, 0.12)',
+  },
+  ambientSweepGlow: {
+    position: 'absolute',
+    top: '-10%',
+    left: -28,
+    width: 154,
+    height: '118%',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    boxShadow: '0 0 44px 18px rgba(239, 255, 246, 0.08)',
   },
   touchLens: {
     position: 'absolute',

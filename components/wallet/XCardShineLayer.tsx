@@ -1,10 +1,12 @@
 import { StyleSheet, type ViewStyle } from 'react-native';
+import { useCallback, useEffect } from 'react';
 import Animated, {
   Easing,
   Extrapolation,
   interpolate,
   type AnimatedStyle,
   type SharedValue,
+  runOnUI,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -16,9 +18,10 @@ const SHINE_WIDTH_RATIO = 0.105;
 const SHINE_HEIGHT_RATIO = 1.85;
 const SHINE_TOP_RATIO = -0.42;
 const SHINE_TRACKS = 8;
+const SHINE_LOOP_INTERVAL_MS = 1200;
 const SHINE_ROTATION = `${SHINE_ROTATION_DEGREES}deg`;
 const SHINE_TIMING = {
-  duration: 360,
+  duration: 1400,
   easing: Easing.out(Easing.cubic),
 };
 
@@ -80,16 +83,45 @@ export function useXCardShine({
   const progressG = useSharedValue(1);
   const progressH = useSharedValue(1);
   const trackIndex = useSharedValue(0);
-  const tracks = [progressA, progressB, progressC, progressD, progressE, progressF, progressG, progressH];
 
-  const triggerShine = () => {
+  const triggerShine = useCallback(() => {
     'worklet';
     const activeTrack = Math.round(trackIndex.value) % SHINE_TRACKS;
-    const progress = tracks[activeTrack];
+    const progress =
+      activeTrack === 0
+        ? progressA
+        : activeTrack === 1
+          ? progressB
+          : activeTrack === 2
+            ? progressC
+            : activeTrack === 3
+              ? progressD
+              : activeTrack === 4
+                ? progressE
+                : activeTrack === 5
+                  ? progressF
+                  : activeTrack === 6
+                    ? progressG
+                    : progressH;
     trackIndex.value = (trackIndex.value + 1) % SHINE_TRACKS;
     progress.value = 0;
     progress.value = withTiming(1, SHINE_TIMING);
-  };
+  }, [progressA, progressB, progressC, progressD, progressE, progressF, progressG, progressH, trackIndex]);
+
+  useEffect(() => {
+    if (!tiltEnabled) {
+      return;
+    }
+
+    runOnUI(triggerShine)();
+    const intervalId = setInterval(() => {
+      runOnUI(triggerShine)();
+    }, SHINE_LOOP_INTERVAL_MS);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [tiltEnabled, triggerShine]);
 
   const shineSweepStyles = [
     useShineSweepStyle(progressA, tiltEnabled, shineOpacity, shineTravel.startX, shineTravel.endX),

@@ -11,14 +11,18 @@ async function initializeFirebaseAppCheck(): Promise<void> {
     return;
   }
 
+  const debugToken = process.env.EXPO_PUBLIC_FIREBASE_APP_CHECK_DEBUG_TOKEN;
+
   await initializeAppCheck(getApp(), {
     provider: {
       providerOptions: {
         android: {
           provider: __DEV__ ? 'debug' : 'playIntegrity',
+          debugToken: __DEV__ ? debugToken : undefined,
         },
         apple: {
           provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback',
+          debugToken: __DEV__ ? debugToken : undefined,
         },
       },
     },

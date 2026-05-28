@@ -25,6 +25,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PhonkText from '../../components/PhonkText';
+import TransactionLoadingOverlay from '../../components/TransactionLoadingOverlay';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -424,6 +425,8 @@ export default function RedeemScreen() {
                         </TouchableOpacity>
                     </ScrollView>
                 </View>
+
+                <TransactionLoadingOverlay visible={onlineLoading} />
             </SafeAreaView>
         );
     }
@@ -792,6 +795,8 @@ export default function RedeemScreen() {
                         </ScrollView>
                 </View>
             </KeyboardAvoidingView>
+
+            <TransactionLoadingOverlay visible={isRedeeming} />
         </SafeAreaView>
     );
 }

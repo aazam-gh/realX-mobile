@@ -1,5 +1,4 @@
 import 'react-native-reanimated';
-import '@react-native-firebase/app';
 import { ensureFirebaseAppCheck } from '../utils/firebaseAppCheck';
 import {
   getAuth,

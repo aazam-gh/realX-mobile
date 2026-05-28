@@ -116,8 +116,9 @@
           }
         }
       ],
-      "@react-native-firebase/app-check",
       "@react-native-firebase/app",
+      "@react-native-firebase/app-check",
+      "./plugins/with-rnfb-app-check-ios-fix",
       "@react-native-firebase/auth",
       "@react-native-community/datetimepicker",
       "expo-asset",

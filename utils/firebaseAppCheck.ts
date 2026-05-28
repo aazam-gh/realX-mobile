@@ -1,4 +1,5 @@
-import appCheck from '@react-native-firebase/app-check';
+import { getApp } from '@react-native-firebase/app';
+import { initializeAppCheck } from '@react-native-firebase/app-check';
 import { Platform } from 'react-native';
 
 import { logger } from './logger';
@@ -10,19 +11,17 @@ async function initializeFirebaseAppCheck(): Promise<void> {
     return;
   }
 
-  const provider = appCheck().newReactNativeFirebaseAppCheckProvider();
-
-  provider.configure({
-    android: {
-      provider: __DEV__ ? 'debug' : 'playIntegrity',
+  await initializeAppCheck(getApp(), {
+    provider: {
+      providerOptions: {
+        android: {
+          provider: __DEV__ ? 'debug' : 'playIntegrity',
+        },
+        apple: {
+          provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback',
+        },
+      },
     },
-    apple: {
-      provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback',
-    },
-  });
-
-  await appCheck().initializeAppCheck({
-    provider,
     isTokenAutoRefreshEnabled: true,
   });
 }

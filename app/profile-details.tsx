@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { deleteUser, getAuth, updateProfile } from '@react-native-firebase/auth';
+import { deleteUser, getAuth, signOut, updateProfile } from '@react-native-firebase/auth';
 import { doc, getDoc, getFirestore, updateDoc } from '@react-native-firebase/firestore';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -160,7 +160,7 @@ export default function ProfileDetailsScreen() {
                             // Explicitly sign out to clear any local session data
                             // This may throw if the user is already deleted, which is expected
                             try {
-                                await authInstance.signOut();
+                                await signOut(authInstance);
                             } catch {
                                 // User already deleted, sign out is a no-op
                             }

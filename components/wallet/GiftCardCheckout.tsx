@@ -21,6 +21,7 @@ import { Colors } from '../../constants/Colors';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
+import TransactionLoadingOverlay from '../TransactionLoadingOverlay';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { showLocalNotification } from '../../utils/notifications';
 import { useTranslation } from 'react-i18next';
@@ -347,6 +348,8 @@ export default function GiftCardCheckout({
                     )}
                 </TouchableOpacity>
             </ScrollView>
+
+            <TransactionLoadingOverlay visible={isRedeeming} />
         </KeyboardAvoidingView>
     );
 }

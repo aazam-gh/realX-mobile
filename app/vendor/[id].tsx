@@ -368,67 +368,70 @@ export default function VendorScreen() {
                         )}
                     </View>
 
-                    <View style={styles.metaRow}>
-                        <View style={styles.metaLeft}>
-                        <TouchableOpacity style={[styles.locationButton, { backgroundColor: theme.cardMuted }]} onPress={() => {
-                            if (branches.length > 1) {
-                                setBranchPickerVisible(true);
-                                return;
-                            }
+                    <View style={styles.metaStack}>
+                        <View style={[styles.metaLine, styles.metaLineSpread]}>
+                            <TouchableOpacity style={[styles.locationButton, { backgroundColor: theme.cardMuted }]} onPress={() => {
+                                if (branches.length > 1) {
+                                    setBranchPickerVisible(true);
+                                    return;
+                                }
 
-                            if (branches.length === 1) {
-                                openBranchOnMap(branches[0]);
-                                return;
-                            }
+                                if (branches.length === 1) {
+                                    openBranchOnMap(branches[0]);
+                                    return;
+                                }
 
-                            const vendorName = pickLocalizedText(isArabic, vendor.nameAr, vendor.name, 'Vendor');
-                            const q = encodeURIComponent(vendorName + " Qatar");
-                            void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
-                        }} activeOpacity={0.7}>
-                            <Ionicons name="location-outline" size={18} color={theme.brand} />
-                            <Text style={[styles.locationText, { color: theme.text, fontFamily: Typography.poppins.medium }]}>
-                                {branches.length > 1 ? `${t('location')} (${branches.length})` : t('location')}
-                            </Text>
-                        </TouchableOpacity>
-                        {nearestBranch?.distanceKm != null && (
-                            <View style={[styles.nearestBranchChip, { backgroundColor: theme.brandSoft }]}>
-                                <Ionicons name="navigate-outline" size={13} color={theme.brand} />
-                                <Text style={[styles.nearestBranchText, { color: theme.brandText }]}>{nearestBranch.distanceKm.toFixed(1)} km</Text>
-                            </View>
-                        )}
-                        {nearestBranch?.phoneNumber ? (
-                            <TouchableOpacity
-                                style={[styles.phoneButton, { backgroundColor: theme.cardMuted }]}
-                                onPress={() => callPhoneNumber(nearestBranch.phoneNumber)}
-                                activeOpacity={0.7}
-                            >
-                                <Ionicons name="call-outline" size={15} color={theme.brand} />
-                                <Text style={[styles.phoneButtonText, { color: theme.text }]} numberOfLines={1}>
-                                    {nearestBranch.phoneNumber}
+                                const vendorName = pickLocalizedText(isArabic, vendor.nameAr, vendor.name, 'Vendor');
+                                const q = encodeURIComponent(vendorName + " Qatar");
+                                void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
+                            }} activeOpacity={0.7}>
+                                <Ionicons name="location-outline" size={18} color={theme.brand} />
+                                <Text style={[styles.locationText, { color: theme.text, fontFamily: Typography.poppins.medium }]} numberOfLines={1}>
+                                    {branches.length > 1 ? `${t('location')} (${branches.length})` : t('location')}
                                 </Text>
                             </TouchableOpacity>
-                        ) : null}
+                            {nearestBranch?.distanceKm != null && (
+                                <View style={[styles.nearestBranchChip, { backgroundColor: theme.brandSoft }]}>
+                                    <Ionicons name="navigate-outline" size={13} color={theme.brand} />
+                                    <Text style={[styles.nearestBranchText, { color: theme.brandText }]} numberOfLines={1}>{nearestBranch.distanceKm.toFixed(1)} km</Text>
+                                </View>
+                            )}
                         </View>
 
-                        <View style={styles.tagsRow}>
-                            {vendor.trending && (
-                                <View style={styles.tagChip}>
-                                    <Ionicons name="trending-up" size={14} color="#FFF" />
-                                    <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]}>{t('trending')}</Text>
-                                </View>
-                            )}
-                            {vendor.xcard && (
-                                <View style={[styles.tagChip, { backgroundColor: theme.brand }]}>
-                                    <Ionicons name="cash-outline" size={14} color="#FFF" />
-                                    <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]}>{t('cashback')}</Text>
-                                </View>
-                            )}
-                            {vendor.vendorType === 'online' && (
-                                <View style={[styles.tagChip, { backgroundColor: '#2563EB' }]}>
-                                    <Ionicons name="globe-outline" size={14} color="#FFF" />
-                                    <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]}>{t('online_vendor_label')}</Text>
-                                </View>
-                            )}
+                        <View style={[styles.metaLine, styles.metaLineSpread]}>
+                            {nearestBranch?.phoneNumber ? (
+                                <TouchableOpacity
+                                    style={[styles.phoneButton, { backgroundColor: theme.cardMuted }]}
+                                    onPress={() => callPhoneNumber(nearestBranch.phoneNumber)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="call-outline" size={15} color={theme.brand} />
+                                    <Text style={[styles.phoneButtonText, { color: theme.text }]} numberOfLines={1}>
+                                        {nearestBranch.phoneNumber}
+                                    </Text>
+                                </TouchableOpacity>
+                            ) : null}
+
+                            <View style={styles.tagsRow}>
+                                {vendor.trending && (
+                                    <View style={styles.tagChip}>
+                                        <Ionicons name="trending-up" size={14} color="#FFF" />
+                                        <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]} numberOfLines={1}>{t('trending')}</Text>
+                                    </View>
+                                )}
+                                {vendor.xcard && (
+                                    <View style={[styles.tagChip, { backgroundColor: theme.brand }]}>
+                                        <Ionicons name="cash-outline" size={14} color="#FFF" />
+                                        <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]} numberOfLines={1}>{t('cashback')}</Text>
+                                    </View>
+                                )}
+                                {vendor.vendorType === 'online' && (
+                                    <View style={[styles.tagChip, { backgroundColor: '#2563EB' }]}>
+                                        <Ionicons name="globe-outline" size={14} color="#FFF" />
+                                        <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]} numberOfLines={1}>{t('online_vendor_label')}</Text>
+                                    </View>
+                                )}
+                            </View>
                         </View>
                     </View>
 
@@ -669,48 +672,45 @@ const isSaved = savedOfferIds.has(savedId);
                                             onPress={() => openBranchOnMap(branch)}
                                             activeOpacity={0.8}
                                         >
-                                            <View style={[styles.branchIcon, { backgroundColor: theme.card }]}>
-                                                <Ionicons name={index === 0 ? 'navigate' : 'location-outline'} size={18} color={theme.brand} />
-                                            </View>
-                                            <View style={styles.branchTextBlock}>
-                                                <View style={styles.branchTitleRow}>
-                                                    <Text style={[styles.branchName, { color: theme.text }]} numberOfLines={1}>{branchName}</Text>
-                                                    {index === 0 && branch.distanceKm != null && (
-                                                        <View style={[styles.branchNearestPill, { backgroundColor: theme.brand }]}>
-                                                            <Text style={[styles.branchNearestText, { color: theme.onActionSolid }]}>Nearest</Text>
-                                                        </View>
-                                                    )}
+                                            <View style={styles.branchMainRow}>
+                                                <View style={[styles.branchIcon, { backgroundColor: theme.card }]}>
+                                                    <Ionicons name={index === 0 ? 'navigate' : 'location-outline'} size={18} color={theme.brand} />
                                                 </View>
-                                                {address ? <Text style={[styles.branchAddress, { color: theme.mutedText }]} numberOfLines={2}>{address}</Text> : null}
+                                                <View style={styles.branchTextBlock}>
+                                                    <View style={styles.branchTitleRow}>
+                                                        <Text style={[styles.branchName, { color: theme.text }]} numberOfLines={1}>{branchName}</Text>
+                                                        {index === 0 && branch.distanceKm != null && (
+                                                            <View style={[styles.branchNearestPill, { backgroundColor: theme.brand }]}>
+                                                                <Text style={[styles.branchNearestText, { color: theme.onActionSolid }]}>Nearest</Text>
+                                                            </View>
+                                                        )}
+                                                    </View>
+                                                    {address ? <Text style={[styles.branchAddress, { color: theme.mutedText }]} numberOfLines={2}>{address}</Text> : null}
+                                                </View>
+                                            </View>
+                                            <View style={[styles.branchMetaRow, styles.branchMetaRowSpread]}>
                                                 {branch.phoneNumber ? (
-                                                    <View style={styles.branchPhoneRow}>
+                                                    <TouchableOpacity
+                                                        style={[styles.branchPhoneChip, { backgroundColor: theme.card }]}
+                                                        onPress={(event) => {
+                                                            event.stopPropagation();
+                                                            callPhoneNumber(branch.phoneNumber);
+                                                        }}
+                                                        activeOpacity={0.8}
+                                                    >
                                                         <Ionicons name="call-outline" size={14} color={theme.brand} />
                                                         <Text style={[styles.branchPhoneText, { color: theme.text }]} numberOfLines={1}>
                                                             {branch.phoneNumber}
                                                         </Text>
-                                                    </View>
+                                                    </TouchableOpacity>
                                                 ) : null}
                                                 {branch.distanceKm != null && (
-                                                    <Text style={[styles.branchDistance, { color: theme.brandText }]}>{branch.distanceKm.toFixed(1)} km away</Text>
+                                                    <View style={[styles.branchDistanceChip, { backgroundColor: theme.brandSoft }]}>
+                                                        <Ionicons name="navigate-outline" size={13} color={theme.brand} />
+                                                        <Text style={[styles.branchDistance, { color: theme.brandText }]} numberOfLines={1}>{branch.distanceKm.toFixed(1)} km away</Text>
+                                                    </View>
                                                 )}
                                             </View>
-                                            {branch.phoneNumber ? (
-                                                <TouchableOpacity
-                                                    style={[styles.branchCallButton, { backgroundColor: theme.brand }]}
-                                                    onPress={(event) => {
-                                                        event.stopPropagation();
-                                                        callPhoneNumber(branch.phoneNumber);
-                                                    }}
-                                                    activeOpacity={0.8}
-                                                >
-                                                    <Ionicons name="call" size={16} color={theme.onActionSolid} />
-                                                    <Text style={[styles.branchCallText, { color: theme.onActionSolid }]}>
-                                                        {isArabic ? 'اتصال' : 'Call'}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            ) : (
-                                            <Ionicons name="chevron-forward" size={18} color={theme.iconMuted} />
-                                            )}
                                         </TouchableOpacity>
                                     );
                                 })}
@@ -821,22 +821,26 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 8,
     },
-    metaRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: 8,
-    },
-    metaLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    metaStack: {
+        marginTop: 12,
         gap: 10,
-        flexShrink: 1,
+    },
+    metaLine: {
+        flexDirection: 'row',
+        alignItems: 'center',
         flexWrap: 'wrap',
+        gap: 10,
+    },
+    metaLineSpread: {
+        justifyContent: 'space-between',
     },
     tagsRow: {
         flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
         gap: 8,
+        flex: 1,
+        justifyContent: 'flex-end',
     },
     tagChip: {
         flexDirection: 'row',
@@ -860,14 +864,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 20,
+        maxWidth: '58%',
     },
     locationText: {
         fontSize: 14,
+        flexShrink: 1,
     },
     nearestBranchChip: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
+        minWidth: 110,
         paddingHorizontal: 10,
         paddingVertical: 7,
         borderRadius: 18,
@@ -880,7 +887,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
-        maxWidth: 170,
+        maxWidth: '48%',
         paddingHorizontal: 10,
         paddingVertical: 7,
         borderRadius: 18,
@@ -1055,11 +1062,14 @@ const styles = StyleSheet.create({
         paddingBottom: 10,
     },
     branchRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
+        gap: 10,
         borderRadius: 20,
         padding: 14,
+    },
+    branchMainRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 12,
     },
     branchIcon: {
         width: 40,
@@ -1096,32 +1106,44 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontFamily: Typography.poppins.medium,
     },
-    branchPhoneRow: {
+    branchMetaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 8,
+        paddingStart: 52,
+    },
+    branchMetaRowSpread: {
+        justifyContent: 'space-between',
+    },
+    branchPhoneChip: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
+        maxWidth: '48%',
+        minWidth: '46%',
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+        borderRadius: 18,
     },
     branchPhoneText: {
-        flex: 1,
+        flexShrink: 1,
         fontSize: 13,
         fontFamily: Typography.poppins.semiBold,
+    },
+    branchDistanceChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        maxWidth: '48%',
+        minWidth: '46%',
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+        borderRadius: 18,
     },
     branchDistance: {
         fontSize: 12,
         fontFamily: Typography.poppins.semiBold,
-    },
-    branchCallButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-        paddingHorizontal: 12,
-        paddingVertical: 9,
-        borderRadius: 18,
-    },
-    branchCallText: {
-        fontSize: 12,
-        fontFamily: Typography.poppins.semiBold,
-        textTransform: 'uppercase',
     },
     termText: {
         fontSize: 14,

@@ -7,7 +7,7 @@ import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, Share, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -335,18 +335,6 @@ export default function VendorScreen() {
                                 <Ionicons name="arrow-back" size={24} color={theme.logoTileText} />
                             </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={[styles.roundButton, { backgroundColor: theme.logoTile, shadowColor: theme.shadow }]}
-                                activeOpacity={0.8}
-                                onPress={() => {
-                                    const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
-                                    Share.share({
-                                        message: `${t('share_vendor_message', { name: vendorName })}\nhttps://reelx.app/vendor/${actualVendorId || id}`,
-                                    });
-                                }}
-                            >
-                                <Ionicons name="share-outline" size={24} color={theme.logoTileText} />
-                            </TouchableOpacity>
                         </View>
                     </SafeAreaView>
 

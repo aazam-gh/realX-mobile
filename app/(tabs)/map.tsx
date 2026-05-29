@@ -907,12 +907,16 @@ export default function MapScreen() {
               )}
 
               {selectedMapVendor.phoneNumber ? (
-                <View style={[styles.calloutPhonePill, { backgroundColor: theme.cardMuted }]}>
+                <TouchableOpacity
+                  style={[styles.calloutPhonePill, { backgroundColor: theme.cardMuted }]}
+                  onPress={() => callPhoneNumber(selectedMapVendor.phoneNumber)}
+                  activeOpacity={0.7}
+                >
                   <Ionicons name="call-outline" size={14} color={theme.brand} />
                   <Text style={[styles.calloutPhoneText, { color: theme.text }]} numberOfLines={1}>
                     {selectedMapVendor.phoneNumber}
                   </Text>
-                </View>
+                </TouchableOpacity>
               ) : null}
 
               <View style={styles.calloutActions}>

@@ -122,13 +122,13 @@ export default function GiftCardCheckout({
             <RewardSuccessScreen
                 mascotSource={require('../../assets/images/realx-mascot-run-gift-both-hands.png')}
                 badgeText={t('gift_card_text')}
-                merchantLabel={isRTL ? 'المتجر' : 'Merchant'}
+                merchantLabel={t('reward_success_merchant_label')}
                 merchantName={brand.name}
                 rows={[
                     {
                         icon: 'gift-outline',
                         iconBorderColor: '#D1F4DA',
-                        label: isRTL ? 'قيمة بطاقة الهدية' : 'Gift card value',
+                        label: t('reward_success_gift_card_value_label'),
                         value: `${currency} ${selectedAmount.toFixed(2)}`,
                         tone: 'savings',
                     },
@@ -140,9 +140,9 @@ export default function GiftCardCheckout({
                     },
                 ]}
                 metaLines={[
-                    isRTL ? 'جاهزة للاستخدام في المتجر' : 'Ready to use in store',
+                    t('reward_success_ready_in_store'),
                 ]}
-                primaryActionLabel={isRTL ? 'تم' : 'Done'}
+                primaryActionLabel={t('done')}
                 onPrimaryAction={() => onSuccess?.()}
                 onClose={() => onSuccess?.()}
                 isRTL={isRTL}

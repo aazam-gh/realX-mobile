@@ -7,6 +7,7 @@ import Animated, {
   Easing,
   interpolateColor,
   runOnJS,
+  type SharedValue,
   useAnimatedReaction,
   useAnimatedStyle,
   useReducedMotion,
@@ -40,6 +41,7 @@ type RewardSuccessScreenProps = {
   mascotSource: ImageSource;
   badgeText: string;
   badgeFinalPercent?: number;
+  badgeCountUpSuffix?: string;
   animateBadgeCountUp?: boolean;
   merchantLabel: string;
   merchantName?: string;
@@ -62,6 +64,7 @@ export default function RewardSuccessScreen({
   mascotSource,
   badgeText,
   badgeFinalPercent,
+  badgeCountUpSuffix = '',
   animateBadgeCountUp = false,
   merchantLabel,
   merchantName,
@@ -85,9 +88,7 @@ export default function RewardSuccessScreen({
   const discountColorProgress = useSharedValue(0);
   const discountScaleProgress = useSharedValue(1);
   const receiptProgress = useSharedValue(0);
-  const firstRowProgress = useSharedValue(0);
-  const secondRowProgress = useSharedValue(0);
-  const thirdRowProgress = useSharedValue(0);
+  const rowProgress = useSharedValue(0);
 
   const shouldAnimateBadgeCount = animateBadgeCountUp && typeof badgeFinalPercent === 'number' && badgeFinalPercent > 0;
   const discountBadgeAnimationDelay = 420;
@@ -102,9 +103,7 @@ export default function RewardSuccessScreen({
       discountColorProgress.value = 1;
       discountScaleProgress.value = 1;
       receiptProgress.value = 1;
-      firstRowProgress.value = 1;
-      secondRowProgress.value = 1;
-      thirdRowProgress.value = 1;
+      rowProgress.value = rows.length;
       setAnimatedDiscountPercent(badgeFinalPercent ?? 0);
       return;
     }
@@ -146,23 +145,27 @@ export default function RewardSuccessScreen({
     }
 
     receiptProgress.value = withDelay(520, withTiming(1, { duration: 320, easing: Easing.out(Easing.quad) }));
-    firstRowProgress.value = withDelay(740, withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) }));
-    secondRowProgress.value = withDelay(910, withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) }));
-    thirdRowProgress.value = withDelay(1080, withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) }));
+    rowProgress.value = 0;
+    rowProgress.value = withDelay(
+      740,
+      withTiming(rows.length, {
+        duration: Math.max(rows.length, 1) * 170,
+        easing: Easing.out(Easing.cubic),
+      })
+    );
   }, [
     badgeFinalPercent,
     discountColorProgress,
     discountCounterProgress,
     discountProgress,
     discountScaleProgress,
-    firstRowProgress,
     heroProgress,
     mascotProgress,
     prefersReducedMotion,
     receiptProgress,
-    secondRowProgress,
+    rowProgress,
+    rows.length,
     shouldAnimateBadgeCount,
-    thirdRowProgress,
   ]);
 
   useAnimatedReaction(
@@ -208,26 +211,10 @@ export default function RewardSuccessScreen({
     transform: [{ translateY: (1 - receiptProgress.value) * 20 }],
   }));
 
-  const firstRowStyle = useAnimatedStyle(() => ({
-    opacity: firstRowProgress.value,
-    transform: [{ translateY: (1 - firstRowProgress.value) * 12 }],
-  }));
-
-  const secondRowStyle = useAnimatedStyle(() => ({
-    opacity: secondRowProgress.value,
-    transform: [{ translateY: (1 - secondRowProgress.value) * 12 }],
-  }));
-
-  const thirdRowStyle = useAnimatedStyle(() => ({
-    opacity: thirdRowProgress.value,
-    transform: [{ translateY: (1 - thirdRowProgress.value) * 12 }],
-  }));
-
-  const rowAnimatedStyles = [firstRowStyle, secondRowStyle, thirdRowStyle];
   const successTopOffset = safeArea.top + 12;
   const mascotSize = Math.round(Math.min(screenWidth * 0.8, Math.min(screenHeight * 0.42, 430)));
   const receiptBottomPadding = Math.max(safeArea.bottom + 20, 24);
-  const badgeDisplayText = shouldAnimateBadgeCount ? `${animatedDiscountPercent}% OFF` : badgeText;
+  const badgeDisplayText = shouldAnimateBadgeCount ? `${animatedDiscountPercent}${badgeCountUpSuffix}` : badgeText;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.brand }]}>
@@ -305,29 +292,13 @@ export default function RewardSuccessScreen({
             ) : null}
 
             {rows.map((row, index) => (
-              <Animated.View
+              <RewardSuccessReceiptRow
                 key={`${row.label}-${row.value}`}
-                style={[
-                  styles.receiptRow,
-                  rowAnimatedStyles[index],
-                  index > 0 && { borderTopColor: receiptDivider, borderTopWidth: StyleSheet.hairlineWidth },
-                ]}
-              >
-                <View style={[styles.receiptIconWrap, { borderColor: row.iconBorderColor }]}>
-                  <Ionicons name={row.icon} size={16} color={getRowColor(row.tone)} />
-                </View>
-                <View style={styles.receiptTextWrap}>
-                  <Text style={[getRowLabelStyle(row.tone), { textAlign: isRTL ? 'right' : 'left' }]}>
-                    {row.label}
-                  </Text>
-                  <Text
-                    style={[styles.receiptAmount, { color: getRowColor(row.tone) }]}
-                    accessibilityLabel={row.accessibilityLabel}
-                  >
-                    {row.value}
-                  </Text>
-                </View>
-              </Animated.View>
+                row={row}
+                index={index}
+                isRTL={isRTL}
+                rowProgress={rowProgress}
+              />
             ))}
 
             {metaLines.length > 0 ? (
@@ -345,16 +316,61 @@ export default function RewardSuccessScreen({
                 label={primaryActionLabel}
                 variant="compact"
                 leadingIcon="checkmark"
-                onPress={() => {
-                  triggerSubtleHaptic();
-                  onPrimaryAction();
-                }}
+                onPress={onPrimaryAction}
               />
             </View>
           </View>
         </Animated.View>
       </Animated.View>
     </SafeAreaView>
+  );
+}
+
+type RewardSuccessReceiptRowProps = {
+  row: RewardSuccessRow;
+  index: number;
+  isRTL: boolean;
+  rowProgress: SharedValue<number>;
+};
+
+function RewardSuccessReceiptRow({
+  row,
+  index,
+  isRTL,
+  rowProgress,
+}: RewardSuccessReceiptRowProps) {
+  const rowAnimatedStyle = useAnimatedStyle(() => {
+    const progress = Math.min(Math.max(rowProgress.value - index, 0), 1);
+
+    return {
+      opacity: progress,
+      transform: [{ translateY: (1 - progress) * 12 }],
+    };
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.receiptRow,
+        rowAnimatedStyle,
+        index > 0 && { borderTopColor: receiptDivider, borderTopWidth: StyleSheet.hairlineWidth },
+      ]}
+    >
+      <View style={[styles.receiptIconWrap, { borderColor: row.iconBorderColor }]}>
+        <Ionicons name={row.icon} size={16} color={getRowColor(row.tone)} />
+      </View>
+      <View style={styles.receiptTextWrap}>
+        <Text style={[getRowLabelStyle(row.tone), { textAlign: isRTL ? 'right' : 'left' }]}>
+          {row.label}
+        </Text>
+        <Text
+          style={[styles.receiptAmount, { color: getRowColor(row.tone) }]}
+          accessibilityLabel={row.accessibilityLabel}
+        >
+          {row.value}
+        </Text>
+      </View>
+    </Animated.View>
   );
 }
 

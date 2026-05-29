@@ -38,11 +38,60 @@ interface RedemptionResult {
     savedAmount?: number;
     cashbackAmount: number;
     transactionId?: string;
-    redeemedAt?: string | number;
+    redeemedAt?: unknown;
     creatorName?: string;
     totalAmount: number;
     finalAmount: number;
 }
+
+const normalizeRedeemedAt = (value: unknown): Date | null => {
+    const fromMilliseconds = (milliseconds: number) => {
+        const date = new Date(milliseconds);
+        return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    if (typeof value === 'number') {
+        return fromMilliseconds(value < 1000000000000 ? value * 1000 : value);
+    }
+
+    if (typeof value === 'string') {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) return null;
+
+        const numericValue = Number(trimmedValue);
+        if (Number.isFinite(numericValue)) {
+            return fromMilliseconds(numericValue < 1000000000000 ? numericValue * 1000 : numericValue);
+        }
+
+        return fromMilliseconds(Date.parse(trimmedValue));
+    }
+
+    if (value && typeof value === 'object') {
+        const maybeTimestamp = value as {
+            toDate?: () => Date;
+            _seconds?: number;
+            _nanoseconds?: number;
+            seconds?: number;
+            nanoseconds?: number;
+        };
+
+        if (typeof maybeTimestamp.toDate === 'function') {
+            return normalizeRedeemedAt(maybeTimestamp.toDate());
+        }
+
+        const seconds = maybeTimestamp.seconds ?? maybeTimestamp._seconds;
+        const nanoseconds = maybeTimestamp.nanoseconds ?? maybeTimestamp._nanoseconds ?? 0;
+        if (typeof seconds === 'number' && typeof nanoseconds === 'number') {
+            return fromMilliseconds((seconds * 1000) + (nanoseconds / 1000000));
+        }
+    }
+
+    return null;
+};
 
 // Types for better type safety
 interface VendorData {
@@ -220,7 +269,7 @@ export default function RedeemScreen() {
                 setRedemptionResult({
                     discountAmount: data.discountAmount || discountAmount,
                     transactionId: data.transactionId,
-                    redeemedAt: data.redeemedAt || Date.now(),
+                    redeemedAt: data.redeemedAt ?? Date.now(),
                     savedAmount: data.savedAmount ?? data.discountAmount ?? discountAmount,
                     cashbackAmount: data.cashbackAmount || 0,
                     creatorName: data.creatorName,
@@ -462,8 +511,9 @@ export default function RedeemScreen() {
         const merchantName = isArabic
             ? (vendor?.nameAr || vendor?.name)
             : vendor?.name;
-        const redeemedOn = redemptionResult.redeemedAt
-            ? new Date(redemptionResult.redeemedAt).toLocaleString(isArabic ? 'ar-QA' : 'en-QA', {
+        const normalizedRedeemedAt = normalizeRedeemedAt(redemptionResult.redeemedAt);
+        const redeemedOn = normalizedRedeemedAt
+            ? normalizedRedeemedAt.toLocaleString(isArabic ? 'ar-QA' : 'en-QA', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -475,13 +525,36 @@ export default function RedeemScreen() {
             inStoreOffer.discountType === 'buy1get1'
                 ? t('buy1get1_label')
                 : inStoreOffer.discountType === 'percentage'
-                    ? `${roundedDiscountPercent}% OFF`
-                    : `${currency} ${Number(inStoreOffer.discountValue || 0).toFixed(0)} OFF`;
-        const receiptSavedLine = isArabic ? 'وفرت' : 'You saved';
-        const receiptPayLabel = isArabic ? 'المبلغ المدفوع' : `${t('amount_to_pay_label')}`;
-        const pointsLine = isArabic ? 'نقاط XP المكتسبة:' : 'XPoints earned:';
+                    ? `${t('flat_off_prefix')}${roundedDiscountPercent}%${t('flat_off_suffix')}`
+                    : `${currency} ${Number(inStoreOffer.discountValue || 0).toFixed(0)}${t('flat_off_suffix')}`;
+        const receiptSavedLine = t('reward_success_you_saved_label');
+        const receiptPayLabel = t('amount_to_pay_label');
+        const pointsLine = t('reward_success_xpoints_earned_label');
+        const receiptRows = [
+            {
+                icon: 'heart-outline' as const,
+                iconBorderColor: '#D1F4DA',
+                label: receiptSavedLine,
+                value: `${currency} ${savedStr}`,
+                tone: 'savings' as const,
+                accessibilityLabel: `${receiptSavedLine} ${currency} ${savedStr}`,
+            },
+            {
+                icon: 'card-outline' as const,
+                iconBorderColor: '#DCE4EC',
+                label: receiptPayLabel,
+                value: `${currency} ${redemptionResult.finalAmount.toFixed(2)}`,
+            },
+            ...(redemptionResult.cashbackAmount > 0 ? [{
+                icon: 'wallet-outline' as const,
+                iconBorderColor: '#FFE7C7',
+                label: pointsLine,
+                value: `${currency} ${earnedStr}`,
+                tone: 'points' as const,
+            }] : []),
+        ];
         const metaLines = [
-            redeemedOn ? (isArabic ? `في ${redeemedOn}` : `Redeemed on ${redeemedOn}`) : null,
+            redeemedOn ? t('redeemed_on', { date: redeemedOn }) : null,
             redemptionResult.creatorName ? t('thanks_to_creator', { creator: redemptionResult.creatorName }) : null,
         ].filter(Boolean) as string[];
 
@@ -490,34 +563,13 @@ export default function RedeemScreen() {
                 mascotSource={require('../../assets/images/realx-mascot-run-cash-both-hands.png')}
                 badgeText={discountBadgeText}
                 badgeFinalPercent={roundedDiscountPercent}
+                badgeCountUpSuffix={`%${t('flat_off_suffix')}`}
                 animateBadgeCountUp={isPercentageDiscountOffer}
-                merchantLabel={isArabic ? 'المتجر' : 'Merchant'}
+                merchantLabel={t('reward_success_merchant_label')}
                 merchantName={merchantName}
-                rows={[
-                    {
-                        icon: 'heart-outline',
-                        iconBorderColor: '#D1F4DA',
-                        label: receiptSavedLine,
-                        value: `${currency} ${savedStr}`,
-                        tone: 'savings',
-                        accessibilityLabel: `${receiptSavedLine} ${currency} ${savedStr}`,
-                    },
-                    {
-                        icon: 'card-outline',
-                        iconBorderColor: '#DCE4EC',
-                        label: receiptPayLabel,
-                        value: `${currency} ${redemptionResult.finalAmount.toFixed(2)}`,
-                    },
-                    {
-                        icon: 'wallet-outline',
-                        iconBorderColor: '#FFE7C7',
-                        label: pointsLine,
-                        value: `${currency} ${earnedStr}`,
-                        tone: 'points',
-                    },
-                ]}
+                rows={receiptRows}
                 metaLines={metaLines}
-                primaryActionLabel={isArabic ? 'تم' : 'Done'}
+                primaryActionLabel={t('done')}
                 onPrimaryAction={() => router.replace('/wallet')}
                 onClose={() => router.replace('/')}
                 isRTL={isArabic}

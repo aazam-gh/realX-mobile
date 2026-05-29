@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import {
     I18nManager,
     Linking,
@@ -12,6 +13,7 @@ import {
 } from 'react-native';
 
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 
@@ -25,6 +27,7 @@ type WaktiBannerProps = {
 
 export default function WaktiBanner({ style }: WaktiBannerProps) {
     const isRTL = I18nManager.isRTL;
+    const { t } = useTranslation();
 
     const handlePress = async () => {
         const storeUrl = Platform.OS === 'android' ? WAKTI_ANDROID_URL : WAKTI_IOS_URL;
@@ -51,10 +54,10 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                 <View style={[styles.content, isRTL && styles.contentRTL]}>
                     <View style={styles.copy}>
                         <Text style={[styles.body, isRTL && styles.textRTL]}>
-                            Get help planning, learning, and moving faster with Wakti.
+                            {t('wakti_banner_body')}
                         </Text>
                         <Text style={[styles.title, isRTL && styles.textRTL]}>
-                            Try Wakti AI
+                            {t('wakti_banner_cta')}
                         </Text>
                     </View>
 
@@ -175,7 +178,7 @@ const styles = StyleSheet.create({
         color: 'rgba(255, 255, 255, 0.74)',
         fontSize: 13,
         lineHeight: 18,
-        fontWeight: '600',
+        fontFamily: Typography.poppins.medium,
         maxWidth: 220,
     },
     title: {
@@ -188,7 +191,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 15,
         lineHeight: 20,
-        fontWeight: '900',
+        fontFamily: Typography.hanson.bold,
         letterSpacing: -0.1,
         textShadowColor: 'rgba(0, 0, 0, 0.36)',
         textShadowOffset: { width: 0, height: 1 },

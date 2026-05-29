@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -11,11 +10,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PhonkText from '../../components/PhonkText';
 import {
     OnboardingButtonMotion,
+    OnboardingGlowMotion,
     OnboardingIntroFooterMotion,
     OnboardingIntroHeadlineMotion,
     OnboardingIntroLogoMotion,
     OnboardingIntroMascotMotion,
-    OnboardingPulseMotion,
     OnboardingScreenMotion,
     OnboardingStaggerItem,
 } from '../../components/onboarding/OnboardingMotion';
@@ -121,18 +120,21 @@ export default function OnboardingScreen() {
                                 </TouchableOpacity>
                             </View>
                             <OnboardingButtonMotion enabled>
-                                <TouchableOpacity
-                                    style={[styles.button, { backgroundColor: theme.logoTile }, isRTL ? styles.buttonRTL : styles.buttonLTR]}
-                                    onPress={handleGetStarted}
-                                    activeOpacity={0.9}
+                                <OnboardingGlowMotion
+                                    style={styles.buttonGlowWrapper}
+                                    glowStyle={[styles.buttonGlow, { backgroundColor: theme.logoTile, borderColor: theme.logoTile }]}
                                 >
-                                    <PhonkText style={[styles.buttonText, { color: theme.brand }]}>{t('onboarding_get_started')}</PhonkText>
-                                    <OnboardingPulseMotion>
+                                    <TouchableOpacity
+                                        style={[styles.button, { backgroundColor: theme.logoTile }, isRTL ? styles.buttonRTL : styles.buttonLTR]}
+                                        onPress={handleGetStarted}
+                                        activeOpacity={0.9}
+                                    >
+                                        <PhonkText style={[styles.buttonText, { color: theme.brand }]}>{t('onboarding_get_started')}</PhonkText>
                                         <View style={[styles.arrowCircle, { backgroundColor: theme.brand }]}>
                                             <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={24} color="white" />
                                         </View>
-                                    </OnboardingPulseMotion>
-                                </TouchableOpacity>
+                                    </TouchableOpacity>
+                                </OnboardingGlowMotion>
                             </OnboardingButtonMotion>
                         </OnboardingIntroFooterMotion>
                     </View>
@@ -203,15 +205,11 @@ export default function OnboardingScreen() {
                         <TouchableOpacity
                             activeOpacity={0.9}
                             onPress={handleLogin}
+                            style={[styles.loginPill, { backgroundColor: theme.logoTile }]}
                         >
-                            <GlassView
-                                style={styles.loginPill}
-                                glassEffectStyle="regular"
-                            >
-                                <Text style={[styles.loginText, { color: theme.logoTileText }, isRTL && styles.subtextRTL]}>
-                                    {t('onboarding_login_prompt')} <Text style={[styles.loginBold, { color: theme.brand }]}>{t('onboarding_login_action')}</Text>
-                                </Text>
-                            </GlassView>
+                            <Text style={[styles.loginText, { color: theme.logoTileText }, isRTL && styles.subtextRTL]}>
+                                {t('onboarding_login_prompt')} <Text style={[styles.loginBold, { color: theme.brand }]}>{t('onboarding_login_action')}</Text>
+                            </Text>
                         </TouchableOpacity>
                         </OnboardingStaggerItem>
                     </View>
@@ -305,6 +303,23 @@ const styles = StyleSheet.create({
         // Elevation for Android
         elevation: 5,
     },
+    buttonGlowWrapper: {
+        position: 'relative',
+    },
+    buttonGlow: {
+        position: 'absolute',
+        top: -8,
+        right: -8,
+        bottom: -8,
+        left: -8,
+        borderRadius: 48,
+        borderWidth: 1,
+        shadowColor: '#FFFFFF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.85,
+        shadowRadius: 18,
+        elevation: 2,
+    },
     buttonText: {
         fontSize: 18,
         color: '#18B852',
@@ -324,9 +339,9 @@ const styles = StyleSheet.create({
     },
     langText: {
         fontFamily: Typography.poppins.medium,
-        fontSize: 16,
-        color: '#FFFFFF',
-        opacity: 0.6,
+        fontSize: 20,
+      color: '#FFFFFF',
+      opacity: 0.75,
     },
     langTextActive: {
         opacity: 1,
@@ -336,7 +351,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#FFFFFF',
         marginHorizontal: 15,
-        opacity: 0.6,
     },
     // Role selection styles
     roleSelectionContent: {
@@ -423,7 +437,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 35,
         borderRadius: 100,
         marginTop: 50,
-        overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 5,
     },
     loginText: {
         fontFamily: Typography.poppins.medium,

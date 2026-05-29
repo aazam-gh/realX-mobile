@@ -24,6 +24,10 @@ type MotionViewProps = {
   style?: StyleProp<ViewStyle>;
 };
 
+type GlowMotionProps = MotionViewProps & {
+  glowStyle?: StyleProp<ViewStyle>;
+};
+
 const reduceMotion = ReduceMotion.System;
 
 export function OnboardingScreenMotion({ children, delay = 0, style }: MotionViewProps) {
@@ -144,6 +148,38 @@ export function OnboardingPulseMotion({ children, style }: MotionViewProps) {
 
   return (
     <Animated.View style={[style, animatedStyle]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+export function OnboardingGlowMotion({ children, glowStyle, style }: GlowMotionProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const glowOpacity = useSharedValue(prefersReducedMotion ? 0.45 : 0.32);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      glowOpacity.value = 0.45;
+      return;
+    }
+
+    glowOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.82, { duration: 1200, easing: Easing.inOut(Easing.quad), reduceMotion }),
+        withTiming(0.32, { duration: 1200, easing: Easing.inOut(Easing.quad), reduceMotion }),
+      ),
+      -1,
+      false,
+    );
+  }, [glowOpacity, prefersReducedMotion]);
+
+  const animatedGlowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+
+  return (
+    <Animated.View style={style}>
+      <Animated.View pointerEvents="none" style={[glowStyle, animatedGlowStyle]} />
       {children}
     </Animated.View>
   );

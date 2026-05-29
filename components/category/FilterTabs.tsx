@@ -1,17 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React, { useEffect, useMemo } from 'react';
-import { Dimensions, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { type ComponentProps, useEffect, useMemo } from 'react';
+import { I18nManager, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
-
-const BRAND_GREEN = '#18B852';
-const BG_LIGHT = '#F5F5F5';
+import { useAppTheme } from '../../context/AppThemeContext';
 
 type FilterOption = {
     id: string;
     label: string;
-    icon: any;
+    icon: ComponentProps<typeof Ionicons>['name'];
 };
 
 interface FilterTabsProps {
@@ -22,14 +20,16 @@ interface FilterTabsProps {
 
 export default function FilterTabs({ selectedFilter, onFilterChange, filters }: FilterTabsProps) {
     const { t } = useTranslation();
+    const { isDark, theme } = useAppTheme();
+    const { width } = useWindowDimensions();
 
-    const currentFilters = useMemo(() => filters || [
+    const currentFilters = useMemo<FilterOption[]>(() => filters || [
         { id: 'all', label: t('filter_all'), icon: 'apps-outline' },
         { id: 'cashbacks', label: t('filter_cash'), icon: 'cash-outline' },
         { id: 'trending', label: t('filter_top'), icon: 'flame' },
     ], [filters, t]);
 
-    const containerWidth = Dimensions.get('window').width - 40;
+    const containerWidth = width - 40;
     const tabWidth = containerWidth / currentFilters.length;
 
     const initialIndex = currentFilters.findIndex(f => f.id === selectedFilter);
@@ -56,11 +56,28 @@ export default function FilterTabs({ selectedFilter, onFilterChange, filters }: 
         opacity: opacity.value,
     }));
 
+    const inactiveColor = isDark ? theme.text : theme.icon;
+    const selectedColor = theme.onActionSolid;
+
     return (
         <View style={styles.outerContainer}>
-            <View style={styles.container}>
+            <View style={[
+                styles.container,
+                {
+                    backgroundColor: isDark ? theme.cardMuted : theme.surface,
+                    borderColor: isDark ? theme.borderStrong : theme.border,
+                },
+            ]}>
                 <Animated.View
-                    style={[styles.slider, { width: tabWidth }, sliderStyle]}
+                    style={[
+                        styles.slider,
+                        {
+                            width: tabWidth,
+                            backgroundColor: theme.brand,
+                            borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.05)',
+                        },
+                        sliderStyle,
+                    ]}
                 />
 
                 {currentFilters.map((filter) => {
@@ -70,15 +87,15 @@ export default function FilterTabs({ selectedFilter, onFilterChange, filters }: 
                         <TouchableOpacity
                             key={filter.id}
                             style={[styles.filterButton, { width: tabWidth }]}
-                            onPress={() => onFilterChange?.(filter.id)}
+                            onPress={() => onFilterChange(filter.id)}
                             activeOpacity={1}
                         >
                             <Ionicons
                                 name={filter.icon}
                                 size={20}
-                                color={isSelected ? '#FFFFFF' : '#000000'}
+                                color={isSelected ? selectedColor : inactiveColor}
                             />
-                            <Text style={[styles.filterText, { color: isSelected ? '#FFFFFF' : '#000000' }]}>
+                            <Text style={[styles.filterText, { color: isSelected ? selectedColor : inactiveColor }]}>
                                 {filter.label}
                             </Text>
                         </TouchableOpacity>
@@ -96,22 +113,18 @@ const styles = StyleSheet.create({
     },
     container: {
         flexDirection: 'row',
-        backgroundColor: BG_LIGHT,
-        borderRadius: 24, // Pure pill shape
+        borderRadius: 24,
+        borderWidth: 1,
         position: 'relative',
         height: 48,
         alignItems: 'center',
-        // Force LTR layout to keep tab positions same in Arabic
         direction: 'ltr',
     },
     slider: {
         position: 'absolute',
         height: '100%',
-        backgroundColor: BRAND_GREEN,
         borderRadius: 24,
-        // Optional: add a slight border if you want it to look exactly like the image
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
     },
     filterButton: {
         flexDirection: 'row',
@@ -119,12 +132,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         height: '100%',
         gap: 8,
-        zIndex: 1, // Ensures text is above the slider
+        zIndex: 1,
     },
     filterText: {
         fontSize: 14,
         fontFamily: Typography.poppins.semiBold,
-        // Ensure Arabic text looks good
         marginTop: I18nManager.isRTL ? -2 : 0,
     },
 });

@@ -21,6 +21,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import {
+  OnboardingButtonMotion,
+  OnboardingCardMotion,
+  OnboardingScreenMotion,
+  OnboardingStaggerItem,
+} from '../../components/onboarding/OnboardingMotion';
 import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 
@@ -108,7 +114,7 @@ export default function EmailOnboarding() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
       >
-        <View style={styles.headerBackground}>
+        <OnboardingScreenMotion style={styles.headerBackground}>
           <SafeAreaView edges={['top']} style={styles.headerContent}>
             <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
               <TouchableOpacity onPress={handleBack} style={styles.iconButton}>
@@ -119,15 +125,18 @@ export default function EmailOnboarding() {
               </TouchableOpacity>
             </View>
           </SafeAreaView>
-        </View>
+        </OnboardingScreenMotion>
 
-        <View style={[styles.cardContainer, { flex: 1 }]}>
+        <OnboardingCardMotion style={[styles.cardContainer, { flex: 1 }]}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.card}>
+              <OnboardingStaggerItem delay={120}>
               <View style={styles.iconCircle}>
                 <Ionicons name="person-add-outline" size={36} color={Colors.brandGreen} />
               </View>
+              </OnboardingStaggerItem>
 
+              <OnboardingStaggerItem delay={170}>
               <View style={styles.textContainer}>
                 <Text style={styles.titleSmall}>{t('onboarding_email_title_prefix')}</Text>
                 <View style={styles.titleRow}>
@@ -139,8 +148,9 @@ export default function EmailOnboarding() {
                   </PhonkText>
                 </View>
               </View>
+              </OnboardingStaggerItem>
 
-              <View style={styles.inputWrapper}>
+              <OnboardingStaggerItem delay={220} style={styles.inputWrapper}>
                 <View style={[styles.singleInputContainer, email ? styles.inputFocused : null]}>
                   <Ionicons name="mail-outline" size={20} color={email ? Colors.brandGreen : '#999'} style={styles.inputIcon} />
                   <TextInput
@@ -157,18 +167,23 @@ export default function EmailOnboarding() {
                     autoFocus
                   />
                 </View>
-              </View>
+              </OnboardingStaggerItem>
 
+              <OnboardingStaggerItem delay={270}>
               <Text style={styles.infoText}>{t('onboarding_email_description')}</Text>
+              </OnboardingStaggerItem>
+              <OnboardingStaggerItem delay={310}>
               <TouchableOpacity onPress={() => router.push({ pathname: '/(onboarding)/upload-id', params: { role } } as any)} style={styles.linkButton}>
                 <Text style={styles.linkText}>{t('onboarding_no_edu_email_link')}</Text>
               </TouchableOpacity>
+              </OnboardingStaggerItem>
             </View>
           </TouchableWithoutFeedback>
-        </View>
+        </OnboardingCardMotion>
       </KeyboardAvoidingView>
 
       <View style={styles.footer}>
+        <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
         <TouchableOpacity
           style={[styles.button, email && !isLoading && styles.buttonEnabled]}
           onPress={handleContinue}
@@ -181,6 +196,7 @@ export default function EmailOnboarding() {
             <Text style={styles.buttonText}>{t('onboarding_continue')}</Text>
           )}
         </TouchableOpacity>
+        </OnboardingButtonMotion>
       </View>
     </View>
   );
@@ -248,7 +264,6 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,
     justifyContent: 'center', alignItems: 'center', marginBottom: 20,
-    opacity: 0.5,
   },
   buttonEnabled: {
     opacity: 1,

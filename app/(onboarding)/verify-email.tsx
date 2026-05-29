@@ -21,6 +21,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import {
+  OnboardingButtonMotion,
+  OnboardingCardMotion,
+  OnboardingScreenMotion,
+  OnboardingStaggerItem,
+} from '../../components/onboarding/OnboardingMotion';
 import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 
@@ -81,7 +87,7 @@ export default function VerifyEmailScreen() {
     >
       <StatusBar style="light" />
 
-      <View style={styles.headerBackground}>
+      <OnboardingScreenMotion style={styles.headerBackground}>
         <SafeAreaView edges={['top']} style={styles.headerContent}>
           <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
             <TouchableOpacity onPress={handleBack} style={styles.iconButton}>
@@ -92,23 +98,27 @@ export default function VerifyEmailScreen() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </View>
+      </OnboardingScreenMotion>
 
-      <View style={[styles.cardContainer, { flex: 1 }]}>
+      <OnboardingCardMotion style={[styles.cardContainer, { flex: 1 }]}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.card}>
+            <OnboardingStaggerItem delay={120}>
             <View style={styles.iconCircle}>
               <Ionicons name="shield-checkmark-outline" size={36} color={Colors.brandGreen} />
             </View>
+            </OnboardingStaggerItem>
 
+            <OnboardingStaggerItem delay={170}>
             <View style={styles.textContainer}>
               <Text style={styles.titleSmall}>{t('onboarding_verify_email_title_prefix')}</Text>
               <PhonkText style={styles.titleLarge}>
                 <Text style={styles.greenText}>{t('onboarding_verify_email_title_suffix')}</Text>
               </PhonkText>
             </View>
+            </OnboardingStaggerItem>
 
-            <View style={styles.inputWrapper}>
+            <OnboardingStaggerItem delay={220} style={styles.inputWrapper}>
               <View style={[styles.singleInputContainer, email ? styles.inputFocused : null]}>
                 <Ionicons name="mail-outline" size={20} color={email ? Colors.brandGreen : '#999'} style={styles.inputIcon} />
                 <TextInput
@@ -125,13 +135,16 @@ export default function VerifyEmailScreen() {
                   autoFocus
                 />
               </View>
-            </View>
+            </OnboardingStaggerItem>
 
+            <OnboardingStaggerItem delay={270}>
             <Text style={styles.infoText}>{t('onboarding_verify_email_description')}</Text>
+            </OnboardingStaggerItem>
           </View>
         </TouchableWithoutFeedback>
 
         <View style={styles.footer}>
+          <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
           <TouchableOpacity
             style={[styles.button, email && !isLoading && styles.buttonEnabled]}
             onPress={handleContinue}
@@ -144,8 +157,9 @@ export default function VerifyEmailScreen() {
               <Text style={styles.buttonText}>{t('onboarding_continue')}</Text>
             )}
           </TouchableOpacity>
+          </OnboardingButtonMotion>
         </View>
-      </View>
+      </OnboardingCardMotion>
     </KeyboardAvoidingView>
   );
 }
@@ -204,7 +218,6 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,
     justifyContent: 'center', alignItems: 'center', marginBottom: 20,
-    opacity: 0.5,
   },
   buttonEnabled: {
     opacity: 1,

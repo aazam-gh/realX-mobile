@@ -9,6 +9,16 @@ import { useTranslation } from 'react-i18next';
 import { Dimensions, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PhonkText from '../../components/PhonkText';
+import {
+    OnboardingButtonMotion,
+    OnboardingIntroFooterMotion,
+    OnboardingIntroHeadlineMotion,
+    OnboardingIntroLogoMotion,
+    OnboardingIntroMascotMotion,
+    OnboardingPulseMotion,
+    OnboardingScreenMotion,
+    OnboardingStaggerItem,
+} from '../../components/onboarding/OnboardingMotion';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { setStoredLanguage } from '../../src/localization/i18n';
@@ -52,34 +62,39 @@ export default function OnboardingScreen() {
 
             <SafeAreaView style={styles.safeArea}>
                 {step === 0 ? (
+                    <OnboardingScreenMotion key="intro" style={styles.motionFill}>
                     <View style={styles.content}>
                         {/* Logo */}
-                        <View style={styles.logoContainer}>
+                        <OnboardingIntroLogoMotion style={styles.logoContainer}>
                             <Image
                                 source={require('../../assets/images/logo.png')}
                                 style={styles.logo}
                                 contentFit="contain"
                             />
-                        </View>
+                        </OnboardingIntroLogoMotion>
 
                         {/* Headline */}
                         <View style={[styles.headlineContainer, isRTL && styles.headlineRTL]}>
-                            <PhonkText style={styles.headlineBroke}>{t('onboarding_headline_broke')}</PhonkText>
-                            <PhonkText style={styles.headlineNotAnymore}>{t('onboarding_headline_not_anymore')}</PhonkText>
+                            <OnboardingIntroHeadlineMotion delay={180}>
+                                <PhonkText style={styles.headlineBroke}>{t('onboarding_headline_broke')}</PhonkText>
+                            </OnboardingIntroHeadlineMotion>
+                            <OnboardingIntroHeadlineMotion delay={260}>
+                                <PhonkText style={styles.headlineNotAnymore}>{t('onboarding_headline_not_anymore')}</PhonkText>
+                            </OnboardingIntroHeadlineMotion>
                         </View>
 
                         {/* Character Graphic */}
-                        <View style={[styles.graphicContainer, isRTL && styles.graphicContainerRTL]}>
+                        <OnboardingIntroMascotMotion style={[styles.graphicContainer, isRTL && styles.graphicContainerRTL]}>
                             <Image
                                 source={require('../../assets/images/onboarding.png')}
                                 style={styles.characterImage}
                                 contentFit="contain"
                                 contentPosition="left"
                             />
-                        </View>
+                        </OnboardingIntroMascotMotion>
 
                         {/* Footer */}
-                        <View style={styles.footer}>
+                        <OnboardingIntroFooterMotion style={styles.footer}>
                             <Text style={[styles.subtext, isRTL && styles.subtextRTL]}>
                                 {t('onboarding_student_subtext')}
                             </Text>
@@ -93,19 +108,25 @@ export default function OnboardingScreen() {
                                     <Text style={[styles.langText, i18n.language === 'ar' && styles.langTextActive]}>العربية</Text>
                                 </TouchableOpacity>
                             </View>
-                            <TouchableOpacity
-                                style={[styles.button, isRTL ? styles.buttonRTL : styles.buttonLTR]}
-                                onPress={handleGetStarted}
-                                activeOpacity={0.9}
-                            >
-                                <PhonkText style={styles.buttonText}>{t('onboarding_get_started')}</PhonkText>
-                                <View style={styles.arrowCircle}>
-                                    <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={24} color="white" />
-                                </View>
-                            </TouchableOpacity>
-                        </View>
+                            <OnboardingButtonMotion enabled>
+                                <TouchableOpacity
+                                    style={[styles.button, isRTL ? styles.buttonRTL : styles.buttonLTR]}
+                                    onPress={handleGetStarted}
+                                    activeOpacity={0.9}
+                                >
+                                    <PhonkText style={styles.buttonText}>{t('onboarding_get_started')}</PhonkText>
+                                    <OnboardingPulseMotion>
+                                        <View style={styles.arrowCircle}>
+                                            <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={24} color="white" />
+                                        </View>
+                                    </OnboardingPulseMotion>
+                                </TouchableOpacity>
+                            </OnboardingButtonMotion>
+                        </OnboardingIntroFooterMotion>
                     </View>
+                    </OnboardingScreenMotion>
                 ) : (
+                    <OnboardingScreenMotion key="roles" style={styles.motionFill}>
                     <View style={styles.roleSelectionContent}>
                         {/* Logo */}
                         <View style={styles.roleLogoContainer}>
@@ -118,6 +139,7 @@ export default function OnboardingScreen() {
 
                         {/* Role Cards */}
                         <View style={styles.cardsWrapper}>
+                            <OnboardingStaggerItem delay={80}>
                             <TouchableOpacity
                                 style={[styles.roleCard, isRTL && styles.rowReverse]}
                                 activeOpacity={0.9}
@@ -138,7 +160,9 @@ export default function OnboardingScreen() {
                                 </View>
                                 <Ionicons name={isRTL ? 'chevron-back-outline' : 'chevron-forward-outline'} size={32} color="#AAAAAA" />
                             </TouchableOpacity>
+                            </OnboardingStaggerItem>
 
+                            <OnboardingStaggerItem delay={150}>
                             <TouchableOpacity
                                 style={[styles.roleCard, isRTL && styles.rowReverse]}
                                 activeOpacity={0.9}
@@ -159,9 +183,11 @@ export default function OnboardingScreen() {
                                 </View>
                                 <Ionicons name={isRTL ? 'chevron-back-outline' : 'chevron-forward-outline'} size={32} color="#AAAAAA" />
                             </TouchableOpacity>
+                            </OnboardingStaggerItem>
                         </View>
 
                         {/* Login Pill */}
+                        <OnboardingStaggerItem delay={220}>
                         <TouchableOpacity
                             activeOpacity={0.9}
                             onPress={handleLogin}
@@ -175,7 +201,9 @@ export default function OnboardingScreen() {
                                 </Text>
                             </GlassView>
                         </TouchableOpacity>
+                        </OnboardingStaggerItem>
                     </View>
+                    </OnboardingScreenMotion>
                 )}
             </SafeAreaView>
         </View>
@@ -187,6 +215,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     safeArea: {
+        flex: 1,
+    },
+    motionFill: {
         flex: 1,
     },
     content: {
@@ -398,5 +429,3 @@ const styles = StyleSheet.create({
         color: "#18B852",
     },
 });
-
-

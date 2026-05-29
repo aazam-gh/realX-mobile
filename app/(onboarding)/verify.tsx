@@ -20,6 +20,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import {
+  OnboardingButtonMotion,
+  OnboardingCardMotion,
+  OnboardingScreenMotion,
+  OnboardingShakeMotion,
+  OnboardingStateMotion,
+  OnboardingStaggerItem,
+} from '../../components/onboarding/OnboardingMotion';
 import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 import { savePendingVerification } from '../../utils/verificationPending';
@@ -41,6 +49,7 @@ export default function VerifyOtpScreen() {
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorAnimationKey, setErrorAnimationKey] = useState(0);
   const [cooldownSeconds, setCooldownSeconds] = useState(60);
   const [resendLoading, setResendLoading] = useState(false);
 
@@ -162,6 +171,7 @@ export default function VerifyOtpScreen() {
       if (code === 'invalid-argument') {
         // Wrong code
         setError(message);
+        setErrorAnimationKey((value) => value + 1);
         // Clear OTP input
         setOtp(Array(OTP_LENGTH).fill(''));
         inputRefs.current[0]?.focus();
@@ -217,7 +227,7 @@ export default function VerifyOtpScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      <View style={styles.headerBackground}>
+      <OnboardingScreenMotion style={styles.headerBackground}>
         <SafeAreaView edges={['top']} style={styles.headerContent}>
           <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
             <TouchableOpacity onPress={handleBack} style={styles.iconButton}>
@@ -228,30 +238,37 @@ export default function VerifyOtpScreen() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </View>
+      </OnboardingScreenMotion>
 
-      <View style={[styles.cardContainer, { flex: 1 }]}>
+      <OnboardingCardMotion style={[styles.cardContainer, { flex: 1 }]}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.card}>
+            <OnboardingStaggerItem delay={120}>
             <View style={styles.iconCircle}>
               <Ionicons name="mail-open-outline" size={40} color={Colors.brandGreen} />
             </View>
+            </OnboardingStaggerItem>
 
+            <OnboardingStaggerItem delay={170}>
             <View style={styles.textContainer}>
               <Text style={styles.titleSmall}>{titlePrefix}</Text>
               <PhonkText style={styles.titleLarge}>
                 <Text style={styles.greenText}>{titleSuffix}</Text>
               </PhonkText>
             </View>
+            </OnboardingStaggerItem>
 
+            <OnboardingStaggerItem delay={220}>
             <Text style={styles.subtitle}>
               {t('onboarding_otp_subtitle', { email: '' })}
             </Text>
             {email ? <Text style={styles.emailText}>{email}</Text> : null}
+            </OnboardingStaggerItem>
 
+            <OnboardingShakeMotion trigger={errorAnimationKey}>
             <View style={[styles.otpContainer, isRTL && styles.otpContainerRTL]}>
               {Array.from({ length: OTP_LENGTH }).map((_, index) => (
-                <View key={index} style={[
+                <OnboardingStateMotion key={index} delay={260 + index * 25} style={[
                   styles.otpBox,
                   otp[index] ? styles.otpBoxFilled : null,
                   !otp[index] && index === otp.findIndex(d => d === '') ? styles.otpBoxActive : null,
@@ -268,17 +285,21 @@ export default function VerifyOtpScreen() {
                     autoFocus={index === 0}
                     selectTextOnFocus
                   />
-                </View>
+                </OnboardingStateMotion>
               ))}
             </View>
+            </OnboardingShakeMotion>
 
             {error && (
+              <OnboardingStateMotion>
               <View style={styles.errorContainer}>
                 <Ionicons name="alert-circle-outline" size={16} color="#E53935" />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
+              </OnboardingStateMotion>
             )}
 
+            <OnboardingStaggerItem delay={430}>
             <View style={styles.resendContainer}>
               {cooldownSeconds > 0 ? (
                 <Text style={styles.cooldownText}>
@@ -294,11 +315,13 @@ export default function VerifyOtpScreen() {
                 </TouchableOpacity>
               )}
             </View>
+            </OnboardingStaggerItem>
           </View>
         </TouchableWithoutFeedback>
-      </View>
+      </OnboardingCardMotion>
 
       <View style={styles.footer}>
+        <OnboardingButtonMotion enabled={Boolean(isOtpComplete && !isLoading)}>
         <TouchableOpacity
           style={[styles.button, isOtpComplete && !isLoading && styles.buttonEnabled]}
           onPress={handleVerify}
@@ -311,6 +334,7 @@ export default function VerifyOtpScreen() {
             <Text style={styles.buttonText}>{t('onboarding_otp_verify_button')}</Text>
           )}
         </TouchableOpacity>
+        </OnboardingButtonMotion>
       </View>
     </View>
   );
@@ -472,7 +496,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    opacity: 0.5,
   },
   buttonEnabled: {
     opacity: 1,

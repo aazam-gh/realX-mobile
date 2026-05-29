@@ -23,6 +23,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import {
+  OnboardingButtonMotion,
+  OnboardingCardMotion,
+  OnboardingScreenMotion,
+  OnboardingStateMotion,
+  OnboardingStaggerItem,
+} from '../../components/onboarding/OnboardingMotion';
 import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 
@@ -107,7 +114,7 @@ export default function LoginScreen() {
         behavior="padding"
         keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
       >
-        <View style={styles.headerBackground}>
+        <OnboardingScreenMotion style={styles.headerBackground}>
           <SafeAreaView edges={['top']} style={styles.headerContent}>
             <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
               <TouchableOpacity onPress={handleBack} style={styles.iconButton}>
@@ -118,22 +125,26 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
           </SafeAreaView>
-        </View>
+        </OnboardingScreenMotion>
 
-        <View style={[styles.cardContainer, { backgroundColor: '#FFFFFF' }]}>
+        <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: '#FFFFFF' }]}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.card}>
+              <OnboardingStaggerItem delay={120}>
               <View style={styles.iconCircle}>
                 <Ionicons name="log-in-outline" size={36} color={Colors.brandGreen} />
               </View>
+              </OnboardingStaggerItem>
 
+              <OnboardingStaggerItem delay={170}>
               <View style={styles.textContainer}>
                 <PhonkText style={styles.titleLarge}>
                   <Text style={styles.greenText}>{t('onboarding_login_title')}</Text>
                 </PhonkText>
               </View>
+              </OnboardingStaggerItem>
 
-              <View style={styles.inputWrapper}>
+              <OnboardingStaggerItem delay={220} style={styles.inputWrapper}>
                 <View style={[styles.singleInputContainer, email ? styles.inputFocused : null]}>
                   <Ionicons name="mail-outline" size={20} color={email ? Colors.brandGreen : '#999'} style={styles.inputIcon} />
                   <TextInput
@@ -150,17 +161,20 @@ export default function LoginScreen() {
                     autoFocus={true}
                   />
                 </View>
-              </View>
+              </OnboardingStaggerItem>
 
+              <OnboardingStaggerItem delay={270}>
               <Text style={styles.infoText}>
                 {t('onboarding_login_info')}
               </Text>
+              </OnboardingStaggerItem>
             </View>
           </TouchableWithoutFeedback>
-        </View>
+        </OnboardingCardMotion>
       </KeyboardAvoidingView>
 
       <View style={styles.footer}>
+        <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
         <TouchableOpacity
           style={[styles.button, email && !isLoading && styles.buttonEnabled]}
           onPress={handleContinue}
@@ -175,6 +189,7 @@ export default function LoginScreen() {
             </Text>
           )}
         </TouchableOpacity>
+        </OnboardingButtonMotion>
       </View>
 
       <Modal
@@ -184,7 +199,7 @@ export default function LoginScreen() {
         onRequestClose={() => setShowSignUpModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <OnboardingStateMotion style={styles.modalContent}>
             <View style={styles.modalIconContainer}>
               <Ionicons name="person-add-outline" size={40} color={Colors.brandGreen} />
             </View>
@@ -207,7 +222,7 @@ export default function LoginScreen() {
             >
               <Text style={styles.modalSecondaryButtonText}>{t('cancel')}</Text>
             </TouchableOpacity>
-          </View>
+          </OnboardingStateMotion>
         </View>
       </Modal>
     </View>
@@ -305,7 +320,6 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,
     justifyContent: 'center', alignItems: 'center', marginBottom: 20,
-    opacity: 0.5,
   },
   buttonEnabled: {
     opacity: 1,

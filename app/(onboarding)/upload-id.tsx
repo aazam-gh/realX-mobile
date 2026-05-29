@@ -19,6 +19,13 @@ import { Image } from 'expo-image';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import {
+  OnboardingButtonMotion,
+  OnboardingCardMotion,
+  OnboardingScreenMotion,
+  OnboardingStateMotion,
+  OnboardingStaggerItem,
+} from '../../components/onboarding/OnboardingMotion';
 import { useTranslation } from 'react-i18next';
 import { setVerificationImages } from '../../utils/verificationStore';
 
@@ -91,7 +98,7 @@ export default function UploadIdScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      <View style={styles.headerBackground}>
+      <OnboardingScreenMotion style={styles.headerBackground}>
         <SafeAreaView edges={['top']} style={styles.headerContent}>
           <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
             <TouchableOpacity onPress={handleBack} style={styles.iconButton}>
@@ -102,27 +109,33 @@ export default function UploadIdScreen() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </View>
+      </OnboardingScreenMotion>
 
-      <View style={styles.cardContainer}>
+      <OnboardingCardMotion style={styles.cardContainer}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.card}
         >
+          <OnboardingStaggerItem delay={120}>
           <View style={styles.iconCircle}>
             <Ionicons name="card-outline" size={32} color={Colors.brandGreen} />
           </View>
+          </OnboardingStaggerItem>
 
+          <OnboardingStaggerItem delay={170}>
           <View style={styles.textContainer}>
             <Text style={styles.titleSmall}>{t('onboarding_upload_id_title_prefix')}</Text>
             <PhonkText style={styles.titleLarge}>
               <Text style={styles.greenText}>{t('onboarding_upload_id_title_suffix')}</Text>
             </PhonkText>
           </View>
+          </OnboardingStaggerItem>
 
+          <OnboardingStaggerItem delay={220}>
           <Text style={styles.subtitle}>{t('onboarding_upload_id_description')}</Text>
+          </OnboardingStaggerItem>
 
-          <View style={styles.uploadContainer}>
+          <OnboardingStaggerItem delay={270} style={styles.uploadContainer}>
             {/* Front upload */}
             <TouchableOpacity
               style={[styles.uploadZone, frontImage && styles.uploadZoneFilled]}
@@ -130,17 +143,17 @@ export default function UploadIdScreen() {
               activeOpacity={0.7}
             >
               {frontImage ? (
-                <View style={styles.previewContainer}>
+                <OnboardingStateMotion key="front-preview" style={styles.previewContainer}>
                   <Image source={{ uri: frontImage.uri }} style={styles.previewImage} contentFit="contain" />
                   <View style={styles.replaceBadge}>
                     <Text style={styles.replaceText}>{t('onboarding_upload_replace')}</Text>
                   </View>
-                </View>
+                </OnboardingStateMotion>
               ) : (
-                <View style={styles.uploadPlaceholder}>
+                <OnboardingStateMotion key="front-placeholder" style={styles.uploadPlaceholder}>
                   <Ionicons name="camera-outline" size={32} color="#999" />
                   <Text style={styles.uploadLabel}>{t('onboarding_upload_front')}</Text>
-                </View>
+                </OnboardingStateMotion>
               )}
             </TouchableOpacity>
 
@@ -151,25 +164,28 @@ export default function UploadIdScreen() {
               activeOpacity={0.7}
             >
               {backImage ? (
-                <View style={styles.previewContainer}>
+                <OnboardingStateMotion key="back-preview" style={styles.previewContainer}>
                   <Image source={{ uri: backImage.uri }} style={styles.previewImage} contentFit="contain" />
                   <View style={styles.replaceBadge}>
                     <Text style={styles.replaceText}>{t('onboarding_upload_replace')}</Text>
                   </View>
-                </View>
+                </OnboardingStateMotion>
               ) : (
-                <View style={styles.uploadPlaceholder}>
+                <OnboardingStateMotion key="back-placeholder" style={styles.uploadPlaceholder}>
                   <Ionicons name="camera-outline" size={32} color="#999" />
                   <Text style={styles.uploadLabel}>{t('onboarding_upload_back')}</Text>
-                </View>
+                </OnboardingStateMotion>
               )}
             </TouchableOpacity>
-          </View>
+          </OnboardingStaggerItem>
 
+          <OnboardingStaggerItem delay={330}>
           <Text style={styles.infoText}>{t('onboarding_upload_id_info')}</Text>
+          </OnboardingStaggerItem>
         </KeyboardAvoidingView>
 
         <View style={styles.footer}>
+          <OnboardingButtonMotion enabled={Boolean(bothUploaded && !isLoading)}>
           <TouchableOpacity
             style={[styles.button, bothUploaded && !isLoading && styles.buttonEnabled]}
             onPress={handleContinue}
@@ -182,8 +198,9 @@ export default function UploadIdScreen() {
               <Text style={styles.buttonText}>{t('onboarding_continue')}</Text>
             )}
           </TouchableOpacity>
+          </OnboardingButtonMotion>
         </View>
-      </View>
+      </OnboardingCardMotion>
     </View>
   );
 }
@@ -269,7 +286,6 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,
     justifyContent: 'center', alignItems: 'center', marginBottom: 20,
-    opacity: 0.5,
   },
   buttonEnabled: {
     opacity: 1,

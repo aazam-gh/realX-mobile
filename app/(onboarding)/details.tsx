@@ -23,6 +23,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import {
+    OnboardingButtonMotion,
+    OnboardingCardMotion,
+    OnboardingScreenMotion,
+    OnboardingStaggerItem,
+} from '../../components/onboarding/OnboardingMotion';
 import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 
@@ -102,7 +108,7 @@ export default function DetailsOnboarding() {
             <StatusBar style="light" />
 
             {/* Header / Background Section */}
-            <View style={styles.headerBackground}>
+            <OnboardingScreenMotion style={styles.headerBackground}>
                 <SafeAreaView edges={['top']} style={styles.headerContent}>
                     <View style={styles.topButtons}>
                         <TouchableOpacity
@@ -121,10 +127,10 @@ export default function DetailsOnboarding() {
                         </TouchableOpacity>
                     </View>
                 </SafeAreaView>
-            </View>
+            </OnboardingScreenMotion>
 
             {/* Main Content Card */}
-            <View style={[styles.cardContainer, { backgroundColor: '#FFFFFF' }]}>
+            <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: '#FFFFFF' }]}>
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ flexGrow: 1 }}
@@ -132,18 +138,22 @@ export default function DetailsOnboarding() {
                 >
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={styles.card}>
+                            <OnboardingStaggerItem delay={120}>
                             <View style={styles.iconCircle}>
                                 <Ionicons name="create-outline" size={32} color={Colors.brandGreen} />
                             </View>
+                            </OnboardingStaggerItem>
 
+                            <OnboardingStaggerItem delay={170}>
                             <View style={styles.textContainer}>
                                 <Text style={styles.titleSmall}>{t('onboarding_details_title_prefix')}</Text>
                                 <PhonkText style={styles.titleLarge}>
                                     <Text style={styles.greenText}>{t('onboarding_details_title_suffix')}</Text>
                                 </PhonkText>
                             </View>
+                            </OnboardingStaggerItem>
 
-                            <View style={styles.formContainer}>
+                            <OnboardingStaggerItem delay={220} style={styles.formContainer}>
                                 <View style={[styles.row, isRTL && styles.rowRTL]}>
                                     <View
                                         style={[
@@ -267,7 +277,7 @@ export default function DetailsOnboarding() {
                                         </TouchableOpacity>
                                     </View>
                                 </View>
-                            </View>
+                            </OnboardingStaggerItem>
                         </View>
                     </TouchableWithoutFeedback>
 
@@ -276,6 +286,7 @@ export default function DetailsOnboarding() {
                         keyboardVerticalOffset={20}
                         style={styles.footer}
                     >
+                        <OnboardingButtonMotion enabled={Boolean(isFormValid)}>
                         <TouchableOpacity
                             style={[styles.button, isFormValid && styles.buttonEnabled]}
                             onPress={handleContinue}
@@ -286,9 +297,10 @@ export default function DetailsOnboarding() {
                                 {isLoading ? t('onboarding_saving') : t('onboarding_continue')}
                             </Text>
                         </TouchableOpacity>
+                        </OnboardingButtonMotion>
                     </KeyboardAvoidingView>
                 </ScrollView>
-            </View>
+            </OnboardingCardMotion>
         </View>
     );
 }
@@ -400,7 +412,6 @@ const styles = StyleSheet.create({
     button: {
         backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,
         justifyContent: 'center', alignItems: 'center', marginBottom: 20,
-        opacity: 0.5,
     },
     buttonEnabled: {
         opacity: 1,

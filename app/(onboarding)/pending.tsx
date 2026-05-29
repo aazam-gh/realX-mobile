@@ -15,6 +15,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import {
+  OnboardingButtonMotion,
+  OnboardingCardMotion,
+  OnboardingScreenMotion,
+  OnboardingStateMotion,
+} from '../../components/onboarding/OnboardingMotion';
 import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 import { clearPendingVerification } from '../../utils/verificationPending';
@@ -103,18 +109,20 @@ export default function PendingVerificationScreen() {
         </View>
       )}
 
-      <TouchableOpacity
-        style={styles.checkButton}
-        onPress={handleCheckNow}
-        disabled={checking}
-        activeOpacity={0.7}
-      >
-        {checking ? (
-          <ActivityIndicator color={Colors.brandGreen} size="small" />
-        ) : (
-          <Text style={styles.checkButtonText}>{t('onboarding_pending_check_status')}</Text>
-        )}
-      </TouchableOpacity>
+      <OnboardingButtonMotion enabled={!checking} disabledOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.checkButton}
+          onPress={handleCheckNow}
+          disabled={checking}
+          activeOpacity={0.7}
+        >
+          {checking ? (
+            <ActivityIndicator color={Colors.brandGreen} size="small" />
+          ) : (
+            <Text style={styles.checkButtonText}>{t('onboarding_pending_check_status')}</Text>
+          )}
+        </TouchableOpacity>
+      </OnboardingButtonMotion>
 
       {lastChecked && (
         <Text style={styles.lastCheckedText}>
@@ -152,9 +160,11 @@ export default function PendingVerificationScreen() {
           ? t('onboarding_pending_rejection_reason', { reason: rejectionReason })
           : t('onboarding_pending_rejected_default')}
       </Text>
-      <TouchableOpacity style={styles.tryAgainButton} onPress={handleTryAgain} activeOpacity={0.8}>
-        <Text style={styles.tryAgainButtonText}>{t('onboarding_pending_try_again')}</Text>
-      </TouchableOpacity>
+      <OnboardingButtonMotion enabled={true}>
+        <TouchableOpacity style={styles.tryAgainButton} onPress={handleTryAgain} activeOpacity={0.8}>
+          <Text style={styles.tryAgainButtonText}>{t('onboarding_pending_try_again')}</Text>
+        </TouchableOpacity>
+      </OnboardingButtonMotion>
     </>
   );
 
@@ -162,21 +172,33 @@ export default function PendingVerificationScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      <View style={styles.headerBackground}>
+      <OnboardingScreenMotion style={styles.headerBackground}>
         <SafeAreaView edges={['top']} style={styles.headerContent}>
           {/* No navigation buttons — user cannot leave this screen */}
         </SafeAreaView>
-      </View>
+      </OnboardingScreenMotion>
 
-      <View style={styles.cardContainer}>
+      <OnboardingCardMotion style={styles.cardContainer}>
         <View style={styles.card}>
           <View style={styles.centerContent}>
-            {status === 'pending' && renderPending()}
-            {status === 'approved' && renderApproved()}
-            {status === 'rejected' && renderRejected()}
+            {status === 'pending' && (
+              <OnboardingStateMotion key="pending" style={styles.statusContent}>
+                {renderPending()}
+              </OnboardingStateMotion>
+            )}
+            {status === 'approved' && (
+              <OnboardingStateMotion key="approved" style={styles.statusContent}>
+                {renderApproved()}
+              </OnboardingStateMotion>
+            )}
+            {status === 'rejected' && (
+              <OnboardingStateMotion key="rejected" style={styles.statusContent}>
+                {renderRejected()}
+              </OnboardingStateMotion>
+            )}
           </View>
         </View>
-      </View>
+      </OnboardingCardMotion>
     </View>
   );
 }
@@ -200,6 +222,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+  },
+  statusContent: {
+    alignItems: 'center',
+    width: '100%',
   },
   iconCircle: {
     width: 100,

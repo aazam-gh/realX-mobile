@@ -1,4 +1,4 @@
-import { collection, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore';
+import { collection, doc, getDoc, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -17,6 +17,35 @@ const OFFER_CARD_GAP = 12;
 const OFFER_SIDE_PADDING = 30;
 const OFFER_CARD_WIDTH_RATIO = 0.60;
 const OFFER_AUTO_SCROLL_MS = 4000;
+
+type TrendingOfferBannerItem = {
+    trendingOfferBannerId?: string;
+    vendorId?: string;
+    images?: {
+        mobile?: string;
+    };
+    altText?: string;
+    isActive?: boolean;
+};
+
+const mapVendorDocToCard = (vendorId: string, vendorData: any, customBannerImage?: string) => ({
+    id: vendorId,
+    vendorId,
+    nameEn: vendorData.nameEn || vendorData.name,
+    nameAr: vendorData.nameAr || vendorData.name,
+    vendorName: vendorData.name,
+    vendorNameAr: vendorData.nameAr,
+    shortDescription: vendorData.shortDescription,
+    shortDescriptionAr: vendorData.shortDescriptionAr || vendorData.shortDescriptionAR,
+    brandDescription: vendorData.brandDescription,
+    descriptionEn: vendorData.descriptionEn,
+    descriptionAr: vendorData.descriptionAr,
+    vendorProfilePicture: vendorData.profilePicture,
+    coverImage: vendorData.coverImage,
+    bannerImage: customBannerImage || vendorData.bannerImage,
+    xcard: vendorData.xcard || false,
+    isTrending: true,
+});
 
 export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     const { t } = useTranslation();
@@ -39,31 +68,44 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
         const fetchTrendingVendors = async () => {
             try {
                 const db = getFirestore();
-                const q = query(collection(db, 'vendors'), where('isTrending', '==', true));
-                const snapshot = await getDocs(q);
+                const fetchLegacyTrendingVendors = async () => {
+                    const q = query(collection(db, 'vendors'), where('isTrending', '==', true));
+                    const snapshot = await getDocs(q);
 
-                const fetchedResults = snapshot.docs.map((docSnap: any) => {
-                    const vendorData = docSnap.data();
+                    return snapshot.docs.map((docSnap: any) => mapVendorDocToCard(docSnap.id, docSnap.data()));
+                };
 
-                    return {
-                        id: docSnap.id,
-                        vendorId: docSnap.id,
-                        nameEn: vendorData.nameEn || vendorData.name,
-                        nameAr: vendorData.nameAr || vendorData.name,
-                        vendorName: vendorData.name,
-                        vendorNameAr: vendorData.nameAr,
-                        shortDescription: vendorData.shortDescription,
-                        shortDescriptionAr: vendorData.shortDescriptionAr || vendorData.shortDescriptionAR,
-                        brandDescription: vendorData.brandDescription,
-                        descriptionEn: vendorData.descriptionEn,
-                        descriptionAr: vendorData.descriptionAr,
-                        vendorProfilePicture: vendorData.profilePicture,
-                        coverImage: vendorData.coverImage,
-                        bannerImage: vendorData.bannerImage,
-                        xcard: vendorData.xcard || false,
-                        isTrending: true,
-                    };
-                });
+                const cmsSnap = await getDoc(doc(db, 'cms', 'trending-offer-banners'));
+                const cmsItems = cmsSnap.exists()
+                    ? ((cmsSnap.data()?.items || []) as TrendingOfferBannerItem[])
+                    : [];
+
+                const activeCmsItems = cmsItems.filter(item => (
+                    item.isActive !== false
+                    && !!item.vendorId?.trim()
+                    && !!item.images?.mobile?.trim()
+                ));
+
+                let fetchedResults: any[] = [];
+
+                if (activeCmsItems.length > 0) {
+                    const vendorResults = await Promise.all(activeCmsItems.map(async (item) => {
+                        const vendorId = item.vendorId?.trim();
+                        const customBannerImage = item.images?.mobile?.trim();
+                        if (!vendorId || !customBannerImage) return null;
+
+                        const vendorSnap = await getDoc(doc(db, 'vendors', vendorId));
+                        if (!vendorSnap.exists()) return null;
+
+                        return mapVendorDocToCard(vendorSnap.id, vendorSnap.data(), customBannerImage);
+                    }));
+
+                    fetchedResults = vendorResults.filter(Boolean);
+                }
+
+                if (fetchedResults.length === 0) {
+                    fetchedResults = await fetchLegacyTrendingVendors();
+                }
 
                 setVendors(fetchedResults);
             } catch (error) {

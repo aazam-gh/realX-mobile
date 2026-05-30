@@ -104,9 +104,9 @@ export function OnboardingIntroMascotMotion({ children, delay = 320, style }: Mo
   return (
     <Animated.View
       entering={FadeInLeft.duration(420).delay(delay).easing(Easing.out(Easing.cubic)).reduceMotion(reduceMotion)}
-      style={[style, animatedStyle]}
+      style={style}
     >
-      {children}
+      <Animated.View style={animatedStyle}>{children}</Animated.View>
     </Animated.View>
   );
 }

@@ -25,6 +25,7 @@ import { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
 
 const { width, height } = Dimensions.get('window');
+const TAJAWAL_BLACK = 'TajawalBlack';
 
 export default function OnboardingScreen() {
     const router = useRouter();
@@ -75,20 +76,20 @@ export default function OnboardingScreen() {
                         </OnboardingIntroLogoMotion>
 
                         {/* Headline */}
-                        <View style={[styles.headlineContainer, isRTL && styles.headlineRTL]}>
+                        <View style={styles.headlineContainer}>
                             <OnboardingIntroHeadlineMotion delay={180}>
                                 <StaggeredHeadingText
                                     text={t('onboarding_headline_broke')}
-                                    textStyle={styles.headlineBroke}
-                                    fontHeight={34}
+                                    textStyle={[styles.headlineBroke, isRTL && styles.arHeadline]}
+                                    fontHeight={isRTL ? 56 : 34}
                                     delay={980}
                                 />
                             </OnboardingIntroHeadlineMotion>
                             <OnboardingIntroHeadlineMotion delay={260}>
                                 <StaggeredHeadingText
                                     text={t('onboarding_headline_not_anymore')}
-                                    textStyle={styles.headlineNotAnymore}
-                                    fontHeight={34}
+                                    textStyle={[styles.headlineNotAnymore, isRTL && styles.arHeadline]}
+                                    fontHeight={isRTL ? 56 : 34}
                                     delay={1120}
                                 />
                             </OnboardingIntroHeadlineMotion>
@@ -96,17 +97,19 @@ export default function OnboardingScreen() {
 
                         {/* Character Graphic */}
                         <OnboardingIntroMascotMotion style={[styles.graphicContainer, isRTL && styles.graphicContainerRTL]}>
-                            <Image
-                                source={require('../../assets/images/onboarding.png')}
-                                style={styles.characterImage}
-                                contentFit="contain"
-                                contentPosition="left"
-                            />
+                            <View style={isRTL ? styles.mascotFlip : undefined}>
+                                <Image
+                                    source={require('../../assets/images/onboarding.png')}
+                                    style={[styles.characterImage, isRTL && styles.characterImageRTL]}
+                                    contentFit="contain"
+                                    contentPosition="left"
+                                />
+                            </View>
                         </OnboardingIntroMascotMotion>
 
                         {/* Footer */}
                         <OnboardingIntroFooterMotion style={styles.footer}>
-                            <Text style={[styles.subtext, isRTL && styles.subtextRTL]}>
+                            <Text style={[styles.subtext, isRTL && styles.arSubtext]}>
                                 {t('onboarding_student_subtext')}
                             </Text>
 
@@ -125,11 +128,13 @@ export default function OnboardingScreen() {
                                     glowStyle={[styles.buttonGlow, { backgroundColor: theme.logoTile, borderColor: theme.logoTile }]}
                                 >
                                     <TouchableOpacity
-                                        style={[styles.button, { backgroundColor: theme.logoTile }, isRTL ? styles.buttonRTL : styles.buttonLTR]}
+                                        style={[styles.button, { backgroundColor: theme.logoTile }]}
                                         onPress={handleGetStarted}
                                         activeOpacity={0.9}
                                     >
-                                        <PhonkText style={[styles.buttonText, { color: theme.brand }]}>{t('onboarding_get_started')}</PhonkText>
+                                        <PhonkText style={[styles.buttonText, { color: theme.brand }, isRTL && styles.arButtonText]}>
+                                            {t('onboarding_get_started')}
+                                        </PhonkText>
                                         <View style={[styles.arrowCircle, { backgroundColor: theme.brand }]}>
                                             <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={24} color="white" />
                                         </View>
@@ -155,7 +160,7 @@ export default function OnboardingScreen() {
                         <View style={styles.cardsWrapper}>
                             <OnboardingStaggerItem delay={80}>
                             <TouchableOpacity
-                                style={[styles.roleCard, { backgroundColor: theme.logoTile }, isRTL && styles.rowReverse]}
+                                style={[styles.roleCard, { backgroundColor: theme.logoTile }]}
                                 activeOpacity={0.9}
                                 onPress={() => handleSelectRole('student')}
                             >
@@ -178,7 +183,7 @@ export default function OnboardingScreen() {
 
                             <OnboardingStaggerItem delay={150}>
                             <TouchableOpacity
-                                style={[styles.roleCard, { backgroundColor: theme.logoTile }, isRTL && styles.rowReverse]}
+                                style={[styles.roleCard, { backgroundColor: theme.logoTile }]}
                                 activeOpacity={0.9}
                                 onPress={() => handleSelectRole('creator')}
                             >
@@ -248,7 +253,7 @@ const styles = StyleSheet.create({
     headlineContainer: {
         marginTop: 40,
         alignSelf: 'flex-start',
-        paddingLeft: 10,
+        paddingStart: 10,
     },
     headlineBroke: {
         fontSize: 32,
@@ -259,7 +264,7 @@ const styles = StyleSheet.create({
     headlineNotAnymore: {
         fontSize: 32,
         color: '#FFFFFF',
-        lineHeight: 44
+        lineHeight: 44,
     },
     graphicContainer: {
         flex: 1,
@@ -267,12 +272,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'flex-start',
         alignSelf: 'flex-start',
-        marginLeft: -24, // Negate content padding to hit edge
+        marginStart: -24,
         marginTop: 50,
     },
     characterImage: {
         width: width * 0.85,
         height: height * 0.45,
+    },
+    characterImageRTL: {
+        width: width * 0.92,
+    },
+    mascotFlip: {
+        transform: [{ scaleX: -1 }],
     },
     footer: {
         width: '100%',
@@ -295,6 +306,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        paddingStart: 30,
+        paddingEnd: 10,
         // Shadow for iOS
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -403,34 +416,35 @@ const styles = StyleSheet.create({
         lineHeight: 16,
         paddingRight: 10,
     },
-    headlineRTL: {
-        alignSelf: 'flex-end',
-        paddingRight: 10,
+    arHeadline: {
+        fontFamily: TAJAWAL_BLACK,
+        fontSize: 42,
+        lineHeight: 56,
+        fontStyle: 'normal',
+        textAlign: 'right',
+        writingDirection: 'rtl',
+    },
+    graphicContainerRTL: {
+        marginTop: 24,
     },
     subtextRTL: {
         textAlign: 'right',
+        writingDirection: 'rtl',
+    },
+    arSubtext: {
+        fontSize: 21,
+        lineHeight: 30,
+        writingDirection: 'rtl',
     },
     roleTextContainerRTL: {
         marginLeft: 0,
         marginRight: 4,
     },
-    graphicContainerRTL: {
-        alignSelf: 'flex-end',
-        alignItems: 'flex-end',
-        marginRight: -24,
-        marginLeft: 0,
-    },
-    rowReverse: {
-        flexDirection: 'row-reverse',
-    },
-    buttonLTR: {
-        paddingLeft: 30,
-        paddingRight: 10,
-    },
-    buttonRTL: {
-        paddingLeft: 10,
-        paddingRight: 30,
-        flexDirection: 'row-reverse',
+    arButtonText: {
+        fontFamily: TAJAWAL_BLACK,
+        fontSize: 24,
+        textAlign: 'right',
+        writingDirection: 'rtl',
     },
     loginPill: {
         paddingVertical: 15,

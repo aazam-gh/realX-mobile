@@ -32,13 +32,7 @@ type StaggeredCharacterProps = {
 };
 
 function splitText(text: string) {
-  const segmenter = typeof Intl !== 'undefined' && 'Segmenter' in Intl
-    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
-    : null;
-
-  return segmenter
-    ? Array.from(segmenter.segment(text), (segment) => segment.segment)
-    : Array.from(text);
+  return text.trim().split(/\s+/g);
 }
 
 function StaggeredCharacter({

@@ -41,6 +41,7 @@ export default function RootLayout() {
     Poppins: require('../assets/fonts/poppins.ttf'),
     JaliArabicRegular: require('../assets/fonts/jali-arabic-regular.ttf'),
     JaliArabicBold: require('../assets/fonts/jali-arabic-bold.ttf'),
+    TajawalBlack: require('../assets/fonts/Tajawal-Black.ttf'),
   });
 
   const [i18nReady, setI18nReady] = useState(false);

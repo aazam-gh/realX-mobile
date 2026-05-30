@@ -98,7 +98,8 @@
             "./assets/fonts/Hanson-Bold.otf",
             "./assets/fonts/poppins.ttf",
             "./assets/fonts/jali-arabic-regular.ttf",
-            "./assets/fonts/jali-arabic-bold.ttf"
+            "./assets/fonts/jali-arabic-bold.ttf",
+            "./assets/fonts/Tajawal-Black.ttf"
           ]
         }
       ],

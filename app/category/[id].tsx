@@ -2,7 +2,7 @@ import { collection, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, 
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, ImageSourcePropType, Keyboard, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StatusBar, StyleSheet, Text, View, Image } from 'react-native';
+import { ActivityIndicator, ImageSourcePropType, Keyboard, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, View, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { logger } from '../../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -125,6 +125,9 @@ const HeaderContent = memo(({
     loadingVendors,
 }: HeaderContentProps) => {
     const { theme } = useAppTheme();
+    const { height, width } = useWindowDimensions();
+    const comingSoonMinHeight = Math.max(360, height - 220);
+    const comingSoonImageSize = Math.min(200, Math.max(150, width * 0.48));
 
     return (
         <>
@@ -145,7 +148,7 @@ const HeaderContent = memo(({
             )}
 
             {loading ? (
-                <View style={styles.comingSoonContainer}>
+                <View style={[styles.comingSoonContainer, { minHeight: comingSoonMinHeight }]}>
                     <ActivityIndicator size="large" color={theme.brand} />
                 </View>
             ) : !showComingSoon ? (
@@ -169,10 +172,10 @@ const HeaderContent = memo(({
                     />
                 </>
             ) : (
-                <View style={styles.comingSoonContainer}>
+                <View style={[styles.comingSoonContainer, { minHeight: comingSoonMinHeight }]}>
                     <Image
                         source={require('../../assets/images/comingsoon.png')}
-                        style={styles.comingSoonImage}
+                        style={[styles.comingSoonImage, { width: comingSoonImageSize, height: comingSoonImageSize }]}
                         resizeMode="contain"
                     />
                     <Text style={[styles.comingSoonTitle, { color: theme.text }]}>
@@ -559,11 +562,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 40,
-        minHeight: Dimensions.get('window').height - 200,
     },
     comingSoonImage: {
-        width: 200,
-        height: 200,
         marginBottom: 20,
         zIndex: 10,
     },

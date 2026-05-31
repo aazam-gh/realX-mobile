@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -25,10 +25,10 @@ type Props = {
 
 const MAX_VISIBLE_CATEGORIES = 7;
 const SEE_MORE_IMAGE = require('../../assets/images/see-more.svg');
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function CategoryGrid({ categories: propCategories, onCategoryPress }: Props) {
     const router = useRouter();
+    const { height, width } = useWindowDimensions();
     const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
     const [fetchedCategories, setFetchedCategories] = useState<CategoryItem[]>([]);
@@ -80,6 +80,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
         image: SEE_MORE_IMAGE,
     };
     const displayCategories = hasMoreCategories ? [...visibleCategories, comingSoonItem] : baseCategories;
+    const categoryImageSize = Math.min(80, Math.max(64, (width - 64) / 4));
 
     const closeDrawer = () => setIsDrawerVisible(false);
 
@@ -113,7 +114,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                     {item.image ? (
                         <Image
                             source={typeof item.image === 'string' ? { uri: item.image } : item.image}
-                            style={styles.categoryImage}
+                            style={[styles.categoryImage, { width: categoryImageSize, height: categoryImageSize }]}
                             contentFit="contain"
                         />
                     ) : (
@@ -156,7 +157,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                     onRequestClose={closeDrawer}
                 >
                     <Pressable style={[styles.overlay, { backgroundColor: theme.overlay }]} onPress={closeDrawer}>
-                        <Pressable style={[styles.drawerContainer, { backgroundColor: theme.surfaceElevated }]} onPress={(e) => e.stopPropagation()}>
+                        <Pressable style={[styles.drawerContainer, { backgroundColor: theme.surfaceElevated, maxHeight: height * 0.75 }]} onPress={(e) => e.stopPropagation()}>
                             <View style={styles.drawerHandleContainer}>
                                 <View style={[styles.drawerHandle, { backgroundColor: theme.borderStrong }]} />
                             </View>
@@ -229,7 +230,6 @@ const styles = StyleSheet.create({
     drawerContainer: {
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        maxHeight: SCREEN_HEIGHT * 0.75,
         paddingHorizontal: 24,
         paddingTop: 12,
         paddingBottom: 28,

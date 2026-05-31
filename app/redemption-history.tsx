@@ -175,7 +175,7 @@ export default function RedemptionHistoryScreen() {
                 <Text style={[styles.vendorName, { color: theme.text }]} numberOfLines={1}>
                   {isArabic ? (item.vendorNameAr || item.vendorName || 'VENDOR') : (item.vendorName || 'VENDOR')}
                 </Text>
-                <Text style={[styles.savingsText, { color: theme.mutedText, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                <Text style={[styles.savingsText, { color: theme.mutedText, writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={2}>
                   {t('estimated_savings', {
                     amount: t('amount_with_currency', { amount: fmt(savings), currency }),
                   })}
@@ -184,8 +184,8 @@ export default function RedemptionHistoryScreen() {
             </View>
 
             <View style={styles.paidInfo}>
-              <Text style={[styles.paidLabel, { color: theme.mutedText }]}>{t('total_paid')}</Text>
-              <PhonkText style={[styles.paidAmount, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+              <Text style={[styles.paidLabel, { color: theme.mutedText }]} numberOfLines={1}>{t('total_paid')}</Text>
+              <PhonkText style={[styles.paidAmount, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                 {t('amount_with_currency', { amount: fmt(paid), currency })}
               </PhonkText>
             </View>
@@ -195,7 +195,7 @@ export default function RedemptionHistoryScreen() {
 
           <View style={styles.cardFooter}>
             <View style={styles.offerInfo}>
-              <Text style={[styles.offerLabel, { color: theme.mutedText }]}>{t('offer_redeemed_label')}</Text>
+              <Text style={[styles.offerLabel, { color: theme.mutedText }]} numberOfLines={1}>{t('offer_redeemed_label')}</Text>
               <Text style={[styles.offerValue, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                 {discountText}
               </Text>
@@ -213,7 +213,7 @@ export default function RedemptionHistoryScreen() {
                   });
                 }}
               >
-                <Text style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{t('redeem_again')}</Text>
+                <Text style={[styles.redeemButtonText, { color: theme.onActionSolid }]} numberOfLines={1}>{t('redeem_again')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -298,12 +298,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: 12,
   },
   vendorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: 12,
+    minWidth: 0,
   },
   logoContainer: {
     width: 50,
@@ -320,6 +321,7 @@ const styles = StyleSheet.create({
   },
   vendorTextContainer: {
     flex: 1,
+    minWidth: 0,
   },
   vendorName: {
     fontSize: 18,
@@ -332,6 +334,8 @@ const styles = StyleSheet.create({
   },
   paidInfo: {
     alignItems: 'flex-end',
+    flexShrink: 0,
+    maxWidth: '42%',
   },
   paidLabel: {
     fontSize: 12,
@@ -349,10 +353,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
+    gap: 12,
   },
   offerInfo: {
     flex: 1,
-    marginRight: 12,
+    minWidth: 0,
   },
   offerLabel: {
     fontSize: 12,
@@ -364,6 +369,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.poppins.semiBold,
   },
   redeemButton: {
+    flexShrink: 0,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,

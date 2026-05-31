@@ -145,7 +145,7 @@ export default function SavedOffersScreen() {
             onPress={() => redeemOffer(item)}
           >
             <Ionicons name="flash" size={18} color={theme.onActionSolid} />
-            <Text style={[styles.redeemText, { color: theme.onActionSolid }]}>{t('redeem_caps')}</Text>
+            <Text style={[styles.redeemText, { color: theme.onActionSolid }]} numberOfLines={1}>{t('redeem_caps')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.removeButton, { borderColor: theme.border }]}
@@ -153,7 +153,7 @@ export default function SavedOffersScreen() {
             disabled={removingIds.has(item.id)}
           >
             <Ionicons name="bookmark" size={18} color={theme.brand} />
-            <Text style={[styles.removeText, { color: theme.text }]}>{t('remove')}</Text>
+            <Text style={[styles.removeText, { color: theme.text }]} numberOfLines={1}>{t('remove')}</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -286,6 +286,7 @@ const styles = StyleSheet.create({
   redeemButton: {
   },
   redeemText: {
+    flexShrink: 1,
     fontFamily: Typography.poppins.semiBold,
     fontSize: 13,
   },
@@ -300,6 +301,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   removeText: {
+    flexShrink: 1,
     fontFamily: Typography.poppins.semiBold,
     fontSize: 13,
   },

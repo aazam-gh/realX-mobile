@@ -320,6 +320,7 @@ const styles = StyleSheet.create({
     },
     amountOptions: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
         gap: 12,
     },
@@ -328,6 +329,7 @@ const styles = StyleSheet.create({
     },
     amountOption: {
         flex: 1,
+        minWidth: 90,
         height: 56,
         borderRadius: 30,
         alignItems: 'center',

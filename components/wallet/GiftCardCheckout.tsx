@@ -14,6 +14,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    useWindowDimensions,
     View,
 } from 'react-native';
 import { useAppTheme } from '../../context/AppThemeContext';
@@ -53,6 +54,7 @@ export default function GiftCardCheckout({
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const pinInputRef = useRef<TextInput>(null);
+    const { width } = useWindowDimensions();
     const { theme } = useAppTheme();
 
     const totalBillNum = parseFloat(totalBill) || 0;
@@ -61,6 +63,7 @@ export default function GiftCardCheckout({
     const canRedeem = pin.length === 4 && totalBillNum > 0;
     const { t } = useTranslation();
     const isRTL = I18nManager.isRTL;
+    const pinBoxSize = Math.min(65, Math.max(54, (width - 144) / 4));
 
     const handleRedeem = async () => {
         if (!canRedeem) return;
@@ -219,7 +222,14 @@ export default function GiftCardCheckout({
                         }}
                     >
                         {[0, 1, 2, 3].map((index) => (
-                            <View key={index} style={[styles.pinBox, { backgroundColor: theme.card, shadowColor: theme.shadow }]}>
+                            <View
+                                key={index}
+                                style={[
+                                    styles.pinBox,
+                                    { width: pinBoxSize, height: pinBoxSize },
+                                    { backgroundColor: theme.card, shadowColor: theme.shadow },
+                                ]}
+                            >
                                 <Text style={[styles.pinText, { color: theme.subtleText }, pin.length > index && { color: theme.text, marginTop: 0 }]}>
                                     {pin.length > index ? '●' : '*'}
                                 </Text>
@@ -259,20 +269,20 @@ export default function GiftCardCheckout({
                     {totalBillNum > 0 && (
                         <View style={[styles.breakdownContainer, { backgroundColor: theme.card }]}>
                             <View style={styles.breakdownRow}>
-                            <Text style={[styles.breakdownLabel, { color: theme.mutedText }]}>{t('total_bill')}</Text>
-                                <Text style={[styles.breakdownValue, { color: theme.mutedText }]}>
+                            <Text style={[styles.breakdownLabel, { color: theme.mutedText }]} numberOfLines={2}>{t('total_bill')}</Text>
+                                <Text style={[styles.breakdownValue, { color: theme.mutedText }]} numberOfLines={1}>
                                     {currency} {totalBillNum.toFixed(2)}
                                 </Text>
                             </View>
                             <View style={styles.breakdownRow}>
-                            <Text style={[styles.breakdownLabelGreen, { color: theme.brandText }]}>{t('gift_card_redeemed_label')}</Text>
-                                <Text style={[styles.breakdownValueGreen, { color: theme.brandText }]}>
+                            <Text style={[styles.breakdownLabelGreen, { color: theme.brandText }]} numberOfLines={2}>{t('gift_card_redeemed_label')}</Text>
+                                <Text style={[styles.breakdownValueGreen, { color: theme.brandText }]} numberOfLines={1}>
                                     − {currency} {Math.min(selectedAmount, totalBillNum).toFixed(2)}
                                 </Text>
                             </View>
                             <View style={[styles.breakdownDivider, { backgroundColor: theme.border }]} />
                             <View style={styles.breakdownRow}>
-                                <Text style={[styles.breakdownLabelBold, { color: theme.text }]}>{t('amount_to_pay_label')}</Text>
+                                <Text style={[styles.breakdownLabelBold, { color: theme.text }]} numberOfLines={2}>{t('amount_to_pay_label')}</Text>
                                 <PhonkText style={[styles.breakdownValueBold, { color: theme.text }]}>
                                     {currency} {remainingAmount.toFixed(2)}
                                 </PhonkText>
@@ -429,8 +439,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
     },
     pinBox: {
-        width: 65,
-        height: 65,
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
@@ -484,21 +492,26 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        gap: 12,
         paddingVertical: 8,
     },
     breakdownLabel: {
+        flex: 1,
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
     },
     breakdownValue: {
+        flexShrink: 0,
         fontSize: 14,
         fontFamily: Typography.poppins.semiBold,
     },
     breakdownLabelGreen: {
+        flex: 1,
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
     },
     breakdownValueGreen: {
+        flexShrink: 0,
         fontSize: 14,
         fontFamily: Typography.poppins.semiBold,
     },
@@ -507,10 +520,12 @@ const styles = StyleSheet.create({
         marginVertical: 4,
     },
     breakdownLabelBold: {
+        flex: 1,
         fontSize: 16,
         fontFamily: Typography.poppins.semiBold,
     },
     breakdownValueBold: {
+        flexShrink: 0,
         fontSize: 18,
     },
     redeemButton: {

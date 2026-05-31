@@ -938,7 +938,7 @@ export default function MapScreen() {
                   activeOpacity={0.7}
                 >
                   <Ionicons name="storefront-outline" size={16} color={theme.text} />
-                  <Text style={[styles.calloutBtnText, { color: theme.text }]}>{t('map_callout_view')}</Text>
+                  <Text style={[styles.calloutBtnText, { color: theme.text }]} numberOfLines={1}>{t('map_callout_view')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -959,7 +959,7 @@ export default function MapScreen() {
                   activeOpacity={0.7}
                 >
                   <Ionicons name="navigate" size={16} color="#FFF" />
-                  <Text style={[styles.calloutBtnText, { color: '#FFF' }]}>{t('map_callout_directions')}</Text>
+                  <Text style={[styles.calloutBtnText, { color: '#FFF' }]} numberOfLines={1}>{t('map_callout_directions')}</Text>
                 </TouchableOpacity>
               </View>
             </Pressable>
@@ -1354,6 +1354,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   calloutBtnText: {
+    flexShrink: 1,
     fontSize: 14,
     fontFamily: Typography.poppins.semiBold,
   },

@@ -1,12 +1,12 @@
 import { GlassView } from 'expo-glass-effect';
 import {
-    Dimensions,
     I18nManager,
     Modal,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
+    useWindowDimensions,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,8 +14,6 @@ import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
 import { useAppTheme } from '../../context/AppThemeContext';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type Props = {
     visible: boolean;
@@ -73,6 +71,7 @@ function StepItem({ step, isArabic }: StepItemProps) {
 
 export default function HowItWorksDrawer({ visible, onClose }: Props) {
     const insets = useSafeAreaInsets();
+    const { height } = useWindowDimensions();
     const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
     const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
@@ -98,6 +97,7 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                     style={[
                         styles.drawerContainer,
                         { backgroundColor: theme.surfaceElevated },
+                        { maxHeight: height * 0.85 },
                         { paddingBottom: insets.bottom + 20 },
                     ]}
                     onPress={(e) => e.stopPropagation()}
@@ -165,7 +165,6 @@ const styles = StyleSheet.create({
     drawerContainer: {
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        maxHeight: SCREEN_HEIGHT * 0.85,
     },
     handleContainer: {
         alignItems: 'center',

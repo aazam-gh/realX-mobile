@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as Updates from 'expo-updates';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { I18nManager, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PhonkText from '../../components/PhonkText';
 import {
@@ -24,16 +24,21 @@ import { Typography } from '../../constants/Typography';
 import { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
 
-const { width, height } = Dimensions.get('window');
 const TAJAWAL_BLACK = 'TajawalBlack';
 
 export default function OnboardingScreen() {
     const router = useRouter();
+    const { width, height } = useWindowDimensions();
     const [step, setStep] = useState(0);
 
     const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
     const isRTL = I18nManager.isRTL;
+    const compactWidth = width < 390;
+    const compactHeight = height < 820;
+    const mascotWidth = width * (isRTL ? (compactWidth ? 0.88 : 0.92) : (compactWidth ? 0.8 : 0.85));
+    const mascotHeight = height * (compactHeight ? 0.36 : 0.45);
+    const roleImageSize = compactWidth ? 84 : 100;
 
     const changeLanguage = async (lang: 'en' | 'ar') => {
         if (i18n.language === lang) return;
@@ -76,7 +81,7 @@ export default function OnboardingScreen() {
                         </OnboardingIntroLogoMotion>
 
                         {/* Headline */}
-                        <View style={styles.headlineContainer}>
+                        <View style={[styles.headlineContainer, compactHeight && styles.headlineContainerCompact]}>
                             <OnboardingIntroHeadlineMotion delay={180}>
                                 <StaggeredHeadingText
                                     text={t('onboarding_headline_broke')}
@@ -96,11 +101,17 @@ export default function OnboardingScreen() {
                         </View>
 
                         {/* Character Graphic */}
-                        <OnboardingIntroMascotMotion style={[styles.graphicContainer, isRTL && styles.graphicContainerRTL]}>
+                        <OnboardingIntroMascotMotion
+                            style={[
+                                styles.graphicContainer,
+                                { width, marginTop: compactHeight ? 24 : 50 },
+                                isRTL && styles.graphicContainerRTL,
+                            ]}
+                        >
                             <View style={isRTL ? styles.mascotFlip : undefined}>
                                 <Image
                                     source={require('../../assets/images/onboarding.png')}
-                                    style={[styles.characterImage, isRTL && styles.characterImageRTL]}
+                                    style={[styles.characterImage, { width: mascotWidth, height: mascotHeight }]}
                                     contentFit="contain"
                                     contentPosition="left"
                                 />
@@ -146,9 +157,9 @@ export default function OnboardingScreen() {
                     </OnboardingScreenMotion>
                 ) : (
                     <OnboardingScreenMotion key="roles" style={styles.motionFill}>
-                    <View style={styles.roleSelectionContent}>
+                    <View style={[styles.roleSelectionContent, compactHeight && styles.roleSelectionContentCompact]}>
                         {/* Logo */}
-                        <View style={styles.roleLogoContainer}>
+                        <View style={[styles.roleLogoContainer, compactHeight && styles.roleLogoContainerCompact]}>
                             <Image
                                 source={require('../../assets/images/logo.png')}
                                 style={styles.roleLogo}
@@ -164,7 +175,7 @@ export default function OnboardingScreen() {
                                 activeOpacity={0.9}
                                 onPress={() => handleSelectRole('student')}
                             >
-                                <View style={[styles.roleImageCircle]}>
+                                <View style={[styles.roleImageCircle, { width: roleImageSize, height: roleImageSize }]}>
                                     <Image
                                         source={require('../../assets/images/join-student.png')}
                                         style={styles.roleImage}
@@ -187,7 +198,7 @@ export default function OnboardingScreen() {
                                 activeOpacity={0.9}
                                 onPress={() => handleSelectRole('creator')}
                             >
-                                <View style={[styles.roleImageCircle]}>
+                                <View style={[styles.roleImageCircle, { width: roleImageSize, height: roleImageSize }]}>
                                     <Image
                                         source={require('../../assets/images/join-creator.png')}
                                         style={styles.roleImage}
@@ -255,6 +266,9 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
         paddingStart: 10,
     },
+    headlineContainerCompact: {
+        marginTop: 24,
+    },
     headlineBroke: {
         fontSize: 32,
         color: '#FFFFFF',
@@ -268,19 +282,13 @@ const styles = StyleSheet.create({
     },
     graphicContainer: {
         flex: 1,
-        width: width,
         justifyContent: 'center',
         alignItems: 'flex-start',
         alignSelf: 'flex-start',
         marginStart: -24,
-        marginTop: 50,
     },
     characterImage: {
-        width: width * 0.85,
-        height: height * 0.45,
-    },
-    characterImageRTL: {
-        width: width * 0.92,
+        maxWidth: '100%',
     },
     mascotFlip: {
         transform: [{ scaleX: -1 }],
@@ -372,8 +380,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center', // Center content vertically as in screenshot
         paddingHorizontal: 16,
     },
+    roleSelectionContentCompact: {
+        justifyContent: 'flex-start',
+        paddingTop: 24,
+    },
     roleLogoContainer: {
         marginBottom: 60,
+    },
+    roleLogoContainerCompact: {
+        marginBottom: 32,
     },
     roleLogo: {
         height: 80,

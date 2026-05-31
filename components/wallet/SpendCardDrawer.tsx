@@ -281,8 +281,8 @@ export default function SpendCardDrawer({
 
                         {/* Balance Card */}
                         <View style={[styles.balanceCard, { backgroundColor: theme.cardMuted }]}>
-                            <Text style={[styles.balanceLabel, { color: theme.mutedText }]}>{t('available_balance')}</Text>
-                            <PhonkText style={[styles.balanceValue, { color: theme.text }]}>
+                            <Text style={[styles.balanceLabel, { color: theme.mutedText }]} numberOfLines={2}>{t('available_balance')}</Text>
+                            <PhonkText style={[styles.balanceValue, { color: theme.text }]} numberOfLines={1}>
                                 {balance.toFixed(2)} {currency}
                             </PhonkText>
                         </View>
@@ -439,10 +439,12 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     balanceLabel: {
+        flex: 1,
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
     },
     balanceValue: {
+        flexShrink: 0,
         fontSize: 20,
     },
     searchContainer: {

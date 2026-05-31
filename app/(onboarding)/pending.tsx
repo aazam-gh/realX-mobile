@@ -107,7 +107,7 @@ export default function PendingVerificationScreen() {
       {email && (
         <View style={[styles.emailBadge, { backgroundColor: theme.cardMuted }]}>
           <Ionicons name="mail-outline" size={16} color={theme.iconMuted} />
-          <Text style={[styles.emailText, { color: theme.text }]}>{email}</Text>
+          <Text style={[styles.emailText, { color: theme.text }]} numberOfLines={1}>{email}</Text>
         </View>
       )}
 
@@ -255,8 +255,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 24,
+    maxWidth: '100%',
   },
   emailText: {
+    flexShrink: 1,
     fontSize: 15,
     fontFamily: Typography.poppins.medium,
   },

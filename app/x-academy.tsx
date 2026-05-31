@@ -7,13 +7,13 @@ import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
 import {
   ActivityIndicator,
-  Dimensions,
   I18nManager,
   Linking,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,8 +21,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PhonkText from '../components/PhonkText';
 import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
-
-const { width } = Dimensions.get('window');
 
 type University = {
   nameEn?: string;
@@ -35,6 +33,7 @@ type University = {
 
 export default function XAcademyScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { t, i18n } = useTranslation();
   const { theme } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -67,6 +66,7 @@ export default function XAcademyScreen() {
   }, []);
 
   const bannerUnis = universities.filter(u => u.bannerStatus === true);
+  const bannerWidth = Math.min(width - 40, Math.round(width * 0.85));
 
   return (
     <SafeAreaView
@@ -105,13 +105,13 @@ export default function XAcademyScreen() {
                   styles.bannerScrollContent,
                   isRTL && styles.rowReverse,
                 ]}
-                snapToInterval={width * 0.85 + 16}
+                snapToInterval={bannerWidth + 16}
                 decelerationRate="fast"
               >
                 {bannerUnis.map(uni => (
                   <TouchableOpacity
                     key={`banner-${uni.id}`}
-                    style={styles.carouselBanner}
+                    style={[styles.carouselBanner, { width: bannerWidth }]}
                     onPress={() => uni.link && Linking.openURL(uni.link)}
                     activeOpacity={0.9}
                   >
@@ -246,7 +246,6 @@ const styles = StyleSheet.create({
   },
 
   carouselBanner: {
-    width: width * 0.85,
     height: 180,
     borderRadius: 24,
     overflow: 'hidden',

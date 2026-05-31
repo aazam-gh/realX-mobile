@@ -1,4 +1,4 @@
-import { View, StyleSheet, Dimensions } from "react-native";
+import { View, StyleSheet, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
@@ -8,11 +8,11 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-const { width } = Dimensions.get("window");
-
 export default function CustomSplash({ onFinish }: { onFinish: () => void }) {
+  const { width } = useWindowDimensions();
   const scale = useSharedValue(0.8);
   const opacity = useSharedValue(0);
+  const imageSize = Math.min(width * 0.9, 420);
 
   useEffect(() => {
     async function start() {
@@ -41,7 +41,7 @@ export default function CustomSplash({ onFinish }: { onFinish: () => void }) {
       <Animated.View style={animatedStyle}>
         <Image
           source={require("../assets/images/splash.png")}
-          style={styles.image}
+          style={[styles.image, { width: imageSize, height: imageSize }]}
           contentFit="contain"
         />
       </Animated.View>
@@ -57,7 +57,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   image: {
-    width: width * 0.9, // 🔥 CONTROL SIZE HERE
-    height: width * 0.9,
+    maxWidth: "90%",
   },
 });

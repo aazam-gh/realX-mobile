@@ -14,6 +14,7 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -40,6 +41,7 @@ export default function VerifyOtpScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string; purpose?: string; role?: string }>();
   const { email, purpose, role } = params;
+  const { width } = useWindowDimensions();
   const { t } = useTranslation();
   const { theme } = useAppTheme();
 
@@ -56,6 +58,8 @@ export default function VerifyOtpScreen() {
   const [resendLoading, setResendLoading] = useState(false);
 
   const inputRefs = useRef<(TextInput | null)[]>([]);
+  const otpBoxWidth = Math.min(50, Math.max(42, (width - 96) / OTP_LENGTH));
+  const otpBoxHeight = Math.max(54, otpBoxWidth + 8);
 
   // Countdown timer
   useEffect(() => {
@@ -264,7 +268,7 @@ export default function VerifyOtpScreen() {
             <Text style={[styles.subtitle, { color: theme.subtleText }]}>
               {t('onboarding_otp_subtitle', { email: '' })}
             </Text>
-            {email ? <Text style={[styles.emailText, { color: theme.text }]}>{email}</Text> : null}
+            {email ? <Text style={[styles.emailText, { color: theme.text }]} numberOfLines={1}>{email}</Text> : null}
             </OnboardingStaggerItem>
 
             <OnboardingShakeMotion trigger={errorAnimationKey}>
@@ -272,6 +276,10 @@ export default function VerifyOtpScreen() {
               {Array.from({ length: OTP_LENGTH }).map((_, index) => (
                 <OnboardingStateMotion key={index} delay={260 + index * 25} style={[
                   styles.otpBox,
+                  {
+                    width: otpBoxWidth,
+                    height: otpBoxHeight,
+                  },
                   {
                     backgroundColor: otp[index] ? theme.brandSoft : theme.cardMuted,
                     borderColor: otp[index]
@@ -417,8 +425,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
   },
   otpBox: {
-    width: 50,
-    height: 58,
     borderRadius: 14,
     borderWidth: 2,
     borderColor: 'transparent',

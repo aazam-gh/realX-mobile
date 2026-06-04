@@ -1,4 +1,5 @@
-import { collection, doc, getDoc, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore';
+import { collection, getDocs, getFirestore, limit, query, where } from '@react-native-firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -8,6 +9,8 @@ import RestaurantCard from '../category/RestaurantCard';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../../utils/logger';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { fetchCmsDocument, fetchVendor } from '../../utils/firebaseQueries';
+import { queryClient, queryKeys } from '../../utils/queryClient';
 
 type TrendingOffersProps = {
     onVendorPress?: (vendor: any) => void;
@@ -17,6 +20,7 @@ const OFFER_CARD_GAP = 12;
 const OFFER_SIDE_PADDING = 30;
 const OFFER_CARD_WIDTH_RATIO = 0.60;
 const OFFER_AUTO_SCROLL_MS = 4000;
+const TRENDING_FALLBACK_LIMIT = 10;
 
 type TrendingOfferBannerItem = {
     trendingOfferBannerId?: string;
@@ -51,8 +55,65 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
     const isRTL = I18nManager.isRTL;
-    const [vendors, setVendors] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const {
+        data: vendors = [],
+        error,
+        isLoading,
+    } = useQuery({
+        queryKey: queryKeys.trendingOffers(),
+        queryFn: async () => {
+            const db = getFirestore();
+            const fetchLegacyTrendingVendors = async () => {
+                const q = query(
+                    collection(db, 'vendors'),
+                    where('isTrending', '==', true),
+                    limit(TRENDING_FALLBACK_LIMIT)
+                );
+                const snapshot = await getDocs(q);
+
+                return snapshot.docs.map((docSnap: any) => {
+                    const vendorData = docSnap.data();
+                    queryClient.setQueryData(queryKeys.vendor(docSnap.id), { id: docSnap.id, data: vendorData });
+                    return mapVendorDocToCard(docSnap.id, vendorData);
+                });
+            };
+
+            const cmsData = await fetchCmsDocument<{ items?: TrendingOfferBannerItem[] }>('trending-offer-banners');
+            const cmsItems = cmsData?.items || [];
+
+            const activeCmsItems = cmsItems.filter(item => (
+                item.isActive !== false
+                && !!item.vendorId?.trim()
+                && !!item.images?.mobile?.trim()
+            ));
+
+            let fetchedResults: any[] = [];
+
+            if (activeCmsItems.length > 0) {
+                const vendorResults = await Promise.all(activeCmsItems.map(async (item) => {
+                    const vendorId = item.vendorId?.trim();
+                    const customBannerImage = item.images?.mobile?.trim();
+                    if (!vendorId || !customBannerImage) return null;
+
+                    const vendorResult = await queryClient.fetchQuery({
+                        queryKey: queryKeys.vendor(vendorId),
+                        queryFn: () => fetchVendor(vendorId),
+                    });
+                    if (!vendorResult) return null;
+
+                    return mapVendorDocToCard(vendorResult.id, vendorResult.data, customBannerImage);
+                }));
+
+                fetchedResults = vendorResults.filter(Boolean);
+            }
+
+            if (fetchedResults.length === 0) {
+                fetchedResults = await fetchLegacyTrendingVendors();
+            }
+
+            return fetchedResults;
+        },
+    });
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollViewRef = useRef<ScrollView | null>(null);
     const isUserInteractingRef = useRef(false);
@@ -65,58 +126,8 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     const trendingLabelHighlight = t('trending_label_highlight');
 
     useEffect(() => {
-        const fetchTrendingVendors = async () => {
-            try {
-                const db = getFirestore();
-                const fetchLegacyTrendingVendors = async () => {
-                    const q = query(collection(db, 'vendors'), where('isTrending', '==', true));
-                    const snapshot = await getDocs(q);
-
-                    return snapshot.docs.map((docSnap: any) => mapVendorDocToCard(docSnap.id, docSnap.data()));
-                };
-
-                const cmsSnap = await getDoc(doc(db, 'cms', 'trending-offer-banners'));
-                const cmsItems = cmsSnap.exists()
-                    ? ((cmsSnap.data()?.items || []) as TrendingOfferBannerItem[])
-                    : [];
-
-                const activeCmsItems = cmsItems.filter(item => (
-                    item.isActive !== false
-                    && !!item.vendorId?.trim()
-                    && !!item.images?.mobile?.trim()
-                ));
-
-                let fetchedResults: any[] = [];
-
-                if (activeCmsItems.length > 0) {
-                    const vendorResults = await Promise.all(activeCmsItems.map(async (item) => {
-                        const vendorId = item.vendorId?.trim();
-                        const customBannerImage = item.images?.mobile?.trim();
-                        if (!vendorId || !customBannerImage) return null;
-
-                        const vendorSnap = await getDoc(doc(db, 'vendors', vendorId));
-                        if (!vendorSnap.exists()) return null;
-
-                        return mapVendorDocToCard(vendorSnap.id, vendorSnap.data(), customBannerImage);
-                    }));
-
-                    fetchedResults = vendorResults.filter(Boolean);
-                }
-
-                if (fetchedResults.length === 0) {
-                    fetchedResults = await fetchLegacyTrendingVendors();
-                }
-
-                setVendors(fetchedResults);
-            } catch (error) {
-                logger.error('Error fetching trending vendors:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchTrendingVendors();
-    }, []);
+        if (error) logger.error('Error fetching trending vendors:', error);
+    }, [error]);
 
     useEffect(() => {
         if (displayedVendors.length <= 1) {
@@ -176,7 +187,7 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
         }
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <View style={[styles.container, styles.loaderContainer]}>
                 <ActivityIndicator size="small" color={theme.brand} />

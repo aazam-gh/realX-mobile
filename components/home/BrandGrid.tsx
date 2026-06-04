@@ -1,7 +1,7 @@
-import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
     ActivityIndicator,
     I18nManager,
@@ -15,6 +15,8 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../../utils/logger';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { fetchCmsDocument } from '../../utils/firebaseQueries';
+import { queryKeys } from '../../utils/queryClient';
 
 type BrandItem = {
     id: string;
@@ -84,42 +86,33 @@ export default function BrandGrid() {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
     const isRTL = I18nManager.isRTL;
-    const [brands, setBrands] = useState<BrandItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const {
+        data: brands = [],
+        error,
+        isLoading,
+    } = useQuery({
+        queryKey: queryKeys.cmsDocument('brand'),
+        queryFn: async () => {
+            const data = await fetchCmsDocument<{ brands?: BrandItem[] }>('brand');
+            return (data?.brands || [])
+                .filter((b: BrandItem) => b.isActive)
+                .map((b: BrandItem) => ({
+                    id: b.id,
+                    name: b.name,
+                    logoUrl: b.logoUrl,
+                    vendorId: b.vendorId,
+                    isActive: b.isActive,
+                }));
+        },
+    });
     const router = useRouter();
     const displayedBrands = useMemo(() => (isRTL ? [...brands].reverse() : brands), [brands, isRTL]);
     const brandLabelPrefix = t('brand_header_prefix');
     const brandLabelHighlight = t('brand_header_highlight');
 
     useEffect(() => {
-        const fetchBrands = async () => {
-            try {
-                const db = getFirestore();
-                const brandsDocRef = doc(db, 'cms', 'brand');
-                const brandsSnap = await getDoc(brandsDocRef);
-
-                if (brandsSnap.exists()) {
-                    const data = brandsSnap.data();
-                    const activeBrands = (data?.brands || [])
-                        .filter((b: any) => b.isActive)
-                        .map((b: any) => ({
-                            id: b.id,
-                            name: b.name,
-                            logoUrl: b.logoUrl,
-                            vendorId: b.vendorId,
-                            isActive: b.isActive,
-                        })) as BrandItem[];
-                    setBrands(activeBrands);
-                }
-            } catch (error) {
-                logger.error('Error fetching brands:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchBrands();
-    }, []);
+        if (error) logger.error('Error fetching brands:', error);
+    }, [error]);
 
     const handlePress = (brand: BrandItem) => {
         const vendorId = brand.vendorId?.trim();
@@ -152,7 +145,7 @@ export default function BrandGrid() {
         };
     }, [displayedBrands]);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <View style={[ styles.loaderContainer]}>
                 <ActivityIndicator size="small" color={theme.brand} />

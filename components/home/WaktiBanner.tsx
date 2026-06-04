@@ -1,4 +1,6 @@
+import { BottomSheetModal, BottomSheetView, type BottomSheetMethods } from '@expo/ui/community/bottom-sheet';
 import { Image } from 'expo-image';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     I18nManager,
@@ -28,14 +30,21 @@ type WaktiBannerProps = {
 export default function WaktiBanner({ style }: WaktiBannerProps) {
     const isRTL = I18nManager.isRTL;
     const { t } = useTranslation();
+    const modalRef = useRef<BottomSheetMethods>(null);
 
-    const handlePress = async () => {
+    const handleBannerPress = () => {
+        triggerSubtleHaptic();
+        modalRef.current?.present();
+    };
+
+    const handleStorePress = async () => {
         const storeUrl = Platform.OS === 'android' ? WAKTI_ANDROID_URL : WAKTI_IOS_URL;
 
         triggerSubtleHaptic();
 
         try {
             await Linking.openURL(storeUrl);
+            modalRef.current?.dismiss();
         } catch (error) {
             logger.error('Error opening Wakti store URL:', error);
         }
@@ -45,12 +54,12 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
         <View style={[styles.section, style]}>
             <TouchableOpacity
                 activeOpacity={0.9}
-                onPress={handlePress}
+                onPress={handleBannerPress}
                 style={styles.card}
-                accessibilityRole="link"
-                accessibilityLabel="Download Wakti AI"
+                accessibilityRole="button"
+                accessibilityLabel={t('wakti_banner_accessibility_label')}
+                accessibilityHint={t('wakti_banner_accessibility_hint')}
             >
-
                 <View style={[styles.content, isRTL && styles.contentRTL]}>
                     <View style={styles.copy}>
                         <Text style={[styles.body, isRTL && styles.textRTL]}>
@@ -71,6 +80,58 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                     </View>
                 </View>
             </TouchableOpacity>
+
+            <BottomSheetModal
+                ref={modalRef}
+                enablePanDownToClose
+                backgroundStyle={styles.sheetBackground}
+            >
+                <BottomSheetView style={styles.sheet}>
+                    <View style={[styles.sheetHero, isRTL && styles.sheetHeroRTL]}>
+                        <View style={styles.sheetArtPanel}>
+                            <Image
+                                source={waktiBannerImage}
+                                style={styles.sheetArtImage}
+                                contentFit="contain"
+                                accessibilityLabel="Wakti AI"
+                            />
+                        </View>
+
+                        <View style={styles.sheetCopy}>
+                            <Text style={[styles.sheetTitle, isRTL && styles.sheetTextRTL]}>
+                                {t('wakti_sheet_title')}
+                            </Text>
+                            <Text style={[styles.sheetBody, isRTL && styles.sheetTextRTL]}>
+                                {t('wakti_sheet_body')}
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.detailList}>
+                        <Text style={[styles.detailItem, isRTL && styles.sheetTextRTL]}>
+                            {t('wakti_sheet_detail_planning')}
+                        </Text>
+                        <Text style={[styles.detailItem, isRTL && styles.sheetTextRTL]}>
+                            {t('wakti_sheet_detail_learning')}
+                        </Text>
+                        <Text style={[styles.detailItem, isRTL && styles.sheetTextRTL]}>
+                            {t('wakti_sheet_detail_tasks')}
+                        </Text>
+                    </View>
+
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={handleStorePress}
+                        style={styles.sheetCta}
+                        accessibilityRole="link"
+                        accessibilityLabel={t('wakti_sheet_cta')}
+                    >
+                        <Text style={styles.sheetCtaText}>
+                            {t('wakti_sheet_cta')}
+                        </Text>
+                    </TouchableOpacity>
+                </BottomSheetView>
+            </BottomSheetModal>
         </View>
     );
 }
@@ -87,42 +148,6 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
         boxShadow: '0 16px 34px rgba(4, 15, 18, 0.18)',
-    },
-  hero: {
-        overflow: 'hidden',
-        backgroundColor: '#09161D',
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
-    },
-    glowTop: {
-        position: 'absolute',
-        top: -72,
-        right: -40,
-        width: 180,
-        height: 180,
-        borderRadius: 90,
-        backgroundColor: 'rgba(28, 184, 82, 0.16)',
-    },
-    glowBottom: {
-        position: 'absolute',
-        bottom: -88,
-        left: -52,
-        width: 204,
-        height: 204,
-        borderRadius: 102,
-        backgroundColor: 'rgba(44, 124, 196, 0.18)',
-    },
-    heroContent: {
-        position: 'absolute',
-        top: 16,
-        left: 16,
-        right: 16,
-        gap: 8,
-        zIndex: 2,
-    },
-    heroContentRTL: {
-        left: 16,
-        right: 16,
     },
     content: {
         paddingVertical: 10,
@@ -149,30 +174,14 @@ const styles = StyleSheet.create({
     },
     artImage: {
         width: 128,
-      height: 128,
-      resizeMode: "cover"
+        height: 128,
+        resizeMode: 'cover',
     },
     copy: {
         flex: 1,
         gap: 8,
         alignItems: 'flex-start',
         justifyContent: 'center',
-    },
-    kicker: {
-        color: Colors.brandGreen,
-        fontSize: 11,
-        lineHeight: 14,
-        fontWeight: '900',
-        letterSpacing: 1.1,
-        textTransform: 'uppercase',
-    },
-    headline: {
-        color: '#FFFFFF',
-        fontSize: 24,
-        lineHeight: 28,
-        fontWeight: '900',
-        letterSpacing: -0.7,
-        maxWidth: 230,
     },
     body: {
         color: 'rgba(255, 255, 255, 0.74)',
@@ -196,6 +205,96 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0, 0, 0, 0.36)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 8,
+    },
+    sheetBackground: {
+        backgroundColor: '#071217',
+    },
+    sheet: {
+        paddingHorizontal: 22,
+        paddingTop: 8,
+        paddingBottom: 30,
+        gap: 18,
+        backgroundColor: '#071217',
+    },
+    sheetHero: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    sheetHeroRTL: {
+        flexDirection: 'row-reverse',
+    },
+    sheetArtPanel: {
+        width: 112,
+        height: 112,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        borderWidth: 1,
+        borderColor: 'rgba(125, 177, 224, 0.16)',
+        borderRadius: 24,
+    },
+    sheetArtImage: {
+        width: 146,
+        height: 146,
+        resizeMode: 'cover',
+    },
+    sheetCopy: {
+        flex: 1,
+        gap: 8,
+        minWidth: 0,
+    },
+    sheetTitle: {
+        color: '#FFFFFF',
+        fontSize: 21,
+        lineHeight: 27,
+        fontFamily: Typography.hanson.bold,
+    },
+    sheetBody: {
+        color: 'rgba(255, 255, 255, 0.74)',
+        fontSize: 14,
+        lineHeight: 21,
+        fontFamily: Typography.poppins.medium,
+    },
+    detailList: {
+        gap: 10,
+    },
+    detailItem: {
+        overflow: 'hidden',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(125, 177, 224, 0.14)',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        color: 'rgba(255, 255, 255, 0.86)',
+        fontSize: 13,
+        lineHeight: 18,
+        fontFamily: Typography.poppins.medium,
+    },
+    sheetCta: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 52,
+        borderRadius: 18,
+        backgroundColor: Colors.brandGreen,
+        paddingVertical: 14,
+        paddingHorizontal: 18,
+    },
+    sheetCtaText: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        lineHeight: 20,
+        fontFamily: Typography.hanson.bold,
+        textAlign: 'center',
+        textShadowColor: 'rgba(0, 0, 0, 0.28)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 8,
+    },
+    sheetTextRTL: {
+        textAlign: 'right',
+        writingDirection: 'rtl',
     },
     textRTL: {
         alignSelf: 'flex-end',

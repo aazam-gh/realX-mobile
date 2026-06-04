@@ -23,6 +23,13 @@ function getResend(): Resend {
 }
 
 const db = admin.firestore();
+const getStorageBucket = () => {
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'reelx-backend';
+  const bucketName = process.env.FIREBASE_STORAGE_BUCKET ||
+    (projectId === 'reelx-backend' ? 'reelx-backend' : `${projectId}.appspot.com`);
+
+  return admin.storage().bucket(bucketName);
+};
 const REVIEW_EMAIL = (process.env.APPLE_REVIEW_EMAIL || 'apple-review@realx.qa').toLowerCase().trim();
 const ALLOWED_STUDENT_EMAIL_DOMAINS = new Set([
   'gemsed.com',
@@ -91,7 +98,7 @@ const isAllowedStudentEmail = (email: string) => {
 
   if (!domain) return false;
 
-  return domain.endsWith('.edu.qa') || ALLOWED_STUDENT_EMAIL_DOMAINS.has(domain);
+  return domain.endsWith('.qa') || domain.endsWith('.edu.qa') || ALLOWED_STUDENT_EMAIL_DOMAINS.has(domain);
 };
 
 const getQatarDateKey = () => {
@@ -1542,6 +1549,7 @@ export const submitVerificationRequest = onCall(
       .collection('verification_requests')
       .where('email', '==', normalizedEmail)
       .where('submittedAt', '>=', cutoff)
+      .limit(VERIFICATION_MAX_SUBMISSIONS)
       .get();
 
     if (recentSubmissions.size >= VERIFICATION_MAX_SUBMISSIONS) {
@@ -1579,7 +1587,7 @@ export const submitVerificationRequest = onCall(
     const requestId = requestRef.id;
 
     // Upload images to Firebase Storage
-    const bucket = admin.storage().bucket('reelx-backend');
+    const bucket = getStorageBucket();
     const frontPath = `verification_requests/${requestId}/front.jpg`;
     const backPath = `verification_requests/${requestId}/back.jpg`;
 
@@ -1654,7 +1662,7 @@ export const listPendingVerificationRequests = onCall(
       .orderBy('submittedAt', 'asc')
       .get();
 
-    const bucket = admin.storage().bucket('reelx-backend');
+    const bucket = getStorageBucket();
     const requests = [];
 
     for (const doc of snapshot.docs) {

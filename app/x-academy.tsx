@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
 import {
@@ -21,6 +21,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PhonkText from '../components/PhonkText';
 import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
+import { fetchCmsDocument } from '../utils/firebaseQueries';
+import { queryKeys } from '../utils/queryClient';
 
 type University = {
   nameEn?: string;
@@ -38,32 +40,21 @@ export default function XAcademyScreen() {
   const { theme } = useAppTheme();
   const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
 
-  const [universities, setUniversities] = useState<(University & { id: string })[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: universities = [],
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: queryKeys.xAcademyUniversities(),
+    queryFn: async () => {
+      const data = await fetchCmsDocument<{ universities?: (University & { id: string })[] }>('university');
+      return data?.universities || [];
+    },
+  });
 
   useEffect(() => {
-    const fetchUniversities = async () => {
-      try {
-        const db = getFirestore();
-        const uniDocRef = doc(db, 'cms', 'university');
-        const docSnap = await getDoc(uniDocRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data) {
-            const unis = (data.universities || []) as (University & { id: string })[];
-            setUniversities(unis);
-          }
-        }
-      } catch (error) {
-        logger.error('XAcademyScreen: Error fetching universities:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUniversities();
-  }, []);
+    if (error) logger.error('XAcademyScreen: Error fetching universities:', error);
+  }, [error]);
 
   const bannerUnis = universities.filter(u => u.bannerStatus === true);
   const bannerWidth = Math.min(width - 40, Math.round(width * 0.85));
@@ -92,7 +83,7 @@ export default function XAcademyScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {loading ? (
+        {isLoading ? (
           <ActivityIndicator size="large" color={theme.brand} style={styles.loader} />
         ) : (
           <>

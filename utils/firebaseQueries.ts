@@ -1,0 +1,295 @@
+import {
+    collection,
+    doc,
+    FirebaseFirestoreTypes,
+    getDoc,
+    getDocs,
+    getFirestore,
+    limit,
+    orderBy,
+    query,
+    startAfter,
+    where,
+} from '@react-native-firebase/firestore';
+import { getCachedVendorDisplayFields } from './vendorDisplayCache';
+
+export type FirestorePage<T> = {
+    items: T[];
+    lastDoc: FirebaseFirestoreTypes.QueryDocumentSnapshot | null;
+    lastDocId: string | null;
+    reachedEnd: boolean;
+};
+
+export type SavedOfferItem = {
+    id: string;
+    type?: string;
+    vendorId: string;
+    offerIndex: number;
+    vendorName?: string;
+    vendorNameAr?: string;
+    vendorLogo?: string;
+    vendorCoverImage?: string;
+    titleEn?: string;
+    titleAr?: string;
+    descriptionEn?: string;
+    descriptionAr?: string;
+    discountType?: string;
+    discountValue?: number | null;
+    xcard?: boolean;
+};
+
+export type RedemptionHistoryTransaction = {
+    id: string;
+    type: string;
+    vendorId: string;
+    vendorName: string;
+    vendorNameAr?: string;
+    totalAmount: number;
+    discountAmount?: number;
+    finalAmount?: number;
+    offer?: {
+        discountType?: string;
+        discountValue?: number;
+        titleEn?: string;
+        titleAr?: string;
+    } | null;
+    createdAt?: any;
+    offerAmount?: number;
+    paidAmount?: number;
+    amount?: number;
+    timestamp?: any;
+};
+
+export type RedemptionHistoryResult = {
+    transactions: RedemptionHistoryTransaction[];
+    vendorLogos: Record<string, string>;
+};
+
+export type WalletBrandQueryItem = {
+    id: string;
+    name: string;
+    nameAr?: string;
+    logo: string | null;
+    backgroundColor: string;
+    loyalty: any[];
+};
+
+export async function fetchCmsDocument<T = Record<string, any>>(documentId: string): Promise<T | null> {
+    const db = getFirestore();
+    const docSnap = await getDoc(doc(db, 'cms', documentId));
+    return docSnap.exists() ? (docSnap.data() as T) : null;
+}
+
+export async function fetchCategories(isArabic: boolean) {
+    const db = getFirestore();
+    const categoriesQuery = query(
+        collection(db, 'categories'),
+        orderBy('order', 'asc')
+    );
+
+    const snapshot = await getDocs(categoriesQuery);
+    return snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data = docSnap.data();
+        return {
+            id: docSnap.id,
+            name: isArabic ? (data.nameArabic || data.nameAr || data.nameEnglish) : data.nameEnglish,
+            englishName: data.nameEnglish,
+            image: data.imageUrl,
+        };
+    });
+}
+
+export async function fetchCategory(categoryId: string) {
+    const db = getFirestore();
+    const docSnap = await getDoc(doc(db, 'categories', categoryId));
+    return docSnap.exists() ? docSnap.data() : null;
+}
+
+export async function fetchVendor(vendorId: string) {
+    const db = getFirestore();
+    const docSnap = await getDoc(doc(db, 'vendors', vendorId));
+    return docSnap.exists() ? { id: docSnap.id, data: docSnap.data() } : null;
+}
+
+export async function fetchVendorRoute(vendorIdOrName: string, isArabic: boolean) {
+    const db = getFirestore();
+    const directVendor = await fetchVendor(vendorIdOrName);
+    if (directVendor) {
+        return {
+            vendorId: directVendor.id,
+            vendorData: directVendor.data,
+        };
+    }
+
+    const vendorsRef = collection(db, 'vendors');
+    const nameSnap = await getDocs(query(vendorsRef, where('name', '==', vendorIdOrName), limit(1)));
+    if (!nameSnap.empty) {
+        const foundDoc = nameSnap.docs[0];
+        return {
+            vendorId: foundDoc.id,
+            vendorData: foundDoc.data(),
+        };
+    }
+
+    if (isArabic) {
+        const nameArSnap = await getDocs(query(vendorsRef, where('nameAr', '==', vendorIdOrName), limit(1)));
+        if (!nameArSnap.empty) {
+            const foundDoc = nameArSnap.docs[0];
+            return {
+                vendorId: foundDoc.id,
+                vendorData: foundDoc.data(),
+            };
+        }
+    }
+
+    return null;
+}
+
+export async function fetchSavedOffers(userId: string, pageSize = 50): Promise<SavedOfferItem[]> {
+    const db = getFirestore();
+    const savedRef = collection(db, 'students', userId, 'savedItems');
+    const savedQuery = query(savedRef, orderBy('createdAt', 'desc'), limit(pageSize));
+    const snapshot = await getDocs(savedQuery);
+
+    return snapshot.docs
+        .map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+        }))
+        .filter((item: SavedOfferItem) => !item.type || item.type === 'offer') as SavedOfferItem[];
+}
+
+export async function fetchSavedOfferIds(userId: string, vendorId: string): Promise<Set<string>> {
+    const db = getFirestore();
+    const savedRef = collection(db, 'students', userId, 'savedItems');
+    const savedQuery = query(savedRef, where('vendorId', '==', vendorId));
+    const snapshot = await getDocs(savedQuery);
+    return new Set<string>(snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => docSnap.id));
+}
+
+export async function fetchSavedMapPlaceIds(userId: string, pageSize = 100): Promise<Set<string>> {
+    const db = getFirestore();
+    const savedRef = collection(db, 'students', userId, 'savedItems');
+    const savedQuery = query(savedRef, where('type', '==', 'mapPlace'), limit(pageSize));
+    const snapshot = await getDocs(savedQuery);
+    return new Set<string>(snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => docSnap.id));
+}
+
+export async function fetchRedemptionHistory(userId: string, pageSize = 10): Promise<RedemptionHistoryResult> {
+    const db = getFirestore();
+    const historyQuery = query(
+        collection(db, 'transactions'),
+        where('userId', '==', userId),
+        where('type', 'in', ['offer', 'online_redemption']),
+        orderBy('createdAt', 'desc'),
+        limit(pageSize)
+    );
+
+    const snap = await getDocs(historyQuery);
+    const transactions: RedemptionHistoryTransaction[] = [];
+    const uniqueVendorIds = new Set<string>();
+
+    snap.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data = docSnap.data();
+        transactions.push({
+            id: docSnap.id,
+            ...data,
+        } as RedemptionHistoryTransaction);
+
+        if (typeof data.vendorId === 'string' && data.vendorId.length > 0) {
+            uniqueVendorIds.add(data.vendorId);
+        }
+    });
+
+    const vendorLogos: Record<string, string> = {};
+    await Promise.all(
+        Array.from(uniqueVendorIds).map(async (vendorId) => {
+            const vendorDisplay = await getCachedVendorDisplayFields(vendorId);
+            vendorLogos[vendorId] = vendorDisplay?.profilePicture || '';
+        })
+    );
+
+    return {
+        transactions,
+        vendorLogos,
+    };
+}
+
+export async function fetchMapLocations() {
+    const db = getFirestore();
+    const locationsSnap = await getDoc(doc(db, 'maps', 'locations'));
+    return locationsSnap.exists() ? locationsSnap.data() : null;
+}
+
+export async function fetchStudentProfile(userId: string) {
+    const db = getFirestore();
+    const docSnap = await getDoc(doc(db, 'students', userId));
+    return docSnap.exists() ? docSnap.data() : null;
+}
+
+export async function fetchVendorSearchPage(
+    searchQuery: string,
+    pageSize: number,
+    startAfterDoc: FirebaseFirestoreTypes.QueryDocumentSnapshot | null,
+): Promise<FirestorePage<any>> {
+    const db = getFirestore();
+    const vendorsRef = collection(db, 'vendors');
+    const constraints: any[] = [
+        where('searchTokens', 'array-contains', searchQuery),
+    ];
+    const vendorQuery = startAfterDoc
+        ? query(vendorsRef, ...constraints, startAfter(startAfterDoc) as any, limit(pageSize) as any)
+        : query(vendorsRef, ...constraints, limit(pageSize) as any);
+    const snapshot = await getDocs(vendorQuery);
+    const items = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+    }));
+    const lastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+    return {
+        items,
+        lastDoc,
+        lastDocId: lastDoc?.id ?? null,
+        reachedEnd: snapshot.docs.length < pageSize,
+    };
+}
+
+export async function fetchXcardBrandsPage(
+    searchQuery: string,
+    pageSize: number,
+    startAfterDoc: FirebaseFirestoreTypes.QueryDocumentSnapshot | null,
+    unknownLabel: string,
+): Promise<FirestorePage<WalletBrandQueryItem>> {
+    const db = getFirestore();
+    let brandsQuery = collection(db, 'vendors').where('xcard', '==', true);
+
+    if (searchQuery.length > 0) {
+        brandsQuery = brandsQuery.where('searchTokens', 'array-contains', searchQuery);
+    }
+
+    brandsQuery = startAfterDoc
+        ? brandsQuery.startAfter(startAfterDoc).limit(pageSize)
+        : brandsQuery.limit(pageSize);
+
+    const snapshot = await getDocs(brandsQuery);
+    const items: WalletBrandQueryItem[] = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data = docSnap.data();
+        return {
+            id: docSnap.id,
+            name: data.name || unknownLabel,
+            nameAr: data.nameAr || undefined,
+            logo: data.profilePicture || data.logoUrl || data.imageUrl || null,
+            backgroundColor: '#F0F0F0',
+            loyalty: data.loyalty || [],
+        };
+    });
+    const lastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+    return {
+        items,
+        lastDoc,
+        lastDocId: lastDoc?.id ?? null,
+        reachedEnd: snapshot.docs.length < pageSize,
+    };
+}

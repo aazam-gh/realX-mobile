@@ -1,5 +1,6 @@
-import { collection, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, startAfter, where } from '@react-native-firebase/firestore';
+import { collection, getDocs, getFirestore, limit, orderBy, query, startAfter, where } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
+import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ImageSourcePropType, Keyboard, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, View, Image } from 'react-native';
@@ -17,6 +18,8 @@ import { useTranslation } from 'react-i18next';
 import { SearchBar } from '../../components/home';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
+import { fetchCategory } from '../../utils/firebaseQueries';
+import { queryClient, queryKeys } from '../../utils/queryClient';
 
 const BACKGROUND_ICONS = [
     { name: 'laptop-outline' as const, top: '2%', left: '75%', size: 28, color: '#8E8E93', rotation: '15deg' },
@@ -199,8 +202,6 @@ export default function CategoryScreen() {
     const { isDark, theme } = useAppTheme();
     const isArabic = i18n.language === 'ar';
 
-    const [categoryData, setCategoryData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [selectedSubCategory, setSelectedSubCategory] = useState('all');
     const [searchInput, setSearchInput] = useState('');
@@ -220,6 +221,21 @@ export default function CategoryScreen() {
         title: name || defaultConfig.title,
     };
 
+    const categoryId = typeof id === 'string' ? id : '';
+    const {
+        data: categoryData = null,
+        error: categoryError,
+        isLoading: loading,
+    } = useQuery({
+        queryKey: queryKeys.category(categoryId),
+        queryFn: () => fetchCategory(categoryId),
+        enabled: categoryId.length > 0,
+    });
+
+    useEffect(() => {
+        if (categoryError) logger.error("Error fetching category:", categoryError);
+    }, [categoryError]);
+
     // Derived state for subcategories existence
     const hasSubCategories = (categoryData?.subcategories && categoryData.subcategories.length > 0) || (config.subCategories && config.subCategories.length > 0);
     const isCategoryActive = categoryData ? categoryData.isActive !== false : true;
@@ -238,27 +254,6 @@ export default function CategoryScreen() {
             flashListRef.current?.scrollToOffset({ offset: scrollOffsetRef.current, animated: true });
         });
     }, []);
-
-    useEffect(() => {
-        const fetchCategory = async () => {
-            if (!id) return;
-            try {
-                const db = getFirestore();
-                const docRef = doc(db, 'categories', id);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    setCategoryData(docSnap.data());
-                }
-            } catch (error) {
-                logger.error("Error fetching category:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchCategory();
-    }, [id]);
 
     const fetchVendors = useCallback(async (isNew = false) => {
         if (loadingVendors || (isListEnd && !isNew) || !isCategoryActive) return;
@@ -304,7 +299,15 @@ export default function CategoryScreen() {
                     : query(vendorsRef, ...baseConstraints, orderBy('createdAt', 'desc') as any, limit(PAGE_SIZE) as any);
             }
 
-            const querySnapshot = await getDocs(q);
+            const querySnapshot = await queryClient.fetchQuery({
+                queryKey: queryKeys.vendorsPage('category', {
+                    activeSearchQuery,
+                    englishCategoryName,
+                    selectedFilter,
+                    selectedSubCategory,
+                }, (isNew ? null : lastDocRef.current?.id ?? null)),
+                queryFn: () => getDocs(q),
+            });
 
             if (!querySnapshot.empty) {
                 const fetchedVendors = querySnapshot.docs.map((doc: any) => ({

@@ -1,6 +1,6 @@
-import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
     ActivityIndicator,
     I18nManager,
@@ -16,6 +16,8 @@ import {
 import { Colors } from '../../constants/Colors';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
+import { fetchCmsDocument } from '../../utils/firebaseQueries';
+import { queryKeys } from '../../utils/queryClient';
 import PhonkText from '../PhonkText';
 
 export type FeaturedBannerItem = {
@@ -57,41 +59,24 @@ function sortByOrder(a: FeaturedBannerItem, b: FeaturedBannerItem) {
 export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
     const { width } = useWindowDimensions();
     const isRTL = I18nManager.isRTL;
-    const [cmsItem, setCmsItem] = useState<FeaturedBannerItem | null>(null);
-    const [loading, setLoading] = useState(!item);
+    const {
+        data: cmsItem = null,
+        error,
+        isLoading,
+    } = useQuery({
+        queryKey: queryKeys.cmsDocument('featuredBrandShowcase'),
+        queryFn: async () => {
+            const data = await fetchCmsDocument<{ items?: FeaturedBannerItem[] }>('featuredBrandShowcase');
+            return (data?.items || [])
+                .filter(isValidBannerItem)
+                .sort(sortByOrder)[0] ?? null;
+        },
+        enabled: !item,
+    });
 
     useEffect(() => {
-        if (item) {
-            setLoading(false);
-            return;
-        }
-
-        const fetchBanner = async () => {
-            try {
-                const db = getFirestore();
-                const bannerDocRef = doc(db, 'cms', 'featuredBrandShowcase');
-                const bannerSnap = await getDoc(bannerDocRef);
-
-                if (!bannerSnap.exists()) {
-                    setCmsItem(null);
-                    return;
-                }
-
-                const data = bannerSnap.data();
-                const firstActiveItem = (data?.items || [])
-                    .filter(isValidBannerItem)
-                    .sort(sortByOrder)[0] ?? null;
-
-                setCmsItem(firstActiveItem);
-            } catch (error) {
-                logger.error('Error fetching featured banner:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchBanner();
-    }, [item]);
+        if (error) logger.error('Error fetching featured banner:', error);
+    }, [error]);
 
     const layout = useMemo(() => {
         const cardWidth = Math.max(0, width - 40);
@@ -111,7 +96,7 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
     }, [width]);
 
     const currentItem = item ?? cmsItem;
-    const isLoading = !item && loading;
+    const isCmsLoading = !item && isLoading;
 
     const handlePress = async () => {
         if (!currentItem?.orderUrl) {
@@ -130,7 +115,7 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
         }
     };
 
-    if (isLoading) {
+    if (isCmsLoading) {
         return (
             <View style={[style]}>
                 <ActivityIndicator size="small" color={Colors.brandGreen} />

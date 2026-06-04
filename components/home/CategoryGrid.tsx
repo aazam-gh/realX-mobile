@@ -1,4 +1,4 @@
-import { collection, getDocs, getFirestore, orderBy, query } from '@react-native-firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -9,6 +9,8 @@ import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
+import { fetchCategories } from '../../utils/firebaseQueries';
+import { queryKeys } from '../../utils/queryClient';
 
 type CategoryItem = {
     id: string;
@@ -31,44 +33,23 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     const { height, width } = useWindowDimensions();
     const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
-    const [fetchedCategories, setFetchedCategories] = useState<CategoryItem[]>([]);
-    const [loading, setLoading] = useState(!propCategories);
     const [isDrawerVisible, setIsDrawerVisible] = useState(false);
 
     const isArabic = i18n.language === 'ar';
 
+    const {
+        data: fetchedCategories = [],
+        error,
+        isLoading,
+    } = useQuery<CategoryItem[]>({
+        queryKey: queryKeys.categories(isArabic ? 'ar' : 'en'),
+        queryFn: () => fetchCategories(isArabic),
+        enabled: !propCategories,
+    });
+
     useEffect(() => {
-        if (propCategories) return;
-
-        const fetchCategories = async () => {
-            try {
-                const db = getFirestore();
-                const q = query(
-                    collection(db, 'categories'),
-                    orderBy('order', 'asc')
-                );
-
-                const snapshot = await getDocs(q);
-                const items: CategoryItem[] = snapshot.docs.map((doc: any) => {
-                    const data = doc.data();
-                    return {
-                        id: doc.id,
-                        name: isArabic ? (data.nameArabic || data.nameAr || data.nameEnglish) : data.nameEnglish,
-                        englishName: data.nameEnglish,
-                        image: data.imageUrl,
-                    };
-                });
-
-                setFetchedCategories(items);
-            } catch (error) {
-                logger.error('Error fetching categories:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchCategories();
-    }, [propCategories, isArabic]);
+        if (error) logger.error('Error fetching categories:', error);
+    }, [error]);
 
     const baseCategories = propCategories || fetchedCategories;
     const visibleCategories = baseCategories.slice(0, MAX_VISIBLE_CATEGORIES);
@@ -126,7 +107,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
         );
     };
 
-    if (loading) {
+    if (!propCategories && isLoading) {
         return (
             <View style={[styles.container, styles.loaderContainer]}>
                 <ActivityIndicator size="small" color={theme.brand} />

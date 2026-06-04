@@ -1,7 +1,8 @@
 import { pickLocalizedText } from '../../utils/textFallback';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
-import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where } from '@react-native-firebase/firestore';
+import { deleteDoc, doc, getFirestore, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
@@ -16,6 +17,8 @@ import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
 import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
+import { fetchSavedOfferIds, fetchVendorRoute } from '../../utils/firebaseQueries';
+import { queryClient, queryKeys } from '../../utils/queryClient';
 
 type VendorBranch = {
     id: string;
@@ -90,97 +93,64 @@ export default function VendorScreen() {
     const isArabic = i18n.language === 'ar';
     const [vendor, setVendor] = useState<any>(null);
     const [offers, setOffers] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [selectedOfferForTC, setSelectedOfferForTC] = useState<any>(null);
     const [actualVendorId, setActualVendorId] = useState<string | null>(null);
     const [savedOfferIds, setSavedOfferIds] = useState<Set<string>>(new Set());
     const [savingOfferIds, setSavingOfferIds] = useState<Set<string>>(new Set());
     const [branchPickerVisible, setBranchPickerVisible] = useState(false);
     const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+    const currentUserId = getAuth().currentUser?.uid ?? null;
+    const vendorLookupId = typeof id === 'string' ? id : '';
+
+    const {
+        data: vendorRouteData,
+        error: vendorRouteError,
+        isLoading,
+    } = useQuery({
+        queryKey: queryKeys.vendorRoute(vendorLookupId, isArabic ? 'ar' : 'en'),
+        queryFn: () => fetchVendorRoute(vendorLookupId, isArabic),
+        enabled: vendorLookupId.length > 0,
+    });
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (!id) return;
-            try {
-                const db = getFirestore();
-
-                // Fetch Vendor
-                const vendorRef = doc(db, 'vendors', id);
-                const vendorSnap = await getDoc(vendorRef);
-                
-                let vendorData = null;
-                let foundVendorId = id;
-
-                if (vendorSnap.exists()) {
-                    vendorData = vendorSnap.data();
-                    setActualVendorId(id);
-                } else {
-                    // Fallback: Try searching by name if ID lookup fails
-                    // This is useful since the banner's offerId might be the vendor name
-                    const vendorsRef = collection(db, 'vendors');
-                    const nameQuery = query(vendorsRef, where('name', '==', id));
-                    const nameSnap = await getDocs(nameQuery);
-                    
-                    if (!nameSnap.empty) {
-                        const foundDoc = nameSnap.docs[0];
-                        vendorData = foundDoc.data();
-                        foundVendorId = foundDoc.id;
-                        setActualVendorId(foundDoc.id);
-                    } else if (isArabic) {
-                        const nameArQuery = query(vendorsRef, where('nameAr', '==', id));
-                        const nameArSnap = await getDocs(nameArQuery);
-                        if (!nameArSnap.empty) {
-                            const foundDoc = nameArSnap.docs[0];
-                            vendorData = foundDoc.data();
-                            foundVendorId = foundDoc.id;
-                            setActualVendorId(foundDoc.id);
-                        }
-                    }
-                }
-
-                if (vendorData) {
-                    setVendor(vendorData);
-
-                    // Use offers array from vendor document
-                    const vendorOffers = (vendorData.offers || []).map((offer: any, index: number) => ({
-                        id: `${foundVendorId}_offer_${index}`,
-                        offerIndex: index,
-                        ...offer,
-                    }));
-
-                    setOffers(vendorOffers);
-                }
-            } catch (error) {
-                logger.error("Error fetching vendor data:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [id, isArabic]);
+        if (vendorRouteError) logger.error("Error fetching vendor data:", vendorRouteError);
+    }, [vendorRouteError]);
 
     useEffect(() => {
-        const fetchSavedOffers = async () => {
-            const user = getAuth().currentUser;
-            if (!user || !actualVendorId) {
-                setSavedOfferIds(new Set());
-                return;
-            }
+        if (!vendorRouteData) {
+            setVendor(null);
+            setOffers([]);
+            setActualVendorId(null);
+            return;
+        }
 
-            try {
-                const db = getFirestore();
-                const savedRef = collection(db, 'students', user.uid, 'savedItems');
-                const savedQuery = query(savedRef, where('vendorId', '==', actualVendorId));
-                const snapshot = await getDocs(savedQuery);
-                setSavedOfferIds(new Set(snapshot.docs.map((docSnap: any) => docSnap.id)));
-            } catch (error) {
-                logger.error('Error loading saved offers:', error);
-            }
-        };
+        setActualVendorId(vendorRouteData.vendorId);
+        setVendor(vendorRouteData.vendorData);
+        setOffers((vendorRouteData.vendorData.offers || []).map((offer: any, index: number) => ({
+            id: `${vendorRouteData.vendorId}_offer_${index}`,
+            offerIndex: index,
+            ...offer,
+        })));
+    }, [vendorRouteData]);
 
-        void fetchSavedOffers();
-    }, [actualVendorId]);
+    const {
+        data: savedOfferIdsQueryData,
+        error: savedOfferIdsError,
+    } = useQuery<Set<string>>({
+        queryKey: currentUserId && actualVendorId ? queryKeys.savedOfferIds(currentUserId, actualVendorId) : ['savedOfferIds', 'anonymous'],
+        queryFn: () => currentUserId && actualVendorId
+            ? fetchSavedOfferIds(currentUserId, actualVendorId)
+            : Promise.resolve(new Set<string>()),
+        enabled: !!currentUserId && !!actualVendorId,
+    });
+
+    useEffect(() => {
+        if (savedOfferIdsQueryData) setSavedOfferIds(savedOfferIdsQueryData);
+    }, [savedOfferIdsQueryData]);
+
+    useEffect(() => {
+        if (savedOfferIdsError) logger.error('Error loading saved offers:', savedOfferIdsError);
+    }, [savedOfferIdsError]);
 
     useEffect(() => {
         const loadUserLocation = async () => {
@@ -260,8 +230,10 @@ export default function VendorScreen() {
                 setSavedOfferIds((previous) => {
                     const next = new Set(previous);
                     next.delete(savedId);
+                    queryClient.setQueryData(queryKeys.savedOfferIds(user.uid, vendorId), next);
                     return next;
                 });
+                await queryClient.invalidateQueries({ queryKey: queryKeys.savedOffers(user.uid) });
                 return;
             }
 
@@ -283,7 +255,12 @@ export default function VendorScreen() {
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
-            setSavedOfferIds((previous) => new Set(previous).add(savedId));
+            setSavedOfferIds((previous) => {
+                const next = new Set(previous).add(savedId);
+                queryClient.setQueryData(queryKeys.savedOfferIds(user.uid, vendorId), next);
+                return next;
+            });
+            await queryClient.invalidateQueries({ queryKey: queryKeys.savedOffers(user.uid) });
         } catch (error) {
             logger.error('Error toggling saved offer:', error);
             Alert.alert(t('error'), t('saved_offer_failed'));
@@ -296,7 +273,7 @@ export default function VendorScreen() {
         }
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
                 <ActivityIndicator size="large" color={theme.brand} />

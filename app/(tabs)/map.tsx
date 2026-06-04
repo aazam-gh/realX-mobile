@@ -2,16 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
 import {
-  collection,
   deleteDoc,
   doc,
-  getDoc,
-  getDocs,
   getFirestore,
-  query,
   serverTimestamp,
   setDoc,
-  where,
 } from '@react-native-firebase/firestore';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -37,6 +32,8 @@ import {
   toGeohash
 } from '../../utils/mapGeo';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { fetchMapLocations, fetchSavedMapPlaceIds } from '../../utils/firebaseQueries';
+import { queryClient, queryKeys } from '../../utils/queryClient';
 
 function clampRegion(region: Region): Region {
   const minLatDelta = 0.05;
@@ -65,6 +62,7 @@ const MAP_GEOHASH_PRECISION = 5;
 const MAP_RECENTS_KEY = 'realx.map.recentPlaces.v1';
 const MAP_BOTTOM_PANEL_OFFSET = 50;
 const MAP_FLOATING_BUTTON_GAP = 12;
+const SAVED_MAP_PLACES_LIMIT = 100;
 const _DEFAULT_ZOOM = 11.5;
 void _DEFAULT_ZOOM;
 
@@ -208,28 +206,26 @@ export default function MapScreen() {
   }, [vendors]);
 
   useEffect(() => {
-    const loadSavedMapPlaces = async () => {
-      const user = getAuth().currentUser;
+    const loadSavedMapPlaces = async (user: any) => {
       if (!user) {
         setSavedMapPlaceIds(new Set());
         return;
       }
 
       try {
-        const db = getFirestore();
-        const savedRef = collection(db, 'students', user.uid, 'savedItems');
-        const savedQuery = query(savedRef, where('type', '==', 'mapPlace'));
-        const snapshot = await getDocs(savedQuery);
-        setSavedMapPlaceIds(new Set(snapshot.docs.map((docSnap: any) => docSnap.id)));
+        const savedIds = await queryClient.fetchQuery<Set<string>>({
+          queryKey: queryKeys.savedMapPlaces(user.uid),
+          queryFn: () => fetchSavedMapPlaceIds(user.uid, SAVED_MAP_PLACES_LIMIT),
+        });
+        setSavedMapPlaceIds(savedIds);
       } catch (savedError) {
         logger.error('Error loading saved map places:', savedError);
       }
     };
 
-    const unsubscribe = onAuthStateChanged(getAuth(), () => {
-      void loadSavedMapPlaces();
+    const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
+      void loadSavedMapPlaces(user);
     });
-    void loadSavedMapPlaces();
     return unsubscribe;
   }, []);
 
@@ -445,10 +441,12 @@ export default function MapScreen() {
         }
       }
 
-      const db = getFirestore();
-      const locationsSnap = await getDoc(doc(db, 'maps', 'locations'));
+      const locationsData = await queryClient.fetchQuery({
+        queryKey: queryKeys.mapLocations(),
+        queryFn: fetchMapLocations,
+      });
 
-      if (!locationsSnap.exists()) {
+      if (!locationsData) {
         logger.warn('[Map] No maps/locations document found');
         setVendors([]);
         setLoading(false);
@@ -457,7 +455,6 @@ export default function MapScreen() {
       }
 
       const byId = new Map<string, VendorMapItem>();
-      const locationsData = locationsSnap.data() as Record<string, any>;
       parseMapLocations(locationsData).forEach((location) => byId.set(location.id, location));
 
       logger.log('[Map] Parsed', byId.size, 'valid map locations');
@@ -635,6 +632,7 @@ export default function MapScreen() {
         setSavedMapPlaceIds((previous) => {
           const next = new Set(previous);
           next.delete(savedId);
+          queryClient.setQueryData(queryKeys.savedMapPlaces(user.uid), next);
           return next;
         });
         return;
@@ -657,7 +655,11 @@ export default function MapScreen() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      setSavedMapPlaceIds((previous) => new Set(previous).add(savedId));
+      setSavedMapPlaceIds((previous) => {
+        const next = new Set(previous).add(savedId);
+        queryClient.setQueryData(queryKeys.savedMapPlaces(user.uid), next);
+        return next;
+      });
     } catch (saveError) {
       logger.error('Error toggling saved map place:', saveError);
       Alert.alert(t('error'), t('saved_offer_failed'));

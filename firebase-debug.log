@@ -1,0 +1,30 @@
+[debug] [2026-06-04T13:21:12.469Z] ----------------------------------------------------------------------
+[debug] [2026-06-04T13:21:12.473Z] Command:       /Users/alcadeus/.nvm/versions/node/v24.12.0/bin/node /opt/homebrew/bin/firebase deploy --only functions
+[debug] [2026-06-04T13:21:12.473Z] CLI Version:   15.3.1
+[debug] [2026-06-04T13:21:12.473Z] Platform:      darwin
+[debug] [2026-06-04T13:21:12.473Z] Node Version:  v24.12.0
+[debug] [2026-06-04T13:21:12.473Z] Time:          Thu Jun 04 2026 16:21:12 GMT+0300 (Arabian Standard Time)
+[debug] [2026-06-04T13:21:12.473Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-06-04T13:21:13.145Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-06-04T13:21:13.145Z] > authorizing via signed-in user (aazamthakur@gmail.com)
+[debug] [2026-06-04T13:21:13.145Z] [iam] checking project reelx-backend for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-06-04T13:21:13.146Z] Checked if tokens are valid: true, expires at: 1780581058878
+[debug] [2026-06-04T13:21:13.146Z] Checked if tokens are valid: true, expires at: 1780581058878
+[debug] [2026-06-04T13:21:13.146Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/reelx-backend:testIamPermissions [none]
+[debug] [2026-06-04T13:21:13.146Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/reelx-backend:testIamPermissions x-goog-quota-user=projects/reelx-backend
+[debug] [2026-06-04T13:21:13.146Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/reelx-backend:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-06-04T13:21:14.518Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/reelx-backend:testIamPermissions 200
+[debug] [2026-06-04T13:21:14.518Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/reelx-backend:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-06-04T13:21:14.519Z] Checked if tokens are valid: true, expires at: 1780581058878
+[debug] [2026-06-04T13:21:14.519Z] Checked if tokens are valid: true, expires at: 1780581058878
+[debug] [2026-06-04T13:21:14.519Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/reelx-backend/serviceAccounts/reelx-backend@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-06-04T13:21:14.519Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/reelx-backend/serviceAccounts/reelx-backend@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-06-04T13:21:16.133Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/reelx-backend/serviceAccounts/reelx-backend@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-06-04T13:21:16.134Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/reelx-backend/serviceAccounts/reelx-backend@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'reelx-backend'...
+[info] 
+[info] i  deploying functions 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run lint
+[info] Running command: npm --prefix "$RESOURCE_DIR" run build

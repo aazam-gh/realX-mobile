@@ -29,11 +29,12 @@ This project uses Firebase for backend services. To get started with Firebase:
     *   Click "Add project" and follow the instructions to create a new project.
 
 2.  **Add Apps to your Firebase Project:**
-    *   **Web App:** Set up a web app in your Firebase project to get your web configuration object.
-    *   **Android App:** Register an Android app. Download `google-services.json` and place it in the project root directory (`./google-services.json`).
-    *   **iOS App:** Register an iOS app. Download `GoogleService-Info.plist` and place it in the project root directory (`./GoogleService-Info.plist`).
+    *   **Production Android App:** Register `com.reelx.app`. Download `google-services.json` and place it in the project root directory (`./google-services.json`).
+    *   **Production iOS App:** Register `com.reelx.app`. Download `GoogleService-Info.plist` and place it in the project root directory (`./GoogleService-Info.plist`).
+    *   **Development Android App:** Register `com.reelx.app.dev`. Download `google-services.json` and place it in `firebase/dev/google-services.json`.
+    *   **Development iOS App:** Register `com.reelx.app.dev`. Download `GoogleService-Info.plist` and place it in `firebase/dev/GoogleService-Info.plist`.
 
-    *Note: The `google-services.json` and `GoogleService-Info.plist` files are already present in the project root based on the file structure. You may need to update them with your project-specific configurations.*
+    *Note: The root `google-services.json` and `GoogleService-Info.plist` are the production files. Local commands default to the dev app variant through `app.config.js`. See `docs/firebase-environments.md`.*
 
 3.  **Add Firebase Configuration to your Project:**
     Create a file named `constants/firebaseConfig.ts` and add your Firebase configuration:
@@ -71,7 +72,7 @@ This project uses Firebase for backend services. To get started with Firebase:
 Once dependencies are installed and Firebase is configured, start the Expo development server:
 
 ```bash
-npx expo start
+npm run start
 ```
 
 This will open a new tab in your browser with the Expo Dev Tools. You can then:

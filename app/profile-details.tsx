@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { deleteUser, getAuth, signOut, updateProfile } from '@react-native-firebase/auth';
-import { doc, getDoc, getFirestore, updateDoc } from '@react-native-firebase/firestore';
+import { doc, getFirestore, updateDoc } from '@react-native-firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -24,6 +25,8 @@ import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import PhonkText from '../components/PhonkText';
 import UserAvatar from '../components/UserAvatar';
+import { fetchStudentProfile } from '../utils/firebaseQueries';
+import { queryClient, queryKeys } from '../utils/queryClient';
 
 export default function ProfileDetailsScreen() {
     const router = useRouter();
@@ -43,52 +46,57 @@ export default function ProfileDetailsScreen() {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const user = getAuth().currentUser;
+    const userId = user?.uid ?? null;
+
+    const {
+        data: studentProfile,
+        error: studentProfileError,
+        isLoading: isStudentProfileLoading,
+    } = useQuery({
+        queryKey: userId ? queryKeys.studentProfile(userId) : ['studentProfile', 'anonymous'],
+        queryFn: () => userId ? fetchStudentProfile(userId) : Promise.resolve(null),
+        enabled: !!userId,
+    });
 
     useEffect(() => {
-        const authInstance = getAuth();
-        const user = authInstance.currentUser;
         if (!user) {
             router.replace('/(onboarding)');
             return;
         }
 
-        const fetchUserData = async () => {
-            try {
-                const db = getFirestore();
-                const studentDocRef = doc(db, 'students', user.uid);
-                const docSnap = await getDoc(studentDocRef);
+        setIsLoading(isStudentProfileLoading);
+    }, [isStudentProfileLoading, router, user]);
 
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setFirstName(data?.firstName || '');
-                    setLastName(data?.lastName || '');
-                    setEmail(data?.email || user.email || '');
-                    setPhotoURL(data?.photoURL || user.photoURL || null);
-                    setRole(data?.role || null);
-                    if (data?.dob) {
-                        try {
-                            if (data.dob.includes('-')) {
-                                const [year, month, day] = data.dob.split('-').map(Number);
-                                setDob(new Date(year, month - 1, day));
-                            } else if (data.dob.includes('/')) {
-                                const [day, month, year] = data.dob.split('/').map(Number);
-                                setDob(new Date(year, month - 1, day));
-                            }
-                        } catch (e) {
-                            logger.error('Date parsing error:', e);
-                        }
-                    }
+    useEffect(() => {
+        if (studentProfileError) {
+            logger.error('Error fetching user data:', studentProfileError);
+            Alert.alert(t('error'), t('profile_load_failed'));
+        }
+    }, [studentProfileError, t]);
+
+    useEffect(() => {
+        if (!user || !studentProfile) return;
+
+        setFirstName(studentProfile.firstName || '');
+        setLastName(studentProfile.lastName || '');
+        setEmail(studentProfile.email || user.email || '');
+        setPhotoURL(studentProfile.photoURL || user.photoURL || null);
+        setRole(studentProfile.role || null);
+        if (studentProfile.dob) {
+            try {
+                if (studentProfile.dob.includes('-')) {
+                    const [year, month, day] = studentProfile.dob.split('-').map(Number);
+                    setDob(new Date(year, month - 1, day));
+                } else if (studentProfile.dob.includes('/')) {
+                    const [day, month, year] = studentProfile.dob.split('/').map(Number);
+                    setDob(new Date(year, month - 1, day));
                 }
             } catch (error) {
-                logger.error('Error fetching user data:', error);
-            Alert.alert(t('error'), t('profile_load_failed'));
-            } finally {
-                setIsLoading(false);
+                logger.error('Date parsing error:', error);
             }
-    };
-
-    fetchUserData();
-}, [router, t]);
+        }
+    }, [studentProfile, user]);
 
     const handleBack = () => {
         router.back();
@@ -125,6 +133,10 @@ export default function ProfileDetailsScreen() {
             };
 
             await updateDoc(studentDocRef, updatedData);
+            queryClient.setQueryData(queryKeys.studentProfile(user.uid), (previous: any) => ({
+                ...(previous || {}),
+                ...updatedData,
+            }));
 
             await updateProfile(user, {
                 displayName: `${firstName.trim()} ${lastName.trim()}`

@@ -1,21 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { getAuth } from '@react-native-firebase/auth';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  getFirestore,
-  limit,
-  orderBy,
-  query,
-  where,
-  FirebaseFirestoreTypes
-} from '@react-native-firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, FlatList, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../context/AppThemeContext';
@@ -24,6 +13,8 @@ import PhonkText from '../components/PhonkText';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
 import { toArabicDigits } from '../utils/numbers';
+import { fetchRedemptionHistory, RedemptionHistoryTransaction } from '../utils/firebaseQueries';
+import { queryKeys } from '../utils/queryClient';
 
 /*
   UI Format based on design specs:
@@ -34,27 +25,7 @@ import { toArabicDigits } from '../utils/numbers';
     - Bottom of card: "Redeemed on Jul 7 08:07 AM"
 */
 
-interface Transaction {
-  id: string;
-  type: string;
-  vendorId: string;
-  vendorName: string;
-  vendorNameAr?: string;
-  totalAmount: number;
-  discountAmount?: number;
-  finalAmount?: number;
-  offer?: {
-    discountType?: string;
-    discountValue?: number;
-    titleEn?: string;
-    titleAr?: string;
-  } | null;
-  createdAt?: any;
-  offerAmount?: number;
-  paidAmount?: number;
-  amount?: number;
-  timestamp?: any;
-}
+type Transaction = RedemptionHistoryTransaction;
 
 export default function RedemptionHistoryScreen() {
   const { t, i18n } = useTranslation();
@@ -63,77 +34,22 @@ export default function RedemptionHistoryScreen() {
   const currency = t('currency_qar');
   const fmt = (n: number, decimals = 0) => isArabic ? toArabicDigits(n.toFixed(decimals)) : n.toFixed(decimals);
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [vendorLogos, setVendorLogos] = useState<Record<string, string>>({});
+  const userId = getAuth().currentUser?.uid ?? null;
+  const {
+    data,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: userId ? queryKeys.redemptionHistory(userId) : ['redemptionHistory', 'anonymous'],
+    queryFn: () => userId ? fetchRedemptionHistory(userId) : Promise.resolve({ transactions: [], vendorLogos: {} }),
+    enabled: !!userId,
+  });
+  const transactions = data?.transactions || [];
+  const vendorLogos = data?.vendorLogos || {};
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchHistory = async () => {
-      try {
-        const auth = getAuth();
-        const user = auth.currentUser;
-        if (!user) return;
-
-        const db = getFirestore();
-        const q = query(
-          collection(db, 'transactions'),
-          where('userId', '==', user.uid),
-          where('type', 'in', ['offer', 'online_redemption']),
-          orderBy('createdAt', 'desc'),
-          limit(10)
-        );
-
-        const snap = await getDocs(q);
-        const fetchedTransactions: Transaction[] = [];
-        const uniqueVendorIds = new Set<string>();
-
-        snap.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
-          const data = docSnap.data();
-          fetchedTransactions.push({
-            id: docSnap.id,
-            ...data
-          } as Transaction);
-
-          if (data.vendorId) {
-            uniqueVendorIds.add(data.vendorId);
-          }
-        });
-
-        if (isMounted) {
-          setTransactions(fetchedTransactions);
-        }
-
-        // Fetch vendor details (for logos) in parallel
-        const logos: Record<string, string> = {};
-        await Promise.all(
-          Array.from(uniqueVendorIds).map(async (vendorId) => {
-            const vSnap = await getDoc(doc(db, 'vendors', vendorId));
-            if (vSnap.exists()) {
-              logos[vendorId] = vSnap.data()?.profilePicture || '';
-            }
-          })
-        );
-
-        if (isMounted) {
-          setVendorLogos(logos);
-          setLoading(false);
-        }
-      } catch (error) {
-        logger.error('Error fetching redemptions:', error);
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchHistory();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    if (error) logger.error('Error fetching redemptions:', error);
+  }, [error]);
 
   const renderItem = ({ item }: { item: Transaction }) => {
     const logoUri = vendorLogos[item.vendorId];
@@ -241,7 +157,7 @@ export default function RedemptionHistoryScreen() {
         </Text>
       </View>
 
-      {loading ? (
+        {!!userId && isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.brand} />
         </View>

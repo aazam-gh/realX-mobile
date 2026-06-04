@@ -1,5 +1,5 @@
 import { getAuth } from '@react-native-firebase/auth';
-import { collection, doc, getDoc, getFirestore, limit, onSnapshot, orderBy, query, where } from '@react-native-firebase/firestore';
+import { collection, getFirestore, limit, onSnapshot, orderBy, query, where } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, I18nManager, StyleSheet, Text, View } from 'react-native';
@@ -10,6 +10,7 @@ import RedemptionItem, { RedemptionData } from './RedemptionItem';
 import { logger } from '../../utils/logger';
 import { toArabicDigits } from '../../utils/numbers';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { getCachedVendorDisplayFields } from '../../utils/vendorDisplayCache';
 
 const LOGO_COLORS = ['#3D5A80', '#C41E3A', '#8B4513', '#2A9D8F', '#E76F51', '#E9C46A'];
 
@@ -39,9 +40,7 @@ export default function RecentRedemptions() {
         );
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
-            const db = getFirestore();
-
-            // Deduplicate vendor IDs and batch fetch
+            // Deduplicate vendor IDs and reuse session-cached display docs.
             const vendorIds: string[] = [];
             snapshot.docs.forEach((d: any) => {
                 const vendorId = d.data()?.vendorId;
@@ -54,10 +53,8 @@ export default function RecentRedemptions() {
 
             await Promise.all(uniqueVendorIds.map(async (vid) => {
                 try {
-                    const vDoc = await getDoc(doc(db, 'vendors', vid));
-                    if (vDoc.exists()) {
-                        vendorMap.set(vid, vDoc.data());
-                    }
+                    const vendorDisplay = await getCachedVendorDisplayFields(vid);
+                    if (vendorDisplay) vendorMap.set(vid, vendorDisplay);
                 } catch (e) {
                     logger.warn(`Error fetching vendor ${vid}:`, e);
                 }

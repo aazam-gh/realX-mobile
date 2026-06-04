@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
-import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
+import { useQuery } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { logger } from '../../utils/logger';
@@ -32,6 +32,8 @@ import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { normalizeDigits } from '../../utils/numbers';
 import { showLocalNotification } from '../../utils/notifications';
+import { fetchVendor } from '../../utils/firebaseQueries';
+import { queryClient, queryKeys } from '../../utils/queryClient';
 
 interface RedemptionResult {
     discountAmount: number;
@@ -125,7 +127,6 @@ export default function RedeemScreen() {
     const isArabic = i18n.language === 'ar';
     const [vendor, setVendor] = useState<VendorData | null>(null);
     const [offer, setOffer] = useState<OfferData | null>(null);
-    const [loading, setLoading] = useState(true);
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [redemptionResult, setRedemptionResult] = useState<RedemptionResult | null>(null);
     const [onlinePreview, setOnlinePreview] = useState<{ discountCode: string; remainingToday: number; dailyLimitPerUser: number } | null>(null);
@@ -143,61 +144,68 @@ export default function RedeemScreen() {
     const pinInputRef = useRef<TextInput>(null);
     const amountInputRef = useRef<TextInput>(null);
     const scrollRef = useRef<ScrollView>(null);
+    const currentVendorId = vendorId || id || '';
+
+    const {
+        data: vendorResult,
+        error: vendorError,
+        isLoading,
+    } = useQuery({
+        queryKey: queryKeys.vendor(currentVendorId),
+        queryFn: () => fetchVendor(currentVendorId),
+        enabled: currentVendorId.length > 0,
+    });
 
     useEffect(() => {
-        let isMounted = true;
+        if (vendorError) logger.error("Error fetching data:", vendorError);
+    }, [vendorError]);
 
-        const fetchData = async () => {
-            const currentVendorId = vendorId || id;
-            if (!currentVendorId) return;
-            try {
-                const db = getFirestore();
+    useEffect(() => {
+        if (!vendorResult) {
+            setVendor(null);
+            setOffer(null);
+            return;
+        }
 
-                // Fetch Vendor document (offers are now embedded)
-                const vendorRef = doc(db, 'vendors', currentVendorId);
-                const vendorSnap = await getDoc(vendorRef);
-                if (vendorSnap.exists() && isMounted) {
-                    const vendorData = vendorSnap.data() as VendorData;
-                    setVendor(vendorData);
+        const vendorData = vendorResult.data as VendorData;
+        setVendor(vendorData);
+        if (vendorData.vendorType === 'online') {
+            setOffer(null);
+        } else {
+            const offerIdx = offerIndexParam != null ? parseInt(offerIndexParam, 10) : 0;
+            const vendorOffers = vendorData.offers || [];
+            setOffer(vendorOffers[offerIdx] ? vendorOffers[offerIdx] as OfferData : null);
+        }
+        setStep(vendorData.xcard === true ? 'creator' : 'pin');
+    }, [offerIndexParam, vendorResult]);
 
-                    if (vendorData.vendorType === 'online') {
-                        const functions = getFunctions(undefined, 'me-central1');
-                        const getOnlineRedemptionPreview = httpsCallable(functions, 'getOnlineRedemptionPreview');
-                        try {
-                            const previewResult = await getOnlineRedemptionPreview({ vendorId: currentVendorId });
-                            setOnlinePreview(previewResult.data as any);
-                            setOnlineError('');
-                        } catch (error: any) {
-                            logger.error('Online redemption preview error:', error);
-                            setOnlineError(error.message || t('redemption_failed_message'));
-                        }
-                    } else {
-                        // Extract offer from vendor's offers array by index
-                        const offerIdx = offerIndexParam != null ? parseInt(offerIndexParam, 10) : 0;
-                        const vendorOffers = vendorData.offers || [];
-                        if (vendorOffers[offerIdx]) {
-                            setOffer(vendorOffers[offerIdx] as OfferData);
-                        }
-                    }
+    const {
+        data: onlinePreviewData,
+        error: onlinePreviewError,
+    } = useQuery({
+        queryKey: queryKeys.onlineRedemptionPreview(currentVendorId),
+        queryFn: async () => {
+            const functions = getFunctions(undefined, 'me-central1');
+            const getOnlineRedemptionPreview = httpsCallable(functions, 'getOnlineRedemptionPreview');
+            const previewResult = await getOnlineRedemptionPreview({ vendorId: currentVendorId });
+            return previewResult.data as { discountCode: string; remainingToday: number; dailyLimitPerUser: number };
+        },
+        enabled: currentVendorId.length > 0 && vendor?.vendorType === 'online',
+    });
 
-                    // If vendor has xcard enabled, start with creator code step
-                    if (vendorData.xcard === true) {
-                        setStep('creator');
-                    }
-                }
-            } catch (error) {
-                logger.error("Error fetching data:", error);
-            } finally {
-                if (isMounted) setLoading(false);
-            }
-        };
+    useEffect(() => {
+        if (onlinePreviewData) {
+            setOnlinePreview(onlinePreviewData);
+            setOnlineError('');
+        }
+    }, [onlinePreviewData]);
 
-        fetchData();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [id, vendorId, offerIndexParam, t]);
+    useEffect(() => {
+        if (onlinePreviewError) {
+            logger.error('Online redemption preview error:', onlinePreviewError);
+            setOnlineError((onlinePreviewError as any).message || t('redemption_failed_message'));
+        }
+    }, [onlinePreviewError, t]);
 
     // Discount calculation
     const totalAmount = parseFloat(normalizeDigits(amount)) || 0;
@@ -318,6 +326,9 @@ export default function RedeemScreen() {
             const data = result.data as any;
             if (typeof data.remainingToday === 'number') {
                 setOnlinePreview((previous) => previous ? { ...previous, remainingToday: data.remainingToday } : previous);
+                queryClient.setQueryData(queryKeys.onlineRedemptionPreview(currentVendorId), (previous: any) => (
+                    previous ? { ...previous, remainingToday: data.remainingToday } : previous
+                ));
             }
 
             if (data.purchaseUrl) {
@@ -365,7 +376,7 @@ export default function RedeemScreen() {
         }
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
                 <ActivityIndicator size="large" color={theme.brand} />

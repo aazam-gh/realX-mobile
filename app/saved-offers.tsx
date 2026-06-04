@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
-import { collection, deleteDoc, doc, getDocs, getFirestore, limit, orderBy, query } from '@react-native-firebase/firestore';
+import { deleteDoc, doc, getFirestore } from '@react-native-firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, I18nManager, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,64 +13,31 @@ import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
+import { fetchSavedOffers, SavedOfferItem } from '../utils/firebaseQueries';
+import { queryClient, queryKeys } from '../utils/queryClient';
 
-type SavedOffer = {
-  id: string;
-  type?: string;
-  vendorId: string;
-  offerIndex: number;
-  vendorName?: string;
-  vendorNameAr?: string;
-  vendorLogo?: string;
-  vendorCoverImage?: string;
-  titleEn?: string;
-  titleAr?: string;
-  descriptionEn?: string;
-  descriptionAr?: string;
-  discountType?: string;
-  discountValue?: number | null;
-  xcard?: boolean;
-};
+type SavedOffer = SavedOfferItem;
 
 export default function SavedOffersScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { isDark, theme } = useAppTheme();
   const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
-  const [savedOffers, setSavedOffers] = useState<SavedOffer[]>([]);
-  const [loading, setLoading] = useState(true);
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
-
-  const fetchSavedOffers = useCallback(async () => {
-    const user = getAuth().currentUser;
-    if (!user) {
-      setSavedOffers([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const db = getFirestore();
-      const savedRef = collection(db, 'students', user.uid, 'savedItems');
-      const savedQuery = query(savedRef, orderBy('createdAt', 'desc'), limit(50));
-      const snapshot = await getDocs(savedQuery);
-      setSavedOffers(snapshot.docs
-        .map((docSnap: any) => ({
-          id: docSnap.id,
-          ...docSnap.data(),
-        }))
-        .filter((item: SavedOffer) => !item.type || item.type === 'offer') as SavedOffer[]);
-    } catch (error) {
-      logger.error('Error loading saved offers:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const userId = getAuth().currentUser?.uid ?? null;
+  const {
+    data: savedOffers = [],
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: userId ? queryKeys.savedOffers(userId) : ['savedOffers', 'anonymous'],
+    queryFn: () => userId ? fetchSavedOffers(userId) : Promise.resolve([]),
+    enabled: !!userId,
+  });
 
   useEffect(() => {
-    void fetchSavedOffers();
-  }, [fetchSavedOffers]);
+    if (error) logger.error('Error loading saved offers:', error);
+  }, [error]);
 
   const removeSavedOffer = async (item: SavedOffer) => {
     const user = getAuth().currentUser;
@@ -79,7 +47,10 @@ export default function SavedOffersScreen() {
     try {
       const db = getFirestore();
       await deleteDoc(doc(db, 'students', user.uid, 'savedItems', item.id));
-      setSavedOffers((previous) => previous.filter((offer) => offer.id !== item.id));
+      queryClient.setQueryData<SavedOffer[]>(queryKeys.savedOffers(user.uid), (previous = []) => (
+        previous.filter((offer) => offer.id !== item.id)
+      ));
+      await queryClient.invalidateQueries({ queryKey: queryKeys.savedOffers(user.uid) });
     } catch (error) {
       logger.error('Error removing saved offer:', error);
     } finally {
@@ -176,7 +147,7 @@ export default function SavedOffersScreen() {
         </PhonkText>
       </View>
 
-      {loading ? (
+      {!!userId && isLoading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.brand} />
         </View>

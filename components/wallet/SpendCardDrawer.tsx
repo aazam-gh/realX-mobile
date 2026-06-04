@@ -1,7 +1,4 @@
 import {
-    collection,
-    getDocs,
-    getFirestore,
     FirebaseFirestoreTypes,
 } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
@@ -28,6 +25,8 @@ import RedeemGiftCard from './RedeemGiftCard';
 import type { WalletBrand } from './types';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { fetchXcardBrandsPage } from '../../utils/firebaseQueries';
+import { queryClient, queryKeys } from '../../utils/queryClient';
 
 const PAGE_SIZE = 10;
 
@@ -124,8 +123,6 @@ export default function SpendCardDrawer({
         if (!isNew && (fetchingRef.current || isListEndRef.current)) return;
 
         const trimmedQuery = normalizeSearchText(currentQuery ?? searchQueryRef.current);
-        const isSearchMode = trimmedQuery.length > 0;
-
         const requestId = ++requestIdRef.current;
         fetchingRef.current = true;
         setErrorMessage(null);
@@ -139,39 +136,25 @@ export default function SpendCardDrawer({
         }
 
         try {
-            const db = getFirestore();
-            let q = collection(db, 'vendors').where('xcard', '==', true);
-
-            if (isSearchMode) {
-                q = q.where('searchTokens', 'array-contains', trimmedQuery);
-            }
-
-            q = isNew || !lastDocRef.current
-                ? q.limit(PAGE_SIZE)
-                : q.startAfter(lastDocRef.current).limit(PAGE_SIZE);
-
-            const snapshot = await getDocs(q);
+            const page = await queryClient.fetchQuery({
+                queryKey: queryKeys.xcardBrandsPage(trimmedQuery, (isNew ? null : lastDocRef.current?.id ?? null)),
+                queryFn: () => fetchXcardBrandsPage(
+                    trimmedQuery,
+                    PAGE_SIZE,
+                    isNew ? null : lastDocRef.current,
+                    t('unknown'),
+                ),
+            });
             if (requestId !== requestIdRef.current) return;
 
-            const items: WalletBrand[] = snapshot.docs.map((doc: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    name: data.name || t('unknown'),
-                    nameAr: data.nameAr || undefined,
-                    logo: data.profilePicture || data.logoUrl || data.imageUrl || null,
-                    backgroundColor: '#F0F0F0',
-                    loyalty: data.loyalty || [],
-                };
-            });
+            const items: WalletBrand[] = page.items;
 
             setBrands((prev) => (isNew ? items : [...prev, ...items]));
 
-            if (snapshot.docs.length > 0) {
-                lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
-                const reachedEnd = snapshot.docs.length < PAGE_SIZE;
-                isListEndRef.current = reachedEnd;
-                setIsListEnd(reachedEnd);
+            if (page.lastDoc) {
+                lastDocRef.current = page.lastDoc;
+                isListEndRef.current = page.reachedEnd;
+                setIsListEnd(page.reachedEnd);
             } else {
                 isListEndRef.current = true;
                 setIsListEnd(true);

@@ -20,6 +20,7 @@ import { RestaurantCard } from '../components/category';
 import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
+import { queryClient, queryKeys } from '../utils/queryClient';
 
 export default function SearchScreen() {
     const { q } = useLocalSearchParams<{ q: string }>();
@@ -78,7 +79,10 @@ export default function SearchScreen() {
                     : query(vendorsRef, ...constraints, limit(PAGE_SIZE) as any);
             }
 
-            const snapshot = await getDocs(q);
+            const snapshot = await queryClient.fetchQuery({
+                queryKey: queryKeys.searchVendorsPage(trimmedQuery, (isNew ? null : lastDocRef.current?.id ?? null)),
+                queryFn: () => getDocs(q),
+            });
 
             // Map vendor documents directly
             const fetched: any[] = snapshot.docs.map((docSnap: any) => ({

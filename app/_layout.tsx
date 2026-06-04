@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   type FirebaseAuthTypes
 } from '@react-native-firebase/auth';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { StudentProvider, useStudent } from '../context/StudentContext';
 import { useFonts } from 'expo-font';
@@ -28,6 +29,7 @@ import {
 } from '../utils/verificationPending';
 import { logger } from '../utils/logger';
 import { AppThemeProvider, useAppTheme } from '../context/AppThemeContext';
+import { queryClient } from '../utils/queryClient';
 
 import CustomSplash from './splash';
 
@@ -94,22 +96,24 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <AppThemeProvider>
-        <StudentProvider>
-          <LayoutContent
-            user={user}
-            loaded={loaded}
-            error={error}
-            i18nReady={i18nReady}
-            appCheckReady={appCheckReady}
-            initializing={initializing}
-            showSplash={showSplash}
-            onSplashFinish={() => setShowSplash(false)}
-          />
-        </StudentProvider>
-      </AppThemeProvider>
-    </SafeAreaProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <AppThemeProvider>
+          <StudentProvider>
+            <LayoutContent
+              user={user}
+              loaded={loaded}
+              error={error}
+              i18nReady={i18nReady}
+              appCheckReady={appCheckReady}
+              initializing={initializing}
+              showSplash={showSplash}
+              onSplashFinish={() => setShowSplash(false)}
+            />
+          </StudentProvider>
+        </AppThemeProvider>
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
 }
 

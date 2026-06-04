@@ -26,13 +26,14 @@ import {
   isInQatar,
   isValidLatLng,
   LatLng,
+  mapTileCacheKey,
+  mapTileSetForRegion,
   QATAR_BOUNDS,
-  regionCacheKey,
-  rememberRegionCacheKey,
+  rememberMapTileCacheKeys,
   toGeohash
 } from '../../utils/mapGeo';
 import { useAppTheme } from '../../context/AppThemeContext';
-import { fetchMapLocations, fetchSavedMapPlaceIds } from '../../utils/firebaseQueries';
+import { fetchMapLocations, fetchMapLocationsByPrefixes, fetchSavedMapPlaceIds, searchMapLocations } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 
 function clampRegion(region: Region): Region {
@@ -58,11 +59,11 @@ function clampRegion(region: Region): Region {
 }
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
-const MAP_GEOHASH_PRECISION = 5;
 const MAP_RECENTS_KEY = 'realx.map.recentPlaces.v1';
 const MAP_BOTTOM_PANEL_OFFSET = 50;
 const MAP_FLOATING_BUTTON_GAP = 12;
 const SAVED_MAP_PLACES_LIMIT = 100;
+const MAP_TILE_FETCH_DEBOUNCE_MS = 450;
 const _DEFAULT_ZOOM = 11.5;
 void _DEFAULT_ZOOM;
 
@@ -95,7 +96,7 @@ type VendorMapItem = {
   distanceKm?: number;
 };
 
-type RegionCachePayload = {
+type TileCachePayload = {
   fetchedAt: number;
   vendors: VendorMapItem[];
 };
@@ -149,6 +150,11 @@ function formatMapSearchPlaceholder(placeholder: string, isRTL: boolean) {
   if (!isRTL) return placeholder;
 
   return placeholder.replace(/[\s.。…]+$/u, '');
+}
+
+function mapFetchKey(region: Region) {
+  const tileSet = mapTileSetForRegion(region);
+  return `${tileSet.precision}:${tileSet.prefixes.join(',')}`;
 }
 
 export default function MapScreen() {
@@ -242,7 +248,7 @@ export default function MapScreen() {
     setIsSearching(true);
     const runSearch = async () => {
       try {
-        const visibleVendors = Array.isArray(vendorsRef.current) ? vendorsRef.current : [];
+        let visibleVendors = Array.isArray(vendorsRef.current) ? vendorsRef.current : [];
         const matchingVendorIds = new Set<string>();
 
         visibleVendors.forEach((vendor) => {
@@ -262,6 +268,26 @@ export default function MapScreen() {
             matchingVendorIds.add(vendor.vendorId);
           }
         });
+
+        if (matchingVendorIds.size === 0) {
+          const remoteResults = await queryClient.fetchQuery({
+            queryKey: queryKeys.mapLocationSearch(trimmedQuery),
+            queryFn: () => searchMapLocations(trimmedQuery),
+          });
+          const remoteVendors = parseMapLocationDocs(remoteResults);
+
+          remoteVendors.forEach((vendor) => {
+            vendorCacheRef.current.set(vendor.id, vendor);
+            matchingVendorIds.add(vendor.vendorId);
+          });
+
+          if (remoteVendors.length > 0 && active) {
+            const allVendors = sortVendorsByDistance(Array.from(vendorCacheRef.current.values()), userLocation);
+            vendorsRef.current = allVendors;
+            visibleVendors = allVendors;
+            setVendors(allVendors);
+          }
+        }
 
         if (!active) return;
 
@@ -293,7 +319,7 @@ export default function MapScreen() {
     return () => {
       active = false;
     };
-  }, [submittedSearchQuery]);
+  }, [submittedSearchQuery, userLocation]);
 
   useEffect(() => {
     let frame: ReturnType<typeof setTimeout>;
@@ -339,6 +365,7 @@ export default function MapScreen() {
   const lastFetchedKeyRef = useRef<string | null>(null);
   const isClampingRef = useRef(false);
   const hasFetchedOnceRef = useRef(false);
+  const hasFetchedMapIndexRef = useRef(false);
 
   // Build GeoJSON points from vendors and load into supercluster
   const vendorPoints: PointFeature[] = useMemo(() => {
@@ -363,6 +390,10 @@ export default function MapScreen() {
       },
     }));
   }, [vendors, searchedVendorIds]);
+
+  const vendorById = useMemo(() => {
+    return new Map(vendors.map((vendor) => [vendor.id, vendor]));
+  }, [vendors]);
 
   // Get clusters for current viewport
   const clusters = useMemo(() => {
@@ -413,7 +444,7 @@ export default function MapScreen() {
     void requestLocation();
   }, []);
 
-  const fetchVendorsForVisibleRegion = useCallback(async (center: LatLng, zoom: number) => {
+  const fetchVendorsForVisibleRegion = useCallback(async (region: Region) => {
     if (!getAuth().currentUser) {
       logger.warn('[Map] Skipping fetch — user not authenticated yet');
       setLoading(false);
@@ -423,55 +454,81 @@ export default function MapScreen() {
     setSearchingNearby(true);
     setError(null);
 
-    const regionHash = toGeohash(center.latitude, center.longitude, MAP_GEOHASH_PRECISION);
-    const cacheKey = regionCacheKey(regionHash);
-
     try {
-      // Fast path: use in-memory cache (no async I/O)
-      const cachedRaw = await AsyncStorage.getItem(cacheKey);
-      if (cachedRaw) {
-        const cached = JSON.parse(cachedRaw) as RegionCachePayload;
-        if (Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
-          // Merge into in-memory cache
-          cached.vendors.forEach((v) => vendorCacheRef.current.set(v.id, v));
-          setLoading(false);
-          setSearchingNearby(false);
-          setVendors(sortVendorsByDistance(Array.from(vendorCacheRef.current.values()), userLocation));
+      const tileSet = mapTileSetForRegion(region);
+      const fetchedTiles: string[] = [];
+      const missingPrefixes: string[] = [];
+
+      await Promise.all(tileSet.prefixes.map(async (prefix) => {
+        const cacheKey = mapTileCacheKey(tileSet.precision, prefix);
+        const cachedRaw = await AsyncStorage.getItem(cacheKey);
+        if (!cachedRaw) {
+          missingPrefixes.push(prefix);
           return;
         }
+
+        try {
+          const cached = JSON.parse(cachedRaw) as TileCachePayload;
+          if (Date.now() - cached.fetchedAt >= CACHE_TTL_MS) {
+            missingPrefixes.push(prefix);
+            return;
+          }
+
+          cached.vendors.forEach((vendor) => vendorCacheRef.current.set(vendor.id, vendor));
+          fetchedTiles.push(cacheKey);
+        } catch {
+          missingPrefixes.push(prefix);
+        }
+      }));
+
+      const normalizedMissingPrefixes = Array.from(new Set(missingPrefixes)).sort();
+
+      if (normalizedMissingPrefixes.length > 0) {
+        const indexedLocations = await queryClient.fetchQuery({
+          queryKey: queryKeys.mapLocationTiles(tileSet.precision, normalizedMissingPrefixes),
+          queryFn: () => fetchMapLocationsByPrefixes(tileSet.precision, normalizedMissingPrefixes),
+        });
+        const indexedVendors = parseMapLocationDocs(indexedLocations);
+        const byPrefix = new Map<string, VendorMapItem[]>();
+
+        indexedVendors.forEach((vendor) => {
+          vendorCacheRef.current.set(vendor.id, vendor);
+          const prefix = vendor.geohash.slice(0, tileSet.precision);
+          const bucket = byPrefix.get(prefix) || [];
+          bucket.push(vendor);
+          byPrefix.set(prefix, bucket);
+        });
+
+        await Promise.all(normalizedMissingPrefixes.map(async (prefix) => {
+          const cacheKey = mapTileCacheKey(tileSet.precision, prefix);
+          await AsyncStorage.setItem(cacheKey, JSON.stringify({
+            fetchedAt: Date.now(),
+            vendors: byPrefix.get(prefix) || [],
+          } satisfies TileCachePayload));
+          fetchedTiles.push(cacheKey);
+        }));
+
+        await rememberMapTileCacheKeys(fetchedTiles);
+        hasFetchedMapIndexRef.current = hasFetchedMapIndexRef.current || indexedVendors.length > 0;
+
+        if (indexedVendors.length === 0 && !hasFetchedMapIndexRef.current && vendorCacheRef.current.size === 0) {
+          const legacyLocationsData = await queryClient.fetchQuery({
+            queryKey: queryKeys.mapLocations(),
+            queryFn: fetchMapLocations,
+          });
+
+          if (legacyLocationsData) {
+            parseMapLocations(legacyLocationsData).forEach((location) => {
+              vendorCacheRef.current.set(location.id, location);
+            });
+            logger.warn('[Map] Falling back to legacy maps/locations cache');
+          }
+        }
+      } else {
+        await rememberMapTileCacheKeys(fetchedTiles);
       }
 
-      const locationsData = await queryClient.fetchQuery({
-        queryKey: queryKeys.mapLocations(),
-        queryFn: fetchMapLocations,
-      });
-
-      if (!locationsData) {
-        logger.warn('[Map] No maps/locations document found');
-        setVendors([]);
-        setLoading(false);
-        setSearchingNearby(false);
-        return;
-      }
-
-      const byId = new Map<string, VendorMapItem>();
-      parseMapLocations(locationsData).forEach((location) => byId.set(location.id, location));
-
-      logger.log('[Map] Parsed', byId.size, 'valid map locations');
-
-      // Merge new vendors into in-memory cache
-      byId.forEach((v, id) => vendorCacheRef.current.set(id, v));
-
-      const allVendors = sortVendorsByDistance(Array.from(vendorCacheRef.current.values()), userLocation);
-      const payload: RegionCachePayload = {
-        fetchedAt: Date.now(),
-        vendors: Array.from(byId.values()),
-      };
-
-      await AsyncStorage.setItem(cacheKey, JSON.stringify(payload));
-      await rememberRegionCacheKey(regionHash);
-
-      setVendors(allVendors);
+      setVendors(sortVendorsByDistance(Array.from(vendorCacheRef.current.values()), userLocation));
     } catch (fetchError) {
       logger.error('Failed loading map vendors:', fetchError);
       setError(t('map_load_error'));
@@ -507,6 +564,20 @@ export default function MapScreen() {
     []
   );
 
+  useEffect(() => {
+    if (!hasFetchedOnceRef.current || !getAuth().currentUser) return;
+
+    const nextFetchKey = mapFetchKey(currentRegion);
+    if (nextFetchKey === lastFetchedKeyRef.current) return;
+
+    const timeout = setTimeout(() => {
+      lastFetchedKeyRef.current = nextFetchKey;
+      void fetchVendorsForVisibleRegion(currentRegion);
+    }, MAP_TILE_FETCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeout);
+  }, [currentRegion, fetchVendorsForVisibleRegion]);
+
   // Initial fetch on mount — wait for auth to be ready
   useEffect(() => {
     if (hasFetchedOnceRef.current) return;
@@ -514,10 +585,8 @@ export default function MapScreen() {
     const doFetch = () => {
       if (!getAuth().currentUser) return false;
       hasFetchedOnceRef.current = true;
-      const zoom = Math.round(Math.log2(360 / 0.6));
-      const center = { latitude: DOHA_CENTER.latitude, longitude: DOHA_CENTER.longitude };
-      lastFetchedKeyRef.current = `${toGeohash(center.latitude, center.longitude, MAP_GEOHASH_PRECISION)}-${zoom}`;
-      void fetchVendorsForVisibleRegion(center, zoom);
+      lastFetchedKeyRef.current = mapFetchKey(currentRegion);
+      void fetchVendorsForVisibleRegion(currentRegion);
       return true;
     };
 
@@ -532,7 +601,7 @@ export default function MapScreen() {
       }
     });
     return unsubscribe;
-  }, [fetchVendorsForVisibleRegion]);
+  }, [currentRegion, fetchVendorsForVisibleRegion]);
 
   useEffect(() => {
     if (!userLocation) return;
@@ -676,7 +745,7 @@ export default function MapScreen() {
     const leaves = superclusterRef.current.getLeaves(cluster.properties.cluster_id, Infinity);
     if (!leaves.length) return;
     const preview = leaves
-      .map((leaf) => vendors.find((vendor) => vendor.id === leaf.properties.id))
+      .map((leaf) => vendorById.get(String(leaf.properties.id)))
       .filter((vendor): vendor is VendorMapItem => !!vendor)
       .slice(0, 4);
     setSelectedMapVendor(null);
@@ -775,22 +844,22 @@ export default function MapScreen() {
               );
             }
 
-            const vendorId = cluster.properties.id;
+            const vendorId = String(cluster.properties.id);
+            const vendor = vendorById.get(vendorId);
 
             return (
               <Marker
                 key={vendorId}
                 coordinate={{ latitude: lat, longitude: lng }}
                 onPress={() => {
-                  const vendor = vendors.find((v) => v.id === vendorId);
                   if (vendor) {
                     selectMapVendor(vendor);
                   }
                 }}
               >
-                <View style={[styles.vendorDot, { borderColor: markerColorForVendor(vendors.find((v) => v.id === vendorId) || {} as VendorMapItem) }]}>
-                  {(vendors.find((v) => v.id === vendorId)?.xcard || vendors.find((v) => v.id === vendorId)?.hasBuyOneGetOne) && (
-                    <View style={[styles.vendorDotCore, { backgroundColor: markerColorForVendor(vendors.find((v) => v.id === vendorId) || {} as VendorMapItem) }]} />
+                <View style={[styles.vendorDot, { borderColor: markerColorForVendor(vendor || {} as VendorMapItem) }]}>
+                  {(vendor?.xcard || vendor?.hasBuyOneGetOne) && (
+                    <View style={[styles.vendorDotCore, { backgroundColor: markerColorForVendor(vendor || {} as VendorMapItem) }]} />
                   )}
                 </View>
               </Marker>
@@ -1055,6 +1124,58 @@ function sortVendorsByDistance(vendors: VendorMapItem[], userLocation: LatLng | 
     .sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
 }
 
+function parseMapLocationDocs(locations: Record<string, any>[]): VendorMapItem[] {
+  return locations.flatMap((rawLocation) => {
+    if (!rawLocation || typeof rawLocation !== 'object') return [];
+
+    const rawLat = rawLocation.latitude;
+    const rawLng = rawLocation.longitude;
+    const latitude = typeof rawLat === 'string' ? parseFloat(rawLat) : rawLat;
+    const longitude = typeof rawLng === 'string' ? parseFloat(rawLng) : rawLng;
+
+    if (!isValidLatLng(latitude, longitude)) {
+      logger.warn('[Map] Skipping indexed location - invalid lat/lng:', rawLat, rawLng);
+      return [];
+    }
+    if (!isInQatar(latitude, longitude)) {
+      logger.warn('[Map] Skipping indexed location - outside Qatar bounds:', latitude, longitude);
+      return [];
+    }
+
+    const vendorId = String(rawLocation.vendorId || '').trim();
+    const locationId = String(rawLocation.locationId || rawLocation.id || 'primary').trim();
+    if (!vendorId || !locationId) return [];
+
+    const geohash = typeof rawLocation.geohash === 'string' && rawLocation.geohash.length > 0
+      ? rawLocation.geohash
+      : toGeohash(latitude, longitude, 6);
+
+    return [{
+      id: `${vendorId}:${locationId}`,
+      vendorId,
+      locationId,
+      name: rawLocation.vendorName || rawLocation.name || undefined,
+      nameAr: rawLocation.vendorNameAr || rawLocation.nameAr || undefined,
+      branchName: rawLocation.branchName || undefined,
+      branchNameAr: rawLocation.branchNameAr || undefined,
+      phoneNumber: typeof rawLocation.phoneNumber === 'string' ? rawLocation.phoneNumber.trim() : undefined,
+      address: rawLocation.address || undefined,
+      addressAr: rawLocation.addressAr || undefined,
+      latitude,
+      longitude,
+      geohash,
+      mainCategory: rawLocation.mainCategory || null,
+      xcard: rawLocation.xcard === true,
+      offerTypes: Array.isArray(rawLocation.offerTypes) ? rawLocation.offerTypes : [],
+      hasBuyOneGetOne: rawLocation.hasBuyOneGetOne === true,
+      hasStudentDeal: rawLocation.hasStudentDeal === true,
+      openingHours: rawLocation.openingHours || null,
+      searchTokens: Array.isArray(rawLocation.searchTokens) ? rawLocation.searchTokens : [],
+      firstOffer: rawLocation.firstOffer || null,
+    }];
+  });
+}
+
 function parseMapLocations(locationsData: Record<string, any> | undefined): VendorMapItem[] {
   if (!locationsData || typeof locationsData !== 'object') return [];
 
@@ -1102,7 +1223,7 @@ function parseMapLocations(locationsData: Record<string, any> | undefined): Vend
       const locationId = String(rawLocation.id || (rawLocation.isPrimary ? 'primary' : `branch-${index + 1}`));
       const geohash = typeof rawLocation.geohash === 'string' && rawLocation.geohash.length > 0
         ? rawLocation.geohash
-        : toGeohash(latitude, longitude, MAP_GEOHASH_PRECISION);
+        : toGeohash(latitude, longitude, 5);
 
       return [{
         id: `${vendorId}:${locationId}`,

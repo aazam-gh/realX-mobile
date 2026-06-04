@@ -74,6 +74,41 @@ export type WalletBrandQueryItem = {
     loyalty: any[];
 };
 
+export type MapLocationQueryItem = {
+    id: string;
+    vendorId: string;
+    locationId: string;
+    name?: string | null;
+    nameAr?: string | null;
+    vendorName?: string | null;
+    vendorNameAr?: string | null;
+    branchName?: string | null;
+    branchNameAr?: string | null;
+    phoneNumber?: string | null;
+    address?: string | null;
+    addressAr?: string | null;
+    latitude: number;
+    longitude: number;
+    geohash?: string | null;
+    geohash4?: string | null;
+    geohash5?: string | null;
+    geohash6?: string | null;
+    mainCategory?: string | null;
+    profilePicture?: string | null;
+    xcard?: boolean;
+    offerTypes?: string[];
+    hasBuyOneGetOne?: boolean;
+    hasStudentDeal?: boolean;
+    openingHours?: any;
+    searchTokens?: string[];
+    firstOffer?: {
+        titleEn?: string;
+        titleAr?: string;
+        discountType?: string;
+    } | null;
+    isPrimary?: boolean;
+};
+
 export async function fetchCmsDocument<T = Record<string, any>>(documentId: string): Promise<T | null> {
     const db = getFirestore();
     const docSnap = await getDoc(doc(db, 'cms', documentId));
@@ -219,6 +254,60 @@ export async function fetchMapLocations() {
     const db = getFirestore();
     const locationsSnap = await getDoc(doc(db, 'maps', 'locations'));
     return locationsSnap.exists() ? locationsSnap.data() : null;
+}
+
+export async function fetchMapLocationsByPrefixes(
+    precision: 4 | 5 | 6,
+    prefixes: string[],
+    perPrefixLimit = 80,
+): Promise<MapLocationQueryItem[]> {
+    const normalizedPrefixes = Array.from(new Set(
+        prefixes
+            .map((prefix) => prefix.trim())
+            .filter((prefix) => prefix.length === precision)
+    ));
+
+    if (!normalizedPrefixes.length) return [];
+
+    const db = getFirestore();
+    const fieldName = `geohash${precision}`;
+    const snapshots = await Promise.all(
+        normalizedPrefixes.map((prefix) => getDocs(query(
+            collection(db, 'mapLocations'),
+            where(fieldName, '==', prefix),
+            limit(perPrefixLimit)
+        )))
+    );
+    const byId = new Map<string, MapLocationQueryItem>();
+
+    snapshots.forEach((snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
+        snapshot.docs.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+            const data = docSnap.data();
+            byId.set(docSnap.id, {
+                id: docSnap.id,
+                ...data,
+            } as MapLocationQueryItem);
+        });
+    });
+
+    return Array.from(byId.values());
+}
+
+export async function searchMapLocations(searchQuery: string, pageSize = 25): Promise<MapLocationQueryItem[]> {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (!normalizedQuery) return [];
+
+    const db = getFirestore();
+    const snapshot = await getDocs(query(
+        collection(db, 'mapLocations'),
+        where('searchTokens', 'array-contains', normalizedQuery),
+        limit(pageSize)
+    ));
+
+    return snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+    } as MapLocationQueryItem));
 }
 
 export async function fetchStudentProfile(userId: string) {

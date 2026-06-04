@@ -23,7 +23,7 @@ import { logger } from '../utils/logger';
 
 const WAKTI_IOS_URL = 'https://apps.apple.com/us/app/wakti-ai/id6755150700';
 const WAKTI_ANDROID_URL = 'https://play.google.com/store/apps/details?id=ai.wakti.app';
-const waktiBannerImage = require('../assets/images/wakti-banner.png');
+const waktiBannerImage = require('../assets/images/waktilogo.png');
 
 export default function WaktiModal() {
     const isRTL = I18nManager.isRTL;
@@ -76,35 +76,25 @@ export default function WaktiModal() {
 
                 <View style={styles.heroCard}>
                     <View style={[styles.heroTopRow, isRTL && styles.heroTopRowRTL]}>
-                        <Text style={[styles.heroHeadline, isRTL && styles.textRTL]} numberOfLines={4}>
-                            {t('wakti_banner_headline')}
-                        </Text>
+                        <View style={styles.heroCopy}>
+                            <Text style={[styles.heroHeadline, isRTL && styles.textRTL]} numberOfLines={4}>
+                                {t('wakti_banner_headline')}
+                            </Text>
+                            <Text style={[styles.heroOffer, isRTL && styles.textRTL]}>
+                                {t('wakti_banner_offer')}
+                            </Text>
+                            <Text style={[styles.heroBody, isRTL && styles.textRTL]}>
+                                {t('wakti_banner_body')}
+                            </Text>
+                        </View>
 
                         <View style={styles.heroArtPanel}>
                             <Image
                                 source={waktiBannerImage}
                                 style={styles.heroArtImage}
-                                contentFit="cover"
-                                contentPosition="top"
-                                accessibilityLabel="Wakti AI"
+                                contentFit="contain"
+                                accessibilityLabel="Wakti AI logo"
                             />
-                        </View>
-                    </View>
-
-                    <View style={[styles.heroOfferRow, isRTL && styles.heroOfferRowRTL]}>
-                        <View style={styles.mustTryWrap}>
-                            <Text style={[styles.mustTry, isRTL && styles.textRTL]} numberOfLines={1}>
-                                {t('wakti_banner_must_try')}
-                            </Text>
-                            <View style={styles.mustTryUnderline} />
-                        </View>
-
-                        <View style={styles.discountWrap}>
-                            <Text style={styles.discountNumber}>20</Text>
-                            <View>
-                                <Text style={styles.discountPercent}>%</Text>
-                                <Text style={styles.discountOff}>{t('wakti_banner_discount_off')}</Text>
-                            </View>
                         </View>
                     </View>
                 </View>
@@ -199,17 +189,36 @@ const styles = StyleSheet.create({
     heroTopRowRTL: {
         flexDirection: 'row-reverse',
     },
-    heroHeadline: {
+    heroCopy: {
         flex: 1,
         minWidth: 0,
+        gap: 12,
+    },
+    heroHeadline: {
         color: Colors.brandGreen,
         fontSize: 26,
         lineHeight: 36,
         fontFamily: Typography.hanson.bold,
     },
+    heroOffer: {
+        color: Colors.brandGreen,
+        fontSize: 38,
+        lineHeight: 42,
+        fontFamily: Typography.hanson.bold,
+        textTransform: 'uppercase',
+        textShadowColor: 'rgba(24, 184, 82, 0.24)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 12,
+    },
+    heroBody: {
+        color: 'rgba(255, 255, 255, 0.82)',
+        fontSize: 14,
+        lineHeight: 21,
+        fontFamily: Typography.poppins.medium,
+    },
     heroArtPanel: {
-        width: 112,
-        height: 128,
+        width: 120,
+        height: 120,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
@@ -217,64 +226,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(24, 184, 82, 0.44)',
         borderRadius: 24,
+        flexShrink: 0,
     },
     heroArtImage: {
-        width: 176,
-        height: 176,
-    },
-    heroOfferRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        gap: 14,
-    },
-    heroOfferRowRTL: {
-        flexDirection: 'row-reverse',
-    },
-    mustTryWrap: {
-        flex: 1,
-        minWidth: 0,
-        gap: 4,
-    },
-    mustTry: {
-        color: Colors.brandGreen,
-        fontSize: 24,
-        lineHeight: 31,
-        fontFamily: Typography.hanson.bold,
-        textTransform: 'uppercase',
-    },
-    mustTryUnderline: {
-        height: 5,
-        width: '92%',
-        borderRadius: 999,
-        backgroundColor: Colors.brandGreen,
-    },
-    discountWrap: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        flexShrink: 0,
-        paddingBottom: 2,
-    },
-    discountNumber: {
-        color: Colors.brandGreen,
-        fontSize: 58,
-        lineHeight: 62,
-        fontFamily: Typography.hanson.bold,
-        textShadowColor: 'rgba(24, 184, 82, 0.24)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 12,
-    },
-    discountPercent: {
-        color: Colors.brandGreen,
-        fontSize: 25,
-        lineHeight: 28,
-        fontFamily: Typography.hanson.bold,
-    },
-    discountOff: {
-        color: Colors.brandGreen,
-        fontSize: 17,
-        lineHeight: 18,
-        fontFamily: Typography.hanson.bold,
+        width: 96,
+        height: 96,
     },
     details: {
         gap: 14,

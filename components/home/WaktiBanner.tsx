@@ -15,7 +15,7 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 
-const waktiBannerImage = require('../../assets/images/wakti-banner.png');
+const waktiBannerImage = require('../../assets/images/waktilogo.png');
 
 type WaktiBannerProps = {
     style?: StyleProp<ViewStyle>;
@@ -46,32 +46,17 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                         <Text style={[styles.headline, isRTL && styles.textRTL]} numberOfLines={3}>
                             {t('wakti_banner_headline')}
                         </Text>
-
-                        <View style={[styles.offerRow, isRTL && styles.offerRowRTL]}>
-                            <View style={styles.mustTryWrap}>
-                                <Text style={[styles.mustTry, isRTL && styles.textRTL]} numberOfLines={1}>
-                                    {t('wakti_banner_must_try')}
-                                </Text>
-                                <View style={styles.mustTryUnderline} />
-                            </View>
-
-                            <View style={styles.discountWrap}>
-                                <Text style={styles.discountNumber}>20</Text>
-                                <View>
-                                    <Text style={styles.discountPercent}>%</Text>
-                                    <Text style={styles.discountOff}>{t('wakti_banner_discount_off')}</Text>
-                                </View>
-                            </View>
-                        </View>
+                        <Text style={[styles.offerText, isRTL && styles.textRTL]} numberOfLines={1}>
+                            {t('wakti_banner_offer')}
+                        </Text>
                     </View>
 
                     <View style={styles.artPanel}>
                         <Image
                             source={waktiBannerImage}
                             style={styles.artImage}
-                            contentFit="cover"
-                            contentPosition="top"
-                            accessibilityLabel="Wakti AI"
+                            contentFit="contain"
+                            accessibilityLabel="Wakti AI logo"
                         />
                     </View>
                 </View>
@@ -107,73 +92,28 @@ const styles = StyleSheet.create({
     copy: {
         flex: 1,
         minWidth: 0,
-        gap: 14,
+        gap: 12,
         justifyContent: 'center',
     },
     headline: {
         color: Colors.brandGreen,
-        fontSize: 21,
-        lineHeight: 29,
+        fontSize: 20,
+        lineHeight: 28,
         fontFamily: Typography.hanson.bold,
     },
-    offerRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        gap: 12,
-    },
-    offerRowRTL: {
-        flexDirection: 'row-reverse',
-    },
-    mustTryWrap: {
-        flex: 1,
-        minWidth: 0,
-        alignSelf: 'flex-end',
-        gap: 3,
-    },
-    mustTry: {
+    offerText: {
         color: Colors.brandGreen,
-        fontSize: 18,
-        lineHeight: 24,
+        fontSize: 28,
+        lineHeight: 34,
         fontFamily: Typography.hanson.bold,
         textTransform: 'uppercase',
-    },
-    mustTryUnderline: {
-        height: 4,
-        width: '92%',
-        borderRadius: 999,
-        backgroundColor: Colors.brandGreen,
-    },
-    discountWrap: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        flexShrink: 0,
-        paddingBottom: 1,
-    },
-    discountNumber: {
-        color: Colors.brandGreen,
-        fontSize: 45,
-        lineHeight: 48,
-        fontFamily: Typography.hanson.bold,
         textShadowColor: 'rgba(24, 184, 82, 0.24)',
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 10,
     },
-    discountPercent: {
-        color: Colors.brandGreen,
-        fontSize: 20,
-        lineHeight: 22,
-        fontFamily: Typography.hanson.bold,
-    },
-    discountOff: {
-        color: Colors.brandGreen,
-        fontSize: 14,
-        lineHeight: 15,
-        fontFamily: Typography.hanson.bold,
-    },
     artPanel: {
-        width: 94,
-        height: 112,
+        width: 108,
+        height: 108,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
@@ -181,10 +121,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(24, 184, 82, 0.44)',
         borderRadius: 22,
+        flexShrink: 0,
     },
     artImage: {
-        width: 148,
-        height: 148,
+        width: 88,
+        height: 88,
     },
     textRTL: {
         textAlign: 'right',

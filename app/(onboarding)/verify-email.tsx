@@ -10,6 +10,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -89,90 +90,99 @@ export default function VerifyEmailScreen() {
     >
       <StatusBar style="light" />
 
-      <OnboardingScreenMotion style={styles.headerBackground}>
-        <SafeAreaView edges={['top']} style={styles.headerContent}>
-          <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
-            <TouchableOpacity onPress={handleBack} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
-              <Ionicons name={arrowIconName} size={24} color={theme.logoTileText} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/')} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
-              <Ionicons name="close" size={24} color={theme.logoTileText} />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </OnboardingScreenMotion>
-
-      <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: theme.background, flex: 1 }]}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.card}>
-            <OnboardingStaggerItem delay={120}>
-            <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
-              <Ionicons name="shield-checkmark-outline" size={36} color={theme.brand} />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <OnboardingScreenMotion style={styles.headerBackground}>
+          <SafeAreaView edges={['top']} style={styles.headerContent}>
+            <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
+              <TouchableOpacity onPress={handleBack} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
+                <Ionicons name={arrowIconName} size={24} color={theme.logoTileText} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.replace('/')} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
+                <Ionicons name="close" size={24} color={theme.logoTileText} />
+              </TouchableOpacity>
             </View>
-            </OnboardingStaggerItem>
+          </SafeAreaView>
+        </OnboardingScreenMotion>
 
-            <OnboardingStaggerItem delay={170}>
-            <View style={styles.textContainer}>
-              <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{t('onboarding_verify_email_title_prefix')}</Text>
-              <PhonkText style={styles.titleLarge}>
-                <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_verify_email_title_suffix')}</Text>
-              </PhonkText>
-            </View>
-            </OnboardingStaggerItem>
-
-            <OnboardingStaggerItem delay={220} style={styles.inputWrapper}>
-              <View
-                style={[
-                  styles.singleInputContainer,
-                  { backgroundColor: email ? theme.brandSoft : theme.cardMuted, borderColor: email ? theme.brand : 'transparent' },
-                ]}
-              >
-                <Ionicons name="mail-outline" size={20} color={email ? theme.brand : theme.iconMuted} style={styles.inputIcon} />
-                <TextInput
-                  ref={inputRef}
-                  style={[styles.input, { color: theme.text, textAlign: inputTextAlign, flex: 1 }]}
-                  placeholder={t('onboarding_email_placeholder')}
-                  placeholderTextColor={theme.inputPlaceholder}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  value={email}
-                  onChangeText={setEmail}
-                  editable={!isLoading}
-                  autoFocus
-                />
+        <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: theme.background, flex: 1 }]}>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.card}>
+              <OnboardingStaggerItem delay={120}>
+              <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
+                <Ionicons name="shield-checkmark-outline" size={36} color={theme.brand} />
               </View>
-            </OnboardingStaggerItem>
+              </OnboardingStaggerItem>
 
-            <OnboardingStaggerItem delay={270}>
-            <Text style={[styles.infoText, { color: theme.subtleText }]}>{t('onboarding_verify_email_description')}</Text>
-            </OnboardingStaggerItem>
+              <OnboardingStaggerItem delay={170}>
+              <View style={styles.textContainer}>
+                <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{t('onboarding_verify_email_title_prefix')}</Text>
+                <PhonkText style={styles.titleLarge}>
+                  <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_verify_email_title_suffix')}</Text>
+                </PhonkText>
+              </View>
+              </OnboardingStaggerItem>
+
+              <OnboardingStaggerItem delay={220} style={styles.inputWrapper}>
+                <View
+                  style={[
+                    styles.singleInputContainer,
+                    { backgroundColor: email ? theme.brandSoft : theme.cardMuted, borderColor: email ? theme.brand : 'transparent' },
+                  ]}
+                >
+                  <Ionicons name="mail-outline" size={20} color={email ? theme.brand : theme.iconMuted} style={styles.inputIcon} />
+                  <TextInput
+                    ref={inputRef}
+                    style={[styles.input, { color: theme.text, textAlign: inputTextAlign, flex: 1 }]}
+                    placeholder={t('onboarding_email_placeholder')}
+                    placeholderTextColor={theme.inputPlaceholder}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    value={email}
+                    onChangeText={setEmail}
+                    editable={!isLoading}
+                    autoFocus
+                  />
+                </View>
+              </OnboardingStaggerItem>
+
+              <OnboardingStaggerItem delay={270}>
+              <Text style={[styles.infoText, { color: theme.subtleText }]}>{t('onboarding_verify_email_description')}</Text>
+              </OnboardingStaggerItem>
+            </View>
+          </TouchableWithoutFeedback>
+
+          <View style={styles.footer}>
+            <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
+            <TouchableOpacity
+              style={[styles.button, email && !isLoading && styles.buttonEnabled]}
+              onPress={handleContinue}
+              disabled={isLoading || !email}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={theme.onActionSolid} />
+              ) : (
+                <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>{t('onboarding_continue')}</Text>
+              )}
+            </TouchableOpacity>
+            </OnboardingButtonMotion>
           </View>
-        </TouchableWithoutFeedback>
-
-        <View style={styles.footer}>
-          <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
-          <TouchableOpacity
-            style={[styles.button, email && !isLoading && styles.buttonEnabled]}
-            onPress={handleContinue}
-            disabled={isLoading || !email}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={theme.onActionSolid} />
-            ) : (
-              <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>{t('onboarding_continue')}</Text>
-            )}
-          </TouchableOpacity>
-          </OnboardingButtonMotion>
-        </View>
-      </OnboardingCardMotion>
+        </OnboardingCardMotion>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scrollView: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
   headerBackground: { height: 250, backgroundColor: Colors.brandGreen },
   headerContent: { paddingHorizontal: 20, paddingTop: 10 },
   topButtons: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 },

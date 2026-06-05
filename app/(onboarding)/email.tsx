@@ -10,6 +10,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -109,13 +110,18 @@ export default function EmailOnboarding() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
       <StatusBar style="light" />
 
-      <KeyboardAvoidingView
-        style={styles.contentArea}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <OnboardingScreenMotion style={styles.headerBackground}>
           <SafeAreaView edges={['top']} style={styles.headerContent}>
@@ -195,32 +201,33 @@ export default function EmailOnboarding() {
               </OnboardingStaggerItem>
             </View>
           </TouchableWithoutFeedback>
-        </OnboardingCardMotion>
-      </KeyboardAvoidingView>
 
-      <View style={[styles.footer, { backgroundColor: theme.background }]}>
-        <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
-        <TouchableOpacity
-          style={[styles.button, email && !isLoading && styles.buttonEnabled]}
-          onPress={handleContinue}
-          disabled={isLoading || !email}
-          activeOpacity={0.8}
-        >
-          {isLoading ? (
-            <ActivityIndicator color={theme.onActionSolid} />
-          ) : (
-            <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>{t('onboarding_continue')}</Text>
-          )}
-        </TouchableOpacity>
-        </OnboardingButtonMotion>
-      </View>
-    </View>
+          <View style={styles.footer}>
+            <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
+            <TouchableOpacity
+              style={[styles.button, email && !isLoading && styles.buttonEnabled]}
+              onPress={handleContinue}
+              disabled={isLoading || !email}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={theme.onActionSolid} />
+              ) : (
+                <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>{t('onboarding_continue')}</Text>
+              )}
+            </TouchableOpacity>
+            </OnboardingButtonMotion>
+          </View>
+        </OnboardingCardMotion>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  contentArea: { flex: 1 },
+  scrollView: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
   headerBackground: { height: 250, backgroundColor: Colors.brandGreen },
   headerContent: { paddingHorizontal: 20, paddingTop: 10 },
   topButtons: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 },
@@ -273,7 +280,7 @@ const styles = StyleSheet.create({
     fontSize: 14, color: Colors.brandGreen, textAlign: 'center',
     lineHeight: 20, fontFamily: Typography.poppins.semiBold,
   },
-  footer: { paddingHorizontal: 28, paddingBottom: 40 },
+  footer: { paddingBottom: 40, marginTop: 'auto' },
   button: {
     backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,
     justifyContent: 'center', alignItems: 'center', marginBottom: 20,

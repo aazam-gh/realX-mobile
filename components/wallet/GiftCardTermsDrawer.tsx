@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { GlassView } from 'expo-glass-effect';
+import { BottomSheet as UniversalBottomSheet, RNHostView as UniversalRNHostView } from '@expo/ui';
 import React from 'react';
 import {
     I18nManager,
-    Modal,
-    Pressable,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
+    useWindowDimensions,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,138 +27,166 @@ export default function GiftCardTermsDrawer({
     onClose,
 }: GiftCardTermsDrawerProps) {
     const insets = useSafeAreaInsets();
-    const { isDark, theme } = useAppTheme();
-    const { t } = useTranslation();
-    const isRTL = I18nManager.isRTL;
+    const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+    const { theme } = useAppTheme();
+    const { t, i18n } = useTranslation();
+    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+    const sheetWidth = Math.max(0, windowWidth - 32);
+    const sheetMaxHeight = Math.max(0, windowHeight * 0.5 - insets.bottom);
+    const sheetBodyMaxHeight = Math.max(0, sheetMaxHeight - 120);
+    const sheetContent = (
+        <View
+            style={[
+                styles.sheetContent,
+                {
+                    backgroundColor: theme.card,
+                    width: sheetWidth,
+                    maxHeight: sheetMaxHeight,
+                    paddingBottom: insets.bottom + 24,
+                },
+            ]}
+        >
+            <View style={[styles.sheetHeader, isRTL && styles.sheetHeaderRTL]}>
+                <PhonkText style={[styles.modalTitleText, isRTL && styles.modalTitleTextRTL, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                    {t('terms_and_conditions_caps')}
+                </PhonkText>
+                <TouchableOpacity
+                    onPress={onClose}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                    <Ionicons name="close-circle" size={28} color={theme.icon} />
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled
+                style={[styles.sheetBody, { maxHeight: sheetBodyMaxHeight }]}
+                contentContainerStyle={styles.sheetBodyContent}
+            >
+                <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                    {t('no_specific_terms')}
+                </Text>
+
+                <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
+                    <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                        <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('in_store_only')}
+                        </Text>
+                    </View>
+                    <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                        <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('cannot_be_combined')}
+                        </Text>
+                    </View>
+                    <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                        <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('xp_promotional_reward')}
+                        </Text>
+                    </View>
+                    <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                        <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('xp_no_cash_withdrawal')}
+                        </Text>
+                    </View>
+                    <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                        <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('xp_in_app_only')}
+                        </Text>
+                    </View>
+                </View>
+            </ScrollView>
+        </View>
+    );
+
+    if (Platform.OS === 'ios') {
+        const {
+            BottomSheet: SwiftUIBottomSheet,
+            Group: SwiftUIGroup,
+            Host: SwiftUIHost,
+            RNHostView: SwiftUIRNHostView,
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+        } = require('@expo/ui/swift-ui');
+        const {
+            frame,
+            padding,
+            presentationBackground,
+            presentationDragIndicator,
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+        } = require('@expo/ui/swift-ui/modifiers');
+
+        return (
+            <SwiftUIHost style={StyleSheet.absoluteFill} pointerEvents="none">
+                <SwiftUIBottomSheet
+                    isPresented={visible}
+                    onIsPresentedChange={(presented: boolean) => {
+                        if (!presented) onClose();
+                    }}
+                    fitToContents
+                    testID="gift-card-terms-bottom-sheet"
+                >
+                    <SwiftUIGroup
+                        modifiers={[
+                            frame({ maxWidth: Infinity, alignment: 'topLeading' }),
+                            padding({ top: 16, leading: 16, trailing: 16 }),
+                            presentationDragIndicator('visible'),
+                            presentationBackground(theme.card),
+                        ]}
+                    >
+                        <SwiftUIRNHostView matchContents>
+                            {sheetContent}
+                        </SwiftUIRNHostView>
+                    </SwiftUIGroup>
+                </SwiftUIBottomSheet>
+            </SwiftUIHost>
+        );
+    }
 
     return (
-        <Modal
-            visible={visible}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={onClose}
+        <UniversalBottomSheet
+            isPresented={visible}
+            onDismiss={onClose}
+            testID="gift-card-terms-bottom-sheet"
         >
-            <Pressable style={styles.modalOverlay} onPress={onClose}>
-                <GlassView
-                    style={StyleSheet.absoluteFill}
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    tintColor="rgba(0,0,0,0.3)"
-                />
-                <Pressable
-                    style={[
-                        styles.drawerContainer,
-                        {
-                            backgroundColor: theme.card,
-                            paddingBottom: insets.bottom + 20,
-                        },
-                    ]}
-                    onPress={(e) => e.stopPropagation()}
-                    >
-                    <View style={styles.handleContainer}>
-                        <View style={[styles.handle, { backgroundColor: theme.borderStrong }]} />
-                    </View>
-
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <PhonkText style={[styles.modalTitleText, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                                {t('terms_and_conditions_caps')}
-                            </PhonkText>
-                            <TouchableOpacity
-                                onPress={onClose}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Ionicons name="close-circle" size={28} color={theme.icon} />
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView
-                            showsVerticalScrollIndicator={false}
-                            style={styles.modalBody}
-                            contentContainerStyle={styles.modalBodyContent}
-                        >
-                            <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                {t('no_specific_terms')}
-                            </Text>
-
-                            <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
-                                <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('in_store_only')}
-                                    </Text>
-                                </View>
-                                <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('cannot_be_combined')}
-                                    </Text>
-                                </View>
-                                <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('xp_promotional_reward')}
-                                    </Text>
-                                </View>
-                                <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('xp_no_cash_withdrawal')}
-                                    </Text>
-                                </View>
-                                <View style={styles.termRow}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[styles.termText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                        {t('xp_in_app_only')}
-                                    </Text>
-                                </View>
-                            </View>
-                        </ScrollView>
-                    </View>
-                </Pressable>
-            </Pressable>
-        </Modal>
+            <UniversalRNHostView matchContents>
+                {sheetContent}
+            </UniversalRNHostView>
+        </UniversalBottomSheet>
     );
 }
 
 const styles = StyleSheet.create({
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'transparent',
-        justifyContent: 'flex-end',
-    },
-    drawerContainer: {
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
-        maxHeight: '80%',
-    },
-    handleContainer: {
-        alignItems: 'center',
-        paddingVertical: 12,
-    },
-    handle: {
-        width: 40,
-        height: 5,
-        borderRadius: 2.5,
-    },
-    modalContent: {
+    sheetContent: {
         paddingHorizontal: 24,
+        paddingTop: 18,
     },
-    modalHeader: {
+    sheetHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
     },
+    sheetHeaderRTL: {
+        flexDirection: 'row-reverse',
+    },
     modalTitleText: {
+        flex: 1,
         fontSize: 20,
         letterSpacing: 0.5,
     },
-    modalBody: {
-        marginBottom: 20,
+    modalTitleTextRTL: {
+        writingDirection: 'rtl',
     },
-    modalBodyContent: {
-        paddingBottom: 20,
+    sheetBody: {
+        flexGrow: 0,
+    },
+    sheetBodyContent: {
+        paddingBottom: 24,
     },
     descriptionText: {
         fontSize: 16,
@@ -176,9 +204,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
+    termRowRTL: {
+        flexDirection: 'row-reverse',
+    },
     termText: {
         fontSize: 14,
         fontFamily: Typography.poppins.medium,
         flex: 1,
+    },
+    termTextRTL: {
+        writingDirection: 'rtl',
     },
 });

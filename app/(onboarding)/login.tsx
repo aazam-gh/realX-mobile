@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -108,13 +109,18 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
       <StatusBar style="light" />
 
-      <KeyboardAvoidingView
-        style={styles.contentArea}
-        behavior="padding"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <OnboardingScreenMotion style={styles.headerBackground}>
           <SafeAreaView edges={['top']} style={styles.headerContent}>
@@ -177,27 +183,27 @@ export default function LoginScreen() {
               </OnboardingStaggerItem>
             </View>
           </TouchableWithoutFeedback>
-        </OnboardingCardMotion>
-      </KeyboardAvoidingView>
 
-      <View style={[styles.footer, { backgroundColor: theme.background }]}>
-        <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
-        <TouchableOpacity
-          style={[styles.button, email && !isLoading && styles.buttonEnabled]}
-          onPress={handleContinue}
-          disabled={isLoading || !email}
-          activeOpacity={0.8}
-        >
-          {isLoading ? (
-            <ActivityIndicator color={theme.onActionSolid} />
-          ) : (
-            <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>
-              {t('onboarding_login_title')}
-            </Text>
-          )}
-        </TouchableOpacity>
-        </OnboardingButtonMotion>
-      </View>
+          <View style={styles.footer}>
+            <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
+            <TouchableOpacity
+              style={[styles.button, email && !isLoading && styles.buttonEnabled]}
+              onPress={handleContinue}
+              disabled={isLoading || !email}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={theme.onActionSolid} />
+              ) : (
+                <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>
+                  {t('onboarding_login_title')}
+                </Text>
+              )}
+            </TouchableOpacity>
+            </OnboardingButtonMotion>
+          </View>
+        </OnboardingCardMotion>
+      </ScrollView>
 
       <Modal
         visible={showSignUpModal}
@@ -232,7 +238,7 @@ export default function LoginScreen() {
           </OnboardingStateMotion>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -240,8 +246,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  contentArea: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   headerBackground: {
     height: 250,
@@ -312,8 +321,8 @@ const styles = StyleSheet.create({
     fontFamily: Typography.poppins.medium,
   },
   footer: {
-    paddingHorizontal: 28,
     paddingBottom: 40,
+    marginTop: 'auto',
   },
   button: {
     backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,

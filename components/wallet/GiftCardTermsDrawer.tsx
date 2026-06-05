@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BottomSheet, RNHostView } from '@expo/ui';
-import { presentationBackground } from '@expo/ui/swift-ui/modifiers';
+import { BottomSheet as UniversalBottomSheet, RNHostView as UniversalRNHostView } from '@expo/ui';
 import React from 'react';
 import {
     I18nManager,
@@ -35,84 +34,129 @@ export default function GiftCardTermsDrawer({
     const sheetWidth = Math.max(0, windowWidth - 32);
     const sheetMaxHeight = Math.max(0, windowHeight * 0.5 - insets.bottom);
     const sheetBodyMaxHeight = Math.max(0, sheetMaxHeight - 120);
+    const sheetContent = (
+        <View
+            style={[
+                styles.sheetContent,
+                {
+                    backgroundColor: theme.card,
+                    width: sheetWidth,
+                    maxHeight: sheetMaxHeight,
+                    paddingBottom: insets.bottom + 24,
+                },
+            ]}
+        >
+            <View style={[styles.sheetHeader, isRTL && styles.sheetHeaderRTL]}>
+                <PhonkText style={[styles.modalTitleText, isRTL && styles.modalTitleTextRTL, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                    {t('terms_and_conditions_caps')}
+                </PhonkText>
+                <TouchableOpacity
+                    onPress={onClose}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                    <Ionicons name="close-circle" size={28} color={theme.icon} />
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled
+                style={[styles.sheetBody, { maxHeight: sheetBodyMaxHeight }]}
+                contentContainerStyle={styles.sheetBodyContent}
+            >
+                <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                    {t('no_specific_terms')}
+                </Text>
+
+                <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
+                    <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                        <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('in_store_only')}
+                        </Text>
+                    </View>
+                    <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                        <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('cannot_be_combined')}
+                        </Text>
+                    </View>
+                    <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                        <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('xp_promotional_reward')}
+                        </Text>
+                    </View>
+                    <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                        <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('xp_no_cash_withdrawal')}
+                        </Text>
+                    </View>
+                    <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
+                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                        <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                            {t('xp_in_app_only')}
+                        </Text>
+                    </View>
+                </View>
+            </ScrollView>
+        </View>
+    );
+
+    if (Platform.OS === 'ios') {
+        const {
+            BottomSheet: SwiftUIBottomSheet,
+            Group: SwiftUIGroup,
+            Host: SwiftUIHost,
+            RNHostView: SwiftUIRNHostView,
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+        } = require('@expo/ui/swift-ui');
+        const {
+            frame,
+            padding,
+            presentationBackground,
+            presentationDragIndicator,
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+        } = require('@expo/ui/swift-ui/modifiers');
+
+        return (
+            <SwiftUIHost style={StyleSheet.absoluteFill} pointerEvents="none">
+                <SwiftUIBottomSheet
+                    isPresented={visible}
+                    onIsPresentedChange={(presented: boolean) => {
+                        if (!presented) onClose();
+                    }}
+                    fitToContents
+                    testID="gift-card-terms-bottom-sheet"
+                >
+                    <SwiftUIGroup
+                        modifiers={[
+                            frame({ maxWidth: Infinity, alignment: 'topLeading' }),
+                            padding({ top: 16, leading: 16, trailing: 16 }),
+                            presentationDragIndicator('visible'),
+                            presentationBackground(theme.card),
+                        ]}
+                    >
+                        <SwiftUIRNHostView matchContents>
+                            {sheetContent}
+                        </SwiftUIRNHostView>
+                    </SwiftUIGroup>
+                </SwiftUIBottomSheet>
+            </SwiftUIHost>
+        );
+    }
 
     return (
-        <BottomSheet
+        <UniversalBottomSheet
             isPresented={visible}
             onDismiss={onClose}
-            modifiers={Platform.OS === 'ios' ? [presentationBackground(theme.card)] : undefined}
             testID="gift-card-terms-bottom-sheet"
         >
-            <RNHostView matchContents>
-                <View
-                    style={[
-                        styles.sheetContent,
-                        {
-                            backgroundColor: theme.card,
-                            width: sheetWidth,
-                            maxHeight: sheetMaxHeight,
-                            paddingBottom: insets.bottom + 24,
-                        },
-                    ]}
-                >
-                    <View style={[styles.sheetHeader, isRTL && styles.sheetHeaderRTL]}>
-                        <PhonkText style={[styles.modalTitleText, isRTL && styles.modalTitleTextRTL, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
-                            {t('terms_and_conditions_caps')}
-                        </PhonkText>
-                        <TouchableOpacity
-                            onPress={onClose}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                            <Ionicons name="close-circle" size={28} color={theme.icon} />
-                        </TouchableOpacity>
-                    </View>
-
-                    <ScrollView
-                        showsVerticalScrollIndicator={false}
-                        nestedScrollEnabled
-                        style={[styles.sheetBody, { maxHeight: sheetBodyMaxHeight }]}
-                        contentContainerStyle={styles.sheetBodyContent}
-                    >
-                        <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                            {t('no_specific_terms')}
-                        </Text>
-
-                        <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
-                            <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
-                                <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                    {t('in_store_only')}
-                                </Text>
-                            </View>
-                            <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
-                                <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                    {t('cannot_be_combined')}
-                                </Text>
-                            </View>
-                            <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
-                                <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                    {t('xp_promotional_reward')}
-                                </Text>
-                            </View>
-                            <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
-                                <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                    {t('xp_no_cash_withdrawal')}
-                                </Text>
-                            </View>
-                            <View style={[styles.termRow, isRTL && styles.termRowRTL]}>
-                                <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                <Text style={[styles.termText, isRTL && styles.termTextRTL, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
-                                    {t('xp_in_app_only')}
-                                </Text>
-                            </View>
-                        </View>
-                    </ScrollView>
-                </View>
-            </RNHostView>
-        </BottomSheet>
+            <UniversalRNHostView matchContents>
+                {sheetContent}
+            </UniversalRNHostView>
+        </UniversalBottomSheet>
     );
 }
 

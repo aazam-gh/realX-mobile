@@ -4,6 +4,7 @@ import {
   getAuth,
   getIdToken,
   onAuthStateChanged,
+  signOut,
   type FirebaseAuthTypes
 } from '@react-native-firebase/auth';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -30,6 +31,7 @@ import {
 import { logger } from '../utils/logger';
 import { AppThemeProvider, useAppTheme } from '../context/AppThemeContext';
 import { queryClient } from '../utils/queryClient';
+import { isInvalidAuthSessionError } from '../utils/auth';
 
 import CustomSplash from './splash';
 
@@ -143,6 +145,7 @@ function LayoutContent({
   const [appReady, setAppReady] = useState(false);
   const [pendingVerification, setPendingVerification] = useState<PendingVerificationData | null>(null);
   const [pendingCheckDone, setPendingCheckDone] = useState(false);
+  const [validatedMissingProfileUid, setValidatedMissingProfileUid] = useState<string | null>(null);
   const navigationTheme = useMemo(() => {
     const baseTheme = isDark ? DarkTheme : DefaultTheme;
 
@@ -212,6 +215,44 @@ function LayoutContent({
   }, [user, hasProfile]);
 
   useEffect(() => {
+    if (!user || hasProfile !== false) {
+      setValidatedMissingProfileUid(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const validateMissingProfileSession = async () => {
+      try {
+        await getIdToken(user, true);
+        if (!cancelled) {
+          setValidatedMissingProfileUid(user.uid);
+        }
+      } catch (error) {
+        if (cancelled) return;
+
+        if (isInvalidAuthSessionError(error)) {
+          logger.log('Signing out invalid Firebase Auth session after profile deletion', {
+            uid: user.uid,
+          });
+          await signOut(getAuth()).catch((signOutError) => {
+            logger.error('Unable to clear invalid Firebase Auth session:', signOutError);
+          });
+          return;
+        }
+
+        logger.error('Unable to validate authenticated user with missing profile:', error);
+      }
+    };
+
+    void validateMissingProfileSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, hasProfile]);
+
+  useEffect(() => {
     if (initializing || !loaded || !i18nReady || !pendingCheckDone) return;
     if (user && hasProfile === null) return;
 
@@ -235,7 +276,7 @@ function LayoutContent({
         if (inAuthGroup) {
           router.replace('/(tabs)' as any);
         }
-      } else if (hasProfile === false) {
+      } else if (hasProfile === false && validatedMissingProfileUid === user.uid) {
         const currentPath = segments.join('/');
         if (!currentPath.includes('details')) {
           // Fetch role from verification request for users who came through ID verification
@@ -263,7 +304,7 @@ function LayoutContent({
         }
       }
     }
-  }, [user, initializing, loaded, i18nReady, pendingCheckDone, segments, hasProfile, pendingVerification, router]);
+  }, [user, initializing, loaded, i18nReady, pendingCheckDone, segments, hasProfile, pendingVerification, router, validatedMissingProfileUid]);
 
   // Clear pending verification once user authenticates
   useEffect(() => {

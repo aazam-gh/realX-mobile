@@ -63,7 +63,8 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
         (error) => {
           logger.error('StudentContext snapshot error:', error);
           setStudentData(null);
-          setDocExists(false);
+          // A listener failure does not mean the student's profile is missing.
+          setDocExists(null);
           setLoading(false);
         }
       );

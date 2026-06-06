@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { getAuth } from '@react-native-firebase/auth';
+import { getAuth, signOut } from '@react-native-firebase/auth';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -32,6 +32,7 @@ import {
 } from '../../components/onboarding/OnboardingMotion';
 import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
+import { isInvalidAuthSessionError } from '../../utils/auth';
 
 
 
@@ -80,6 +81,15 @@ export default function DetailsOnboarding() {
             router.replace('/(tabs)');
         } catch (error: any) {
             logger.error('Error saving student details:', error);
+
+            if (isInvalidAuthSessionError(error) || String(error?.code || '').includes('unauthenticated')) {
+                await signOut(getAuth()).catch((signOutError) => {
+                    logger.error('Error clearing invalid signup session:', signOutError);
+                });
+                router.replace('/(onboarding)');
+                return;
+            }
+
             Alert.alert(t('error'), error.message || t('onboarding_generic_error_message'));
         } finally {
             setIsLoading(false);
@@ -88,6 +98,16 @@ export default function DetailsOnboarding() {
 
     const handleBack = () => {
         router.back();
+    };
+
+    const handleExit = async () => {
+        try {
+            await signOut(getAuth());
+        } catch (error) {
+            logger.error('Error signing out from signup details:', error);
+        } finally {
+            router.replace('/(onboarding)');
+        }
     };
 
     const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -122,9 +142,9 @@ export default function DetailsOnboarding() {
                             <Ionicons name={arrowIconName} size={24} color="black" />
                         </TouchableOpacity>
                         <TouchableOpacity
-                            onPress={() => router.replace('/')}
-                            style={[styles.iconButton, { opacity: 0 }]}
-                            disabled={true}
+                            onPress={handleExit}
+                            style={styles.iconButton}
+                            disabled={isLoading}
                         >
                             <Ionicons name="close" size={24} color="black" />
                         </TouchableOpacity>

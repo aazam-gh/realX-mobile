@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { getAuth, signOut } from '@react-native-firebase/auth';
+import { getAuth } from '@react-native-firebase/auth';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -32,7 +32,7 @@ import {
 } from '../../components/onboarding/OnboardingMotion';
 import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
-import { isInvalidAuthSessionError } from '../../utils/auth';
+import { clearLocalAuthSession, isInvalidAuthSessionError } from '../../utils/auth';
 
 
 
@@ -83,7 +83,7 @@ export default function DetailsOnboarding() {
             logger.error('Error saving student details:', error);
 
             if (isInvalidAuthSessionError(error) || String(error?.code || '').includes('unauthenticated')) {
-                await signOut(getAuth()).catch((signOutError) => {
+                await clearLocalAuthSession().catch((signOutError) => {
                     logger.error('Error clearing invalid signup session:', signOutError);
                 });
                 router.replace('/(onboarding)');
@@ -102,7 +102,7 @@ export default function DetailsOnboarding() {
 
     const handleExit = async () => {
         try {
-            await signOut(getAuth());
+            await clearLocalAuthSession();
         } catch (error) {
             logger.error('Error signing out from signup details:', error);
         } finally {

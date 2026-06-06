@@ -4,7 +4,6 @@ import {
   getAuth,
   getIdToken,
   onAuthStateChanged,
-  signOut,
   type FirebaseAuthTypes
 } from '@react-native-firebase/auth';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -31,7 +30,7 @@ import {
 import { logger } from '../utils/logger';
 import { AppThemeProvider, useAppTheme } from '../context/AppThemeContext';
 import { queryClient } from '../utils/queryClient';
-import { isInvalidAuthSessionError } from '../utils/auth';
+import { clearLocalAuthSession, isInvalidAuthSessionError } from '../utils/auth';
 
 import CustomSplash from './splash';
 
@@ -235,7 +234,7 @@ function LayoutContent({
           logger.log('Signing out invalid Firebase Auth session after profile deletion', {
             uid: user.uid,
           });
-          await signOut(getAuth()).catch((signOutError) => {
+          await clearLocalAuthSession().catch((signOutError) => {
             logger.error('Unable to clear invalid Firebase Auth session:', signOutError);
           });
           return;

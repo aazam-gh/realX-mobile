@@ -122,13 +122,13 @@ function FeatureChip({
                 />
                 <Text
                     style={[
-                        styles.featureText,
+                        styles.featureTitle,
                         {
                             fontSize: featureFontSize,
                             lineHeight: featureLineHeight,
                         },
-                        isDark ? styles.featureTextDark : styles.featureTextLight,
-                        isRTL && styles.featureTextRTL,
+                        isDark ? styles.featureTitleDark : styles.featureTitleLight,
+                        isRTL && styles.featureTitleRTL,
                     ]}
                 >
                     {feature}
@@ -146,10 +146,12 @@ export default function WaktiSheetContent({ isDark = true, onStoreOpened }: Wakt
     const ctaProductName = 'Wakti AI';
     const ctaLabel = `${ctaActionLabel} ${ctaProductName}`;
     const sheetBackgroundColor = isDark ? '#050B14' : '#EEF7FF';
-    const studentFeatures = [
-        t('wakti_feature_faster'),
-        t('wakti_feature_smarter'),
-        t('wakti_feature_easier'),
+    const featureCategories = [
+        t('wakti_feature_leisure_title'),
+        t('wakti_feature_wellness_title'),
+        t('wakti_feature_organization_title'),
+        t('wakti_feature_creative_title'),
+        t('wakti_feature_intelligence_title'),
     ];
     const sheetMinHeight = Math.round(height * 0.5);
     const isCompactWidth = width < 360;
@@ -162,7 +164,7 @@ export default function WaktiSheetContent({ isDark = true, onStoreOpened }: Wakt
     const headlineLineHeight = isCompactWidth ? 27 : 29;
     const featureFontSize = isCompactWidth ? 12 : 13;
     const featureLineHeight = isCompactWidth ? 15 : 16;
-    const featureCardMinHeight = isCompactWidth ? 44 : 46;
+    const featureCardMinHeight = isCompactWidth ? 48 : 52;
     const ctaFontSize = isCompactWidth ? 18 : 20;
     const ctaLineHeight = isCompactWidth ? 22 : 24;
     const ctaHorizontalPadding = isCompactWidth ? 18 : 24;
@@ -342,7 +344,7 @@ export default function WaktiSheetContent({ isDark = true, onStoreOpened }: Wakt
                         {t('wakti_sheet_title')}
                     </Text>
                     <View style={[styles.featureGrid, { rowGap: isCompactWidth ? 7 : 8 }, isRTL && styles.featureGridRTL]}>
-                        {studentFeatures.map((feature, index) => (
+                        {featureCategories.map((feature, index) => (
                             <FeatureChip
                                 key={feature}
                                 index={index}
@@ -479,14 +481,17 @@ const styles = StyleSheet.create({
     },
     featureGrid: {
         width: '100%',
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'center',
         alignItems: 'center',
+        columnGap: 8,
     },
     featureGridRTL: {
-        alignItems: 'center',
+        flexDirection: 'row-reverse',
     },
     featureChipWrap: {
-        width: '100%',
+        width: '48%',
     },
     featureCard: {
         width: '100%',
@@ -514,22 +519,21 @@ const styles = StyleSheet.create({
     featureCardHighlightDark: {
         backgroundColor: 'rgba(163, 215, 255, 0.40)',
     },
-    featureText: {
+    featureTitle: {
         fontSize: 13,
         lineHeight: 16,
         fontFamily: Typography.poppins.semiBold,
         textAlign: 'center',
-        textTransform: 'uppercase',
     },
-    featureTextRTL: {
+    featureTitleRTL: {
+        alignSelf: 'stretch',
         textAlign: 'center',
-        textTransform: 'none',
         writingDirection: 'rtl',
     },
-    featureTextLight: {
-        color: '#0A0F0C',
+    featureTitleLight: {
+        color: '#102B62',
     },
-    featureTextDark: {
+    featureTitleDark: {
         color: '#FFFFFF',
     },
     ctaMotionWrap: {

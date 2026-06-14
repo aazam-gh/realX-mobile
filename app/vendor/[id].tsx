@@ -533,7 +533,6 @@ const isSaved = savedOfferIds.has(savedId);
             <BottomSheet
                 isPresented={!!selectedOfferForTC}
                 onDismiss={() => setSelectedOfferForTC(null)}
-                enableDynamicSizing
                 modifiers={termsSheetBackgroundModifiers}
                 testID="vendor-terms-bottom-sheet"
             >

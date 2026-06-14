@@ -83,21 +83,32 @@ export const createNotificationFunctions = (db: admin.firestore.Firestore) => {
       const tokenDocRef = db.collection('pushTokens').doc(token);
       const studentRef = db.collection('students').doc(request.auth.uid);
       await db.runTransaction(async (tx) => {
-        const tokenDoc = await tx.get(tokenDocRef);
-        const previousUserId = tokenDoc.data()?.userId;
-
-        if (typeof previousUserId === 'string' && previousUserId !== request.auth?.uid) {
+        const matchingTokens = await tx.get(
+          db.collection('pushTokens').where('token', '==', token)
+        );
+        const tokenDoc = matchingTokens.docs.find((doc) => doc.id === token);
+        const previousUserIds = new Set(
+          matchingTokens.docs
+            .map((doc) => doc.data().userId)
+            .filter((userId): userId is string =>
+              typeof userId === 'string' && userId !== request.auth?.uid
+            )
+        );
+        previousUserIds.forEach((previousUserId) => {
           tx.set(db.collection('students').doc(previousUserId), {
             expoPushTokens: admin.firestore.FieldValue.arrayRemove(token),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           }, { merge: true });
-        }
+        });
+        matchingTokens.docs.forEach((doc) => {
+          if (doc.id !== token) tx.delete(doc.ref);
+        });
 
         tx.set(tokenDocRef, {
           token,
           userId: request.auth?.uid,
           platform: typeof request.data?.platform === 'string' ? request.data.platform : null,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: tokenDoc?.data()?.createdAt || admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
         tx.set(studentRef, {
@@ -122,13 +133,14 @@ export const createNotificationFunctions = (db: admin.firestore.Firestore) => {
         throw new HttpsError('invalid-argument', 'Valid token is required');
       }
 
-      const tokenDocRef = db.collection('pushTokens').doc(token);
       const studentRef = db.collection('students').doc(request.auth.uid);
       await db.runTransaction(async (tx) => {
-        const tokenDoc = await tx.get(tokenDocRef);
-        if (tokenDoc.exists && tokenDoc.data()?.userId === request.auth?.uid) {
-          tx.delete(tokenDocRef);
-        }
+        const matchingTokens = await tx.get(
+          db.collection('pushTokens').where('token', '==', token)
+        );
+        matchingTokens.docs.forEach((doc) => {
+          if (doc.data().userId === request.auth?.uid) tx.delete(doc.ref);
+        });
         tx.set(studentRef, {
           expoPushTokens: admin.firestore.FieldValue.arrayRemove(token),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),

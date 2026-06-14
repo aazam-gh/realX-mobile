@@ -5,7 +5,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    useWindowDimensions,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,8 +24,6 @@ type StepData = {
     number: string;
     text: string;
 };
-
-const HOW_IT_WORKS_SHEET_FRACTION = 0.62;
 
 type StepItemProps = {
     step: StepData;
@@ -74,11 +71,9 @@ function StepItem({ step, isArabic }: StepItemProps) {
 
 export default function HowItWorksDrawer({ visible, onClose }: Props) {
     const insets = useSafeAreaInsets();
-    const { height, width } = useWindowDimensions();
     const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
     const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
-    const sheetMaxHeight = Math.max(0, height * HOW_IT_WORKS_SHEET_FRACTION - insets.bottom);
     const sheetBackgroundModifiers = useMemo(
         () => getBottomSheetBackgroundModifiers(theme.surfaceElevated),
         [theme.surfaceElevated],
@@ -96,7 +91,6 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
         <BottomSheet
             isPresented={visible}
             onDismiss={onClose}
-            snapPoints={[{ fraction: HOW_IT_WORKS_SHEET_FRACTION }]}
             modifiers={sheetBackgroundModifiers}
             testID="xcard-how-it-works-bottom-sheet"
         >
@@ -105,14 +99,12 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                     style={[
                         styles.sheetContent,
                         { backgroundColor: theme.surfaceElevated },
-                        { width },
-                        { maxHeight: sheetMaxHeight },
                         { paddingBottom: Math.max(insets.bottom, 10) },
                     ]}
                 >
                     <BottomSheetOverscanBackground backgroundColor={theme.surfaceElevated} />
                     <ScrollView
-                        style={[styles.content, { maxHeight: sheetMaxHeight }]}
+                        style={styles.content}
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                         bounces={false}
@@ -179,7 +171,7 @@ const styles = StyleSheet.create({
     sheetContent: {
         position: 'relative',
         paddingTop: 20,
-        alignSelf: 'center',
+        alignSelf: 'stretch',
         overflow: 'visible',
     },
     content: {

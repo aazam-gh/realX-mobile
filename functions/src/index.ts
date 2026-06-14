@@ -547,6 +547,7 @@ export const setVendorRedemptionPin = onCall(
     const pin = requirePin(request.data?.pin);
     const vendorRef = db.collection('vendors').doc(vendorId);
     const secretRef = db.collection('vendorRedemptionSecrets').doc(vendorId);
+    const adminPinRef = db.collection('vendor_pins').doc(vendorId);
 
     await db.runTransaction(async (tx) => {
       const vendorDoc = await tx.get(vendorRef);
@@ -554,11 +555,18 @@ export const setVendorRedemptionPin = onCall(
         throw new HttpsError('not-found', 'Vendor not found');
       }
 
+      const updatedAt = admin.firestore.FieldValue.serverTimestamp();
       tx.set(secretRef, {
         ...hashPin(pin),
         vendorId,
         rotatedBy: request.auth?.uid,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt,
+      });
+      tx.set(adminPinRef, {
+        vendorId,
+        pin,
+        rotatedBy: request.auth?.uid,
+        updatedAt,
       });
     });
 

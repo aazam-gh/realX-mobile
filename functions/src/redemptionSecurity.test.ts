@@ -5,6 +5,7 @@ import {
   hashPin,
   isAllowedGiftCardValue,
   parseRedemptionInput,
+  requirePin,
   verifyPin,
 } from './redemptionSecurity';
 
@@ -54,4 +55,8 @@ test('PIN hashes verify without retaining plaintext', () => {
   assert.equal(verifyPin('1234', secret), true);
   assert.equal(verifyPin('4321', secret), false);
   assert.equal(JSON.stringify(secret).includes('1234'), false);
+});
+
+test('PIN validation preserves leading zeroes', () => {
+  assert.equal(requirePin('0123'), '0123');
 });

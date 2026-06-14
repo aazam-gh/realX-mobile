@@ -176,6 +176,12 @@ match /vendorRedemptionSecrets/{vendorId} {
   allow read, write: if false;
 }
 
+// Plaintext PIN mirror for authenticated admins; writes remain server-only.
+match /vendor_pins/{vendorId} {
+  allow read: if isAdmin();
+  allow write: if false;
+}
+
 match /redemption_rate_limits/{rateLimitId} {
   allow read, write: if false;
 }

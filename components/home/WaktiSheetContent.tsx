@@ -142,9 +142,7 @@ export default function WaktiSheetContent({ isDark = true, onStoreOpened }: Wakt
     const { height, width } = useWindowDimensions();
     const { t, i18n } = useTranslation();
     const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
-    const ctaActionLabel = t('wakti_banner_cta_action');
-    const ctaProductName = 'Wakti AI';
-    const ctaLabel = `${ctaActionLabel} ${ctaProductName}`;
+    const ctaLabel = t('wakti_sheet_cta');
     const sheetBackgroundColor = isDark ? '#050B14' : '#EEF7FF';
     const featureCategories = [
         t('wakti_feature_leisure_title'),
@@ -390,12 +388,7 @@ export default function WaktiSheetContent({ isDark = true, onStoreOpened }: Wakt
                                     isRTL && styles.ctaTextRTL,
                                 ]}
                             >
-                                {isRTL ? (
-                                    <>
-                                        {ctaActionLabel}{' '}
-                                        <Text style={styles.waktiEnglishText}>{ctaProductName}</Text>
-                                    </>
-                                ) : ctaLabel}
+                                {ctaLabel}
                             </Text>
                         </TouchableOpacity>
                     </Animated.View>
@@ -578,9 +571,6 @@ const styles = StyleSheet.create({
     ctaTextRTL: {
         textAlign: 'center',
         writingDirection: 'rtl',
-    },
-    waktiEnglishText: {
-        writingDirection: 'ltr',
     },
     gridLayer: {
         position: 'absolute',

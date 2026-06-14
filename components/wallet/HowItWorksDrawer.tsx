@@ -144,9 +144,22 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                                 isArabic && styles.titleContainerRTL,
                             ]}
                         >
-                            <PhonkText style={[styles.titleText, { color: theme.text }]}>{t('how_it_works_title_prefix')}</PhonkText>
-                            <PhonkText style={[styles.titleHighlight, { color: theme.brand }]}>{t('how_it_works_title_highlight')}</PhonkText>
-                            <PhonkText style={[styles.titleText, { color: theme.text }]}>{t('how_it_works_title_suffix')}</PhonkText>
+                            <PhonkText
+                                style={[
+                                    styles.titleText,
+                                    isArabic && styles.titleTextRTL,
+                                    {
+                                        color: theme.text,
+                                        writingDirection: isArabic ? 'rtl' : 'ltr',
+                                    },
+                                ]}
+                            >
+                                {t('how_it_works_title_prefix')}
+                                <Text style={[styles.titleHighlight, isArabic && styles.titleHighlightRTL, { color: theme.brand }]}>
+                                    {t('how_it_works_title_highlight')}
+                                </Text>
+                                {t('how_it_works_title_suffix')}
+                            </PhonkText>
                         </View>
 
                         {/* Steps */}
@@ -165,7 +178,7 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
     sheetContent: {
         position: 'relative',
-        paddingTop: 12,
+        paddingTop: 20,
         alignSelf: 'center',
         overflow: 'visible',
     },
@@ -176,14 +189,13 @@ const styles = StyleSheet.create({
     scrollContent: {
         width: '100%',
         alignItems: 'center',
-        paddingHorizontal: 24,
+        paddingHorizontal: 20,
     },
     logoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 10,
-        paddingBottom: 14,
+
     },
     logoArabicText: {
         textAlign: 'center',
@@ -215,17 +227,26 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 18,
         paddingBottom: 16,
     },
     titleContainerRTL: {
         direction: 'rtl',
     },
     titleText: {
+        width: '100%',
         fontSize: 22,
+        lineHeight: 28,
+        textAlign: 'center',
+    },
+    titleTextRTL: {
+        fontSize: 28,
+        lineHeight: 36,
     },
     titleHighlight: {
         fontSize: 22,
+    },
+    titleHighlightRTL: {
+        fontSize: 28,
     },
     stepsContainer: {
         width: '100%',

@@ -238,7 +238,8 @@ match /rate_limits/{rateLimitId} {
 }
 
 match /wakti_student_verification_requests/{requestId} {
-  allow read, write: if false;
+  allow read: if isAdmin();
+  allow write: if false;
 }
 
 // ─── verification_requests collection ────────────────────────────────

@@ -149,14 +149,12 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                     </View>
 
                     <View style={styles.artWrap}>
-                        <View style={[styles.artPanel, waktiBannerUsesDarkTheme ? styles.artPanelDark : styles.artPanelLight]}>
-                            <Image
-                                source={waktiBannerImage}
-                                style={styles.artImage}
-                                contentFit="contain"
-                                accessibilityLabel="Wakti AI logo"
-                            />
-                        </View>
+                        <Image
+                            source={waktiBannerImage}
+                            style={styles.artImage}
+                            contentFit="contain"
+                            accessibilityLabel="Wakti AI logo"
+                        />
                     </View>
                 </View>
             </TouchableOpacity>
@@ -258,34 +256,15 @@ const styles = StyleSheet.create({
         writingDirection: 'rtl',
     },
     artWrap: {
-        width: 112,
-        height: 112,
+        width: 128,
+        height: 128,
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
     },
-    artPanel: {
-        width: 112,
-        height: 112,
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        borderRadius: 27,
-        borderWidth: 1,
-    },
-    artPanelLight: {
-        backgroundColor: 'rgba(239, 247, 255, 0.84)',
-        borderColor: 'rgba(255, 255, 255, 0.86)',
-        boxShadow: '0 20px 48px rgba(28, 103, 202, 0.22)',
-    },
-    artPanelDark: {
-        backgroundColor: 'rgba(255, 255, 255, 0.18)',
-        borderColor: 'rgba(255, 255, 255, 0.26)',
-        boxShadow: '0 26px 62px rgba(124, 181, 255, 0.30)',
-    },
     artImage: {
-        width: 96,
-        height: 96,
+        width: 120,
+        height: 120,
     },
     gridLayer: {
         position: 'absolute',

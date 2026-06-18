@@ -2,7 +2,7 @@
   "expo": {
     "name": "realX",
     "slug": "reelx",
-    "version": "1.1.4",
+    "version": "1.1.6",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.reelx.app",
-      "versionCode": 6,
+      "versionCode": 7,
       "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
@@ -49,8 +49,7 @@
       ]
     },
     "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "static"
     },
     "plugins": [
       "expo-router",
@@ -107,14 +106,6 @@
         "expo-build-properties",
         {
           "ios": {
-            "forceStaticLinking": [
-              "RNFBAnalytics",
-              "RNFBApp",
-              "RNFBCrashlytics",
-              "RNFBInAppMessaging",
-              "RNFBInstallations",
-              "RNFBPerf"
-            ],
             "useFrameworks": "static"
           }
         }

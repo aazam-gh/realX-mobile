@@ -1,10 +1,41 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { getAuth, getIdToken } from '@react-native-firebase/auth';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { logger } from './logger';
+
+const PUSH_TOKEN_STORAGE_KEY = 'registered_expo_push_token';
+const PUSH_TOKEN_SYNC_STORAGE_KEY = 'expo_push_token_sync';
+const PUSH_TOKEN_REFRESH_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000;
+
+type StoredPushTokenSync = {
+  token: string;
+  uid: string;
+  syncedAt: number;
+};
+
+const getStoredPushTokenSync = async (): Promise<StoredPushTokenSync | null> => {
+  const value = await AsyncStorage.getItem(PUSH_TOKEN_SYNC_STORAGE_KEY);
+  if (!value) return null;
+
+  try {
+    const parsed = JSON.parse(value) as Partial<StoredPushTokenSync>;
+    if (
+      typeof parsed.token === 'string' &&
+      typeof parsed.uid === 'string' &&
+      typeof parsed.syncedAt === 'number'
+    ) {
+      return parsed as StoredPushTokenSync;
+    }
+  } catch {
+    // A malformed local cache should trigger a fresh server sync.
+  }
+
+  return null;
+};
 
 export const getExpoProjectId = () => {
   return (
@@ -43,7 +74,7 @@ export const registerForExpoPushNotificationsAsync = async () => {
   return token.data;
 };
 
-const registerPushTokenViaCallable = async (token: string) => {
+const registerPushTokenViaCallable = async (token: string, uid: string) => {
   const regions = ['me-central1', 'us-central1'] as const;
   let lastError: unknown;
 
@@ -55,6 +86,11 @@ const registerPushTokenViaCallable = async (token: string) => {
         token,
         platform: Platform.OS,
       });
+      await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
+      await AsyncStorage.setItem(
+        PUSH_TOKEN_SYNC_STORAGE_KEY,
+        JSON.stringify({ token, uid, syncedAt: Date.now() } satisfies StoredPushTokenSync),
+      );
       return;
     } catch (error: any) {
       lastError = error;
@@ -81,8 +117,17 @@ export const syncExpoPushTokenForUser = async (uid: string) => {
   const token = await registerForExpoPushNotificationsAsync();
   if (!token) return null;
 
+  const storedSync = await getStoredPushTokenSync();
+  if (
+    storedSync?.token === token &&
+    storedSync.uid === uid &&
+    Date.now() - storedSync.syncedAt < PUSH_TOKEN_REFRESH_INTERVAL_MS
+  ) {
+    return token;
+  }
+
   try {
-    await registerPushTokenViaCallable(token);
+    await registerPushTokenViaCallable(token, uid);
   } catch (error) {
     if (isUnauthenticatedError(error)) {
       try {
@@ -92,7 +137,7 @@ export const syncExpoPushTokenForUser = async (uid: string) => {
         }
 
         await getIdToken(currentUser, true);
-        await registerPushTokenViaCallable(token);
+        await registerPushTokenViaCallable(token, uid);
         return token;
       } catch (retryError) {
         logger.warn('registerPushToken callable retry failed after token refresh', {
@@ -111,4 +156,21 @@ export const syncExpoPushTokenForUser = async (uid: string) => {
   }
 
   return token;
+};
+
+export const unregisterExpoPushTokenForCurrentUser = async () => {
+  const token = await AsyncStorage.getItem(PUSH_TOKEN_STORAGE_KEY);
+  if (!token || !getAuth().currentUser) return;
+
+  try {
+    const functions = getFunctions(undefined, 'me-central1');
+    const unregisterPushToken = httpsCallable(functions, 'unregisterPushToken');
+    await unregisterPushToken({ token });
+    await AsyncStorage.multiRemove([
+      PUSH_TOKEN_STORAGE_KEY,
+      PUSH_TOKEN_SYNC_STORAGE_KEY,
+    ]);
+  } catch (error) {
+    logger.warn('Unable to unregister Expo push token before sign-out', { error });
+  }
 };

@@ -541,19 +541,12 @@ const isSaved = savedOfferIds.has(savedId);
                     <View style={styles.termsSheetContent}>
                         <View style={styles.termsSheetHeader}>
                             <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
-                            <TouchableOpacity
-                                onPress={() => setSelectedOfferForTC(null)}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Ionicons name="close-circle" size={28} color={theme.icon} />
-                            </TouchableOpacity>
                         </View>
 
                         <ScrollView
                             showsVerticalScrollIndicator={false}
                             nestedScrollEnabled
                             style={styles.termsSheetBody}
-                            contentContainerStyle={styles.termsSheetBodyContent}
                         >
                             <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
                                 {isArabic
@@ -590,7 +583,6 @@ const isSaved = savedOfferIds.has(savedId);
                 <BottomSheet
                     isPresented={!!selectedOfferForTC}
                     onDismiss={() => setSelectedOfferForTC(null)}
-                    snapPoints={['half']}
                     modifiers={termsSheetBackgroundModifiers}
                     testID="vendor-terms-bottom-sheet"
                 >
@@ -602,26 +594,19 @@ const isSaved = savedOfferIds.has(savedId);
                                     backgroundColor: theme.card,
                                     width: termsSheetWidth,
                                     maxHeight: termsSheetMaxHeight,
-                                    paddingBottom: insets.bottom + 24,
+                                    paddingBottom: 0,
                                 },
                             ]}
                         >
                             <BottomSheetOverscanBackground backgroundColor={theme.card} />
                             <View style={styles.termsSheetHeader}>
                                 <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
-                                <TouchableOpacity
-                                    onPress={() => setSelectedOfferForTC(null)}
-                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                >
-                                    <Ionicons name="close-circle" size={28} color={theme.icon} />
-                                </TouchableOpacity>
                             </View>
 
                             <ScrollView
                                 showsVerticalScrollIndicator={false}
                                 nestedScrollEnabled
                                 style={[styles.termsSheetBody, { maxHeight: termsSheetBodyMaxHeight }]}
-                                contentContainerStyle={styles.termsSheetBodyContent}
                             >
                                 <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
                                     {isArabic
@@ -1079,21 +1064,17 @@ const styles = StyleSheet.create({
     },
     termsSheetContent: {
         position: 'relative',
-        overflow: 'visible',
-        paddingHorizontal: 24,
-        paddingTop: 18,
+        paddingHorizontal: 16,
+        paddingTop: 20,
     },
     termsSheetHeader: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
     },
     termsSheetBody: {
         flexGrow: 0,
-    },
-    termsSheetBodyContent: {
-        paddingBottom: 24,
     },
     descriptionText: {
         fontSize: 16,

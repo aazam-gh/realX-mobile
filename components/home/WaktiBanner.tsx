@@ -140,9 +140,14 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                 </View>
                 <View style={[styles.content, isRTL && styles.contentRTL]}>
                     <View style={styles.copy}>
-                        <Text style={[styles.headline, waktiBannerUsesDarkTheme ? styles.headlineDark : styles.headlineLight, isRTL && styles.textRTL]} numberOfLines={2}>
-                            {isRTL ? t('wakti_banner_headline') : 'All in one AI App for students'}
-                        </Text>
+                        <View style={styles.headlineBlock}>
+                            <Text style={[styles.headline, waktiBannerUsesDarkTheme ? styles.headlineDark : styles.headlineLight, isRTL && styles.textRTL]} numberOfLines={1}>
+                                {t('wakti_banner_headline_primary')}
+                            </Text>
+                            <Text style={[styles.subheadline, waktiBannerUsesDarkTheme ? styles.headlineDark : styles.headlineLight, isRTL && styles.textRTL]} numberOfLines={2}>
+                                {t('wakti_banner_headline_secondary')}
+                            </Text>
+                        </View>
                         <View style={[styles.offerPill, waktiBannerUsesDarkTheme ? styles.offerPillDark : styles.offerPillLight, isRTL && styles.offerPillRTL]}>
                             <Text style={[styles.offerText, isRTL && styles.offerTextArabic]} numberOfLines={1}>
                                 {t('wakti_banner_offer')}
@@ -198,13 +203,14 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
 const styles = StyleSheet.create({
     section: {
         paddingTop: 22,
-        paddingHorizontal: 5,
+
     },
     card: {
         position: 'relative',
         overflow: 'hidden',
-        borderWidth: 1.5,
-        borderRadius: 30,
+
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
     },
     cardLight: {
         backgroundColor: 'rgba(239, 247, 255, 0.98)',
@@ -234,15 +240,25 @@ const styles = StyleSheet.create({
         minWidth: 0,
         gap: 14,
     },
+    headlineBlock: {
+        gap: 2,
+    },
     headline: {
         fontSize: 19,
         lineHeight: 25,
-        fontFamily: Typography.poppins.semiBold,
+        fontFamily: Typography.hanson.bold,
+        color: '#FFFFFF',
     },
     headlineLight: {
-        color: '#111111',
+        color: '#FFFFFF',
     },
     headlineDark: {
+        color: '#FFFFFF',
+    },
+    subheadline: {
+        fontSize: 16,
+        lineHeight: 21,
+        fontFamily: Typography.hanson.bold,
         color: '#FFFFFF',
     },
     offerPill: {

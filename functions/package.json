@@ -3,11 +3,11 @@
   "scripts": {
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
     "build": "tsc",
+    "test": "npm run build && node --test lib/*.test.js",
     "build:watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
-    "deploy": "firebase deploy --only functions --project reelx-backend",
     "logs": "firebase functions:log"
   },
   "engines": {

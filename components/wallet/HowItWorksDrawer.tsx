@@ -194,21 +194,20 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
     sheetContent: {
         position: 'relative',
-        paddingTop: 12,
-        alignSelf: 'center',
+        paddingTop: 20,
+        alignSelf: 'stretch',
         overflow: 'visible',
     },
     content: {
         width: '100%',
         alignItems: 'center',
-        paddingHorizontal: 24,
+        paddingHorizontal: 20,
     },
     logoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 10,
-        paddingBottom: 14,
+
     },
     logoArabicText: {
         textAlign: 'center',
@@ -238,20 +237,30 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch',
     },
     titleContainer: {
-        flexDirection: 'row',
+        width: '100%',
+        paddingTop: 18,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 18,
         paddingBottom: 16,
     },
     titleContainerRTL: {
         direction: 'rtl',
     },
     titleText: {
+        width: '100%',
         fontSize: 22,
+        lineHeight: 28,
+        textAlign: 'center',
+    },
+    titleTextRTL: {
+        fontSize: 28,
+        lineHeight: 36,
     },
     titleHighlight: {
         fontSize: 22,
+    },
+    titleHighlightRTL: {
+        fontSize: 28,
     },
     stepsContainer: {
         width: '100%',

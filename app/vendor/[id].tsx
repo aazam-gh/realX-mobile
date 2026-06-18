@@ -9,7 +9,7 @@ import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -17,6 +17,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../../components/PhonkText';
+import AndroidBottomSheetModal from '../../components/AndroidBottomSheetModal';
 import { VendorGallery } from '../../components/vendor/VendorGallery';
 import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
 import { fetchSavedOfferIds, fetchVendorRoute } from '../../utils/firebaseQueries';
@@ -530,26 +531,14 @@ const isSaved = savedOfferIds.has(savedId);
                 </View>
             </ScrollView>
 
-            <BottomSheet
-                isPresented={!!selectedOfferForTC}
-                onDismiss={() => setSelectedOfferForTC(null)}
-                snapPoints={['half']}
-                modifiers={termsSheetBackgroundModifiers}
-                testID="vendor-terms-bottom-sheet"
-            >
-                <RNHostView matchContents>
-                    <View
-                        style={[
-                            styles.termsSheetContent,
-                            {
-                                backgroundColor: theme.card,
-                                width: termsSheetWidth,
-                                maxHeight: termsSheetMaxHeight,
-                                paddingBottom: insets.bottom + 24,
-                            },
-                        ]}
-                    >
-                        <BottomSheetOverscanBackground backgroundColor={theme.card} />
+            {Platform.OS === 'android' ? (
+                <AndroidBottomSheetModal
+                    visible={!!selectedOfferForTC}
+                    onClose={() => setSelectedOfferForTC(null)}
+                    backgroundColor={theme.card}
+                    testID="vendor-terms-bottom-sheet"
+                >
+                    <View style={styles.termsSheetContent}>
                         <View style={styles.termsSheetHeader}>
                             <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
                             <TouchableOpacity
@@ -563,7 +552,7 @@ const isSaved = savedOfferIds.has(savedId);
                         <ScrollView
                             showsVerticalScrollIndicator={false}
                             nestedScrollEnabled
-                            style={[styles.termsSheetBody, { maxHeight: termsSheetBodyMaxHeight }]}
+                            style={styles.termsSheetBody}
                             contentContainerStyle={styles.termsSheetBodyContent}
                         >
                             <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
@@ -596,8 +585,77 @@ const isSaved = savedOfferIds.has(savedId);
                             </View>
                         </ScrollView>
                     </View>
-                </RNHostView>
-            </BottomSheet>
+                </AndroidBottomSheetModal>
+            ) : (
+                <BottomSheet
+                    isPresented={!!selectedOfferForTC}
+                    onDismiss={() => setSelectedOfferForTC(null)}
+                    snapPoints={['half']}
+                    modifiers={termsSheetBackgroundModifiers}
+                    testID="vendor-terms-bottom-sheet"
+                >
+                    <RNHostView matchContents>
+                        <View
+                            style={[
+                                styles.termsSheetContent,
+                                {
+                                    backgroundColor: theme.card,
+                                    width: termsSheetWidth,
+                                    maxHeight: termsSheetMaxHeight,
+                                    paddingBottom: insets.bottom + 24,
+                                },
+                            ]}
+                        >
+                            <BottomSheetOverscanBackground backgroundColor={theme.card} />
+                            <View style={styles.termsSheetHeader}>
+                                <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
+                                <TouchableOpacity
+                                    onPress={() => setSelectedOfferForTC(null)}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Ionicons name="close-circle" size={28} color={theme.icon} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView
+                                showsVerticalScrollIndicator={false}
+                                nestedScrollEnabled
+                                style={[styles.termsSheetBody, { maxHeight: termsSheetBodyMaxHeight }]}
+                                contentContainerStyle={styles.termsSheetBodyContent}
+                            >
+                                <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
+                                    {isArabic
+                                        ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || t('no_specific_terms'))
+                                        : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || t('no_specific_terms'))}
+                                </Text>
+
+                                <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
+                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
+                                    </View>
+                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
+                                    </View>
+                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
+                                    </View>
+                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
+                                    </View>
+                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
+                                    </View>
+                                </View>
+                            </ScrollView>
+                        </View>
+                    </RNHostView>
+                </BottomSheet>
+            )}
 
             <Modal
                 visible={branchPickerVisible}

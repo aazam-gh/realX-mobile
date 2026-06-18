@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     I18nManager,
+    Platform,
     StyleProp,
     StyleSheet,
     Text,
@@ -22,6 +23,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Typography } from '../../constants/Typography';
+import AndroidBottomSheetModal from '../AndroidBottomSheetModal';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
 import WaktiSheetContent from './WaktiSheetContent';
@@ -158,21 +160,37 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                     </View>
                 </View>
             </TouchableOpacity>
-            <BottomSheet
-                isPresented={isSheetPresented}
-                onDismiss={() => setIsSheetPresented(false)}
-                snapPoints={['half']}
-                modifiers={sheetBackgroundModifiers}
-                testID="wakti-bottom-sheet"
-            >
-                <RNHostView matchContents>
+            {Platform.OS === 'android' ? (
+                <AndroidBottomSheetModal
+                    visible={isSheetPresented}
+                    onClose={closeSheet}
+                    backgroundColor={waktiSheetBackgroundColor}
+                    testID="wakti-bottom-sheet"
+                >
                     <WaktiSheetContent
                         isDark
+                        fitToContent
                         onClose={closeSheet}
                         onStoreOpened={() => setIsSheetPresented(false)}
                     />
-                </RNHostView>
-            </BottomSheet>
+                </AndroidBottomSheetModal>
+            ) : (
+                <BottomSheet
+                    isPresented={isSheetPresented}
+                    onDismiss={() => setIsSheetPresented(false)}
+                    snapPoints={['half']}
+                    modifiers={sheetBackgroundModifiers}
+                    testID="wakti-bottom-sheet"
+                >
+                    <RNHostView matchContents>
+                        <WaktiSheetContent
+                            isDark
+                            onClose={closeSheet}
+                            onStoreOpened={() => setIsSheetPresented(false)}
+                        />
+                    </RNHostView>
+                </BottomSheet>
+            )}
         </View>
     );
 }

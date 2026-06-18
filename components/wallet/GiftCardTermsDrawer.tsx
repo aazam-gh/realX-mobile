@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BottomSheet as UniversalBottomSheet, RNHostView as UniversalRNHostView } from '@expo/ui';
 import React from 'react';
 import {
     I18nManager,
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
+import AndroidBottomSheetModal from '../AndroidBottomSheetModal';
 import { BottomSheetOverscanBackground, getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
 import PhonkText from '../PhonkText';
 
@@ -39,19 +39,8 @@ export default function GiftCardTermsDrawer({
         () => getBottomSheetBackgroundModifiers(theme.card),
         [theme.card],
     );
-    const sheetContent = (
-        <View
-            style={[
-                styles.sheetContent,
-                {
-                    backgroundColor: theme.card,
-                    width: sheetWidth,
-                    maxHeight: sheetMaxHeight,
-                    paddingBottom: insets.bottom + 24,
-                },
-            ]}
-        >
-            <BottomSheetOverscanBackground backgroundColor={theme.card} />
+    const sheetBody = (
+        <>
             <View style={[styles.sheetHeader, isRTL && styles.sheetHeaderRTL]}>
                 <PhonkText style={[styles.modalTitleText, isRTL && styles.modalTitleTextRTL, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                     {t('terms_and_conditions_caps')}
@@ -67,7 +56,7 @@ export default function GiftCardTermsDrawer({
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 nestedScrollEnabled
-                style={[styles.sheetBody, { maxHeight: sheetBodyMaxHeight }]}
+                style={[styles.sheetBody, Platform.OS === 'ios' && { maxHeight: sheetBodyMaxHeight }]}
                 contentContainerStyle={styles.sheetBodyContent}
             >
                 <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
@@ -107,8 +96,23 @@ export default function GiftCardTermsDrawer({
                     </View>
                 </View>
             </ScrollView>
-        </View>
+        </>
     );
+
+    if (Platform.OS === 'android') {
+        return (
+            <AndroidBottomSheetModal
+                visible={visible}
+                onClose={onClose}
+                backgroundColor={theme.card}
+                testID="gift-card-terms-bottom-sheet"
+            >
+                <View style={styles.sheetContent}>
+                    {sheetBody}
+                </View>
+            </AndroidBottomSheetModal>
+        );
+    }
 
     if (Platform.OS === 'ios') {
         const {
@@ -144,7 +148,20 @@ export default function GiftCardTermsDrawer({
                         ]}
                     >
                         <SwiftUIRNHostView matchContents>
-                            {sheetContent}
+                            <View
+                                style={[
+                                    styles.sheetContent,
+                                    {
+                                        backgroundColor: theme.card,
+                                        width: sheetWidth,
+                                        maxHeight: sheetMaxHeight,
+                                        paddingBottom: insets.bottom + 24,
+                                    },
+                                ]}
+                            >
+                                <BottomSheetOverscanBackground backgroundColor={theme.card} />
+                                {sheetBody}
+                            </View>
                         </SwiftUIRNHostView>
                     </SwiftUIGroup>
                 </SwiftUIBottomSheet>
@@ -152,18 +169,7 @@ export default function GiftCardTermsDrawer({
         );
     }
 
-    return (
-        <UniversalBottomSheet
-            isPresented={visible}
-            onDismiss={onClose}
-            modifiers={sheetBackgroundModifiers}
-            testID="gift-card-terms-bottom-sheet"
-        >
-            <UniversalRNHostView matchContents>
-                {sheetContent}
-            </UniversalRNHostView>
-        </UniversalBottomSheet>
-    );
+    return null;
 }
 
 const styles = StyleSheet.create({

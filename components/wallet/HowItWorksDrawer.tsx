@@ -1,16 +1,17 @@
-import { BottomSheet, RNHostView } from '@expo/ui';
 import { useMemo } from 'react';
 import {
     I18nManager,
-    ScrollView,
+    Platform,
     StyleSheet,
     Text,
+    useWindowDimensions,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import PhonkText from '../PhonkText';
+import AndroidBottomSheetModal from '../AndroidBottomSheetModal';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { toArabicDigits } from '../../utils/numbers';
 import { BottomSheetOverscanBackground, getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
@@ -71,6 +72,7 @@ function StepItem({ step, isArabic }: StepItemProps) {
 
 export default function HowItWorksDrawer({ visible, onClose }: Props) {
     const insets = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
     const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
     const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
@@ -87,83 +89,105 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
         { number: '5', text: t('how_it_works_step_5') },
     ];
 
+    const sheetBody = (
+        <View style={styles.content}>
+            <View style={styles.logoContainer}>
+                {isArabic ? (
+                    <Text style={styles.logoArabicText}>
+                        <Text style={[styles.logoCardArabic, { color: theme.text }]}>{t('xcard_title_card')}</Text>
+                        {' '}
+                        <Text style={[styles.logoXArabic, { color: theme.brand }]}>{t('xcard_title_x')}</Text>
+                    </Text>
+                ) : (
+                    <>
+                        <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
+                        <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
+                    </>
+                )}
+            </View>
+
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+            <View
+                style={[
+                    styles.titleContainer,
+                    isArabic && styles.titleContainerRTL,
+                ]}
+            >
+                <PhonkText style={[styles.titleText, { color: theme.text }]}>{t('how_it_works_title_prefix')}</PhonkText>
+                <PhonkText style={[styles.titleHighlight, { color: theme.brand }]}>{t('how_it_works_title_highlight')}</PhonkText>
+                <PhonkText style={[styles.titleText, { color: theme.text }]}>{t('how_it_works_title_suffix')}</PhonkText>
+            </View>
+
+            <View style={styles.stepsContainer}>
+                {steps.map((step) => (
+                    <StepItem key={step.number} step={step} isArabic={isArabic} />
+                ))}
+            </View>
+        </View>
+    );
+
+    if (Platform.OS === 'android') {
+        return (
+            <AndroidBottomSheetModal
+                visible={visible}
+                onClose={onClose}
+                backgroundColor={theme.surfaceElevated}
+                testID="xcard-how-it-works-bottom-sheet"
+            >
+                {sheetBody}
+            </AndroidBottomSheetModal>
+        );
+    }
+
+    const {
+        BottomSheet: SwiftUIBottomSheet,
+        Group: SwiftUIGroup,
+        Host: SwiftUIHost,
+        RNHostView: SwiftUIRNHostView,
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+    } = require('@expo/ui/swift-ui');
+    const {
+        frame,
+        presentationDragIndicator,
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+    } = require('@expo/ui/swift-ui/modifiers');
+
     return (
-        <BottomSheet
-            isPresented={visible}
-            onDismiss={onClose}
-            modifiers={sheetBackgroundModifiers}
-            testID="xcard-how-it-works-bottom-sheet"
-        >
-            <RNHostView matchContents>
-                <View
-                    style={[
-                        styles.sheetContent,
-                        { backgroundColor: theme.surfaceElevated },
-                        { paddingBottom: Math.max(insets.bottom, 10) },
+        <SwiftUIHost style={StyleSheet.absoluteFill} pointerEvents="none">
+            <SwiftUIBottomSheet
+                isPresented={visible}
+                onIsPresentedChange={(presented: boolean) => {
+                    if (!presented) onClose();
+                }}
+                fitToContents
+                testID="xcard-how-it-works-bottom-sheet"
+            >
+                <SwiftUIGroup
+                    modifiers={[
+                        frame({ maxWidth: Infinity, alignment: 'topLeading' }),
+                        presentationDragIndicator('visible'),
+                        ...(sheetBackgroundModifiers ?? []),
                     ]}
                 >
-                    <BottomSheetOverscanBackground backgroundColor={theme.surfaceElevated} />
-                    <ScrollView
-                        style={styles.content}
-                        contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                        bounces={false}
-                        nestedScrollEnabled
-                    >
-                        {/* Logo */}
-                        <View style={styles.logoContainer}>
-                            {isArabic ? (
-                                <Text style={styles.logoArabicText}>
-                                    <Text style={[styles.logoCardArabic, { color: theme.text }]}>{t('xcard_title_card')}</Text>
-                                    {' '}
-                                    <Text style={[styles.logoXArabic, { color: theme.brand }]}>{t('xcard_title_x')}</Text>
-                                </Text>
-                            ) : (
-                                <>
-                                    <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
-                                    <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
-                                </>
-                            )}
-                        </View>
-
-                        {/* Divider */}
-                        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-
-                        {/* Title */}
+                    <SwiftUIRNHostView matchContents>
                         <View
                             style={[
-                                styles.titleContainer,
-                                isArabic && styles.titleContainerRTL,
+                                styles.sheetContent,
+                                {
+                                    backgroundColor: theme.surfaceElevated,
+                                    width,
+                                    paddingBottom: Math.max(insets.bottom, 16),
+                                },
                             ]}
                         >
-                            <PhonkText
-                                style={[
-                                    styles.titleText,
-                                    isArabic && styles.titleTextRTL,
-                                    {
-                                        color: theme.text,
-                                        writingDirection: isArabic ? 'rtl' : 'ltr',
-                                    },
-                                ]}
-                            >
-                                {t('how_it_works_title_prefix')}
-                                <Text style={[styles.titleHighlight, isArabic && styles.titleHighlightRTL, { color: theme.brand }]}>
-                                    {t('how_it_works_title_highlight')}
-                                </Text>
-                                {t('how_it_works_title_suffix')}
-                            </PhonkText>
+                            <BottomSheetOverscanBackground backgroundColor={theme.surfaceElevated} />
+                            {sheetBody}
                         </View>
-
-                        {/* Steps */}
-                        <View style={styles.stepsContainer}>
-                            {steps.map((step) => (
-                                <StepItem key={step.number} step={step} isArabic={isArabic} />
-                            ))}
-                        </View>
-                    </ScrollView>
-                </View>
-            </RNHostView>
-        </BottomSheet>
+                    </SwiftUIRNHostView>
+                </SwiftUIGroup>
+            </SwiftUIBottomSheet>
+        </SwiftUIHost>
     );
 }
 
@@ -175,10 +199,6 @@ const styles = StyleSheet.create({
         overflow: 'visible',
     },
     content: {
-        flexGrow: 0,
-        width: '100%',
-    },
-    scrollContent: {
         width: '100%',
         alignItems: 'center',
         paddingHorizontal: 20,
@@ -214,6 +234,7 @@ const styles = StyleSheet.create({
     divider: {
         height: 1,
         marginHorizontal: 20,
+        alignSelf: 'stretch',
     },
     titleContainer: {
         width: '100%',
@@ -245,7 +266,6 @@ const styles = StyleSheet.create({
         width: '100%',
         alignSelf: 'center',
         gap: 8,
-        paddingBottom: 4,
     },
     stepItem: {
         width: '100%',

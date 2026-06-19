@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     I18nManager,
+    Platform,
     StyleProp,
     StyleSheet,
     Text,
@@ -22,6 +23,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Typography } from '../../constants/Typography';
+import AndroidBottomSheetModal from '../AndroidBottomSheetModal';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
 import WaktiSheetContent from './WaktiSheetContent';
@@ -154,32 +156,46 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                     </View>
 
                     <View style={styles.artWrap}>
-                        <View style={[styles.artPanel, waktiBannerUsesDarkTheme ? styles.artPanelDark : styles.artPanelLight]}>
-                            <Image
-                                source={waktiBannerImage}
-                                style={styles.artImage}
-                                contentFit="contain"
-                                accessibilityLabel="Wakti logo"
-                            />
-                        </View>
+                        <Image
+                            source={waktiBannerImage}
+                            style={styles.artImage}
+                            contentFit="contain"
+                            accessibilityLabel="Wakti AI logo"
+                        />
                     </View>
                 </View>
             </TouchableOpacity>
-            <BottomSheet
-                isPresented={isSheetPresented}
-                onDismiss={() => setIsSheetPresented(false)}
-                snapPoints={['half']}
-                modifiers={sheetBackgroundModifiers}
-                testID="wakti-bottom-sheet"
-            >
-                <RNHostView matchContents>
+            {Platform.OS === 'android' ? (
+                <AndroidBottomSheetModal
+                    visible={isSheetPresented}
+                    onClose={closeSheet}
+                    backgroundColor={waktiSheetBackgroundColor}
+                    testID="wakti-bottom-sheet"
+                >
                     <WaktiSheetContent
                         isDark
+                        fitToContent
                         onClose={closeSheet}
                         onStoreOpened={() => setIsSheetPresented(false)}
                     />
-                </RNHostView>
-            </BottomSheet>
+                </AndroidBottomSheetModal>
+            ) : (
+                <BottomSheet
+                    isPresented={isSheetPresented}
+                    onDismiss={() => setIsSheetPresented(false)}
+                    snapPoints={['half']}
+                    modifiers={sheetBackgroundModifiers}
+                    testID="wakti-bottom-sheet"
+                >
+                    <RNHostView matchContents>
+                        <WaktiSheetContent
+                            isDark
+                            onClose={closeSheet}
+                            onStoreOpened={() => setIsSheetPresented(false)}
+                        />
+                    </RNHostView>
+                </BottomSheet>
+            )}
         </View>
     );
 }
@@ -274,31 +290,15 @@ const styles = StyleSheet.create({
         writingDirection: 'rtl',
     },
     artWrap: {
-        width: 112,
-        height: 112,
+        width: 128,
+        height: 128,
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
     },
-    artPanel: {
-        width: 112,
-        height: 112,
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        borderRadius: 27,
-    },
-    artPanelLight: {
-        backgroundColor: 'rgba(239, 247, 255, 0.84)',
-        boxShadow: '0 20px 48px rgba(28, 103, 202, 0.22)',
-    },
-    artPanelDark: {
-        backgroundColor: 'rgba(255, 255, 255, 0.18)',
-        boxShadow: '0 26px 62px rgba(124, 181, 255, 0.30)',
-    },
     artImage: {
-        width: 96,
-        height: 96,
+        width: 120,
+        height: 120,
     },
     gridLayer: {
         position: 'absolute',

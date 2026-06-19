@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -88,7 +88,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: 88,
+    // iOS tab bar is a translucent overlay so content needs clearance; the Android
+    // JS tab bar reserves its own layout space, so a large pad just leaves dead space.
+    paddingBottom: Platform.OS === 'ios' ? 88 : 24,
   },
   glowSection: {
     position: 'relative',

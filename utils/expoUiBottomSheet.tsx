@@ -30,6 +30,10 @@ export function BottomSheetOverscanBackground({
 }: BottomSheetOverscanBackgroundProps) {
     const { height, width } = useWindowDimensions();
 
+    if (Platform.OS !== 'ios') {
+        return null;
+    }
+
     return (
         <View
             pointerEvents="none"

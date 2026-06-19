@@ -38,6 +38,7 @@ type WaktiSheetContentProps = {
     isDark?: boolean;
     onClose?: () => void;
     onStoreOpened?: () => void;
+    fitToContent?: boolean;
 };
 
 type FeatureChipProps = {
@@ -106,12 +107,14 @@ function FeatureChip({
                     isDark ? styles.featureCardDark : styles.featureCardLight,
                 ]}
             >
-                <GlassView
-                    style={StyleSheet.absoluteFill}
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    tintColor={isDark ? 'rgba(255,255,255,0.20)' : 'rgba(58,145,255,0.26)'}
-                />
+                {Platform.OS !== 'android' ? (
+                    <GlassView
+                        style={StyleSheet.absoluteFill}
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        tintColor={isDark ? 'rgba(255,255,255,0.20)' : 'rgba(58,145,255,0.26)'}
+                    />
+                ) : null}
                 <Animated.View
                     pointerEvents="none"
                     style={[
@@ -138,25 +141,24 @@ function FeatureChip({
     );
 }
 
-export default function WaktiSheetContent({ isDark = true, onStoreOpened }: WaktiSheetContentProps) {
+export default function WaktiSheetContent({ isDark = true, onStoreOpened, fitToContent = false }: WaktiSheetContentProps) {
     const { height, width } = useWindowDimensions();
     const { t, i18n } = useTranslation();
     const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
     const ctaLabel = t('wakti_sheet_cta');
     const sheetBackgroundColor = isDark ? '#050B14' : '#EEF7FF';
     const featureCategories = [
-        t('wakti_feature_leisure_title'),
-        t('wakti_feature_wellness_title'),
-        t('wakti_feature_organization_title'),
-        t('wakti_feature_creative_title'),
-        t('wakti_feature_intelligence_title'),
+        t('wakti_feature_hub_chat'),
+        t('wakti_feature_hub_text'),
+        t('wakti_feature_hub_coder'),
+        t('wakti_feature_hub_slides'),
     ];
-    const sheetMinHeight = Math.round(height * 0.5);
+    const sheetMinHeight = fitToContent ? undefined : Math.round(height * 0.5);
     const isCompactWidth = width < 360;
     const isShortScreen = height < 760;
     const contentWidth = clamp(width - (isCompactWidth ? 32 : 40), 280, 420);
-    const containerTopPadding = isShortScreen ? 12 : 18;
-    const containerBottomPadding = isShortScreen ? 12 : 16;
+    const containerTopPadding = fitToContent ? 0 : (isShortScreen ? 12 : 18);
+    const containerBottomPadding = fitToContent ? (isShortScreen ? 8 : 12) : (isShortScreen ? 12 : 16);
     const contentGap = isShortScreen ? 12 : 16;
     const headlineFontSize = isCompactWidth ? 22 : 24;
     const headlineLineHeight = isCompactWidth ? 27 : 29;
@@ -240,8 +242,9 @@ export default function WaktiSheetContent({ isDark = true, onStoreOpened }: Wakt
         <View
             style={[
                 styles.container,
+                fitToContent && styles.containerFitToContent,
                 {
-                    minHeight: sheetMinHeight,
+                    ...(sheetMinHeight != null ? { minHeight: sheetMinHeight } : null),
                     paddingTop: containerTopPadding,
                     paddingBottom: containerBottomPadding,
                     rowGap: contentGap,
@@ -413,6 +416,11 @@ const styles = StyleSheet.create({
     },
     containerRTL: {
         direction: 'rtl',
+    },
+    containerFitToContent: {
+        flex: 0,
+        overflow: 'hidden',
+        width: '100%',
     },
     contentColumn: {
         alignItems: 'center',

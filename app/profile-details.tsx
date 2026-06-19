@@ -24,7 +24,7 @@ import { logger } from '../utils/logger';
 import { unregisterExpoPushTokenForCurrentUser } from '../utils/pushNotifications';
 import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
-import PhonkText from '../components/PhonkText';
+import AppText from '../components/AppText';
 import UserAvatar from '../components/UserAvatar';
 import { fetchStudentProfile } from '../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../utils/queryClient';
@@ -217,16 +217,16 @@ export default function ProfileDetailsScreen() {
             >
                 <Ionicons name={backIconName} size={24} color={theme.icon} />
             </TouchableOpacity>
-                <PhonkText style={[styles.headerTitle, { color: theme.text }, isRTL && styles.headerTitleRTL]}>
+                <AppText style={[styles.headerTitle, { color: theme.text }, isRTL && styles.headerTitleRTL]}>
                     {t('profile_details_title')}
-                </PhonkText>
+                </AppText>
             <TouchableOpacity
                 onPress={handleToggleEdit}
                 style={[styles.editButton, { backgroundColor: theme.cardMuted }]}
             >
-                <PhonkText style={[styles.editButtonText, { color: isEditing ? theme.brand : theme.text }]}>
+                <AppText style={[styles.editButtonText, { color: isEditing ? theme.brand : theme.text }]}>
                     {isEditing ? t('save') : t('edit')}
-                </PhonkText>
+                </AppText>
             </TouchableOpacity>
         </View>
 
@@ -261,9 +261,9 @@ export default function ProfileDetailsScreen() {
                                 {/* First Name Field */}
                                 <View style={styles.inputGroup}>
                                     <View style={styles.labelRow}>
-                                        <PhonkText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
+                                        <AppText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
                                             {t('first_name')}
-                                        </PhonkText>
+                                        </AppText>
                                     </View>
                                     <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}>
                                         <TextInput
@@ -283,9 +283,9 @@ export default function ProfileDetailsScreen() {
                                 {/* Last Name Field */}
                                 <View style={styles.inputGroup}>
                                     <View style={styles.labelRow}>
-                                        <PhonkText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
+                                        <AppText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
                                             {t('last_name')}
-                                        </PhonkText>
+                                        </AppText>
                                     </View>
                                     <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}>
                                         <TextInput
@@ -305,9 +305,9 @@ export default function ProfileDetailsScreen() {
                                 {/* Email Field */}
                                 <View style={styles.inputGroup}>
                                     <View style={styles.labelRow}>
-                                        <PhonkText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
+                                        <AppText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
                                             {t('email_address')}
-                                        </PhonkText>
+                                        </AppText>
                                     </View>
                                     <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, styles.disabledInput]}>
                                         <TextInput
@@ -326,9 +326,9 @@ export default function ProfileDetailsScreen() {
                                 {/* Date of Birth Field */}
                                 <View style={styles.inputGroup}>
                                     <View style={styles.labelRow}>
-                                        <PhonkText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
+                                        <AppText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
                                             {t('date_of_birth')}
-                                        </PhonkText>
+                                        </AppText>
                                     </View>
                                     <TouchableOpacity
                                         style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}
@@ -369,7 +369,7 @@ export default function ProfileDetailsScreen() {
                         >
                             <View style={styles.deleteContent}>
                                 <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                                <PhonkText style={styles.deleteAccountText}>{t('delete_account')}</PhonkText>
+                                <AppText style={styles.deleteAccountText}>{t('delete_account')}</AppText>
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     disabledInput: {
         opacity: 0.8,

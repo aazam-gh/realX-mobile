@@ -8,9 +8,11 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
+    Text,
     View,
 } from 'react-native';
-import PhonkText from '../PhonkText';
+import { Typography } from '../../constants/Typography';
+import AppText from '../AppText';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../../utils/logger';
@@ -161,12 +163,18 @@ export default function BrandGrid() {
         <View>
             <View style={styles.headerContainer}>
                 <View style={styles.headerTitle}>
-                    <PhonkText style={[styles.shopByText, { color: theme.text, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    <AppText
+                        style={[
+                            styles.shopByText,
+                            Typography.getTextDirectionStyle({ isRTL }),
+                            { color: theme.text },
+                        ]}
+                    >
                         {brandLabelPrefix}
-                    </PhonkText>
-                    <PhonkText style={[styles.brandText, { color: theme.brand, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                        {brandLabelHighlight}
-                    </PhonkText>
+                        <Text style={[styles.brandText, { color: theme.brand }]}>
+                            {brandLabelHighlight}
+                        </Text>
+                    </AppText>
                 </View>
             </View>
             <BrandRow items={row1} onPressBrand={handlePress} />
@@ -194,8 +202,8 @@ const styles = StyleSheet.create({
     },
     brandText: {
         fontSize: 20,
-        fontStyle: 'italic',
         letterSpacing: 1,
+        ...Typography.getTextVariantStyle('display'),
     },
     loaderContainer: {
         height: 120,

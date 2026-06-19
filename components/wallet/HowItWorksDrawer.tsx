@@ -10,7 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../PhonkText';
+import AppText from '../AppText';
 import AndroidBottomSheetModal from '../AndroidBottomSheetModal';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { toArabicDigits } from '../../utils/numbers';
@@ -43,7 +43,7 @@ function StepItem({ step, isArabic }: StepItemProps) {
             ]}
         >
             <View style={styles.stepNumberColumn}>
-                <PhonkText
+                <AppText
                     style={[
                         styles.stepNumber,
                         isArabic && styles.stepNumberRTL,
@@ -51,7 +51,7 @@ function StepItem({ step, isArabic }: StepItemProps) {
                     ]}
                 >
                     {isArabic ? toArabicDigits(step.number) : step.number}
-                </PhonkText>
+                </AppText>
             </View>
             <Text
                 style={[
@@ -100,8 +100,8 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                     </Text>
                 ) : (
                     <>
-                        <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
-                        <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
+                        <AppText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</AppText>
+                        <AppText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</AppText>
                     </>
                 )}
             </View>
@@ -114,9 +114,19 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                     isArabic && styles.titleContainerRTL,
                 ]}
             >
-                <PhonkText style={[styles.titleText, { color: theme.text }]}>{t('how_it_works_title_prefix')}</PhonkText>
-                <PhonkText style={[styles.titleHighlight, { color: theme.brand }]}>{t('how_it_works_title_highlight')}</PhonkText>
-                <PhonkText style={[styles.titleText, { color: theme.text }]}>{t('how_it_works_title_suffix')}</PhonkText>
+                <AppText
+                    style={[
+                        styles.titleText,
+                        Typography.getTextDirectionStyle({ isRTL: isArabic }),
+                        { color: theme.text },
+                    ]}
+                >
+                    {t('how_it_works_title_prefix')}
+                    <Text style={[styles.titleHighlight, { color: theme.brand }]}>
+                        {t('how_it_works_title_highlight')}
+                    </Text>
+                    {t('how_it_works_title_suffix')}
+                </AppText>
             </View>
 
             <View style={styles.stepsContainer}>
@@ -220,13 +230,13 @@ const styles = StyleSheet.create({
         fontSize: 28,
     },
     logoXArabic: {
-        fontFamily: 'TajawalBlack',
+        ...Typography.getTextVariantStyle('displayArabicBlack'),
         fontSize: 32,
         lineHeight: 40,
         writingDirection: 'rtl',
     },
     logoCardArabic: {
-        fontFamily: 'TajawalBlack',
+        ...Typography.getTextVariantStyle('displayArabicBlack'),
         fontSize: 32,
         lineHeight: 40,
         writingDirection: 'rtl',
@@ -303,7 +313,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 18,
         lineHeight: 26,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     stepTextRTL: {
         fontSize: 20,

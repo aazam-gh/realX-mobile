@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     padding: 0,
   },
   clearButton: {

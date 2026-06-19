@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     headline: {
         fontSize: 19,
         lineHeight: 25,
-        fontFamily: Typography.hanson.bold,
+        ...Typography.getTextVariantStyle('display'),
         color: '#FFFFFF',
     },
     headlineLight: {
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     subheadline: {
         fontSize: 16,
         lineHeight: 21,
-        fontFamily: Typography.hanson.bold,
+        ...Typography.getTextVariantStyle('display'),
         color: '#FFFFFF',
     },
     offerPill: {
@@ -280,11 +280,11 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 15,
         lineHeight: 18,
-        fontFamily: Typography.hanson.bold,
+        ...Typography.getTextVariantStyle('display'),
         textTransform: 'uppercase',
     },
     offerTextArabic: {
-        fontFamily: 'TajawalBlack',
+        ...Typography.getTextVariantStyle('displayArabicBlack'),
         textAlign: 'right',
         textTransform: 'none',
         writingDirection: 'rtl',

@@ -204,11 +204,11 @@ export default function SearchScreen() {
                 </View>
             ) : results.length === 0 ? (
                 <View style={styles.centeredContainer}>
-                    <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.emptyEmoji]}>🔍</Text>
-                    <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.emptyTitle, isArabic && styles.textRTL]}>
+                    <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.emptyEmoji]}>🔍</Text>
+                    <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.emptyTitle, isArabic && styles.textRTL]}>
                         {committedQuery ? t('search_offers_no_results_title') : t('search_offers_empty_title')}
                     </Text>
-                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium }, styles.emptySubtitle, isArabic && styles.textRTL]}>
+                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body') }, styles.emptySubtitle, isArabic && styles.textRTL]}>
                         {committedQuery
                             ? t('search_offers_no_results_hint', { query: committedQuery })
                             : t('search_offers_empty_hint')}
@@ -227,7 +227,7 @@ export default function SearchScreen() {
                     ListFooterComponent={renderFooter}
                     ListHeaderComponent={
                         <View style={styles.resultCountRow}>
-                            <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium }, styles.resultCount, isArabic && styles.textRTL]}>
+                            <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body') }, styles.resultCount, isArabic && styles.textRTL]}>
                                 {t('search_results_count', { count: results.length })}
                             </Text>
                         </View>
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 15,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         padding: 0,
     },
     centeredContainer: {
@@ -289,19 +289,19 @@ const styles = StyleSheet.create({
     },
     emptyTitle: {
         fontSize: 20,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         textAlign: 'center',
         marginBottom: 8,
     },
     emptySubtitle: {
         fontSize: 15,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         textAlign: 'center',
         lineHeight: 22,
     },
     resultCount: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         paddingTop: 8,
         paddingBottom: 16,
     },

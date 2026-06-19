@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 24,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     scrollContent: {
         paddingHorizontal: 24,
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     },
     lastUpdated: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         marginBottom: 24,
     },
     section: {
@@ -144,12 +144,12 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 18,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         marginBottom: 12,
     },
     paragraph: {
         fontSize: 16,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         lineHeight: 28,
     },
     textRTL: {

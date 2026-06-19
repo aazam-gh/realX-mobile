@@ -2,15 +2,16 @@ import { collection, getDocs, getFirestore, limit, query, where } from '@react-n
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import PhonkText from '../PhonkText';
 import RestaurantCard from '../category/RestaurantCard';
 import { useTranslation } from 'react-i18next';
+import { Typography } from '../../constants/Typography';
 import { logger } from '../../utils/logger';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { fetchCmsDocument, fetchVendor } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
+import AppText from '../AppText';
 
 type TrendingOffersProps = {
     onVendorPress?: (vendor: any) => void;
@@ -206,12 +207,18 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
         <View style={styles.container}>
             <View style={styles.headerContainer}>
                 <View style={styles.headerTitle}>
-                    <PhonkText style={[styles.trendingText, { color: theme.text, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    <AppText
+                        style={[
+                            styles.trendingText,
+                            Typography.getTextDirectionStyle({ isRTL }),
+                            { color: theme.text },
+                        ]}
+                    >
                         {trendingLabelPrefix}
-                    </PhonkText>
-                    <PhonkText style={[styles.offersText, { color: theme.brand, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-                        {trendingLabelHighlight}
-                    </PhonkText>
+                        <Text style={[styles.offersText, { color: theme.brand }]}>
+                            {trendingLabelHighlight}
+                        </Text>
+                    </AppText>
                 </View>
             </View>
             <ScrollView

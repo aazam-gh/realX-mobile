@@ -99,10 +99,10 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                             contentFit="contain"
                         />
                     ) : (
-                        <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, { fontSize: 40 }]}>{item.icon}</Text>
+                        <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, { fontSize: 40 }]}>{item.icon}</Text>
                     )}
                 </View>
-                <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.categoryName]} numberOfLines={1}>{item.name}</Text>
+                <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.categoryName]} numberOfLines={1}>{item.name}</Text>
             </TouchableOpacity>
         );
     };
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     },
     categoryName: {
         fontSize: 12,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         textAlign: 'center',
     },
     loaderContainer: {
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     },
     drawerTitle: {
         fontSize: 18,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         textAlign: 'center',
         marginBottom: 12,
     },
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     },
     drawerListText: {
         fontSize: 16,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         color: '#000000',
     },
 });

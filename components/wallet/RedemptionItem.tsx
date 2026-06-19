@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     },
     logoText: {
         fontSize: 12,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         color: '#FFFFFF',
     },
     logoImage: {
@@ -106,17 +106,17 @@ const styles = StyleSheet.create({
     },
     dateText: {
         fontSize: 11,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         marginBottom: 2,
     },
     merchantName: {
         fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         marginBottom: 2,
     },
     offerType: {
         fontSize: 12,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     savedContainer: {
         alignItems: 'flex-end',
@@ -124,11 +124,11 @@ const styles = StyleSheet.create({
     },
     savedLabel: {
         fontSize: 18,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         color: Colors.brandGreen,
     },
     totalBillText: {
         fontSize: 11,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
 });

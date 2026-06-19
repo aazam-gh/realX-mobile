@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         fontSize: 18,
-        fontFamily: Typography.hanson.bold,
+        ...Typography.getTextVariantStyle('display'),
         color: '#FFFFFF',
         letterSpacing: 1,
     },

@@ -21,7 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import {
   OnboardingButtonMotion,
   OnboardingCardMotion,
@@ -259,9 +259,9 @@ export default function VerifyOtpScreen() {
             <OnboardingStaggerItem delay={170}>
             <View style={styles.textContainer}>
               <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{titlePrefix}</Text>
-              <PhonkText style={styles.titleLarge}>
+              <AppText style={styles.titleLarge}>
                 <Text style={[styles.greenText, { color: theme.brand }]}>{titleSuffix}</Text>
-              </PhonkText>
+              </AppText>
             </View>
             </OnboardingStaggerItem>
 
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   textContainer: { marginBottom: 12, alignItems: 'center' },
   titleSmall: {
     fontSize: 16,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     textTransform: 'uppercase',
     letterSpacing: 2,
     marginBottom: 4,
@@ -406,14 +406,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     marginBottom: 2,
     paddingHorizontal: 10,
   },
   emailText: {
     fontSize: 14,
     textAlign: 'center',
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     marginBottom: 28,
   },
   otpContainer: {
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     fontSize: 24,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     textAlign: 'center',
     backgroundColor: 'transparent',
     paddingVertical: 0,
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 13,
     color: '#E53935',
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     flex: 1,
   },
   resendContainer: {
@@ -472,11 +472,11 @@ const styles = StyleSheet.create({
   },
   cooldownText: {
     fontSize: 14,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   resendText: {
     fontSize: 14,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   footer: {
     position: 'absolute',
@@ -504,6 +504,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 17,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
 });

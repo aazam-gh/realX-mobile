@@ -11,7 +11,7 @@ import {
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import ScalePressable from '../ScalePressable';
-import PhonkText from '../PhonkText';
+import AppText from '../AppText';
 import GiftCardCheckout from './GiftCardCheckout';
 import GiftCardTermsDrawer from './GiftCardTermsDrawer';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -77,8 +77,8 @@ export default function RedeemGiftCard({
                         </Text>
                     ) : (
                         <>
-                            <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
-                            <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
+                            <AppText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</AppText>
+                            <AppText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</AppText>
                         </>
                     )}
                 </View>
@@ -116,14 +116,14 @@ export default function RedeemGiftCard({
                     <Text style={[styles.brandName, { color: theme.text }]}>{brand.name}</Text>
 
                     <View style={styles.generateGiftCardWrapper}>
-                        <PhonkText style={[styles.generateText, { color: theme.text }]}>{t('generate_text')}</PhonkText>
-                        <PhonkText style={[styles.giftCardText, { color: theme.brand }]}>{t('gift_card_text')}</PhonkText>
+                        <AppText style={[styles.generateText, { color: theme.text }]}>{t('generate_text')}</AppText>
+                        <AppText style={[styles.giftCardText, { color: theme.brand }]}>{t('gift_card_text')}</AppText>
                     </View>
 
                     <View style={[styles.selectedAmountContainer, { backgroundColor: theme.card }]}>
-                        <PhonkText style={[styles.selectedAmountText, { color: theme.text }]}>
+                        <AppText style={[styles.selectedAmountText, { color: theme.text }]}>
                             {currency} {selectedAmount.toFixed(2)}
-                        </PhonkText>
+                        </AppText>
                     </View>
                 </View>
 
@@ -162,12 +162,12 @@ export default function RedeemGiftCard({
                                 }}
                                 pressedScale={0.94}
                             >
-                                <PhonkText style={[
+                                <AppText style={[
                                     styles.amountOptionText,
                                     { color: selectedAmount === amount ? theme.text : theme.mutedText },
                                 ]}>
                                     {amount.toFixed(2)}
-                                </PhonkText>
+                                </AppText>
                             </ScalePressable>
                         ))}
                     </View>
@@ -202,7 +202,7 @@ export default function RedeemGiftCard({
                     pressedScale={0.975}
                 >
                     <Ionicons name="flash" size={20} color={theme.onActionSolid} style={styles.redeemIcon} />
-                    <PhonkText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{t('redeem_button_text')}</PhonkText>
+                    <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{t('redeem_button_text')}</AppText>
                 </ScalePressable>
             </ScrollView>
 
@@ -247,13 +247,13 @@ const styles = StyleSheet.create({
         fontSize: 24,
     },
     logoXArabic: {
-        fontFamily: 'TajawalBlack',
+        ...Typography.getTextVariantStyle('displayArabicBlack'),
         fontSize: 28,
         lineHeight: 36,
         writingDirection: 'rtl',
     },
     logoCardArabic: {
-        fontFamily: 'TajawalBlack',
+        ...Typography.getTextVariantStyle('displayArabicBlack'),
         fontSize: 28,
         lineHeight: 36,
         writingDirection: 'rtl',
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
         top: 30,
         left: 30,
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     inStoreBadgeRTL: {
         left: undefined,
@@ -308,11 +308,11 @@ const styles = StyleSheet.create({
     },
     brandLogoPlaceholder: {
         fontSize: 40,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     brandName: {
         fontSize: 18,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         marginTop: 16,
     },
     generateGiftCardWrapper: {
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     insufficientText: {
         flex: 1,
         fontSize: 13,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     redeemIcon: {
         marginRight: 10,
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     },
     tcButtonText: {
         fontSize: 13,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         marginLeft: 6,
     },
     tcButtonTextRTL: {

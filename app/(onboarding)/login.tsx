@@ -24,7 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import {
   OnboardingButtonMotion,
   OnboardingCardMotion,
@@ -146,9 +146,9 @@ export default function LoginScreen() {
 
               <OnboardingStaggerItem delay={170}>
               <View style={styles.textContainer}>
-                <PhonkText style={styles.titleLarge}>
+                <AppText style={styles.titleLarge}>
                   <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_login_title')}</Text>
-                </PhonkText>
+                </AppText>
               </View>
               </OnboardingStaggerItem>
 
@@ -216,7 +216,7 @@ export default function LoginScreen() {
             <View style={[styles.modalIconContainer, { backgroundColor: theme.brandSoft }]}>
               <Ionicons name="person-add-outline" size={40} color={theme.brand} />
             </View>
-            <PhonkText style={[styles.modalTitle, { color: theme.brand }]}>{t('onboarding_account_not_found_title')}</PhonkText>
+            <AppText style={[styles.modalTitle, { color: theme.brand }]}>{t('onboarding_account_not_found_title')}</AppText>
             <Text style={[styles.modalText, { color: theme.mutedText }]}>{t('onboarding_account_not_found_message')}</Text>
 
             <TouchableOpacity
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 10 },
   input: {
     fontSize: 16,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     paddingVertical: 0,
     includeFontPadding: false,
   },
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 10,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   footer: {
     paddingBottom: 40,
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
   buttonText: {
-    fontSize: 17, fontFamily: Typography.poppins.semiBold,
+    fontSize: 17, ...Typography.getTextVariantStyle('bodyStrong'),
   },
   modalOverlay: {
     flex: 1,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 30,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     lineHeight: 24,
   },
   modalPrimaryButton: {
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   },
   modalPrimaryButtonText: {
     fontSize: 16,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   modalSecondaryButton: {
     height: 56,
@@ -397,6 +397,6 @@ const styles = StyleSheet.create({
   },
   modalSecondaryButtonText: {
     fontSize: 16,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
 });

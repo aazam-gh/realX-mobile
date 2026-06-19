@@ -9,7 +9,7 @@ import { ActivityIndicator, FlatList, I18nManager, StyleSheet, Text, TouchableOp
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
-import PhonkText from '../components/PhonkText';
+import AppText from '../components/AppText';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
 import { toArabicDigits } from '../utils/numbers';
@@ -101,9 +101,9 @@ export default function RedemptionHistoryScreen() {
 
             <View style={styles.paidInfo}>
               <Text style={[styles.paidLabel, { color: theme.mutedText }]} numberOfLines={1}>{t('total_paid')}</Text>
-              <PhonkText style={[styles.paidAmount, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>
+              <AppText style={[styles.paidAmount, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>
                 {t('amount_with_currency', { amount: fmt(paid), currency })}
-              </PhonkText>
+              </AppText>
             </View>
           </View>
 
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   headerTitleRTL: {
     textAlign: 'right',
@@ -247,12 +247,12 @@ const styles = StyleSheet.create({
   },
   vendorName: {
     fontSize: 18,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     marginBottom: 4,
   },
   savingsText: {
     fontSize: 12,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   paidInfo: {
     alignItems: 'flex-end',
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   },
   paidLabel: {
     fontSize: 12,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     marginBottom: 4,
   },
   paidAmount: {
@@ -283,12 +283,12 @@ const styles = StyleSheet.create({
   },
   offerLabel: {
     fontSize: 12,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     marginBottom: 4,
   },
   offerValue: {
     fontSize: 14,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   redeemButton: {
     flexShrink: 0,
@@ -298,11 +298,11 @@ const styles = StyleSheet.create({
   },
   redeemButtonText: {
     fontSize: 14,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   dateText: {
     fontSize: 12,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     marginLeft: 8,
   },
   emptyContainer: {
@@ -311,6 +311,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
 });

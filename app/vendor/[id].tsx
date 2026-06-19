@@ -16,7 +16,7 @@ import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import AndroidBottomSheetModal from '../../components/AndroidBottomSheetModal';
 import { VendorGallery } from '../../components/vendor/VendorGallery';
 import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
@@ -295,7 +295,7 @@ export default function VendorScreen() {
     if (!vendor) {
         return (
                 <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
-                <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.errorText]}>{t('vendor_not_found')}</Text>
+                <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.errorText]}>{t('vendor_not_found')}</Text>
             </View>
         );
     }
@@ -349,7 +349,7 @@ export default function VendorScreen() {
                                 contentFit="contain"
                             />
                         ) : (
-                            <PhonkText style={[{ color: theme.text }, styles.vendorName]}>{pickLocalizedText(isArabic, vendor.nameAr, vendor.name, 'Vendor')}</PhonkText>
+                            <AppText style={[{ color: theme.text }, styles.vendorName]}>{pickLocalizedText(isArabic, vendor.nameAr, vendor.name, 'Vendor')}</AppText>
                         )}
                     </View>
 
@@ -371,7 +371,7 @@ export default function VendorScreen() {
                                 void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
                             }} activeOpacity={0.7}>
                                 <Ionicons name="location-outline" size={18} color={theme.brand} />
-                                <Text style={[styles.locationText, { color: theme.text, fontFamily: Typography.poppins.medium }]} numberOfLines={1}>
+                                <Text style={[styles.locationText, { color: theme.text, ...Typography.getTextVariantStyle('body') }]} numberOfLines={1}>
                                     {branches.length > 1 ? `${t('location')} (${branches.length})` : t('location')}
                                 </Text>
                             </TouchableOpacity>
@@ -401,19 +401,19 @@ export default function VendorScreen() {
                                 {vendor.trending && (
                                     <View style={styles.tagChip}>
                                         <Ionicons name="trending-up" size={14} color="#FFF" />
-                                        <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]} numberOfLines={1}>{t('trending')}</Text>
+                                        <Text style={[styles.tagText, { ...Typography.getTextVariantStyle('bodyStrong') }]} numberOfLines={1}>{t('trending')}</Text>
                                     </View>
                                 )}
                                 {vendor.xcard && (
                                     <View style={[styles.tagChip, { backgroundColor: theme.brand }]}>
                                         <Ionicons name="cash-outline" size={14} color="#FFF" />
-                                        <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]} numberOfLines={1}>{t('cashback')}</Text>
+                                        <Text style={[styles.tagText, { ...Typography.getTextVariantStyle('bodyStrong') }]} numberOfLines={1}>{t('cashback')}</Text>
                                     </View>
                                 )}
                                 {vendor.vendorType === 'online' && (
                                     <View style={[styles.tagChip, { backgroundColor: '#2563EB' }]}>
                                         <Ionicons name="globe-outline" size={14} color="#FFF" />
-                                        <Text style={[styles.tagText, { fontFamily: Typography.poppins.semiBold }]} numberOfLines={1}>{t('online_vendor_label')}</Text>
+                                        <Text style={[styles.tagText, { ...Typography.getTextVariantStyle('bodyStrong') }]} numberOfLines={1}>{t('online_vendor_label')}</Text>
                                     </View>
                                 )}
                             </View>
@@ -428,9 +428,9 @@ export default function VendorScreen() {
                             <View style={styles.offerCard}>
                                 <View style={[styles.offerInfoContainer, { backgroundColor: theme.cardMuted }]}>
                                     <View style={styles.offerContent}>
-                                        <PhonkText style={[{ color: theme.text }, styles.offerTitle]}>
+                                        <AppText style={[{ color: theme.text }, styles.offerTitle]}>
                                             {pickLocalizedText(isArabic, vendor.brandOfferNameAr, vendor.brandOfferName, t('online_vendor_title'))}
-                                        </PhonkText>
+                                        </AppText>
                                         <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
                                             {t('online_vendor_description')}
                                         </Text>
@@ -445,7 +445,7 @@ export default function VendorScreen() {
                                         }}
                                     >
                                         <Ionicons name="globe-outline" size={18} color={theme.onActionSolid} />
-                                        <Text style={[{ color: theme.onActionSolid, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
+                                        <Text style={[{ color: theme.onActionSolid, ...Typography.getTextVariantStyle('body') }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -491,15 +491,15 @@ const isSaved = savedOfferIds.has(savedId);
                                     {/* Top Info Pill */}
                                     <View style={[styles.offerInfoContainer, { backgroundColor: theme.cardMuted }]}>
                                         <View style={styles.offerContent}>
-                                            <PhonkText style={[{ color: theme.text }, styles.offerTitle]}>
+                                            <AppText style={[{ color: theme.text }, styles.offerTitle]}>
                                                 {(offerTitle || "").split(/(\d+(?:\.\d+)?\s?%?)/).map((part: string, index: number) => 
                                                     /^\d+(?:\.\d+)?\s?%?$/.test(part) ? (
-                                                        <PhonkText key={index} style={styles.greenText}>{part}</PhonkText>
+                                                        <AppText key={index} style={styles.greenText}>{part}</AppText>
                                                     ) : (
                                                         part
                                                     )
                                                 )}
-                                            </PhonkText>
+                                            </AppText>
                                         </View>
                                     </View>
                                     {/* Bottom Button Pills */}
@@ -509,7 +509,7 @@ const isSaved = savedOfferIds.has(savedId);
                                             onPress={() => setSelectedOfferForTC(offer)}
                                         >
                                             <Ionicons name="alert-circle-outline" size={22} color={theme.iconMuted} />
-                                            <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('view_tc')}</Text>
+                                            <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.pillButtonTextSmall]}>{t('view_tc')}</Text>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
@@ -519,7 +519,7 @@ const isSaved = savedOfferIds.has(savedId);
                                             }}
                                         >
                                             <Ionicons name="flash" size={18} color={theme.onActionSolid} />
-                                            <Text style={[{ color: theme.onActionSolid, fontFamily: Typography.poppins.medium }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
+                                            <Text style={[{ color: theme.onActionSolid, ...Typography.getTextVariantStyle('body') }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
                                         </TouchableOpacity>
 
                                     </View>
@@ -540,7 +540,7 @@ const isSaved = savedOfferIds.has(savedId);
                 >
                     <View style={styles.termsSheetContent}>
                         <View style={styles.termsSheetHeader}>
-                            <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
+                            <AppText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</AppText>
                         </View>
 
                         <ScrollView
@@ -548,7 +548,7 @@ const isSaved = savedOfferIds.has(savedId);
                             nestedScrollEnabled
                             style={styles.termsSheetBody}
                         >
-                            <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
+                            <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
                                 {isArabic
                                     ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || t('no_specific_terms'))
                                     : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || t('no_specific_terms'))}
@@ -557,23 +557,23 @@ const isSaved = savedOfferIds.has(savedId);
                             <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
                                 <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                     <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
+                                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
                                 </View>
                                 <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                     <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
+                                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
                                 </View>
                                 <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                     <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
+                                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
                                 </View>
                                 <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                     <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
+                                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
                                 </View>
                                 <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                     <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
+                                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
                                 </View>
                             </View>
                         </ScrollView>
@@ -600,7 +600,7 @@ const isSaved = savedOfferIds.has(savedId);
                         >
                             <BottomSheetOverscanBackground backgroundColor={theme.card} />
                             <View style={styles.termsSheetHeader}>
-                                <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</PhonkText>
+                                <AppText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</AppText>
                             </View>
 
                             <ScrollView
@@ -608,7 +608,7 @@ const isSaved = savedOfferIds.has(savedId);
                                 nestedScrollEnabled
                                 style={[styles.termsSheetBody, { maxHeight: termsSheetBodyMaxHeight }]}
                             >
-                                <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
+                                <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
                                     {isArabic
                                         ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || t('no_specific_terms'))
                                         : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || t('no_specific_terms'))}
@@ -617,23 +617,23 @@ const isSaved = savedOfferIds.has(savedId);
                                 <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
                                     <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                         <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
+                                        <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
                                     </View>
                                     <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                         <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
+                                        <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
                                     </View>
                                     <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                         <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
+                                        <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
                                     </View>
                                     <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                         <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
+                                        <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
                                     </View>
                                     <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                         <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, fontFamily: Typography.poppins.medium, textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
+                                        <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
                                     </View>
                                 </View>
                             </ScrollView>
@@ -666,9 +666,9 @@ const isSaved = savedOfferIds.has(savedId);
 
                         <View style={styles.modalContent}>
                             <View style={styles.modalHeader}>
-                                <PhonkText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>
+                                <AppText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>
                                     {isArabic ? 'الفروع' : 'BRANCHES'}
-                                </PhonkText>
+                                </AppText>
                                 <TouchableOpacity
                                     onPress={() => setBranchPickerVisible(false)}
                                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
     },
     errorText: {
         fontSize: 16,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     scrollContent: {
         paddingBottom: 40,
@@ -908,7 +908,7 @@ const styles = StyleSheet.create({
     },
     nearestBranchText: {
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     phoneButton: {
         flexDirection: 'row',
@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
     phoneButtonText: {
         flexShrink: 1,
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     ratingContainer: {
         flexDirection: 'row',
@@ -931,7 +931,7 @@ const styles = StyleSheet.create({
     },
     ratingText: {
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     categoryChip: {
         flexDirection: 'row',
@@ -947,7 +947,7 @@ const styles = StyleSheet.create({
     },
     categoryText: {
         fontSize: 12,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     offersList: {
         marginTop: 24,
@@ -984,7 +984,7 @@ const styles = StyleSheet.create({
     },
     offerSubtitle: {
         fontSize: 15,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         color: '#8E8E93',
     },
     offerActionsRow: {
@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
     },
     pillButtonTextSmall: {
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
@@ -1078,7 +1078,7 @@ const styles = StyleSheet.create({
     },
     descriptionText: {
         fontSize: 16,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         lineHeight: 24,
     },
     commonTerms: {
@@ -1128,7 +1128,7 @@ const styles = StyleSheet.create({
     branchName: {
         flex: 1,
         fontSize: 15,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     branchNearestPill: {
         borderRadius: 10,
@@ -1137,12 +1137,12 @@ const styles = StyleSheet.create({
     },
     branchNearestText: {
         fontSize: 10,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         textTransform: 'uppercase',
     },
     branchAddress: {
         fontSize: 13,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     branchMetaRow: {
         flexDirection: 'row',
@@ -1166,7 +1166,7 @@ const styles = StyleSheet.create({
     branchPhoneText: {
         flexShrink: 1,
         fontSize: 15,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     branchDistanceChip: {
         flexDirection: 'row',
@@ -1179,10 +1179,10 @@ const styles = StyleSheet.create({
     },
     branchDistance: {
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     termText: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
 });

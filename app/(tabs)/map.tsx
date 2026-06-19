@@ -16,7 +16,7 @@ import { ActivityIndicator, Alert, I18nManager, Linking, Platform, Pressable, St
 import MapView, { Marker, Polyline, Region } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Supercluster, { ClusterFeature, PointFeature } from 'supercluster';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import { logger } from '../../utils/logger';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -799,7 +799,7 @@ export default function MapScreen() {
       />
 
       <View style={[styles.titleBar, { backgroundColor: theme.background }, isArabic && { alignItems: 'flex-start' }]}>
-        <PhonkText style={[styles.headerTitle]}>
+        <AppText style={[styles.headerTitle]}>
           {isArabic ? (
             <>
               <Text style={{ color: theme.text }}>الخريطة </Text>
@@ -811,7 +811,7 @@ export default function MapScreen() {
               <Text style={{ color: theme.text }}>MAP</Text>
             </>
           )}
-        </PhonkText>
+        </AppText>
       </View>
 
       <View style={styles.mapContainer}>
@@ -960,11 +960,11 @@ export default function MapScreen() {
             >
               <View style={styles.calloutHeader}>
                 <View style={styles.calloutTitleBlock}>
-                  <PhonkText style={[styles.calloutVendorName, { color: theme.text }, isArabic && styles.textRTL]} numberOfLines={1}>
+                  <AppText style={[styles.calloutVendorName, { color: theme.text }, isArabic && styles.textRTL]} numberOfLines={1}>
                     {isArabic
                       ? (selectedMapVendor.nameAr || selectedMapVendor.name)
                       : selectedMapVendor.name}
-                  </PhonkText>
+                  </AppText>
                   {(selectedMapVendor.branchName || selectedMapVendor.address) && (
                     <Text style={[styles.calloutBranchText, { color: theme.mutedText }, isArabic && styles.textRTL]} numberOfLines={1}>
                       {isArabic
@@ -986,11 +986,11 @@ export default function MapScreen() {
               {selectedMapVendor.firstOffer && (
                 <View style={[styles.calloutOfferPill, { backgroundColor: theme.cardMuted }]}>
                   <Ionicons name="pricetag" size={14} color={theme.brand} />
-                  <PhonkText style={[styles.calloutOfferText, { color: theme.brandText }, isArabic && styles.textRTL]} numberOfLines={1}>
+                  <AppText style={[styles.calloutOfferText, { color: theme.brandText }, isArabic && styles.textRTL]} numberOfLines={1}>
                     {isArabic
                       ? (selectedMapVendor.firstOffer.titleAr || selectedMapVendor.firstOffer.titleEn || '')
                       : (selectedMapVendor.firstOffer.titleEn || selectedMapVendor.firstOffer.titleAr || '')}
-                  </PhonkText>
+                  </AppText>
                 </View>
               )}
 
@@ -1300,7 +1300,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     padding: 0,
   },
   mapContainer: {
@@ -1337,7 +1337,7 @@ const styles = StyleSheet.create({
   clusterText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   vendorDot: {
     width: 24,
@@ -1367,7 +1367,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   overlayText: {
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     fontSize: 13,
   },
   overlayError: {
@@ -1382,7 +1382,7 @@ const styles = StyleSheet.create({
   },
   overlayErrorText: {
     textAlign: 'center',
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     fontSize: 13,
   },
   cancelNavButton: {
@@ -1434,7 +1434,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 13,
     color: '#6E6E73',
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   calloutOfferPill: {
     flexDirection: 'row',
@@ -1459,7 +1459,7 @@ const styles = StyleSheet.create({
   },
   calloutDistanceText: {
     fontSize: 13,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   calloutPhonePill: {
     flexDirection: 'row',
@@ -1475,7 +1475,7 @@ const styles = StyleSheet.create({
   calloutPhoneText: {
     flexShrink: 1,
     fontSize: 13,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   calloutActions: {
     flexDirection: 'row',
@@ -1509,7 +1509,7 @@ const styles = StyleSheet.create({
   calloutBtnText: {
     flexShrink: 1,
     fontSize: 14,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   clusterPreviewCard: {
     position: 'absolute',
@@ -1531,7 +1531,7 @@ const styles = StyleSheet.create({
   },
   clusterPreviewTitle: {
     fontSize: 14,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   clusterPreviewRow: {
     flexDirection: 'row',
@@ -1547,13 +1547,13 @@ const styles = StyleSheet.create({
   clusterPreviewName: {
     flex: 1,
     fontSize: 13,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   textRTL: {
     writingDirection: 'rtl',
   },
   clusterPreviewDistance: {
     fontSize: 12,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
 });

@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     width: '136%',
   },
   initials: {
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     includeFontPadding: false,
     textAlign: 'center',
     zIndex: 1,

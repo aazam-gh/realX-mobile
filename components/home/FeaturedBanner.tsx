@@ -18,7 +18,7 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 import { fetchCmsDocument } from '../../utils/firebaseQueries';
 import { queryKeys } from '../../utils/queryClient';
-import PhonkText from '../PhonkText';
+import AppText from '../AppText';
 
 export type FeaturedBannerItem = {
     id: string;
@@ -147,7 +147,7 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
                     />
                     <View style={styles.overlay} />
                     <View style={[styles.header, isRTL && styles.headerRTL]}>
-                        <PhonkText
+                        <AppText
                             numberOfLines={1}
                             style={[
                                 styles.title,
@@ -158,7 +158,7 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
                             ]}
                         >
                             {title}
-                        </PhonkText>
+                        </AppText>
                     </View>
                 </View>
 

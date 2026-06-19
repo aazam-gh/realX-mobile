@@ -542,17 +542,16 @@ const styles = StyleSheet.create({
     },
     comingSoonTitle: {
         fontSize: 28,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         textAlign: 'center',
         marginBottom: 12,
         zIndex: 10,
     },
     comingSoonTitleGreen: {
-        fontStyle: 'italic',
     },
     comingSoonSubtitle: {
         fontSize: 16,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         textAlign: 'center',
         lineHeight: 24,
         zIndex: 10,

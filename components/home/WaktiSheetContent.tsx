@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     headline: {
         fontSize: 24,
         lineHeight: 29,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         textAlign: 'center',
     },
     headlineLight: {
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     featureTitle: {
         fontSize: 13,
         lineHeight: 16,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         textAlign: 'center',
     },
     featureTitleRTL: {
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 20,
         lineHeight: 24,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         textAlign: 'center',
     },
     ctaTextRTL: {

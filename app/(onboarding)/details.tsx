@@ -23,7 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import {
     OnboardingButtonMotion,
     OnboardingCardMotion,
@@ -170,9 +170,9 @@ export default function DetailsOnboarding() {
                             <OnboardingStaggerItem delay={170}>
                             <View style={styles.textContainer}>
                                 <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{t('onboarding_details_title_prefix')}</Text>
-                                <PhonkText style={styles.titleLarge}>
+                                <AppText style={styles.titleLarge}>
                                     <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_details_title_suffix')}</Text>
-                                </PhonkText>
+                                </AppText>
                             </View>
                             </OnboardingStaggerItem>
 
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     titleSmall: {
-        fontSize: 14, fontFamily: Typography.poppins.medium,
+        fontSize: 14, ...Typography.getTextVariantStyle('body'),
         textTransform: 'uppercase', letterSpacing: 2,
         marginBottom: 4, textAlign: 'center',
     },
@@ -413,13 +413,13 @@ const styles = StyleSheet.create({
     inputMarginLTR: { marginRight: 6 },
     inputIcon: { marginRight: 10 },
     input: {
-        fontSize: 16, fontFamily: Typography.poppins.medium,
+        fontSize: 16, ...Typography.getTextVariantStyle('body'),
         paddingVertical: 0,
         includeFontPadding: false,
     },
     genderContainer: { marginTop: 8 },
     label: {
-        fontSize: 14, fontFamily: Typography.poppins.medium,
+        fontSize: 14, ...Typography.getTextVariantStyle('body'),
         marginBottom: 10, marginLeft: 6,
     },
     labelRTL: { marginLeft: 0, marginRight: 6, textAlign: 'right' },
@@ -434,10 +434,10 @@ const styles = StyleSheet.create({
     genderButtonSelected: {
     },
     genderText: {
-        fontSize: 15, fontFamily: Typography.poppins.medium,
+        fontSize: 15, ...Typography.getTextVariantStyle('body'),
     },
     genderTextSelected: {
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     footer: { paddingBottom: 40 },
     button: {
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
     },
     buttonText: {
-        fontSize: 17, fontFamily: Typography.poppins.semiBold,
+        fontSize: 17, ...Typography.getTextVariantStyle('bodyStrong'),
     },
     iosPickerContainer: {
         borderRadius: 16,
@@ -463,6 +463,6 @@ const styles = StyleSheet.create({
     },
     doneButtonStyle: { padding: 5 },
     doneButtonText: {
-        color: Colors.brandGreen, fontFamily: Typography.poppins.semiBold, fontSize: 16,
+        color: Colors.brandGreen, ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 16,
     },
 });

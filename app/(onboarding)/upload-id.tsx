@@ -19,7 +19,7 @@ import { Image } from 'expo-image';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import {
   OnboardingButtonMotion,
   OnboardingCardMotion,
@@ -127,9 +127,9 @@ export default function UploadIdScreen() {
           <OnboardingStaggerItem delay={170}>
           <View style={styles.textContainer}>
             <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{t('onboarding_upload_id_title_prefix')}</Text>
-            <PhonkText style={styles.titleLarge}>
+            <AppText style={styles.titleLarge}>
               <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_upload_id_title_suffix')}</Text>
-            </PhonkText>
+            </AppText>
           </View>
           </OnboardingStaggerItem>
 
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   },
   textContainer: { marginBottom: 12, alignItems: 'center' },
   titleSmall: {
-    fontSize: 14, fontFamily: Typography.poppins.medium,
+    fontSize: 14, ...Typography.getTextVariantStyle('body'),
     textTransform: 'uppercase', letterSpacing: 2,
     marginBottom: 4, textAlign: 'center',
   },
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   greenText: {},
   subtitle: {
     fontSize: 14, textAlign: 'center',
-    lineHeight: 20, fontFamily: Typography.poppins.medium,
+    lineHeight: 20, ...Typography.getTextVariantStyle('body'),
     marginBottom: 24, paddingHorizontal: 10,
   },
   uploadContainer: {
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', gap: 8,
   },
   uploadLabel: {
-    fontSize: 13, fontFamily: Typography.poppins.medium,
+    fontSize: 13, ...Typography.getTextVariantStyle('body'),
     textAlign: 'center',
   },
   previewContainer: {
@@ -283,11 +283,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 4,
   },
   replaceText: {
-    color: '#fff', fontSize: 11, fontFamily: Typography.poppins.semiBold,
+    color: '#fff', fontSize: 11, ...Typography.getTextVariantStyle('bodyStrong'),
   },
   infoText: {
     fontSize: 13, textAlign: 'center',
-    lineHeight: 18, fontFamily: Typography.poppins.medium,
+    lineHeight: 18, ...Typography.getTextVariantStyle('body'),
     paddingHorizontal: 10,
   },
   footer: { paddingBottom: 40, marginTop: 'auto' },
@@ -301,5 +301,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  buttonText: { fontSize: 17, fontFamily: Typography.poppins.semiBold },
+  buttonText: { fontSize: 17, ...Typography.getTextVariantStyle('bodyStrong') },
 });

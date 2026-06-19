@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     includeFontPadding: false,
     letterSpacing: 0.5,
-    fontFamily: Typography.hanson.bold,
+    ...Typography.getTextVariantStyle('display'),
   },
   mascotWrap: {
     marginTop: 0,
@@ -505,13 +505,13 @@ const styles = StyleSheet.create({
   },
   receiptMerchantLabel: {
     fontSize: 13,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   receiptMerchantValue: {
     flex: 1,
     textAlign: 'right',
     fontSize: 13,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   receiptRow: {
     minHeight: 48,
@@ -534,24 +534,24 @@ const styles = StyleSheet.create({
   },
   savedLabel: {
     fontSize: 13,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     lineHeight: 16,
   },
   receiptAmount: {
     marginTop: 1,
     fontSize: 17,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     letterSpacing: -0.2,
   },
   receiptRowLabel: {
     fontSize: 12,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     lineHeight: 15,
   },
   metaText: {
     fontSize: 11,
     lineHeight: 15,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   footerStrip: {
     marginTop: 4,

@@ -130,12 +130,12 @@ const styles = StyleSheet.create({
     },
     chipText: {
         fontSize: 12,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         textAlign: 'center',
         lineHeight: 18,
     },
     chipTextSelected: {
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
 });
 

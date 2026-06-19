@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: LOADER_GREEN,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     fontSize: 15,
     textAlign: 'center',
   },

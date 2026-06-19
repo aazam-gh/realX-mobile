@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, I18nManager, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import PhonkText from '../components/PhonkText';
+import AppText from '../components/AppText';
 import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
@@ -100,9 +100,9 @@ export default function SavedOffersScreen() {
             <Text style={[styles.vendorName, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={1}>
               {vendorName || t('unknown_vendor')}
             </Text>
-            <PhonkText style={[styles.offerTitle, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={2}>
+            <AppText style={[styles.offerTitle, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={2}>
               {title || t('saved_offer')}
-            </PhonkText>
+            </AppText>
             {description ? (
               <Text style={[styles.description, { color: theme.subtleText, textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={2}>
                 {description}
@@ -142,9 +142,9 @@ export default function SavedOffersScreen() {
         >
           <Ionicons name={isArabic ? 'arrow-forward' : 'arrow-back'} size={22} color={theme.icon} />
         </TouchableOpacity>
-        <PhonkText style={[styles.headerTitle, { color: theme.text }, isArabic && styles.headerTitleRTL]}>
+        <AppText style={[styles.headerTitle, { color: theme.text }, isArabic && styles.headerTitleRTL]}>
           {t('saved_offers')}
-        </PhonkText>
+        </AppText>
       </View>
 
       {!!userId && isLoading ? (
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   },
   vendorName: {
     fontSize: 13,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   offerTitle: {
     fontSize: 20,
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 13,
     lineHeight: 18,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     marginTop: 4,
   },
   actions: {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   redeemText: {
     flexShrink: 1,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     fontSize: 13,
   },
   removeButton: {
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   },
   removeText: {
     flexShrink: 1,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     fontSize: 13,
   },
   centered: {
@@ -291,14 +291,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     marginTop: 16,
     fontSize: 20,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     textAlign: 'center',
   },
   emptySubtitle: {
     marginTop: 8,
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     textAlign: 'center',
   },
 });

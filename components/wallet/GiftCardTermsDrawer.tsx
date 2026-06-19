@@ -16,7 +16,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import AndroidBottomSheetModal from '../AndroidBottomSheetModal';
 import { BottomSheetOverscanBackground, getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
-import PhonkText from '../PhonkText';
+import AppText from '../AppText';
 
 type GiftCardTermsDrawerProps = {
     visible: boolean;
@@ -42,9 +42,9 @@ export default function GiftCardTermsDrawer({
     const sheetBody = (
         <>
             <View style={[styles.sheetHeader, isRTL && styles.sheetHeaderRTL]}>
-                <PhonkText style={[styles.modalTitleText, isRTL && styles.modalTitleTextRTL, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                <AppText style={[styles.modalTitleText, isRTL && styles.modalTitleTextRTL, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                     {t('terms_and_conditions_caps')}
-                </PhonkText>
+                </AppText>
                 <TouchableOpacity
                     onPress={onClose}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     },
     descriptionText: {
         fontSize: 16,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         lineHeight: 24,
     },
     commonTerms: {
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     },
     termText: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         flex: 1,
     },
     termTextRTL: {

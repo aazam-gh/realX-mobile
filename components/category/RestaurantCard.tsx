@@ -84,7 +84,7 @@ export default function RestaurantCard({
                 contentFit="cover"
               />
             ) : (
-              <Text style={[{ color: theme.logoTileText, fontFamily: Typography.poppins.medium }, styles.logoEmoji]}>🏪</Text>
+              <Text style={[{ color: theme.logoTileText, ...Typography.getTextVariantStyle('body') }, styles.logoEmoji]}>🏪</Text>
             )}
           </View>
         </View>
@@ -107,7 +107,7 @@ export default function RestaurantCard({
         <View style={styles.textRow}>
           <Text style={[
             styles.name,
-            { color: theme.text, fontFamily: Typography.poppins.medium },
+            { color: theme.text, ...Typography.getTextVariantStyle('body') },
             { writingDirection: isArabic ? 'rtl' : 'ltr' },
           ]} numberOfLines={1}>{isArabic ? (nameAr || name) : name}</Text>
         </View>
@@ -116,7 +116,7 @@ export default function RestaurantCard({
           <View style={styles.textRow}>
             <Text style={[
               styles.descriptionText,
-              { color: theme.mutedText, fontFamily: Typography.poppins.medium },
+              { color: theme.mutedText, ...Typography.getTextVariantStyle('body') },
               { writingDirection: isArabic ? 'rtl' : 'ltr' },
             ]} numberOfLines={2}>{discountText || cashbackText}</Text>
           </View>
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   },
   badgeText: { // generic text style for badges
     fontSize: 10,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
@@ -234,12 +234,12 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 14,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     marginBottom: 2,
   },
   descriptionText: {
     fontSize: 12,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     color: '#666666',
     lineHeight: 16,
   },

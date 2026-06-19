@@ -11,7 +11,7 @@ import { logger } from '../../utils/logger';
 import { clearLocalAuthSession } from '../../utils/auth';
 import { toArabicDigits } from '../../utils/numbers';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import i18n, { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
 import { useStudent } from '../../context/StudentContext';
@@ -87,14 +87,14 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={[styles.header, isRTL && styles.headerRTL]}>
-          <PhonkText
+          <AppText
             style={[
               { color: theme.text, textAlign: isRTL ? 'right' : 'left' },
               styles.headerText,
             ]}
           >
             {t('profile')}
-          </PhonkText>
+          </AppText>
         </View>
 
         <View style={[styles.topPill, { backgroundColor: theme.cardMuted }]}>
@@ -109,7 +109,7 @@ export default function ProfileScreen() {
               size={80}
             />
             <View style={[styles.badge, { backgroundColor: theme.brand }]}>
-              <PhonkText style={[{ color: '#FFFFFF', textAlign: isRTL ? 'right' : 'left' }, styles.badgeText]}>{t('rookie_badge')}</PhonkText>
+              <AppText style={[{ color: '#FFFFFF', textAlign: isRTL ? 'right' : 'left' }, styles.badgeText]}>{t('rookie_badge')}</AppText>
             </View>
           </View>
         </View>
@@ -117,7 +117,7 @@ export default function ProfileScreen() {
         <View style={[styles.bottomPill, { backgroundColor: theme.cardMuted }]}>
           <View style={styles.profileBottomRow}>
             <View style={[styles.userInfo, isRTL && styles.userInfoRTL]}>
-              <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium, textAlign: isRTL ? 'right' : 'left' }, styles.userName]}>
+              <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body'), textAlign: isRTL ? 'right' : 'left' }, styles.userName]}>
                 {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
               </Text>
             </View>
@@ -126,15 +126,15 @@ export default function ProfileScreen() {
               onPress={() => router.push('/profile-details')}
             >
               <Ionicons name="create-outline" size={16} color={theme.iconMuted} />
-              <PhonkText style={[{ color: theme.text, textAlign: isRTL ? 'right' : 'left' }, styles.editButtonText]}>
+              <AppText style={[{ color: theme.text, textAlign: isRTL ? 'right' : 'left' }, styles.editButtonText]}>
                 {t('profile')}
-              </PhonkText>
+              </AppText>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={[styles.sectionHeader, isRTL && styles.sectionHeaderRTL]}>
-          <PhonkText
+          <AppText
             style={[
               { color: theme.text },
               styles.sectionTitle,
@@ -143,13 +143,13 @@ export default function ProfileScreen() {
             ]}
           >
             {t('savings_tracker')}
-          </PhonkText>
+          </AppText>
         </View>
 
         <View style={[styles.savingsCard, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }, isRTL && styles.savingsCardRTL]}>
           <Text
             style={[
-              { color: theme.text, fontFamily: Typography.poppins.medium },
+              { color: theme.text, ...Typography.getTextVariantStyle('body') },
               styles.savingsLabel,
               isRTL && styles.savingsLabelRTL,
             ]}
@@ -157,9 +157,9 @@ export default function ProfileScreen() {
             {t('all_time_saved')}
           </Text>
           <View style={[styles.savingsAmountContainer, isRTL && styles.savingsAmountContainerRTL]}>
-            <PhonkText style={[{ color: theme.brandText, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }, styles.savingsAmountGreen]}>
+            <AppText style={[{ color: theme.brandText, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }, styles.savingsAmountGreen]}>
               {t('amount_with_currency', { amount: isRTL ? toArabicDigits((userData?.savings ?? 0).toFixed(2)) : (userData?.savings ?? 0).toFixed(2), currency: t('currency_qar') })}
-            </PhonkText>
+            </AppText>
           </View>
         </View>
 
@@ -175,13 +175,13 @@ export default function ProfileScreen() {
           >
             <View style={styles.universityBannerOverlay}>
               <View style={[styles.onlyOnRealxBadge, isRTL && styles.badgeRTL]}>
-                <PhonkText style={styles.onlyOnRealxText}>{t('only_on_realx')}</PhonkText>
+                <AppText style={styles.onlyOnRealxText}>{t('only_on_realx')}</AppText>
               </View>
               
               <View style={styles.universityBannerTitleRow}>
-                <PhonkText style={[styles.universityBannerTitle, isRTL && styles.universityBannerTitleRTL]}>
+                <AppText style={[styles.universityBannerTitle, isRTL && styles.universityBannerTitleRTL]}>
                   {t('apply_to_universities')}
-                </PhonkText>
+                </AppText>
               </View>
               
               <TouchableOpacity
@@ -189,7 +189,7 @@ export default function ProfileScreen() {
                 onPress={() => router.push('/x-academy')}
                 activeOpacity={0.8}
               >
-                <PhonkText style={[styles.universityBannerButtonText, { color: theme.logoTileText }]}>{t('apply_now')}</PhonkText>
+                <AppText style={[styles.universityBannerButtonText, { color: theme.logoTileText }]}>{t('apply_now')}</AppText>
               </TouchableOpacity>
             </View>
           </ImageBackground>
@@ -224,7 +224,7 @@ export default function ProfileScreen() {
           >
             <View style={[styles.logoutContent]}> 
               <Ionicons name="log-out-outline" size={20} color={theme.danger} />
-              <PhonkText style={[styles.logoutText, { color: theme.danger, textAlign: isRTL ? 'right' : 'left' }]}>{t('log_out').toUpperCase()}</PhonkText>
+              <AppText style={[styles.logoutText, { color: theme.danger, textAlign: isRTL ? 'right' : 'left' }]}>{t('log_out').toUpperCase()}</AppText>
             </View>
           </TouchableOpacity>
         </View>
@@ -263,7 +263,7 @@ function MenuItem({
         <Ionicons name={icon} size={24} color={color || theme.icon} />
         <Text
           style={[
-            { color: color || theme.text, fontFamily: Typography.poppins.medium },
+            { color: color || theme.text, ...Typography.getTextVariantStyle('body') },
             styles.menuItemLabel,
             { textAlign: isRTL ? 'right' : 'left' },
           ]}
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 20,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     paddingHorizontal: 4,
   },
   editButton: {
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   },
   savingsLabel: {
     fontSize: 14,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   savingsLabelRTL: {
     textAlign: 'right',
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   },
   menuItemLabel: {
     fontSize: 16,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   logoutPill: {
     borderRadius: 30,

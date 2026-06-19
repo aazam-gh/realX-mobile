@@ -20,7 +20,7 @@ import { logger } from '../../utils/logger';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
-import PhonkText from '../PhonkText';
+import AppText from '../AppText';
 import ScalePressable from '../ScalePressable';
 import RedeemGiftCard from './RedeemGiftCard';
 import type { WalletBrand } from './types';
@@ -259,8 +259,8 @@ export default function SpendCardDrawer({
                                 <Text style={[styles.backArrow, { color: theme.text }]}>{isArabic ? '→' : '←'}</Text>
                             </ScalePressable>
                             <View style={[styles.logoContainer, isArabic && styles.logoContainerRTL]}>
-                                <PhonkText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
-                                <PhonkText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
+                                <AppText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</AppText>
+                                <AppText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</AppText>
                             </View>
                             <View style={styles.headerSpacer} />
                         </View>
@@ -268,9 +268,9 @@ export default function SpendCardDrawer({
                         {/* Balance Card */}
                         <View style={[styles.balanceCard, { backgroundColor: theme.cardMuted }]}>
                             <Text style={[styles.balanceLabel, { color: theme.mutedText }]} numberOfLines={2}>{t('available_balance')}</Text>
-                            <PhonkText style={[styles.balanceValue, { color: theme.text }]} numberOfLines={1}>
+                            <AppText style={[styles.balanceValue, { color: theme.text }]} numberOfLines={1}>
                                 {balance.toFixed(2)} {currency}
-                            </PhonkText>
+                            </AppText>
                         </View>
 
                         {/* Search Bar */}
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     balanceLabel: {
         flex: 1,
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     balanceValue: {
         flexShrink: 0,
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         padding: 0,
     },
     clearButton: {
@@ -503,12 +503,12 @@ const styles = StyleSheet.create({
     },
     brandLogoPlaceholder: {
         fontSize: 18,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         color: '#FFFFFF',
     },
     brandName: {
         fontSize: 15,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         flex: 1,
     },
     emptyState: {
@@ -524,13 +524,13 @@ const styles = StyleSheet.create({
     },
     emptyStateTitle: {
         fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         textAlign: 'center',
         marginBottom: 8,
     },
     emptyStateText: {
         fontSize: 13,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         textAlign: 'center',
         lineHeight: 20,
     },
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
     },
     retryButtonText: {
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         color: '#FFFFFF',
     },
 });

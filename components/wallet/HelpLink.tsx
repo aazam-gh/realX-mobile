@@ -58,10 +58,10 @@ const styles = StyleSheet.create({
     },
     linkText: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     conversionText: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
 });

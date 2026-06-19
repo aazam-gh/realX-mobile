@@ -22,7 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import {
   OnboardingButtonMotion,
   OnboardingCardMotion,
@@ -121,9 +121,9 @@ export default function VerifyEmailScreen() {
               <OnboardingStaggerItem delay={170}>
               <View style={styles.textContainer}>
                 <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{t('onboarding_verify_email_title_prefix')}</Text>
-                <PhonkText style={styles.titleLarge}>
+                <AppText style={styles.titleLarge}>
                   <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_verify_email_title_suffix')}</Text>
-                </PhonkText>
+                </AppText>
               </View>
               </OnboardingStaggerItem>
 
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   },
   textContainer: { marginBottom: 32, alignItems: 'center' },
   titleSmall: {
-    fontSize: 14, fontFamily: Typography.poppins.medium,
+    fontSize: 14, ...Typography.getTextVariantStyle('body'),
     textTransform: 'uppercase', letterSpacing: 2,
     marginBottom: 4, textAlign: 'center',
   },
@@ -221,11 +221,11 @@ const styles = StyleSheet.create({
   },
   inputFocused: {},
   inputIcon: { marginRight: 10 },
-  input: { fontSize: 16, fontFamily: Typography.poppins.medium, paddingVertical: 0, includeFontPadding: false },
+  input: { fontSize: 16, ...Typography.getTextVariantStyle('body'), paddingVertical: 0, includeFontPadding: false },
   infoText: {
     fontSize: 14, textAlign: 'center',
     lineHeight: 20, paddingHorizontal: 10,
-    fontFamily: Typography.poppins.medium, margin: 8,
+    ...Typography.getTextVariantStyle('body'), margin: 8,
   },
   footer: { paddingBottom: 40, marginTop: 'auto' },
   button: {
@@ -238,5 +238,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  buttonText: { fontSize: 17, fontFamily: Typography.poppins.semiBold },
+  buttonText: { fontSize: 17, ...Typography.getTextVariantStyle('bodyStrong') },
 });

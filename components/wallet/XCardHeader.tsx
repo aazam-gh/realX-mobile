@@ -1,6 +1,7 @@
 import { I18nManager, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import PhonkText from '../PhonkText';
+import { Typography } from '../../constants/Typography';
+import AppText from '../AppText';
 import { useAppTheme } from '../../context/AppThemeContext';
 
 export default function XCardHeader() {
@@ -18,8 +19,8 @@ export default function XCardHeader() {
                 </Text>
             ) : (
                 <View style={styles.titleRow}>
-                    <PhonkText style={[styles.titleX, { color: theme.brand }]}>{t('xcard_title_x')}</PhonkText>
-                    <PhonkText style={[styles.titleCard, { color: theme.text }]}>{t('xcard_title_card')}</PhonkText>
+                    <AppText style={[styles.titleX, { color: theme.brand }]}>{t('xcard_title_x')}</AppText>
+                    <AppText style={[styles.titleCard, { color: theme.text }]}>{t('xcard_title_card')}</AppText>
                 </View>
             )}
         </View>
@@ -50,13 +51,13 @@ const styles = StyleSheet.create({
         writingDirection: 'rtl',
     },
     titleXArabic: {
-        fontFamily: 'TajawalBlack',
+        ...Typography.getTextVariantStyle('displayArabicBlack'),
         fontSize: 32,
         lineHeight: 40,
         writingDirection: 'rtl',
     },
     titleCardArabic: {
-        fontFamily: 'TajawalBlack',
+        ...Typography.getTextVariantStyle('displayArabicBlack'),
         fontSize: 32,
         lineHeight: 40,
         writingDirection: 'rtl',

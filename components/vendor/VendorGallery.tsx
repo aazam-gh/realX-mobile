@@ -154,12 +154,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   heading: {
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     fontSize: 14,
     letterSpacing: 0.8,
   },
   count: {
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     fontSize: 12,
     fontVariant: ["tabular-nums"],
   },
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   },
   counterText: {
     color: "#FFFFFF",
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     fontSize: 14,
     fontVariant: ["tabular-nums"],
   },

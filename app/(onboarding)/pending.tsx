@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import {
   OnboardingButtonMotion,
   OnboardingCardMotion,
@@ -99,9 +99,9 @@ export default function PendingVerificationScreen() {
       <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
         <Ionicons name="time-outline" size={48} color={theme.brand} />
       </View>
-      <PhonkText style={styles.titleLarge}>
+      <AppText style={styles.titleLarge}>
         <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_pending_title')}</Text>
-      </PhonkText>
+      </AppText>
       <Text style={[styles.subtitle, { color: theme.mutedText }]}>{t('onboarding_pending_email_notification')}</Text>
 
       {email && (
@@ -141,9 +141,9 @@ export default function PendingVerificationScreen() {
       <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
         <Ionicons name="checkmark-circle-outline" size={56} color={theme.brand} />
       </View>
-      <PhonkText style={styles.titleLarge}>
+      <AppText style={styles.titleLarge}>
         <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_pending_approved_title')}</Text>
-      </PhonkText>
+      </AppText>
       <Text style={[styles.subtitle, { color: theme.mutedText }]}>{t('onboarding_pending_approved_message')}</Text>
       <ActivityIndicator color={theme.brand} size="large" style={styles.spinner} />
     </>
@@ -154,9 +154,9 @@ export default function PendingVerificationScreen() {
       <View style={[styles.iconCircle, { backgroundColor: '#FFEBEE' }]}>
         <Ionicons name="close-circle-outline" size={56} color="#E53935" />
       </View>
-      <PhonkText style={styles.titleLarge}>
+      <AppText style={styles.titleLarge}>
         <Text style={styles.redText}>{t('onboarding_pending_rejected_title')}</Text>
-      </PhonkText>
+      </AppText>
       <Text style={[styles.subtitle, { color: theme.mutedText }]}>
         {rejectionReason
           ? t('onboarding_pending_rejection_reason', { reason: rejectionReason })
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
     marginBottom: 24,
     paddingHorizontal: 10,
   },
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   emailText: {
     flexShrink: 1,
     fontSize: 15,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   checkButton: {
     borderRadius: 20,
@@ -270,11 +270,11 @@ const styles = StyleSheet.create({
   },
   checkButtonText: {
     fontSize: 14,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   lastCheckedText: {
     fontSize: 12,
-    fontFamily: Typography.poppins.medium,
+    ...Typography.getTextVariantStyle('body'),
   },
   spinner: {
     marginTop: 16,
@@ -286,6 +286,6 @@ const styles = StyleSheet.create({
   },
   tryAgainButtonText: {
     fontSize: 16,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
 });

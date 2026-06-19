@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { I18nManager, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../PhonkText';
+import AppText from '../AppText';
 import XCardGlassLayer, {
   getGlassStrength,
   resolveGlassConfig,
@@ -101,7 +101,7 @@ export default function XCard({ earnings = 0, currency = 'XP', creatorCode, glas
               {creatorCode ? (
                 <View style={[styles.creatorCodeContainer, isRTL && styles.creatorCodeContainerRTL]}>
                   <Text style={styles.creatorCodeLabel}>{t('xcard_creator_code_label')}</Text>
-                  <PhonkText style={styles.creatorCodeText}>{creatorCode}</PhonkText>
+                  <AppText style={styles.creatorCodeText}>{creatorCode}</AppText>
                 </View>
               ) : (
                 <View style={styles.creatorCodeSpacer} />
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   earningsLabel: {
     fontSize: 17,
     lineHeight: 22,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     color: '#FFFFFF',
     marginBottom: 4,
     textShadowColor: 'rgba(0, 0, 0, 0.18)',
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   earningsAmount: {
     fontSize: 29,
     lineHeight: 35,
-    fontFamily: Typography.hanson.bold,
+    ...Typography.getTextVariantStyle('display'),
     color: '#FFFFFF',
     textShadowColor: 'rgba(0, 0, 0, 0.18)',
     textShadowRadius: 10,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   creatorCodeLabel: {
     fontSize: 11,
     lineHeight: 14,
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     color: 'rgba(255, 255, 255, 0.74)',
   },
   creatorCodeText: {

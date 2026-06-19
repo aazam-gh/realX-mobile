@@ -24,7 +24,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import RewardSuccessScreen from '../../components/rewards/RewardSuccessScreen';
 import TransactionLoadingOverlay from '../../components/TransactionLoadingOverlay';
 import { useAppTheme } from '../../context/AppThemeContext';
@@ -430,9 +430,9 @@ export default function RedeemScreen() {
                                 <Text style={[styles.onlineKicker, { color: theme.brandText, textAlign: isArabic ? 'right' : 'left' }]}>
                                     {t('online_vendor_label')}
                                 </Text>
-                                <PhonkText style={[styles.onlineTitle, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                <AppText style={[styles.onlineTitle, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                     {vendorName || t('unknown_vendor')}
-                                </PhonkText>
+                                </AppText>
                             </View>
 
                             <View style={[styles.logoContainer, { backgroundColor: theme.logoTile, borderColor: theme.logoTile, shadowColor: theme.shadow }]}>
@@ -494,9 +494,9 @@ export default function RedeemScreen() {
                             ) : (
                                 <>
                                     <Ionicons name="cart" size={20} color={theme.onActionSolid} />
-                                    <PhonkText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
+                                    <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
                                         {t('online_purchase_caps')}
-                                    </PhonkText>
+                                    </AppText>
                                 </>
                             )}
                         </TouchableOpacity>
@@ -624,11 +624,11 @@ export default function RedeemScreen() {
                             {/* Offer Card */}
                             <View style={styles.offerCardWrapper}>
                                 <View style={[styles.offerCard, { backgroundColor: theme.cardMuted }]}>
-                                    <PhonkText style={[styles.offerTitle, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                    <AppText style={[styles.offerTitle, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                         {t('flat_off_prefix')}<Text style={[styles.greenText, { color: theme.brand }]}>
                                             {inStoreOffer.discountType === 'buy1get1' ? t('buy1get1_label') : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`}
                                         </Text>{t('flat_off_suffix')}
-                                    </PhonkText>
+                                    </AppText>
                                 </View>
 
                                 {/* Logo Overlay */}
@@ -780,9 +780,9 @@ export default function RedeemScreen() {
                                             <View style={[styles.breakdownDivider, { backgroundColor: theme.border }]} />
                                             <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                                 <Text style={[styles.breakdownLabelBold, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>{t('amount_to_pay_label')}</Text>
-                                                <PhonkText style={[styles.breakdownValueBold, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                                <AppText style={[styles.breakdownValueBold, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                                                     {t('amount_with_currency', { amount: finalAmount.toFixed(2), currency: t('currency_qar') })}
-                                                </PhonkText>
+                                                </AppText>
                                             </View>
                                             {vendor.xcard === true && (
                                                 <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
@@ -816,9 +816,9 @@ export default function RedeemScreen() {
                                 ) : (
                                     <>
                                         <Ionicons name="flash" size={20} color={theme.onActionSolid} />
-                                        <PhonkText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
+                                        <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
                                             {step === 'creator' ? t('continue_caps') : t('redeem_caps')}
-                                        </PhonkText>
+                                        </AppText>
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -854,11 +854,11 @@ const styles = StyleSheet.create({
     },
     errorText: {
         fontSize: 16,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         marginBottom: 10,
     },
     backLink: {
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     header: {
         flexDirection: 'row',
@@ -908,7 +908,7 @@ const styles = StyleSheet.create({
     },
     onlineKicker: {
         fontSize: 13,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         textTransform: 'uppercase',
         letterSpacing: 1,
     },
@@ -939,13 +939,13 @@ const styles = StyleSheet.create({
     },
     onlineCodeText: {
         fontSize: 28,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         letterSpacing: 3,
     },
     onlineHint: {
         marginTop: 10,
         fontSize: 13,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     onlineLimitRow: {
         alignItems: 'center',
@@ -957,7 +957,7 @@ const styles = StyleSheet.create({
     onlineLimitText: {
         flex: 1,
         fontSize: 13,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     logoContainer: {
         position: 'absolute',
@@ -992,7 +992,7 @@ const styles = StyleSheet.create({
     },
     inputLabel: {
         fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         marginBottom: 12,
     },
     pinContainer: {
@@ -1022,7 +1022,7 @@ const styles = StyleSheet.create({
     pinText: {
         fontSize: 30,
         color: '#E0E0E0',
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         marginTop: 10,
     },
     hiddenPinInput: {
@@ -1046,13 +1046,13 @@ const styles = StyleSheet.create({
     },
     currencyPrefix: {
         fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         marginRight: 10,
     },
     amountInput: {
         flex: 1,
         fontSize: 18,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     breakdownContainer: {
         marginTop: 20,
@@ -1067,19 +1067,19 @@ const styles = StyleSheet.create({
     },
     breakdownLabel: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     breakdownValue: {
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     breakdownLabelGreen: {
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     breakdownValueGreen: {
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     breakdownDivider: {
         height: 1,
@@ -1087,7 +1087,7 @@ const styles = StyleSheet.create({
     },
     breakdownLabelBold: {
         fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     breakdownValueBold: {
         fontSize: 16,
@@ -1095,12 +1095,12 @@ const styles = StyleSheet.create({
     cashbackLabel: {
         fontSize: 13,
         color: '#FF9800',
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     cashbackValue: {
         fontSize: 13,
         color: '#FF9800',
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     redeemButton: {
         borderRadius: 35,
@@ -1139,12 +1139,12 @@ const styles = StyleSheet.create({
     },
     creatorInput: {
         fontSize: 18,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         flex: 1,
         height: '100%',
     },
     optionalText: {
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         fontSize: 14,
     },
 });

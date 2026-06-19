@@ -20,7 +20,7 @@ import {
 import { useAppTheme } from '../../context/AppThemeContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
-import PhonkText from '../PhonkText';
+import AppText from '../AppText';
 import RewardSuccessScreen from '../rewards/RewardSuccessScreen';
 import TransactionLoadingOverlay from '../TransactionLoadingOverlay';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -170,8 +170,8 @@ export default function GiftCardCheckout({
                     <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
                 </TouchableOpacity>
                 <View style={styles.logoContainer}>
-                    <PhonkText style={[styles.logoX, { color: theme.brand }]}>X</PhonkText>
-                    <PhonkText style={[styles.logoCard, { color: theme.text }]}>CARD</PhonkText>
+                    <AppText style={[styles.logoX, { color: theme.brand }]}>X</AppText>
+                    <AppText style={[styles.logoCard, { color: theme.text }]}>CARD</AppText>
                 </View>
                 <View style={styles.headerSpacer} />
             </View>
@@ -184,11 +184,11 @@ export default function GiftCardCheckout({
                 {/* Gift Card Display Card */}
                 <View style={styles.offerCardWrapper}>
                     <View style={[styles.offerCard, { backgroundColor: theme.cardMuted }]}>
-                        <PhonkText style={[styles.offerTitle, { color: theme.text }]}>
+                        <AppText style={[styles.offerTitle, { color: theme.text }]}>
                             {selectedAmount.toFixed(2)}
                             <Text style={[styles.greenText, { color: theme.brand }]}>{currency}</Text>
-                        </PhonkText>
-                        <PhonkText style={[styles.offerSubtitleLabel, { color: theme.brand }]}>{t('gift_card_text')}</PhonkText>
+                        </AppText>
+                        <AppText style={[styles.offerSubtitleLabel, { color: theme.brand }]}>{t('gift_card_text')}</AppText>
                         <Text style={[styles.offerSubtitle, { color: theme.mutedText }]}>{t('in_store_badge')}</Text>
                     </View>
 
@@ -282,9 +282,9 @@ export default function GiftCardCheckout({
                             <View style={[styles.breakdownDivider, { backgroundColor: theme.border }]} />
                             <View style={styles.breakdownRow}>
                                 <Text style={[styles.breakdownLabelBold, { color: theme.text }]} numberOfLines={2}>{t('amount_to_pay_label')}</Text>
-                                <PhonkText style={[styles.breakdownValueBold, { color: theme.text }]}>
+                                <AppText style={[styles.breakdownValueBold, { color: theme.text }]}>
                                     {currency} {remainingAmount.toFixed(2)}
-                                </PhonkText>
+                                </AppText>
                             </View>
                         </View>
                     )}
@@ -309,7 +309,7 @@ export default function GiftCardCheckout({
                     ) : (
                         <>
                             <Ionicons name="flash" size={20} color={theme.onActionSolid} />
-                            <PhonkText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{t('redeem_button_text')}</PhonkText>
+                            <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{t('redeem_button_text')}</AppText>
                         </>
                     )}
                 </TouchableOpacity>
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     },
     offerSubtitle: {
         fontSize: 16,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         marginTop: 4,
     },
     brandLogoOverlay: {
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     },
     brandLogoPlaceholder: {
         fontSize: 40,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     redemptionCard: {
         borderRadius: 35,
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     },
     inputLabel: {
         fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         marginBottom: 12,
     },
     pinContainer: {
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     pinText: {
         fontSize: 30,
         color: '#E0E0E0',
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         marginTop: 10,
     },
     amountInputContainer: {
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     },
     currencyPrefix: {
         fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         marginRight: 10,
     },
     currencyPrefixRTL: {
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     amountInput: {
         flex: 1,
         fontSize: 18,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     breakdownContainer: {
         marginTop: 20,
@@ -494,22 +494,22 @@ const styles = StyleSheet.create({
     breakdownLabel: {
         flex: 1,
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     breakdownValue: {
         flexShrink: 0,
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     breakdownLabelGreen: {
         flex: 1,
         fontSize: 14,
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
     },
     breakdownValueGreen: {
         flexShrink: 0,
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     breakdownDivider: {
         height: 1,
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     breakdownLabelBold: {
         flex: 1,
         fontSize: 16,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     breakdownValueBold: {
         flexShrink: 0,

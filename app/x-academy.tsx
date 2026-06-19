@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import PhonkText from '../components/PhonkText';
+import AppText from '../components/AppText';
 import { useAppTheme } from '../context/AppThemeContext';
 import { Typography } from '../constants/Typography';
 import { fetchCmsDocument } from '../utils/firebaseQueries';
@@ -73,10 +73,10 @@ export default function XAcademyScreen() {
           />
         </TouchableOpacity>
 
-        <PhonkText style={[styles.headerTitle, isRTL && styles.headerTitleRTL]}>
+        <AppText style={[styles.headerTitle, isRTL && styles.headerTitleRTL]}>
           <Text style={{ color: theme.brand }}>{isRTL ? 'إكس' : t('x_academy_title_x')} </Text>
           <Text style={{ color: theme.text }}>{t('x_academy_title_academy')}</Text>
-        </PhonkText>
+        </AppText>
       </View>
 
       <ScrollView
@@ -118,7 +118,7 @@ export default function XAcademyScreen() {
 
             {/* Section Title */}
             <View style={styles.sectionHeader}>
-              <PhonkText
+              <AppText
                 style={[
                   styles.sectionTitle,
                   { color: theme.text },
@@ -126,7 +126,7 @@ export default function XAcademyScreen() {
                 ]}
               >
                 {t('universities')}
-              </PhonkText>
+              </AppText>
             </View>
 
             {/* Universities List */}
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
 
   uniName: {
     color: '#FFF',
-    fontFamily: Typography.poppins.semiBold,
+    ...Typography.getTextVariantStyle('bodyStrong'),
     fontSize: 16,
     marginBottom: 2,
   },
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   },
 
   applyButtonText: {
-    fontFamily: Typography.hanson.bold,
+    ...Typography.getTextVariantStyle('display'),
     fontSize: 10,
   },
 

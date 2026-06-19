@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { I18nManager, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import PhonkText from '../../components/PhonkText';
+import AppText from '../../components/AppText';
 import {
     OnboardingButtonMotion,
     OnboardingGlowMotion,
@@ -23,8 +23,6 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 import { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
-
-const TAJAWAL_BLACK = 'TajawalBlack';
 
 export default function OnboardingScreen() {
     const router = useRouter();
@@ -143,9 +141,9 @@ export default function OnboardingScreen() {
                                         onPress={handleGetStarted}
                                         activeOpacity={0.9}
                                     >
-                                        <PhonkText style={[styles.buttonText, { color: theme.brand }, isRTL && styles.arButtonText]}>
+                                        <AppText style={[styles.buttonText, { color: theme.brand }, isRTL && styles.arButtonText]}>
                                             {t('onboarding_get_started')}
-                                        </PhonkText>
+                                        </AppText>
                                         <View style={[styles.arrowCircle, { backgroundColor: theme.brand }]}>
                                             <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={24} color="white" />
                                         </View>
@@ -183,7 +181,7 @@ export default function OnboardingScreen() {
                                     />
                                 </View>
                                 <View style={[styles.roleTextContainer, isRTL && styles.roleTextContainerRTL]}>
-                                    <PhonkText style={[styles.roleTitle, { color: theme.logoTileText }]}>{t('onboarding_join_as_student')}</PhonkText>
+                                    <AppText style={[styles.roleTitle, { color: theme.logoTileText }]}>{t('onboarding_join_as_student')}</AppText>
                                     <Text style={[styles.roleDescription, { color: theme.logoTileText }, isRTL && styles.subtextRTL]}>
                                         {t('onboarding_student_role_description')}
                                     </Text>
@@ -206,7 +204,7 @@ export default function OnboardingScreen() {
                                     />
                                 </View>
                                 <View style={[styles.roleTextContainer, isRTL && styles.roleTextContainerRTL]}>
-                                    <PhonkText style={[styles.roleTitle, { color: theme.logoTileText }]}>{t('onboarding_join_as_creator')}</PhonkText>
+                                    <AppText style={[styles.roleTitle, { color: theme.logoTileText }]}>{t('onboarding_join_as_creator')}</AppText>
                                     <Text style={[styles.roleDescription, { color: theme.logoTileText }, isRTL && styles.subtextRTL]}>
                                         {t('onboarding_creator_role_description')}
                                     </Text>
@@ -272,7 +270,6 @@ const styles = StyleSheet.create({
     headlineBroke: {
         fontSize: 32,
         color: '#FFFFFF',
-        fontStyle: 'italic',
         lineHeight: 44,
     },
     headlineNotAnymore: {
@@ -299,7 +296,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
     },
     subtext: {
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         fontSize: 18,
         color: '#FFFFFF',
         textAlign: 'left',
@@ -359,14 +356,14 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     langText: {
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         fontSize: 20,
       color: '#FFFFFF',
       opacity: 0.75,
     },
     langTextActive: {
         opacity: 1,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     langSeparator: {
         fontSize: 16,
@@ -426,13 +423,13 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     roleDescription: {
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         fontSize: 12,
         lineHeight: 16,
         paddingRight: 10,
     },
     arHeadline: {
-        fontFamily: TAJAWAL_BLACK,
+        ...Typography.getTextVariantStyle('displayArabicBlack'),
         fontSize: 42,
         lineHeight: 56,
         fontStyle: 'normal',
@@ -456,7 +453,7 @@ const styles = StyleSheet.create({
         marginRight: 4,
     },
     arButtonText: {
-        fontFamily: TAJAWAL_BLACK,
+        ...Typography.getTextVariantStyle('displayArabicBlack'),
         fontSize: 24,
         textAlign: 'right',
         writingDirection: 'rtl',
@@ -475,10 +472,10 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     loginText: {
-        fontFamily: Typography.poppins.medium,
+        ...Typography.getTextVariantStyle('body'),
         fontSize: 16,
     },
     loginBold: {
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
 });

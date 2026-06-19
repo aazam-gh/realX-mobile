@@ -169,6 +169,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   headingText: {
-    fontFamily: Typography.hanson.bold,
+    ...Typography.getTextVariantStyle('display'),
   },
 });

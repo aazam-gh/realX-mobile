@@ -20,12 +20,12 @@ export default function GreetingHeader({ userName }: Props) {
 
     const greetingTextBlock = (
         <View style={[styles.textContainer, isRTL && styles.textContainerRTL]}>
-            <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.greeting, textAlignStyle]}>
+            <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.greeting, textAlignStyle]}>
                 {prefix}
-                <Text style={{ color: theme.brand, fontFamily: Typography.hanson.bold }}>{userName}</Text>
+                <Text style={{ color: theme.brand, ...Typography.getTextVariantStyle('display') }}>{userName}</Text>
                 {suffix ?? ''}
             </Text>
-            <Text style={[{ color: theme.text, fontFamily: Typography.poppins.medium }, styles.subtitle, textAlignStyle]}>{t('greeting_prompt')}</Text>
+            <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.subtitle, textAlignStyle]}>{t('greeting_prompt')}</Text>
         </View>
     );
 
@@ -54,10 +54,10 @@ const styles = StyleSheet.create({
     },
     greeting: {
         fontSize: 28,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     subtitle: {
         fontSize: 28,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
 });

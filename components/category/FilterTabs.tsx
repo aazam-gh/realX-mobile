@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     },
     filterText: {
         fontSize: 14,
-        fontFamily: Typography.poppins.semiBold,
+        ...Typography.getTextVariantStyle('bodyStrong'),
         marginTop: I18nManager.isRTL ? -2 : 0,
     },
 });

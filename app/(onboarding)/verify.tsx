@@ -143,8 +143,7 @@ export default function VerifyOtpScreen() {
           const submitFn = httpsCallable(fnInstance, 'submitVerificationRequest');
           const submission = await submitFn({
             email,
-            idFrontBase64: imageBase64,
-            idBackBase64: imageBase64,
+            idImageBase64: imageBase64,
             role: role || 'student',
           });
           const { statusToken } = submission.data as { statusToken: string };

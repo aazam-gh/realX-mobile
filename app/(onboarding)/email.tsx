@@ -191,9 +191,6 @@ export default function EmailOnboarding() {
                 </View>
               </OnboardingStaggerItem>
 
-              <OnboardingStaggerItem delay={270}>
-              <Text style={[styles.infoText, { color: theme.subtleText }]}>{t('onboarding_email_description')}</Text>
-              </OnboardingStaggerItem>
               <OnboardingStaggerItem delay={310}>
               <TouchableOpacity onPress={() => router.push({ pathname: '/(onboarding)/upload-id', params: { role } } as any)} style={styles.linkButton}>
                 <Text style={[styles.linkText, { color: theme.brandText }]}>{t('onboarding_no_edu_email_link')}</Text>
@@ -270,14 +267,9 @@ const styles = StyleSheet.create({
   inputFocused: {},
   inputIcon: { marginRight: 10 },
   input: { fontSize: 16, ...Typography.getTextVariantStyle('body'), paddingVertical: 0, includeFontPadding: false },
-  infoText: {
-    fontSize: 14, textAlign: 'center',
-    lineHeight: 20, paddingHorizontal: 10,
-    ...Typography.getTextVariantStyle('body'), marginBottom: 8,
-  },
   linkButton: { paddingVertical: 8, paddingHorizontal: 16 },
   linkText: {
-    fontSize: 14, color: Colors.brandGreen, textAlign: 'center',
+    fontSize: 16, color: Colors.brandGreen, textAlign: 'center',
     lineHeight: 20, ...Typography.getTextVariantStyle('bodyStrong'),
   },
   footer: { paddingBottom: 40, marginTop: 'auto' },

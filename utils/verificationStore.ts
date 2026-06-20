@@ -1,20 +1,14 @@
-// In-memory store for base64 image data between screens.
+// In-memory store for the uploaded student ID image between screens.
 // Router params can't handle large payloads, so we use this module instead.
 
-let _frontBase64: string | null = null;
-let _backBase64: string | null = null;
+let _verificationBase64: string | null = null;
 
-export const setVerificationImages = (front: string, back: string) => {
-  _frontBase64 = front;
-  _backBase64 = back;
+export const setVerificationImage = (base64: string) => {
+  _verificationBase64 = base64;
 };
 
-export const getVerificationImages = () => ({
-  frontBase64: _frontBase64,
-  backBase64: _backBase64,
-});
+export const getVerificationImage = () => _verificationBase64;
 
-export const clearVerificationImages = () => {
-  _frontBase64 = null;
-  _backBase64 = null;
+export const clearVerificationImage = () => {
+  _verificationBase64 = null;
 };

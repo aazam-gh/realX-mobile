@@ -33,7 +33,7 @@ import {
 import { logger } from '../../utils/logger';
 import { useTranslation } from 'react-i18next';
 import { savePendingVerification } from '../../utils/verificationPending';
-import { getVerificationImages, clearVerificationImages } from '../../utils/verificationStore';
+import { getVerificationImage, clearVerificationImage } from '../../utils/verificationStore';
 
 const OTP_LENGTH = 6;
 
@@ -135,17 +135,20 @@ export default function VerifyOtpScreen() {
       if (purpose === 'verification') {
         const { emailVerified } = result.data as { emailVerified: boolean };
         if (emailVerified) {
-          // Submit the verification request with stored images
-          const images = getVerificationImages();
+          // Submit the verification request with the stored student ID image.
+          const imageBase64 = getVerificationImage();
+          if (!imageBase64) {
+            throw new Error(t('onboarding_generic_error_message'));
+          }
           const submitFn = httpsCallable(fnInstance, 'submitVerificationRequest');
           const submission = await submitFn({
             email,
-            idFrontBase64: images.frontBase64,
-            idBackBase64: images.backBase64,
+            idFrontBase64: imageBase64,
+            idBackBase64: imageBase64,
             role: role || 'student',
           });
           const { statusToken } = submission.data as { statusToken: string };
-          clearVerificationImages();
+          clearVerificationImage();
           await savePendingVerification(email, role || 'student', statusToken);
           router.replace({
             pathname: '/(onboarding)/pending',

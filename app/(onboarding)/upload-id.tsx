@@ -28,7 +28,7 @@ import {
   OnboardingStaggerItem,
 } from '../../components/onboarding/OnboardingMotion';
 import { useTranslation } from 'react-i18next';
-import { setVerificationImages } from '../../utils/verificationStore';
+import { setVerificationImage } from '../../utils/verificationStore';
 
 const MAX_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -40,16 +40,14 @@ export default function UploadIdScreen() {
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
   const { role } = useLocalSearchParams<{ role?: string }>();
 
-  const [frontImage, setFrontImage] = useState<{ uri: string; base64: string } | null>(null);
-  const [backImage, setBackImage] = useState<{ uri: string; base64: string } | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<{ uri: string; base64: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const pickImage = async (side: 'front' | 'back') => {
+  const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.7,
       base64: true,
-      allowsEditing: true,
     });
 
     if (result.canceled || !result.assets?.[0]) return;
@@ -66,19 +64,15 @@ export default function UploadIdScreen() {
       base64: asset.base64 || '',
     };
 
-    if (side === 'front') {
-      setFrontImage(imageData);
-    } else {
-      setBackImage(imageData);
-    }
+    setUploadedImage(imageData);
   };
 
   const handleContinue = () => {
-    if (!frontImage || !backImage || isLoading) return;
+    if (!uploadedImage || isLoading) return;
 
     setIsLoading(true);
     try {
-      setVerificationImages(frontImage.base64, backImage.base64);
+      setVerificationImage(uploadedImage.base64);
       router.push({
         pathname: '/(onboarding)/verify-email',
         params: { mode: 'verification', role },
@@ -94,7 +88,7 @@ export default function UploadIdScreen() {
     router.back();
   };
 
-  const bothUploaded = frontImage && backImage;
+  const canContinue = Boolean(uploadedImage && !isLoading);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -138,52 +132,26 @@ export default function UploadIdScreen() {
           </OnboardingStaggerItem>
 
           <OnboardingStaggerItem delay={270} style={styles.uploadContainer}>
-            {/* Front upload */}
             <TouchableOpacity
               style={[
                 styles.uploadZone,
                 { backgroundColor: theme.cardMuted, borderColor: theme.border },
-                frontImage && { backgroundColor: theme.brandSoft, borderColor: theme.brand, borderStyle: 'solid' },
+                uploadedImage && { backgroundColor: theme.brandSoft, borderColor: theme.brand, borderStyle: 'solid' },
               ]}
-              onPress={() => pickImage('front')}
+              onPress={pickImage}
               activeOpacity={0.7}
             >
-              {frontImage ? (
-                <OnboardingStateMotion key="front-preview" style={styles.previewContainer}>
-                  <Image source={{ uri: frontImage.uri }} style={styles.previewImage} contentFit="contain" />
+              {uploadedImage ? (
+                <OnboardingStateMotion key="upload-preview" style={styles.previewContainer}>
+                  <Image source={{ uri: uploadedImage.uri }} style={styles.previewImage} contentFit="contain" />
                   <View style={styles.replaceBadge}>
                     <Text style={styles.replaceText}>{t('onboarding_upload_replace')}</Text>
                   </View>
                 </OnboardingStateMotion>
               ) : (
-                <OnboardingStateMotion key="front-placeholder" style={styles.uploadPlaceholder}>
+                <OnboardingStateMotion key="upload-placeholder" style={styles.uploadPlaceholder}>
                   <Ionicons name="camera-outline" size={32} color={theme.iconMuted} />
-                  <Text style={[styles.uploadLabel, { color: theme.subtleText }]}>{t('onboarding_upload_front')}</Text>
-                </OnboardingStateMotion>
-              )}
-            </TouchableOpacity>
-
-            {/* Back upload */}
-            <TouchableOpacity
-              style={[
-                styles.uploadZone,
-                { backgroundColor: theme.cardMuted, borderColor: theme.border },
-                backImage && { backgroundColor: theme.brandSoft, borderColor: theme.brand, borderStyle: 'solid' },
-              ]}
-              onPress={() => pickImage('back')}
-              activeOpacity={0.7}
-            >
-              {backImage ? (
-                <OnboardingStateMotion key="back-preview" style={styles.previewContainer}>
-                  <Image source={{ uri: backImage.uri }} style={styles.previewImage} contentFit="contain" />
-                  <View style={styles.replaceBadge}>
-                    <Text style={styles.replaceText}>{t('onboarding_upload_replace')}</Text>
-                  </View>
-                </OnboardingStateMotion>
-              ) : (
-                <OnboardingStateMotion key="back-placeholder" style={styles.uploadPlaceholder}>
-                  <Ionicons name="camera-outline" size={32} color={theme.iconMuted} />
-                  <Text style={[styles.uploadLabel, { color: theme.subtleText }]}>{t('onboarding_upload_back')}</Text>
+                  <Text style={[styles.uploadLabel, { color: theme.subtleText }]}>{t('onboarding_upload_id_single')}</Text>
                 </OnboardingStateMotion>
               )}
             </TouchableOpacity>
@@ -195,11 +163,11 @@ export default function UploadIdScreen() {
         </KeyboardAvoidingView>
 
         <View style={styles.footer}>
-          <OnboardingButtonMotion enabled={Boolean(bothUploaded && !isLoading)}>
+          <OnboardingButtonMotion enabled={canContinue}>
           <TouchableOpacity
-            style={[styles.button, bothUploaded && !isLoading && styles.buttonEnabled]}
+            style={[styles.button, canContinue && styles.buttonEnabled]}
             onPress={handleContinue}
-            disabled={!bothUploaded || isLoading}
+            disabled={!uploadedImage || isLoading}
             activeOpacity={0.8}
           >
             {isLoading ? (

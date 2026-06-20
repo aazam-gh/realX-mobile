@@ -192,7 +192,6 @@
   ,"onboarding_email_title_suffix": "ACCOUNT"
   ,"onboarding_email_placeholder": "Student Email"
   ,"onboarding_manual_link_placeholder": "Paste the link from your email here"
-  ,"onboarding_email_description": "Use your university email address to access exclusive student deals and discounts."
   ,"onboarding_continue": "Continue"
   ,"onboarding_magic_link_sent_title": "Email Sent"
   ,"onboarding_magic_link_sent_message": "A magic link has been sent to {{email}}. Make sure to check your spam folder."
@@ -293,11 +292,10 @@
   "onboarding_otp_send_failed": "Failed to send code. Please try again.",
   "onboarding_no_edu_email_link": "No student email? Click here to verify with your Student ID",
   "onboarding_upload_id_title_prefix": "UPLOAD YOUR",
-  "onboarding_upload_id_title_suffix": "STUDENT/QATAR ID",
-  "onboarding_upload_id_description": "Upload a clear photo of the front and back of your Student ID card.",
-  "onboarding_upload_id_info": "Maximum 3MB per image. Accepted formats: JPG, PNG.",
-  "onboarding_upload_front": "Upload Front of ID",
-  "onboarding_upload_back": "Upload Back of ID",
+  "onboarding_upload_id_title_suffix": "STUDENT ID",
+  "onboarding_upload_id_description": "Upload a clear photo of your Student ID card.",
+  "onboarding_upload_id_info": "Maximum 3MB. Accepted formats: JPG, PNG.",
+  "onboarding_upload_id_single": "Upload Student ID",
   "onboarding_upload_replace": "Replace",
   "onboarding_upload_image_too_large": "Image is too large. Please choose an image under 3MB.",
   "onboarding_verify_email_title_prefix": "ENTER YOUR",

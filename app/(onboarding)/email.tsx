@@ -186,7 +186,6 @@ export default function EmailOnboarding() {
                     value={email}
                     onChangeText={setEmail}
                     editable={!isLoading}
-                    autoFocus
                   />
                 </View>
               </OnboardingStaggerItem>

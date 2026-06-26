@@ -144,7 +144,7 @@ match /cms/{docId} {
 
 // ─── categories collection ────────────────────────────────────────────
 match /categories/{catId} {
-  allow read: if request.auth != null;
+  allow read: if true;
   allow write: if isAdmin();
 }
 
@@ -156,7 +156,7 @@ match /offers/{offerId} {
 
 // ─── events collection ────────────────────────────────────────────────
 match /events/{eventId} {
-  allow read: if true;
+  allow read: if request.auth != null;
   allow write: if isAdmin();
 }
 
@@ -188,19 +188,19 @@ match /redemption_rate_limits/{rateLimitId} {
 
 // ─── maps collection ──────────────────────────────────────────────────
 match /maps/{mapDocId} {
-  allow read: if request.auth != null;
+  allow read: if true;
   allow write: if isAdmin();
 }
 
 // ─── map locations collection ────────────────────────────────────────
 match /mapLocations/{locationId} {
-  allow read: if request.auth != null;
+  allow read: if true;
   allow write: if isAdmin();
 }
 
 // ─── rewards collection ───────────────────────────────────────────────
 match /rewards/{rewardId} {
-  allow read: if true;
+  allow read: if request.auth != null;
   allow write: if isAdmin();
 }
 

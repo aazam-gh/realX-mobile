@@ -28,6 +28,7 @@ import AppText from '../../components/AppText';
 import RewardSuccessScreen from '../../components/rewards/RewardSuccessScreen';
 import TransactionLoadingOverlay from '../../components/TransactionLoadingOverlay';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAuthAccess } from '../../context/AuthAccessContext';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { normalizeDigits } from '../../utils/numbers';
@@ -124,6 +125,7 @@ export default function RedeemScreen() {
     const router = useRouter();
     const { t, i18n } = useTranslation();
     const { isDark, theme } = useAppTheme();
+    const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
     const isArabic = i18n.language === 'ar';
     const [vendor, setVendor] = useState<VendorData | null>(null);
     const [offer, setOffer] = useState<OfferData | null>(null);
@@ -145,6 +147,13 @@ export default function RedeemScreen() {
     const amountInputRef = useRef<TextInput>(null);
     const scrollRef = useRef<ScrollView>(null);
     const currentVendorId = vendorId || id || '';
+
+    useEffect(() => {
+        if (authAccessLoading || isAuthenticated) return;
+
+        requireAuth('guest_redeem_message');
+        router.replace('/(tabs)' as any);
+    }, [authAccessLoading, isAuthenticated, requireAuth, router]);
 
     const {
         data: vendorResult,
@@ -190,7 +199,7 @@ export default function RedeemScreen() {
             const previewResult = await getOnlineRedemptionPreview({ vendorId: currentVendorId });
             return previewResult.data as { discountCode: string; remainingToday: number; dailyLimitPerUser: number };
         },
-        enabled: currentVendorId.length > 0 && vendor?.vendorType === 'online',
+        enabled: isAuthenticated && currentVendorId.length > 0 && vendor?.vendorType === 'online',
     });
 
     useEffect(() => {
@@ -235,7 +244,7 @@ export default function RedeemScreen() {
         const auth = getAuth();
         const user = auth.currentUser;
         if (!user) {
-            Alert.alert(t('error'), t('login_required_message'));
+            requireAuth('guest_redeem_message');
             return;
         }
 
@@ -306,7 +315,7 @@ export default function RedeemScreen() {
         const auth = getAuth();
         const user = auth.currentUser;
         if (!user) {
-            Alert.alert(t('error'), t('login_required_message'));
+            requireAuth('guest_redeem_message');
             return;
         }
 
@@ -374,6 +383,14 @@ export default function RedeemScreen() {
             handleRedeem();
         }
     };
+
+    if (authAccessLoading || !isAuthenticated) {
+        return (
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.brand} />
+            </View>
+        );
+    }
 
     if (isLoading) {
         return (

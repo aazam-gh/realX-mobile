@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
 import { unregisterExpoPushTokenForCurrentUser } from '../utils/pushNotifications';
 import { useAppTheme } from '../context/AppThemeContext';
+import { useAuthAccess } from '../context/AuthAccessContext';
 import { Typography } from '../constants/Typography';
 import AppText from '../components/AppText';
 import UserAvatar from '../components/UserAvatar';
@@ -33,6 +34,7 @@ export default function ProfileDetailsScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
     const { t, i18n } = useTranslation();
+    const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
     const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
     const backIconName: keyof typeof Ionicons.glyphMap = isRTL ? 'arrow-forward' : 'arrow-back';
 
@@ -50,6 +52,12 @@ export default function ProfileDetailsScreen() {
     const user = getAuth().currentUser;
     const userId = user?.uid ?? null;
 
+    useEffect(() => {
+        if (authAccessLoading || isAuthenticated) return;
+        requireAuth('guest_profile_edit_message');
+        router.replace('/(tabs)/profile' as any);
+    }, [authAccessLoading, isAuthenticated, requireAuth, router]);
+
     const {
         data: studentProfile,
         error: studentProfileError,
@@ -61,13 +69,16 @@ export default function ProfileDetailsScreen() {
     });
 
     useEffect(() => {
+        if (authAccessLoading) return;
+
         if (!user) {
+            if (!isAuthenticated) return;
             router.replace('/(onboarding)');
             return;
         }
 
         setIsLoading(isStudentProfileLoading);
-    }, [isStudentProfileLoading, router, user]);
+    }, [authAccessLoading, isAuthenticated, isStudentProfileLoading, router, user]);
 
     useEffect(() => {
         if (studentProfileError) {

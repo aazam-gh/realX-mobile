@@ -29,6 +29,7 @@ import {
 } from '../utils/verificationPending';
 import { logger } from '../utils/logger';
 import { AppThemeProvider, useAppTheme } from '../context/AppThemeContext';
+import { AuthAccessProvider, useAuthAccess } from '../context/AuthAccessContext';
 import { queryClient } from '../utils/queryClient';
 import { clearLocalAuthSession, isInvalidAuthSessionError } from '../utils/auth';
 
@@ -100,18 +101,20 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <AppThemeProvider>
-          <StudentProvider>
-            <LayoutContent
-              user={user}
-              loaded={loaded}
-              error={error}
-              i18nReady={i18nReady}
-              appCheckReady={appCheckReady}
-              initializing={initializing}
-              showSplash={showSplash}
-              onSplashFinish={() => setShowSplash(false)}
-            />
-          </StudentProvider>
+          <AuthAccessProvider>
+            <StudentProvider>
+              <LayoutContent
+                user={user}
+                loaded={loaded}
+                error={error}
+                i18nReady={i18nReady}
+                appCheckReady={appCheckReady}
+                initializing={initializing}
+                showSplash={showSplash}
+                onSplashFinish={() => setShowSplash(false)}
+              />
+            </StudentProvider>
+          </AuthAccessProvider>
         </AppThemeProvider>
       </SafeAreaProvider>
     </QueryClientProvider>
@@ -138,6 +141,7 @@ function LayoutContent({
   onSplashFinish: () => void;
 }) {
   const { docExists: hasProfile } = useStudent();
+  const { isGuest, loading: guestLoading } = useAuthAccess();
   const { isDark, theme } = useAppTheme();
   const router = useRouter();
   const segments = useSegments();
@@ -176,12 +180,13 @@ function LayoutContent({
       appCheckReady &&
       (loaded || error) &&
       !initializing &&
+      !guestLoading &&
       (user === null || hasProfile !== null) &&
       pendingCheckDone
     ) {
       setAppReady(true);
     }
-  }, [i18nReady, appCheckReady, loaded, error, initializing, user, hasProfile, pendingCheckDone]);
+  }, [i18nReady, appCheckReady, loaded, error, initializing, guestLoading, user, hasProfile, pendingCheckDone]);
 
   // Set up local notification channels when user is authenticated with a profile
   useEffect(() => {
@@ -252,15 +257,30 @@ function LayoutContent({
   }, [user, hasProfile]);
 
   useEffect(() => {
-    if (initializing || !loaded || !i18nReady || !pendingCheckDone) return;
+    if (initializing || guestLoading || !loaded || !i18nReady || !pendingCheckDone) return;
     if (user && hasProfile === null) return;
 
     const inAuthGroup = (segments as string[]).indexOf('(onboarding)') !== -1;
+    const currentPath = segments.join('/');
+    const guestAllowedRootSegments = new Set([
+      '(tabs)',
+      'category',
+      'search',
+      'vendor',
+      'terms',
+      'privacy',
+      'x-academy',
+      'wakti',
+    ]);
+    const isGuestAllowedRoute = guestAllowedRootSegments.has(String(segments[0] || ''));
 
     if (!user) {
-      if (pendingVerification) {
+      if (isGuest) {
+        if (inAuthGroup || !isGuestAllowedRoute) {
+          router.replace('/(tabs)' as any);
+        }
+      } else if (pendingVerification) {
         // Has a pending verification request — show pending screen
-        const currentPath = segments.join('/');
         if (!currentPath.includes('pending')) {
           router.replace({
             pathname: '/(onboarding)/pending',
@@ -310,7 +330,7 @@ function LayoutContent({
         }
       }
     }
-  }, [user, initializing, loaded, i18nReady, pendingCheckDone, segments, hasProfile, pendingVerification, router, validatedMissingProfileUid]);
+  }, [user, initializing, guestLoading, isGuest, loaded, i18nReady, pendingCheckDone, segments, hasProfile, pendingVerification, router, validatedMissingProfileUid]);
 
   // Clear pending verification once user authenticates
   useEffect(() => {

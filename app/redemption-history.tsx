@@ -8,6 +8,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, FlatList, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../context/AppThemeContext';
+import { useAuthAccess } from '../context/AuthAccessContext';
 import { Typography } from '../constants/Typography';
 import AppText from '../components/AppText';
 import { triggerSubtleHaptic } from '../utils/haptics';
@@ -30,11 +31,18 @@ type Transaction = RedemptionHistoryTransaction;
 export default function RedemptionHistoryScreen() {
   const { t, i18n } = useTranslation();
   const { theme } = useAppTheme();
+  const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
   const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
   const currency = t('currency_qar');
   const fmt = (n: number, decimals = 0) => isArabic ? toArabicDigits(n.toFixed(decimals)) : n.toFixed(decimals);
   const router = useRouter();
   const userId = getAuth().currentUser?.uid ?? null;
+
+  useEffect(() => {
+    if (authAccessLoading || isAuthenticated) return;
+    requireAuth('guest_history_message');
+    router.replace('/(tabs)/profile' as any);
+  }, [authAccessLoading, isAuthenticated, requireAuth, router]);
   const {
     data,
     error,
@@ -157,7 +165,11 @@ export default function RedemptionHistoryScreen() {
         </Text>
       </View>
 
-        {!!userId && isLoading ? (
+        {authAccessLoading || (!isAuthenticated && !userId) ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.brand} />
+        </View>
+      ) : !!userId && isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.brand} />
         </View>

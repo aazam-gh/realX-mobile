@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
 import { useAppTheme } from '../context/AppThemeContext';
+import { useAuthAccess } from '../context/AuthAccessContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
@@ -22,9 +23,16 @@ export default function SavedOffersScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { isDark, theme } = useAppTheme();
+  const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
   const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
   const userId = getAuth().currentUser?.uid ?? null;
+
+  useEffect(() => {
+    if (authAccessLoading || isAuthenticated) return;
+    requireAuth('guest_saved_offers_message');
+    router.replace('/(tabs)/profile' as any);
+  }, [authAccessLoading, isAuthenticated, requireAuth, router]);
   const {
     data: savedOffers = [],
     error,
@@ -147,7 +155,11 @@ export default function SavedOffersScreen() {
         </AppText>
       </View>
 
-      {!!userId && isLoading ? (
+      {authAccessLoading || (!isAuthenticated && !userId) ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={theme.brand} />
+        </View>
+      ) : !!userId && isLoading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.brand} />
         </View>

@@ -20,6 +20,7 @@ import {
 } from '../../components/onboarding/OnboardingMotion';
 import StaggeredHeadingText from '../../components/onboarding/StaggeredHeadingText';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAuthAccess } from '../../context/AuthAccessContext';
 import { Typography } from '../../constants/Typography';
 import { setStoredLanguage } from '../../src/localization/i18n';
 import { applyRTL } from '../../src/localization/rtl';
@@ -31,6 +32,7 @@ export default function OnboardingScreen() {
 
     const { t, i18n } = useTranslation();
     const { theme } = useAppTheme();
+    const { continueAsGuest } = useAuthAccess();
     const isRTL = I18nManager.isRTL;
     const compactWidth = width < 390;
     const compactHeight = height < 820;
@@ -150,6 +152,15 @@ export default function OnboardingScreen() {
                                     </TouchableOpacity>
                                 </OnboardingGlowMotion>
                             </OnboardingButtonMotion>
+                            <TouchableOpacity
+                                style={styles.guestButton}
+                                onPress={() => void continueAsGuest()}
+                                activeOpacity={0.85}
+                            >
+                                <Text style={[styles.guestButtonText, isRTL && styles.subtextRTL]}>
+                                    {t('continue_as_guest')}
+                                </Text>
+                            </TouchableOpacity>
                         </OnboardingIntroFooterMotion>
                     </View>
                     </OnboardingScreenMotion>
@@ -226,6 +237,17 @@ export default function OnboardingScreen() {
                             </Text>
                         </TouchableOpacity>
                         </OnboardingStaggerItem>
+                        <OnboardingStaggerItem delay={280}>
+                        <TouchableOpacity
+                            activeOpacity={0.85}
+                            onPress={() => void continueAsGuest()}
+                            style={styles.roleGuestButton}
+                        >
+                            <Text style={[styles.roleGuestText, isRTL && styles.subtextRTL]}>
+                                {t('continue_as_guest')}
+                            </Text>
+                        </TouchableOpacity>
+                        </OnboardingStaggerItem>
                     </View>
                     </OnboardingScreenMotion>
                 )}
@@ -294,6 +316,18 @@ const styles = StyleSheet.create({
         width: '100%',
         paddingBottom: 8,
         paddingHorizontal: 10,
+    },
+    guestButton: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 44,
+        marginTop: 8,
+    },
+    guestButtonText: {
+        ...Typography.getTextVariantStyle('bodyStrong'),
+        color: '#FFFFFF',
+        fontSize: 16,
+        textDecorationLine: 'underline',
     },
     subtext: {
         ...Typography.getTextVariantStyle('body'),
@@ -470,6 +504,18 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 12,
         elevation: 5,
+    },
+    roleGuestButton: {
+        alignSelf: 'center',
+        paddingHorizontal: 18,
+        paddingVertical: 12,
+        marginTop: 12,
+    },
+    roleGuestText: {
+        ...Typography.getTextVariantStyle('bodyStrong'),
+        color: '#FFFFFF',
+        fontSize: 15,
+        textDecorationLine: 'underline',
     },
     loginText: {
         ...Typography.getTextVariantStyle('body'),

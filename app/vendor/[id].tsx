@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAuthAccess } from '../../context/AuthAccessContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import AppText from '../../components/AppText';
@@ -94,6 +95,7 @@ export default function VendorScreen() {
     const { height: windowHeight, width: windowWidth } = useWindowDimensions();
     const { i18n, t } = useTranslation();
     const { isDark, theme } = useAppTheme();
+    const { requireAuth } = useAuthAccess();
     const isArabic = i18n.language === 'ar';
     const termsSheetWidth = Math.max(0, windowWidth - 32);
     const [vendor, setVendor] = useState<any>(null);
@@ -224,7 +226,7 @@ export default function VendorScreen() {
         const user = getAuth().currentUser;
         const vendorId = actualVendorId || id;
         if (!user || !vendorId) {
-            Alert.alert(t('error'), t('login_required_message'));
+            requireAuth('guest_save_offer_message');
             return;
         }
 
@@ -441,6 +443,7 @@ export default function VendorScreen() {
                                     <TouchableOpacity
                                         style={[styles.pillButton, styles.redeemPill, { backgroundColor: theme.actionSolid }]}
                                         onPress={() => {
+                                            if (!requireAuth('guest_redeem_message')) return;
                                             router.push(`/redeem/${actualVendorId || id}?vendorId=${actualVendorId || id}`);
                                         }}
                                     >
@@ -515,6 +518,7 @@ const isSaved = savedOfferIds.has(savedId);
                                         <TouchableOpacity
                                             style={[styles.pillButton, styles.redeemPill, { backgroundColor: theme.actionSolid }]}
                                             onPress={() => {
+                                                if (!requireAuth('guest_redeem_message')) return;
                                                 router.push(`/redeem/${actualVendorId || id}?vendorId=${actualVendorId || id}&offerIndex=${offerIndex}`);
                                             }}
                                         >

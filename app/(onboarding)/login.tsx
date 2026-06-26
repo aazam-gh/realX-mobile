@@ -23,6 +23,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAuthAccess } from '../../context/AuthAccessContext';
 import { Typography } from '../../constants/Typography';
 import AppText from '../../components/AppText';
 import {
@@ -54,6 +55,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { theme } = useAppTheme();
+  const { continueAsGuest } = useAuthAccess();
   const isRTL = I18nManager.isRTL;
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
   const inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
@@ -201,6 +203,15 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
             </OnboardingButtonMotion>
+            <TouchableOpacity
+              style={styles.guestButton}
+              onPress={() => void continueAsGuest()}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.guestButtonText, { color: theme.brand }, isRTL && styles.textRTL]}>
+                {t('continue_as_guest')}
+              </Text>
+            </TouchableOpacity>
           </View>
         </OnboardingCardMotion>
       </ScrollView>
@@ -323,6 +334,20 @@ const styles = StyleSheet.create({
   footer: {
     paddingBottom: 40,
     marginTop: 'auto',
+  },
+  guestButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  guestButtonText: {
+    fontSize: 15,
+    ...Typography.getTextVariantStyle('bodyStrong'),
+    textDecorationLine: 'underline',
+  },
+  textRTL: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   button: {
     backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,

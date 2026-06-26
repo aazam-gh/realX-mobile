@@ -19,9 +19,11 @@ import {
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useStudent } from '../../context/StudentContext';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAuthAccess } from '../../context/AuthAccessContext';
 
 export default function HomeScreen() {
   const { studentData } = useStudent();
+  const { isGuest } = useAuthAccess();
   const userName = studentData?.firstName || '';
   const [searchQuery, setSearchQuery] = useState('');
   const { t } = useTranslation();
@@ -56,7 +58,7 @@ export default function HomeScreen() {
         directionalLockEnabled
         contentContainerStyle={styles.contentContainer}
       >
-        <GreetingHeader userName={userName || t('user')} />
+        <GreetingHeader userName={isGuest ? t('guest_home_name') : (userName || t('user'))} />
         <SearchBar
           placeholder={t('search_placeholder')}
           value={searchQuery}

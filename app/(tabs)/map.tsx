@@ -33,6 +33,7 @@ import {
   toGeohash
 } from '../../utils/mapGeo';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAuthAccess } from '../../context/AuthAccessContext';
 import { fetchMapLocations, fetchMapLocationsByPrefixes, fetchSavedMapPlaceIds, searchMapLocations } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 
@@ -160,6 +161,7 @@ function mapFetchKey(region: Region) {
 export default function MapScreen() {
   const { t, i18n } = useTranslation();
   const { isDark, theme } = useAppTheme();
+  const { requireAuth } = useAuthAccess();
   const router = useRouter();
   const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
   const insets = useSafeAreaInsets();
@@ -445,12 +447,6 @@ export default function MapScreen() {
   }, []);
 
   const fetchVendorsForVisibleRegion = useCallback(async (region: Region) => {
-    if (!getAuth().currentUser) {
-      logger.warn('[Map] Skipping fetch — user not authenticated yet');
-      setLoading(false);
-      return;
-    }
-
     setSearchingNearby(true);
     setError(null);
 
@@ -570,7 +566,7 @@ export default function MapScreen() {
   );
 
   useEffect(() => {
-    if (!hasFetchedOnceRef.current || !getAuth().currentUser) return;
+    if (!hasFetchedOnceRef.current) return;
 
     const nextFetchKey = mapFetchKey(currentRegion);
     if (nextFetchKey === lastFetchedKeyRef.current) return;
@@ -583,29 +579,13 @@ export default function MapScreen() {
     return () => clearTimeout(timeout);
   }, [currentRegion, fetchVendorsForVisibleRegion]);
 
-  // Initial fetch on mount — wait for auth to be ready
+  // Initial fetch on mount.
   useEffect(() => {
     if (hasFetchedOnceRef.current) return;
 
-    const doFetch = () => {
-      if (!getAuth().currentUser) return false;
-      hasFetchedOnceRef.current = true;
-      lastFetchedKeyRef.current = mapFetchKey(currentRegion);
-      void fetchVendorsForVisibleRegion(currentRegion);
-      return true;
-    };
-
-    // Try immediately in case auth is already restored
-    if (doFetch()) return;
-
-    // Otherwise listen for auth readiness
-    const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
-      if (user && !hasFetchedOnceRef.current) {
-        doFetch();
-        unsubscribe();
-      }
-    });
-    return unsubscribe;
+    hasFetchedOnceRef.current = true;
+    lastFetchedKeyRef.current = mapFetchKey(currentRegion);
+    void fetchVendorsForVisibleRegion(currentRegion);
   }, [currentRegion, fetchVendorsForVisibleRegion]);
 
   useEffect(() => {
@@ -690,7 +670,7 @@ export default function MapScreen() {
   const toggleSavedMapPlace = async (vendor: VendorMapItem) => {
     const user = getAuth().currentUser;
     if (!user) {
-      Alert.alert(t('error'), t('login_required_message'));
+      requireAuth('guest_save_map_message');
       return;
     }
 

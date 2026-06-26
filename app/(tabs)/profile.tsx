@@ -17,6 +17,7 @@ import { applyRTL } from '../../src/localization/rtl';
 import { useStudent } from '../../context/StudentContext';
 import UserAvatar from '../../components/UserAvatar';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAuthAccess } from '../../context/AuthAccessContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function ProfileScreen() {
   const { isDark, theme } = useAppTheme();
   const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
   const { studentData: userData } = useStudent();
+  const { isGuest, endGuestSession } = useAuthAccess();
 
   const changeLanguage = async (language: 'en' | 'ar') => {
     if (i18n.language === language) {
@@ -79,6 +81,124 @@ export default function ProfileScreen() {
       ]
     );
   };
+
+  if (isGuest) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={[styles.header, isRTL && styles.headerRTL]}>
+            <AppText
+              style={[
+                { color: theme.text, textAlign: isRTL ? 'right' : 'left' },
+                styles.headerText,
+              ]}
+            >
+              {t('profile')}
+            </AppText>
+          </View>
+
+          <View style={[styles.topPill, { backgroundColor: theme.cardMuted }]}>
+            <View style={styles.profileTopRow}>
+              <UserAvatar
+                firstName={t('guest_home_name')}
+                email={t('guest_profile_email')}
+                size={80}
+              />
+              <View style={[styles.badge, { backgroundColor: theme.brand }]}>
+                <AppText style={[{ color: '#FFFFFF', textAlign: isRTL ? 'right' : 'left' }, styles.badgeText]}>{t('guest_badge')}</AppText>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.bottomPill, { backgroundColor: theme.cardMuted }]}>
+            <View style={[styles.guestProfileContent, isRTL && styles.guestProfileContentRTL]}>
+              <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body'), textAlign: isRTL ? 'right' : 'left' }, styles.userName]}>
+                {t('guest_profile_title')}
+              </Text>
+              <Text style={[styles.guestProfileBody, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                {t('guest_profile_body')}
+              </Text>
+              <View style={[styles.guestProfileActions, isRTL && styles.guestProfileActionsRTL]}>
+                <TouchableOpacity
+                  style={[styles.guestPrimaryAction, { backgroundColor: theme.actionSolid }]}
+                  onPress={() => {
+                    void endGuestSession().finally(() => router.push('/(onboarding)/login' as any));
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.guestPrimaryActionText, { color: theme.onActionSolid }]}>{t('onboarding_login_action')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.guestSecondaryAction, { borderColor: theme.border }]}
+                  onPress={() => {
+                    void endGuestSession().finally(() => router.push('/(onboarding)' as any));
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.guestSecondaryActionText, { color: theme.text }]}>{t('onboarding_sign_up')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.universityBanner}
+            onPress={() => router.push('/x-academy')}
+            activeOpacity={0.9}
+          >
+            <ImageBackground
+              source={require('../../assets/images/uni.png')}
+              style={styles.universityBannerBg}
+              imageStyle={{ borderRadius: 20 }}
+            >
+              <View style={styles.universityBannerOverlay}>
+                <View style={[styles.onlyOnRealxBadge, isRTL && styles.badgeRTL]}>
+                  <AppText style={styles.onlyOnRealxText}>{t('only_on_realx')}</AppText>
+                </View>
+                <View style={styles.universityBannerTitleRow}>
+                  <AppText style={[styles.universityBannerTitle, isRTL && styles.universityBannerTitleRTL]}>
+                    {t('apply_to_universities')}
+                  </AppText>
+                </View>
+                <TouchableOpacity
+                  style={[styles.universityBannerButton, { backgroundColor: theme.logoTile }]}
+                  onPress={() => router.push('/x-academy')}
+                  activeOpacity={0.8}
+                >
+                  <AppText style={[styles.universityBannerButtonText, { color: theme.logoTileText }]}>{t('apply_now')}</AppText>
+                </TouchableOpacity>
+              </View>
+            </ImageBackground>
+          </TouchableOpacity>
+
+          <View style={styles.menuContainer}>
+            <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} isRTL={isRTL} />
+            <MenuItem
+              icon="mail-outline"
+              label={t('contact_us')}
+              onPress={() => Linking.openURL('mailto:info@realx.qa')}
+              isRTL={isRTL}
+            />
+            <MenuItem
+              icon="document-text-outline"
+              label={t('terms_and_conditions')}
+              onPress={() => router.push('/terms')}
+              isRTL={isRTL}
+            />
+            <MenuItem
+              icon="shield-checkmark-outline"
+              label={t('privacy_policy')}
+              onPress={() => router.push('/privacy')}
+              isRTL={isRTL}
+            />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
@@ -334,6 +454,49 @@ const styles = StyleSheet.create({
     fontSize: 20,
     ...Typography.getTextVariantStyle('bodyStrong'),
     paddingHorizontal: 4,
+  },
+  guestProfileContent: {
+    gap: 12,
+    paddingHorizontal: 8,
+  },
+  guestProfileContentRTL: {
+    alignItems: 'flex-start',
+  },
+  guestProfileBody: {
+    fontSize: 14,
+    lineHeight: 20,
+    ...Typography.getTextVariantStyle('body'),
+  },
+  guestProfileActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  guestProfileActionsRTL: {
+    flexDirection: 'row-reverse',
+  },
+  guestPrimaryAction: {
+    flex: 1,
+    minHeight: 46,
+    borderRadius: 23,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestSecondaryAction: {
+    flex: 1,
+    minHeight: 46,
+    borderRadius: 23,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestPrimaryActionText: {
+    fontSize: 14,
+    ...Typography.getTextVariantStyle('bodyStrong'),
+  },
+  guestSecondaryActionText: {
+    fontSize: 14,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   editButton: {
     flexDirection: 'row',

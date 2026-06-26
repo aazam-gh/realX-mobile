@@ -16,6 +16,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import AppUpdatePrompt from '../components/AppUpdatePrompt';
 import { initI18n } from '../src/localization/i18n';
 import { applyRTL } from '../src/localization/rtl';
 import {
@@ -381,6 +382,7 @@ function LayoutContent({
         <Stack.Screen name="wakti" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
       </Stack>
+      <AppUpdatePrompt />
     </ThemeProvider>
   );
 }

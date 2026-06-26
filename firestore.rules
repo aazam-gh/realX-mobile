@@ -142,6 +142,12 @@ match /cms/{docId} {
   allow write: if isAdmin();
 }
 
+// ─── app config collection ───────────────────────────────────────────
+match /appConfig/{docId} {
+  allow read: if docId == 'mobileVersionGate';
+  allow write: if isAdmin();
+}
+
 // ─── categories collection ────────────────────────────────────────────
 match /categories/{catId} {
   allow read: if true;

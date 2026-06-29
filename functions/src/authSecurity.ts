@@ -19,6 +19,7 @@ const ALLOWED_STUDENT_EMAIL_DOMAINS = new Set([
   'oryx.edu.qa',
   'lu.edu.qa',
   'tamu.edu',
+  'smail.astate.edu',
   'hbku.edu.qa',
   'andrew.cmu.edu',
 ]);

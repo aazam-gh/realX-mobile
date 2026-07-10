@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { useRouter } from 'expo-router';
 import React from 'react';

@@ -3,7 +3,7 @@ import {
 } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,

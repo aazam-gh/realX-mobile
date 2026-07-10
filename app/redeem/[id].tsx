@@ -34,7 +34,7 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 import { normalizeDigits } from '../../utils/numbers';
 import { showLocalNotification } from '../../utils/notifications';
 import { fetchVendor } from '../../utils/firebaseQueries';
-import { queryClient, queryKeys } from '../../utils/queryClient';
+import { queryKeys } from '../../utils/queryClient';
 
 interface RedemptionResult {
     discountAmount: number;
@@ -131,7 +131,6 @@ export default function RedeemScreen() {
     const [offer, setOffer] = useState<OfferData | null>(null);
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [redemptionResult, setRedemptionResult] = useState<RedemptionResult | null>(null);
-    const [onlinePreview, setOnlinePreview] = useState<{ discountCode: string; remainingToday: number; dailyLimitPerUser: number } | null>(null);
     const [onlineLoading, setOnlineLoading] = useState(false);
     const [onlineError, setOnlineError] = useState('');
     const [copied, setCopied] = useState(false);
@@ -189,32 +188,33 @@ export default function RedeemScreen() {
     }, [offerIndexParam, vendorResult]);
 
     const {
-        data: onlinePreviewData,
-        error: onlinePreviewError,
+        data: onlineOffer,
+        error: onlineOfferError,
+        isFetching: onlineOfferLoading,
+        refetch: refetchOnlineOffer,
     } = useQuery({
-        queryKey: queryKeys.onlineRedemptionPreview(currentVendorId),
+        queryKey: queryKeys.onlineVendorOffer(currentVendorId),
         queryFn: async () => {
             const functions = getFunctions(undefined, 'me-central1');
-            const getOnlineRedemptionPreview = httpsCallable(functions, 'getOnlineRedemptionPreview');
-            const previewResult = await getOnlineRedemptionPreview({ vendorId: currentVendorId });
-            return previewResult.data as { discountCode: string; remainingToday: number; dailyLimitPerUser: number };
+            const getOnlineVendorOffer = httpsCallable(functions, 'getOnlineVendorOffer');
+            const offerResult = await getOnlineVendorOffer({ vendorId: currentVendorId });
+            return offerResult.data as { discountCode: string };
         },
         enabled: isAuthenticated && currentVendorId.length > 0 && vendor?.vendorType === 'online',
     });
 
     useEffect(() => {
-        if (onlinePreviewData) {
-            setOnlinePreview(onlinePreviewData);
+        if (onlineOffer) {
             setOnlineError('');
         }
-    }, [onlinePreviewData]);
+    }, [onlineOffer]);
 
     useEffect(() => {
-        if (onlinePreviewError) {
-            logger.error('Online redemption preview error:', onlinePreviewError);
-            setOnlineError((onlinePreviewError as any).message || t('redemption_failed_message'));
+        if (onlineOfferError) {
+            logger.error('Online vendor offer error:', onlineOfferError);
+            setOnlineError((onlineOfferError as any).message || t('online_store_access_failed_message'));
         }
-    }, [onlinePreviewError, t]);
+    }, [onlineOfferError, t]);
 
     // Discount calculation
     const totalAmount = parseFloat(normalizeDigits(amount)) || 0;
@@ -304,14 +304,14 @@ export default function RedeemScreen() {
     };
 
     const handleCopyOnlineCode = async () => {
-        if (!onlinePreview?.discountCode) return;
+        if (!onlineOffer?.discountCode) return;
         triggerSubtleHaptic();
-        await Clipboard.setStringAsync(onlinePreview.discountCode);
+        await Clipboard.setStringAsync(onlineOffer.discountCode);
         setCopied(true);
         setTimeout(() => setCopied(false), 1600);
     };
 
-    const handleOnlinePurchase = async () => {
+    const handleOnlineStoreVisit = async () => {
         const auth = getAuth();
         const user = auth.currentUser;
         if (!user) {
@@ -325,28 +325,24 @@ export default function RedeemScreen() {
         setOnlineLoading(true);
         try {
             const functions = getFunctions(undefined, 'me-central1');
-            const redeemOnlineVendor = httpsCallable(functions, 'redeemOnlineVendor');
-            const result = await redeemOnlineVendor({
+            const recordOutboundClick = httpsCallable(functions, 'recordOnlineVendorOutboundClick');
+            const requestId = `online-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+            const result = await recordOutboundClick({
                 vendorId: currentVendorId,
-                vendorName: (isArabic ? (vendor?.nameAr || vendor?.name) : vendor?.name) || '',
+                requestId,
             });
 
-            const data = result.data as any;
-            if (typeof data.remainingToday === 'number') {
-                setOnlinePreview((previous) => previous ? { ...previous, remainingToday: data.remainingToday } : previous);
-                queryClient.setQueryData(queryKeys.onlineRedemptionPreview(currentVendorId), (previous: any) => (
-                    previous ? { ...previous, remainingToday: data.remainingToday } : previous
-                ));
-            }
-
+            const data = result.data as { purchaseUrl?: string; tracked: boolean };
             if (data.purchaseUrl) {
                 await Linking.openURL(data.purchaseUrl);
+            } else {
+                throw new Error(t('online_store_access_failed_message'));
             }
         } catch (error: any) {
-            logger.error('Online redemption error:', error);
+            logger.error('Online store visit error:', error);
             Alert.alert(
-                t('redemption_failed_title'),
-                error.message || t('redemption_failed_message')
+                t('online_store_access_failed_title'),
+                error.message || t('online_store_access_failed_message')
             );
         } finally {
             setOnlineLoading(false);
@@ -418,7 +414,6 @@ export default function RedeemScreen() {
 
     if (isOnlineVendor) {
         const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
-        const remainingToday = onlinePreview?.remainingToday ?? 0;
 
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -472,10 +467,10 @@ export default function RedeemScreen() {
                                 ]}
                                 activeOpacity={0.85}
                                 onPress={handleCopyOnlineCode}
-                                disabled={!onlinePreview?.discountCode}
+                                disabled={!onlineOffer?.discountCode}
                             >
                                 <Text style={[styles.onlineCodeText, { color: theme.brandText }]}>
-                                    {onlinePreview?.discountCode || '----'}
+                                    {onlineOffer?.discountCode || '----'}
                                 </Text>
                                 <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={24} color={theme.brand} />
                             </TouchableOpacity>
@@ -483,16 +478,15 @@ export default function RedeemScreen() {
                             <Text style={[styles.onlineHint, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
                                 {onlineError || (copied ? t('online_code_copied') : t('online_copy_hint'))}
                             </Text>
-
-                            <View style={[styles.onlineLimitRow, { borderTopColor: theme.border, flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                <Ionicons name="calendar-outline" size={18} color={theme.iconMuted} />
-                                <Text style={[styles.onlineLimitText, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
-                                    {t('online_remaining_today', {
-                                        count: remainingToday,
-                                        limit: onlinePreview?.dailyLimitPerUser ?? 0,
-                                    })}
-                                </Text>
-                            </View>
+                            {onlineError ? (
+                                <TouchableOpacity
+                                    onPress={() => void refetchOnlineOffer()}
+                                    disabled={onlineOfferLoading}
+                                    style={styles.onlineRetryButton}
+                                >
+                                    <Text style={[styles.onlineRetryText, { color: theme.brandText }]}>{t('retry')}</Text>
+                                </TouchableOpacity>
+                            ) : null}
                         </View>
 
                         <TouchableOpacity
@@ -500,19 +494,19 @@ export default function RedeemScreen() {
                                 styles.redeemButton,
                                 { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid },
                                 { flexDirection: isArabic ? 'row-reverse' : 'row' },
-                                (!onlinePreview?.discountCode || remainingToday <= 0) && styles.redeemButtonDisabled,
+                                !onlineOffer?.discountCode && styles.redeemButtonDisabled,
                             ]}
                             activeOpacity={0.9}
-                            onPress={handleOnlinePurchase}
-                            disabled={!onlinePreview?.discountCode || remainingToday <= 0 || onlineLoading}
+                            onPress={handleOnlineStoreVisit}
+                            disabled={!onlineOffer?.discountCode || onlineLoading}
                         >
                             {onlineLoading ? (
                                 <ActivityIndicator size="small" color={theme.onActionSolid} />
                             ) : (
                                 <>
-                                    <Ionicons name="cart" size={20} color={theme.onActionSolid} />
+                                    <Ionicons name="open-outline" size={20} color={theme.onActionSolid} />
                                     <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
-                                        {t('online_purchase_caps')}
+                                        {t('online_visit_store_caps')}
                                     </AppText>
                                 </>
                             )}
@@ -964,17 +958,13 @@ const styles = StyleSheet.create({
         fontSize: 13,
         ...Typography.getTextVariantStyle('body'),
     },
-    onlineLimitRow: {
-        alignItems: 'center',
-        gap: 8,
-        marginTop: 18,
-        paddingTop: 18,
-        borderTopWidth: 1,
+    onlineRetryButton: {
+        alignSelf: 'flex-start',
+        paddingVertical: 8,
     },
-    onlineLimitText: {
-        flex: 1,
+    onlineRetryText: {
         fontSize: 13,
-        ...Typography.getTextVariantStyle('body'),
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     logoContainer: {
         position: 'absolute',

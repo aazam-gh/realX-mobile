@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@bottom-tabs/react-navigation": "^1.1.0",
-    "@expo-google-fonts/lato": "^0.4.1",
     "@expo/metro-runtime": "~56.0.15",
     "@expo/ui": "~56.0.18",
     "@expo/vector-icons": "^15.0.3",
@@ -47,7 +46,6 @@
     "expo-router": "~56.2.11",
     "expo-splash-screen": "~56.0.10",
     "expo-status-bar": "~56.0.4",
-    "expo-store-review": "~56.0.3",
     "expo-symbols": "~56.0.5",
     "expo-system-ui": "~56.0.5",
     "expo-updates": "~56.0.19",

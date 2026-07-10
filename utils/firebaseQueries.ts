@@ -241,7 +241,7 @@ export async function fetchRedemptionHistory(userId: string, pageSize = 10): Pro
     const historyQuery = query(
         collection(db, 'transactions'),
         where('userId', '==', userId),
-        where('type', 'in', ['offer', 'online_redemption']),
+        where('type', '==', 'offer'),
         orderBy('createdAt', 'desc'),
         limit(pageSize)
     );

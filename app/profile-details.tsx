@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { deleteUser, getAuth, signOut, updateProfile } from '@react-native-firebase/auth';
 import { doc, getFirestore, updateDoc } from '@react-native-firebase/firestore';

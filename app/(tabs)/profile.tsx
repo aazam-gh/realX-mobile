@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ImageBackground, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ImageBackground, LayoutChangeEvent, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { logger } from '../../utils/logger';
@@ -11,7 +12,6 @@ import { clearLocalAuthSession } from '../../utils/auth';
 import { toArabicDigits } from '../../utils/numbers';
 import { Typography } from '../../constants/Typography';
 import AppText from '../../components/AppText';
-import LanguagePickerModal from '../../components/LanguagePickerModal';
 import { useStudent } from '../../context/StudentContext';
 import UserAvatar from '../../components/UserAvatar';
 import { useAppTheme } from '../../context/AppThemeContext';
@@ -22,10 +22,16 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { isDark, theme } = useAppTheme();
-  const { isRTL } = useAppLocale();
+  const { isRTL, locale, isChanging, changeLocale } = useAppLocale();
   const { studentData: userData } = useStudent();
   const { isGuest, endGuestSession } = useAuthAccess();
-  const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
+  const changeLanguage = async (nextLocale: 'en' | 'ar') => {
+    try {
+      await changeLocale(nextLocale);
+    } catch {
+      Alert.alert(t('error'), t('language_change_failed'));
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -147,7 +153,13 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <View style={styles.menuContainer}>
-            <MenuItem icon="language-outline" label={t('change_language')} onPress={() => setLanguagePickerVisible(true)} isRTL={isRTL} />
+            <LanguageToggle
+              locale={locale}
+              englishLabel={t('english')}
+              arabicLabel={t('arabic')}
+              onChange={(nextLocale) => void changeLanguage(nextLocale)}
+              disabled={isChanging}
+            />
             <MenuItem
               icon="mail-outline"
               label={t('contact_us')}
@@ -168,7 +180,6 @@ export default function ProfileScreen() {
             />
           </View>
         </ScrollView>
-        <LanguagePickerModal visible={languagePickerVisible} onClose={() => setLanguagePickerVisible(false)} />
       </SafeAreaView>
     );
   }
@@ -291,7 +302,13 @@ export default function ProfileScreen() {
         <View style={styles.menuContainer}>
           <MenuItem icon="bookmark-outline" label={t('saved_offers')} onPress={() => router.push('/saved-offers' as any)} isRTL={isRTL} />
           <MenuItem icon="time-outline" label={t('redemption_history')} onPress={() => router.push('/redemption-history' as any)} isRTL={isRTL} />
-          <MenuItem icon="language-outline" label={t('change_language')} onPress={() => setLanguagePickerVisible(true)} isRTL={isRTL} />
+          <LanguageToggle
+            locale={locale}
+            englishLabel={t('english')}
+            arabicLabel={t('arabic')}
+            onChange={(nextLocale) => void changeLanguage(nextLocale)}
+            disabled={isChanging}
+          />
           <MenuItem
             icon="mail-outline"
             label={t('contact_us')}
@@ -322,8 +339,82 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-      <LanguagePickerModal visible={languagePickerVisible} onClose={() => setLanguagePickerVisible(false)} />
     </SafeAreaView>
+  );
+}
+
+function LanguageToggle({
+  locale,
+  englishLabel,
+  arabicLabel,
+  onChange,
+  disabled,
+}: {
+  locale: 'en' | 'ar';
+  englishLabel: string;
+  arabicLabel: string;
+  onChange: (nextLocale: 'en' | 'ar') => void;
+  disabled: boolean;
+}) {
+  const { theme } = useAppTheme();
+  const [trackWidth, setTrackWidth] = useState(0);
+  const thumbOffset = useSharedValue(0);
+  const thumbWidth = Math.max((trackWidth - 8) / 2, 0);
+
+  useEffect(() => {
+    if (!thumbWidth) return;
+
+    thumbOffset.value = withTiming(locale === 'en' ? 0 : thumbWidth, {
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [locale, thumbOffset, thumbWidth]);
+
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: thumbOffset.value }],
+  }));
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    setTrackWidth(event.nativeEvent.layout.width);
+  };
+
+  return (
+    <View
+      style={[styles.languageToggle, { backgroundColor: theme.cardMuted, direction: 'ltr' }, disabled && styles.languageToggleDisabled]}
+      onLayout={handleLayout}
+      accessibilityRole="radiogroup"
+    >
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.languageToggleThumb, { width: thumbWidth, backgroundColor: theme.brand }, thumbStyle]}
+      />
+      <TouchableOpacity
+        style={styles.languageToggleOption}
+        onPress={() => onChange('en')}
+        disabled={disabled || locale === 'en'}
+        activeOpacity={0.8}
+        accessibilityRole="radio"
+        accessibilityLabel={englishLabel}
+        accessibilityState={{ selected: locale === 'en', disabled }}
+      >
+        <Text style={[styles.languageToggleLabel, { color: locale === 'en' ? '#FFFFFF' : theme.text }]}>
+          {englishLabel}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.languageToggleOption}
+        onPress={() => onChange('ar')}
+        disabled={disabled || locale === 'ar'}
+        activeOpacity={0.8}
+        accessibilityRole="radio"
+        accessibilityLabel={arabicLabel}
+        accessibilityState={{ selected: locale === 'ar', disabled }}
+      >
+        <Text style={[styles.languageToggleLabel, { color: locale === 'ar' ? '#FFFFFF' : theme.text }]}>
+          {arabicLabel}
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -334,6 +425,7 @@ function MenuItem({
   color,
   bgColor,
   isRTL,
+  disabled = false,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -341,6 +433,7 @@ function MenuItem({
   color?: string;
   bgColor?: string;
   isRTL: boolean;
+  disabled?: boolean;
 }) {
   const { theme } = useAppTheme();
 
@@ -352,6 +445,7 @@ function MenuItem({
       ]}
       activeOpacity={0.7}
       onPress={onPress}
+      disabled={disabled}
     >
       <View style={[styles.menuItemLeft]}>
         <Ionicons name={icon} size={24} color={color || theme.icon} />
@@ -598,6 +692,35 @@ const styles = StyleSheet.create({
   },
   menuItemLabel: {
     fontSize: 16,
+    ...Typography.getTextVariantStyle('bodyStrong'),
+  },
+  languageToggle: {
+    minHeight: 64,
+    borderRadius: 32,
+    padding: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  languageToggleDisabled: {
+    opacity: 0.65,
+  },
+  languageToggleThumb: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    left: 4,
+    borderRadius: 28,
+  },
+  languageToggleOption: {
+    flex: 1,
+    minHeight: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  languageToggleLabel: {
+    fontSize: 16,
+    textAlign: 'center',
     ...Typography.getTextVariantStyle('bodyStrong'),
   },
   logoutPill: {

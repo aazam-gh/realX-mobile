@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { memo, useMemo } from 'react';
-import { I18nManager, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 
 function CategoryHeader({ title, icon, onBackPress }: Props) {
     const { theme } = useAppTheme();
+    const { isRTL } = useAppLocale();
     const imageSource = useMemo(() => {
         if (typeof icon === 'string') {
             return { uri: icon };
@@ -27,7 +29,7 @@ function CategoryHeader({ title, icon, onBackPress }: Props) {
                 onPress={onBackPress}
                 activeOpacity={0.7}
             >
-                <Ionicons name={I18nManager.isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
+                <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
             </TouchableOpacity>
 
 
@@ -40,7 +42,7 @@ function CategoryHeader({ title, icon, onBackPress }: Props) {
                         contentFit="cover"
                     />
                 )}
-                <Text style={[styles.title, { color: theme.text }, I18nManager.isRTL && styles.titleRTL]}>{title}</Text>
+                <Text style={[styles.title, { color: theme.text }, isRTL && styles.titleRTL]}>{title}</Text>
             </View>
         </View>
     );

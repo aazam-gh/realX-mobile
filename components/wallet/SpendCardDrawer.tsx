@@ -7,7 +7,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
-    I18nManager,
     Keyboard,
     Modal,
     StyleSheet,
@@ -26,6 +25,7 @@ import RedeemGiftCard from './RedeemGiftCard';
 import type { WalletBrand } from './types';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { fetchXcardBrandsPage } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 
@@ -110,9 +110,9 @@ export default function SpendCardDrawer({
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const { t, i18n } = useTranslation();
-    const isRTL = I18nManager.isRTL;
-    const isArabic = i18n.language === 'ar' || isRTL;
+    const { t } = useTranslation();
+    const { locale, isRTL } = useAppLocale();
+    const isArabic = locale === 'ar';
     const fetchingRef = useRef(false);
     const requestIdRef = useRef(0);
     const searchQueryRef = useRef('');

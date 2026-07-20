@@ -3,7 +3,6 @@ import { Image } from 'expo-image';
 import { useEffect, useMemo } from 'react';
 import {
     ActivityIndicator,
-    I18nManager,
     Linking,
     StyleProp,
     StyleSheet,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 
 import { Colors } from '../../constants/Colors';
+import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 import { fetchCmsDocument } from '../../utils/firebaseQueries';
@@ -58,7 +58,7 @@ function sortByOrder(a: FeaturedBannerItem, b: FeaturedBannerItem) {
 
 export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
     const { width } = useWindowDimensions();
-    const isRTL = I18nManager.isRTL;
+    const { isRTL } = useAppLocale();
     const {
         data: cmsItem = null,
         error,

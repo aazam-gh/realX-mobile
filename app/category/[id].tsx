@@ -16,6 +16,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { SearchBar } from '../../components/home';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import { CategoryVendorCursor, fetchCategory, fetchCategoryVendorsPage } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
@@ -197,9 +198,10 @@ HeaderContent.displayName = 'HeaderContent';
 export default function CategoryScreen() {
     const { id, name, englishName } = useLocalSearchParams<{ id: string; name?: string; englishName?: string }>();
     const router = useRouter();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { isDark, theme } = useAppTheme();
-    const isArabic = i18n.language === 'ar';
+    const { locale } = useAppLocale();
+    const isArabic = locale === 'ar';
 
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [selectedSubCategory, setSelectedSubCategory] = useState('all');

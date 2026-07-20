@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { I18nManager, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import ScalePressable from '../ScalePressable';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
+import { useAppLocale } from '../../context/LocaleContext';
 
 type Props = {
     onPress?: () => void;
@@ -24,7 +25,7 @@ export default function SpendButton({
     variant = 'default',
 }: Props) {
     const { t } = useTranslation();
-    const isRTL = I18nManager.isRTL;
+    const { isRTL } = useAppLocale();
     return (
         <View style={styles.container}>
             <ScalePressable

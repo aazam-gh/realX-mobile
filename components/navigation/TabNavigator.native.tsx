@@ -2,9 +2,10 @@ import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { createBottomTabNavigator } from 'expo-router/js-tabs';
 import { withLayoutContext } from 'expo-router';
-import { I18nManager, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 
 const NativeTabs = withLayoutContext(createNativeBottomTabNavigator().Navigator);
 const JSTabs = withLayoutContext(createBottomTabNavigator().Navigator);
@@ -12,6 +13,7 @@ const JSTabs = withLayoutContext(createBottomTabNavigator().Navigator);
 export default function TabNavigator() {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
+  const { direction, isRTL } = useAppLocale();
   const Tabs = Platform.OS === 'ios' ? NativeTabs : JSTabs;
   const isIos = Platform.OS === 'ios';
   const screens = [
@@ -23,6 +25,7 @@ export default function TabNavigator() {
 
   return (
     <Tabs
+      {...(isIos ? { layoutDirection: direction } : {})}
       screenOptions={{
         tabBarActiveTintColor: theme.brand,
         tabBarInactiveTintColor: theme.iconMuted,
@@ -34,7 +37,7 @@ export default function TabNavigator() {
         }),
       } as any}
     >
-      {(I18nManager.isRTL ? [...screens].reverse() : screens).map((screen) => (
+      {(isIos || !isRTL ? screens : [...screens].reverse()).map((screen) => (
         <Tabs.Screen
           key={screen.name}
           name={screen.name}

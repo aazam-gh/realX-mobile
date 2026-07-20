@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
-import { I18nManager, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Typography } from '../../constants/Typography';
+import { useAppLocale } from '../../context/LocaleContext';
 import AppText from '../AppText';
 import XCardGlassLayer, {
   getGlassStrength,
@@ -35,9 +36,9 @@ type Props = {
 };
 
 export default function XCard({ earnings = 0, currency = 'XP', creatorCode, glass = 'liquid', tilt = true }: Props) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+  const { isRTL } = useAppLocale();
   const cardWidth = Math.min(width - CARD_HORIZONTAL_GUTTER, CARD_MAX_WIDTH);
   const cardHeight = cardWidth / CARD_ASPECT_RATIO;
   const amount = formatAmount(earnings);

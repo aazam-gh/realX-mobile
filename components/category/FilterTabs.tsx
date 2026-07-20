@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { type ComponentProps, useEffect, useMemo } from 'react';
-import { I18nManager, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 
 type FilterOption = {
     id: string;
@@ -21,6 +22,7 @@ interface FilterTabsProps {
 export default function FilterTabs({ selectedFilter, onFilterChange, filters }: FilterTabsProps) {
     const { t } = useTranslation();
     const { isDark, theme } = useAppTheme();
+    const { isRTL } = useAppLocale();
     const { width } = useWindowDimensions();
 
     const currentFilters = useMemo<FilterOption[]>(() => filters || [
@@ -95,7 +97,7 @@ export default function FilterTabs({ selectedFilter, onFilterChange, filters }: 
                                 size={20}
                                 color={isSelected ? selectedColor : inactiveColor}
                             />
-                            <Text style={[styles.filterText, { color: isSelected ? selectedColor : inactiveColor }]}>
+                            <Text style={[styles.filterText, { color: isSelected ? selectedColor : inactiveColor, marginTop: isRTL ? -2 : 0 }]}>
                                 {filter.label}
                             </Text>
                         </TouchableOpacity>
@@ -137,6 +139,5 @@ const styles = StyleSheet.create({
     filterText: {
         fontSize: 14,
         ...Typography.getTextVariantStyle('bodyStrong'),
-        marginTop: I18nManager.isRTL ? -2 : 0,
     },
 });

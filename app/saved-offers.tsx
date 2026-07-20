@@ -5,12 +5,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, I18nManager, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
 import { useAppTheme } from '../context/AppThemeContext';
 import { useAuthAccess } from '../context/AuthAccessContext';
+import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
@@ -21,10 +22,11 @@ type SavedOffer = SavedOfferItem;
 
 export default function SavedOffersScreen() {
   const router = useRouter();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { isDark, theme } = useAppTheme();
   const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
-  const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+  const { locale } = useAppLocale();
+  const isArabic = locale === 'ar';
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
   const userId = getAuth().currentUser?.uid ?? null;
 

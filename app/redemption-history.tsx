@@ -5,10 +5,11 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, FlatList, I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../context/AppThemeContext';
 import { useAuthAccess } from '../context/AuthAccessContext';
+import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import AppText from '../components/AppText';
 import { triggerSubtleHaptic } from '../utils/haptics';
@@ -29,10 +30,11 @@ import { queryKeys } from '../utils/queryClient';
 type Transaction = RedemptionHistoryTransaction;
 
 export default function RedemptionHistoryScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { theme } = useAppTheme();
   const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
-  const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+  const { locale } = useAppLocale();
+  const isArabic = locale === 'ar';
   const currency = t('currency_qar');
   const fmt = (n: number, decimals = 0) => isArabic ? toArabicDigits(n.toFixed(decimals)) : n.toFixed(decimals);
   const router = useRouter();

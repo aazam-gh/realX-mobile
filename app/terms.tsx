@@ -1,14 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { I18nManager, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../context/AppThemeContext';
+import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 
 export default function TermsScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
-    const isRTL = I18nManager.isRTL;
+    const { isRTL } = useAppLocale();
 
     const handleBack = () => {
         router.back();

@@ -6,7 +6,6 @@ import React, { useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    I18nManager,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -18,6 +17,7 @@ import {
     View,
 } from 'react-native';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import AppText from '../AppText';
@@ -61,8 +61,8 @@ export default function GiftCardCheckout({
     const remainingAmount = Math.max(0, totalBillNum - selectedAmount);
 
     const canRedeem = pin.length === 4 && totalBillNum > 0;
-    const { t, i18n } = useTranslation();
-    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+    const { t } = useTranslation();
+    const { isRTL } = useAppLocale();
     const pinBoxSize = Math.min(65, Math.max(54, (width - 144) / 4));
 
     const handleRedeem = async () => {

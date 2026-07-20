@@ -6,7 +6,6 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  I18nManager,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -18,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import AppText from '../../components/AppText';
 import {
@@ -36,7 +36,7 @@ export default function UploadIdScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { theme } = useAppTheme();
-  const isRTL = I18nManager.isRTL;
+  const { isRTL } = useAppLocale();
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
   const { role } = useLocalSearchParams<{ role?: string }>();
 

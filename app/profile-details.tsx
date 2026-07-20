@@ -8,7 +8,6 @@ import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    I18nManager,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -24,6 +23,7 @@ import { logger } from '../utils/logger';
 import { unregisterExpoPushTokenForCurrentUser } from '../utils/pushNotifications';
 import { useAppTheme } from '../context/AppThemeContext';
 import { useAuthAccess } from '../context/AuthAccessContext';
+import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import AppText from '../components/AppText';
 import UserAvatar from '../components/UserAvatar';
@@ -33,9 +33,9 @@ import { queryClient, queryKeys } from '../utils/queryClient';
 export default function ProfileDetailsScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
-    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+    const { isRTL } = useAppLocale();
     const backIconName: keyof typeof Ionicons.glyphMap = isRTL ? 'arrow-forward' : 'arrow-back';
 
     // Form states

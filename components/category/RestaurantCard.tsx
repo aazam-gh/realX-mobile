@@ -1,9 +1,9 @@
 import { Image } from 'expo-image';
-import { useTranslation } from 'react-i18next';
-import { I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 
 const cashbackBadgeIcon = require('../../assets/images/cashback.png');
@@ -36,9 +36,9 @@ export default function RestaurantCard({
   style,
   xcardEnabled = false,
 }: Props) {
-  const { i18n } = useTranslation();
   const { theme } = useAppTheme();
-  const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+  const { locale } = useAppLocale();
+  const isArabic = locale === 'ar';
 
   const handlePress = () => {
     triggerSubtleHaptic();

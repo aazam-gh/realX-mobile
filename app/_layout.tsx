@@ -17,8 +17,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import AppUpdatePrompt from '../components/AppUpdatePrompt';
+import { LocaleProvider } from '../context/LocaleContext';
 import { initI18n } from '../src/localization/i18n';
-import { applyRTL } from '../src/localization/rtl';
+import { migrateLegacyGlobalRTL } from '../src/localization/legacyRtlMigration';
 import {
   setupNotificationChannels,
 } from '../utils/notifications';
@@ -77,13 +78,18 @@ export default function RootLayout() {
 
   useEffect(() => {
     const setupLocalization = async () => {
+      let reloading = false;
+
       try {
-        const language = await initI18n();
-        applyRTL(language as 'en' | 'ar');
+        reloading = await migrateLegacyGlobalRTL();
+        if (reloading) return;
+        await initI18n();
       } catch (err) {
         logger.error('Error initializing localization:', err);
       } finally {
-        setI18nReady(true);
+        if (!reloading) {
+          setI18nReady(true);
+        }
       }
     };
 
@@ -101,22 +107,24 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <AppThemeProvider>
-          <AuthAccessProvider>
-            <StudentProvider>
-              <LayoutContent
-                user={user}
-                loaded={loaded}
-                error={error}
-                i18nReady={i18nReady}
-                appCheckReady={appCheckReady}
-                initializing={initializing}
-                showSplash={showSplash}
-                onSplashFinish={() => setShowSplash(false)}
-              />
-            </StudentProvider>
-          </AuthAccessProvider>
-        </AppThemeProvider>
+        <LocaleProvider>
+          <AppThemeProvider>
+            <AuthAccessProvider>
+              <StudentProvider>
+                <LayoutContent
+                  user={user}
+                  loaded={loaded}
+                  error={error}
+                  i18nReady={i18nReady}
+                  appCheckReady={appCheckReady}
+                  initializing={initializing}
+                  showSplash={showSplash}
+                  onSplashFinish={() => setShowSplash(false)}
+                />
+              </StudentProvider>
+            </AuthAccessProvider>
+          </AppThemeProvider>
+        </LocaleProvider>
       </SafeAreaProvider>
     </QueryClientProvider>
   );

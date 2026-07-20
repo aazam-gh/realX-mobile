@@ -1,59 +1,31 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, I18nManager, ImageBackground, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ImageBackground, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Updates from 'expo-updates';
 
 import { logger } from '../../utils/logger';
 import { clearLocalAuthSession } from '../../utils/auth';
 import { toArabicDigits } from '../../utils/numbers';
 import { Typography } from '../../constants/Typography';
 import AppText from '../../components/AppText';
-import i18n, { setStoredLanguage } from '../../src/localization/i18n';
-import { applyRTL } from '../../src/localization/rtl';
+import LanguagePickerModal from '../../components/LanguagePickerModal';
 import { useStudent } from '../../context/StudentContext';
 import UserAvatar from '../../components/UserAvatar';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
+import { useAppLocale } from '../../context/LocaleContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { isDark, theme } = useAppTheme();
-  const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+  const { isRTL } = useAppLocale();
   const { studentData: userData } = useStudent();
   const { isGuest, endGuestSession } = useAuthAccess();
-
-  const changeLanguage = async (language: 'en' | 'ar') => {
-    if (i18n.language === language) {
-      return;
-    }
-
-    try {
-      await i18n.changeLanguage(language);
-      await setStoredLanguage(language);
-      applyRTL(language);
-      await Updates.reloadAsync();
-    } catch (error) {
-      logger.error('Language change error:', error);
-      Alert.alert(t('restart_required'), t('restart_message'));
-    }
-  };
-
-  const handleChangeLanguage = () => {
-    Alert.alert(
-      t('select_language'),
-      '',
-      [
-        { text: t('english'), onPress: () => void changeLanguage('en') },
-        { text: t('arabic'), onPress: () => void changeLanguage('ar') },
-        { text: t('cancel'), style: 'cancel' },
-      ]
-    );
-  };
+  const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -175,7 +147,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <View style={styles.menuContainer}>
-            <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} isRTL={isRTL} />
+            <MenuItem icon="language-outline" label={t('change_language')} onPress={() => setLanguagePickerVisible(true)} isRTL={isRTL} />
             <MenuItem
               icon="mail-outline"
               label={t('contact_us')}
@@ -196,6 +168,7 @@ export default function ProfileScreen() {
             />
           </View>
         </ScrollView>
+        <LanguagePickerModal visible={languagePickerVisible} onClose={() => setLanguagePickerVisible(false)} />
       </SafeAreaView>
     );
   }
@@ -318,7 +291,7 @@ export default function ProfileScreen() {
         <View style={styles.menuContainer}>
           <MenuItem icon="bookmark-outline" label={t('saved_offers')} onPress={() => router.push('/saved-offers' as any)} isRTL={isRTL} />
           <MenuItem icon="time-outline" label={t('redemption_history')} onPress={() => router.push('/redemption-history' as any)} isRTL={isRTL} />
-          <MenuItem icon="language-outline" label={t('change_language')} onPress={handleChangeLanguage} isRTL={isRTL} />
+          <MenuItem icon="language-outline" label={t('change_language')} onPress={() => setLanguagePickerVisible(true)} isRTL={isRTL} />
           <MenuItem
             icon="mail-outline"
             label={t('contact_us')}
@@ -349,6 +322,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <LanguagePickerModal visible={languagePickerVisible} onClose={() => setLanguagePickerVisible(false)} />
     </SafeAreaView>
   );
 }

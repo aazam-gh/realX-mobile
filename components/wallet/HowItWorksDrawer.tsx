@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import {
-    I18nManager,
     Platform,
     StyleSheet,
     Text,
@@ -13,6 +12,7 @@ import { Typography } from '../../constants/Typography';
 import AppText from '../AppText';
 import AndroidBottomSheetModal from '../AndroidBottomSheetModal';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { toArabicDigits } from '../../utils/numbers';
 import { BottomSheetOverscanBackground, getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
 
@@ -73,9 +73,10 @@ function StepItem({ step, isArabic }: StepItemProps) {
 export default function HowItWorksDrawer({ visible, onClose }: Props) {
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { theme } = useAppTheme();
-    const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+    const { locale } = useAppLocale();
+    const isArabic = locale === 'ar';
     const sheetBackgroundModifiers = useMemo(
         () => getBottomSheetBackgroundModifiers(theme.surfaceElevated),
         [theme.surfaceElevated],

@@ -15,6 +15,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import AppText from '../../components/AppText';
@@ -93,10 +94,11 @@ export default function VendorScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { height: windowHeight, width: windowWidth } = useWindowDimensions();
-    const { i18n, t } = useTranslation();
+    const { t } = useTranslation();
     const { isDark, theme } = useAppTheme();
     const { requireAuth } = useAuthAccess();
-    const isArabic = i18n.language === 'ar';
+    const { locale } = useAppLocale();
+    const isArabic = locale === 'ar';
     const termsSheetWidth = Math.max(0, windowWidth - 32);
     const [vendor, setVendor] = useState<any>(null);
     const [offers, setOffers] = useState<any[]>([]);

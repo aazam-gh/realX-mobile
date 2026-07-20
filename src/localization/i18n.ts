@@ -33,6 +33,10 @@ export async function setStoredLanguage(language: 'en' | 'ar') {
   await AsyncStorage.setItem(LANGUAGE_KEY, language);
 }
 
+export async function clearStoredLanguage() {
+  await AsyncStorage.removeItem(LANGUAGE_KEY);
+}
+
 export async function initI18n() {
   const storedLanguage = await getStoredLanguage();
   const initialLanguage = storedLanguage ?? getDeviceLanguage();

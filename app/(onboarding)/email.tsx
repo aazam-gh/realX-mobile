@@ -6,7 +6,6 @@ import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  I18nManager,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import AppText from '../../components/AppText';
 import {
@@ -54,7 +54,7 @@ export default function EmailOnboarding() {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
 
-  const isRTL = I18nManager.isRTL;
+  const { isRTL } = useAppLocale();
   const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
   const inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
   const roleTitle = role === 'creator' ? t('onboarding_email_title_creator') : t('onboarding_email_title_student');

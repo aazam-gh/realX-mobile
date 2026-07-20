@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View, I18nManager } from 'react-native';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import RestaurantCard from './RestaurantCard';
 
@@ -29,10 +30,11 @@ export default function BrowseSection({
     restaurants = [],
     onRestaurantPress,
 }: Props) {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { width } = useWindowDimensions();
     const { theme } = useAppTheme();
-    const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+    const { locale } = useAppLocale();
+    const isArabic = locale === 'ar';
     const cardWidth = Math.min(180, Math.max(150, Math.floor(width * 0.43)));
 
     const displayTitle = title || (mainCategory 

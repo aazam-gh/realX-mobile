@@ -2,13 +2,14 @@ import { collection, getDocs, getFirestore, limit, query, where } from '@react-n
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, I18nManager, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import RestaurantCard from '../category/RestaurantCard';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import { logger } from '../../utils/logger';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { fetchCmsDocument, fetchVendor } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 import AppText from '../AppText';
@@ -55,7 +56,7 @@ const mapVendorDocToCard = (vendorId: string, vendorData: any, customBannerImage
 export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
-    const isRTL = I18nManager.isRTL;
+    const { isRTL } = useAppLocale();
     const {
         data: vendors = [],
         error,

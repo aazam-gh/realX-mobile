@@ -1,7 +1,8 @@
-import { I18nManager, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import MascotThemeButton from './MascotThemeButton';
 
 type Props = {
@@ -11,9 +12,9 @@ type Props = {
 const USER_NAME_PLACEHOLDER = '__USER_NAME__';
 
 export default function GreetingHeader({ userName }: Props) {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { theme } = useAppTheme();
-    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+    const { isRTL } = useAppLocale();
     const textAlignStyle = { textAlign: (isRTL ? 'right' : 'left') as 'right' | 'left' };
     const rawGreeting = t('greeting_line', { name: USER_NAME_PLACEHOLDER });
     const [prefix, suffix] = rawGreeting.split(USER_NAME_PLACEHOLDER);

@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
 import {
   ActivityIndicator,
-  I18nManager,
   Linking,
   ScrollView,
   StyleSheet,
@@ -20,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import AppText from '../components/AppText';
 import { useAppTheme } from '../context/AppThemeContext';
+import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import { fetchCmsDocument } from '../utils/firebaseQueries';
 import { queryKeys } from '../utils/queryClient';
@@ -36,9 +36,9 @@ type University = {
 export default function XAcademyScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { theme } = useAppTheme();
-  const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+  const { locale, isRTL } = useAppLocale();
 
   const {
     data: universities = [],
@@ -133,7 +133,7 @@ export default function XAcademyScreen() {
             <View style={styles.listContainer}>
               {universities.map(uni => {
                 const uniName =
-                  i18n.language === 'ar'
+                  locale === 'ar'
                     ? uni.nameAr || uni.nameEn
                     : uni.nameEn || uni.nameAr;
 

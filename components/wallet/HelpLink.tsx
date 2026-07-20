@@ -1,9 +1,10 @@
-import { I18nManager, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import ScalePressable from '../ScalePressable';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 
 type Props = {
     onPress?: () => void;
@@ -12,7 +13,7 @@ type Props = {
 export default function HelpLink({ onPress }: Props) {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
-    const isRTL = I18nManager.isRTL;
+    const { isRTL } = useAppLocale();
     return (
         <View style={styles.container}>
             <ScalePressable

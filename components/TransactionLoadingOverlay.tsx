@@ -13,6 +13,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Typography } from '../constants/Typography';
+import { useAppLocale } from '../context/LocaleContext';
 
 const transactionLoaderSource = require('../assets/images/loaders/realx-transaction-loader.gif');
 const LOADER_GREEN = '#2FC569';
@@ -31,10 +32,11 @@ export default function TransactionLoadingOverlay({
   visible,
   label,
 }: TransactionLoadingOverlayProps) {
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
+  const { locale } = useAppLocale();
   const reduceMotion = useReducedMotion();
   const resolvedLabel = label || t('transaction_processing');
-  const isArabic = i18n.language === 'ar';
+  const isArabic = locale === 'ar';
   const circleScale = useSharedValue(1);
   const contentOpacity = useSharedValue(0);
   const contentScale = useSharedValue(0.96);

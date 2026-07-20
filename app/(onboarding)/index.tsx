@@ -2,10 +2,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import * as Updates from 'expo-updates';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { I18nManager, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
 import {
@@ -21,19 +20,19 @@ import {
 import StaggeredHeadingText from '../../components/onboarding/StaggeredHeadingText';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
-import { setStoredLanguage } from '../../src/localization/i18n';
-import { applyRTL } from '../../src/localization/rtl';
+import { logger } from '../../utils/logger';
 
 export default function OnboardingScreen() {
     const router = useRouter();
     const { width, height } = useWindowDimensions();
     const [step, setStep] = useState(0);
 
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { theme } = useAppTheme();
     const { continueAsGuest } = useAuthAccess();
-    const isRTL = I18nManager.isRTL;
+    const { locale, isRTL, isChanging, changeLocale } = useAppLocale();
     const compactWidth = width < 390;
     const compactHeight = height < 820;
     const mascotWidth = width * (isRTL ? (compactWidth ? 0.88 : 0.92) : (compactWidth ? 0.8 : 0.85));
@@ -41,11 +40,12 @@ export default function OnboardingScreen() {
     const roleImageSize = compactWidth ? 84 : 100;
 
     const changeLanguage = async (lang: 'en' | 'ar') => {
-        if (i18n.language === lang) return;
-        await setStoredLanguage(lang);
-        await i18n.changeLanguage(lang);
-        applyRTL(lang);
-        await Updates.reloadAsync();
+        try {
+            await changeLocale(lang);
+        } catch (error) {
+            logger.error('Language change error:', error);
+            Alert.alert(t('error'), t('language_change_failed'));
+        }
     };
 
     const handleGetStarted = () => {
@@ -125,12 +125,12 @@ export default function OnboardingScreen() {
                             </Text>
 
                             <View style={styles.languageSwitcher}>
-                                <TouchableOpacity onPress={() => changeLanguage('en')}>
-                                    <Text style={[styles.langText, i18n.language === 'en' && styles.langTextActive]}>English</Text>
+                                <TouchableOpacity disabled={isChanging} onPress={() => void changeLanguage('en')}>
+                                    <Text style={[styles.langText, locale === 'en' && styles.langTextActive]}>English</Text>
                                 </TouchableOpacity>
                                 <Text style={styles.langSeparator}> | </Text>
-                                <TouchableOpacity onPress={() => changeLanguage('ar')}>
-                                    <Text style={[styles.langText, i18n.language === 'ar' && styles.langTextActive]}>العربية</Text>
+                                <TouchableOpacity disabled={isChanging} onPress={() => void changeLanguage('ar')}>
+                                    <Text style={[styles.langText, locale === 'ar' && styles.langTextActive]}>العربية</Text>
                                 </TouchableOpacity>
                             </View>
                             <OnboardingButtonMotion enabled>

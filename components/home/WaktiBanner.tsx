@@ -3,7 +3,6 @@ import { Image } from 'expo-image';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    I18nManager,
     Platform,
     StyleProp,
     StyleSheet,
@@ -23,6 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Typography } from '../../constants/Typography';
+import { useAppLocale } from '../../context/LocaleContext';
 import AndroidBottomSheetModal from '../AndroidBottomSheetModal';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
@@ -45,7 +45,7 @@ type WaktiBannerProps = {
 
 export default function WaktiBanner({ style }: WaktiBannerProps) {
     const [isSheetPresented, setIsSheetPresented] = useState(false);
-    const isRTL = I18nManager.isRTL;
+    const { isRTL } = useAppLocale();
     const { t } = useTranslation();
     const sheetBackgroundModifiers = useMemo(
         () => getBottomSheetBackgroundModifiers(waktiSheetBackgroundColor),

@@ -1,10 +1,11 @@
-import { I18nManager, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useTranslation } from 'react-i18next';
 import { toArabicDigits } from '../../utils/numbers';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 
 export type RedemptionData = {
     id: string;
@@ -25,9 +26,10 @@ type Props = {
 };
 
 export default function RedemptionItem({ item }: Props) {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { theme } = useAppTheme();
-    const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+    const { locale } = useAppLocale();
+    const isArabic = locale === 'ar';
     const fmt = (n: number) => isArabic ? toArabicDigits(n.toFixed(2)) : n.toFixed(2);
 
     return (

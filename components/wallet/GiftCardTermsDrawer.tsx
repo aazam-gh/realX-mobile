@@ -1,7 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 import {
-    I18nManager,
     Platform,
     ScrollView,
     StyleSheet,
@@ -13,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import AndroidBottomSheetModal from '../AndroidBottomSheetModal';
 import { BottomSheetOverscanBackground, getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
@@ -30,8 +30,8 @@ export default function GiftCardTermsDrawer({
     const insets = useSafeAreaInsets();
     const { height: windowHeight, width: windowWidth } = useWindowDimensions();
     const { theme } = useAppTheme();
-    const { t, i18n } = useTranslation();
-    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+    const { t } = useTranslation();
+    const { isRTL } = useAppLocale();
     const sheetWidth = Math.max(0, windowWidth - 32);
     const sheetMaxHeight = Math.max(0, windowHeight * 0.5 - insets.bottom);
     const sheetBodyMaxHeight = Math.max(0, sheetMaxHeight - 120);

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 import { fetchCategories } from '../../utils/firebaseQueries';
@@ -31,11 +32,12 @@ const SEE_MORE_IMAGE = require('../../assets/images/see-more.svg');
 export default function CategoryGrid({ categories: propCategories, onCategoryPress }: Props) {
     const router = useRouter();
     const { height, width } = useWindowDimensions();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+    const { locale } = useAppLocale();
     const { theme } = useAppTheme();
     const [isDrawerVisible, setIsDrawerVisible] = useState(false);
 
-    const isArabic = i18n.language === 'ar';
+    const isArabic = locale === 'ar';
 
     const {
         data: fetchedCategories = [],

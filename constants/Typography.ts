@@ -1,11 +1,16 @@
-import { I18nManager, type TextStyle } from 'react-native';
-
-const isArabic = I18nManager.isRTL;
+import type { TextStyle } from 'react-native';
 
 export const FontFamilyTokens = {
-    display: isArabic ? 'JaliArabicBold' : 'Hanson',
-    body: isArabic ? 'JaliArabicRegular' : 'Poppins',
-    bodyStrong: isArabic ? 'JaliArabicBold' : 'Poppins',
+    display: 'Hanson',
+    body: 'Poppins',
+    bodyStrong: 'Poppins',
+    displayArabicBlack: 'TajawalBlack',
+} as const;
+
+export const ArabicFontFamilyTokens = {
+    display: 'JaliArabicBold',
+    body: 'JaliArabicRegular',
+    bodyStrong: 'JaliArabicBold',
     displayArabicBlack: 'TajawalBlack',
 } as const;
 
@@ -43,11 +48,18 @@ export function getTextVariantStyle(variant: TextVariant): TextStyle {
     return textVariantStyles[variant];
 }
 
+export function getLocalizedTextVariantStyle(variant: TextVariant, locale: 'en' | 'ar'): TextStyle {
+    return {
+        fontFamily: locale === 'ar' ? ArabicFontFamilyTokens[variant] : FontFamilyTokens[variant],
+        fontStyle: 'normal',
+    };
+}
+
 export function getTextDirectionStyle({
     isRTL: explicitRTL,
     textAlign,
 }: TextDirectionOptions = {}): TextStyle {
-    const rtl = explicitRTL ?? isArabic;
+    const rtl = explicitRTL ?? false;
 
     return {
         writingDirection: rtl ? 'rtl' : 'ltr',
@@ -69,6 +81,7 @@ export const Typography = {
     fontFamily: FontFamilyTokens,
     variants: textVariantStyles,
     getTextVariantStyle,
+    getLocalizedTextVariantStyle,
     getTextDirectionStyle,
 } as const;
 

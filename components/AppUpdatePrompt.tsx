@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
-    I18nManager,
     Modal,
     Pressable,
     StyleSheet,
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Typography } from '../constants/Typography';
 import { useAppTheme } from '../context/AppThemeContext';
+import { useAppLocale } from '../context/LocaleContext';
 import {
     defaultAppUpdatePromptState,
     fetchAppUpdatePromptState,
@@ -28,7 +28,7 @@ export default function AppUpdatePrompt() {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
     const insets = useSafeAreaInsets();
-    const isRTL = I18nManager.isRTL;
+    const { isRTL } = useAppLocale();
     const [dismissed, setDismissed] = useState(false);
     const [openingStore, setOpeningStore] = useState(false);
     const {

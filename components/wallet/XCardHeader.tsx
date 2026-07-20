@@ -1,13 +1,15 @@
-import { I18nManager, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import AppText from '../AppText';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 
 export default function XCardHeader() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { theme } = useAppTheme();
-    const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+    const { locale } = useAppLocale();
+    const isArabic = locale === 'ar';
 
     return (
         <View style={styles.container}>

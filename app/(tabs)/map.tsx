@@ -12,7 +12,7 @@ import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, I18nManager, Linking, Platform, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, Polyline, Region } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Supercluster, { ClusterFeature, PointFeature } from 'supercluster';
@@ -34,6 +34,7 @@ import {
 } from '../../utils/mapGeo';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { fetchMapLocations, fetchMapLocationsByPrefixes, fetchSavedMapPlaceIds, searchMapLocations } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 
@@ -159,11 +160,12 @@ function mapFetchKey(region: Region) {
 }
 
 export default function MapScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { isDark, theme } = useAppTheme();
   const { requireAuth } = useAuthAccess();
   const router = useRouter();
-  const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+  const { locale } = useAppLocale();
+  const isArabic = locale === 'ar';
   const insets = useSafeAreaInsets();
 
   const mapRef = useRef<MapView>(null);

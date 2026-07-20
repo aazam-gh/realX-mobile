@@ -2,13 +2,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
-    I18nManager,
     ScrollView,
     StyleSheet,
     Text,
     View,
 } from 'react-native';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import ScalePressable from '../ScalePressable';
 import AppText from '../AppText';
@@ -39,8 +39,8 @@ export default function RedeemGiftCard({
     const [selectedAmount, setSelectedAmount] = useState(amounts[0]);
     const [showCheckout, setShowCheckout] = useState(false);
     const [showTerms, setShowTerms] = useState(false);
-    const { t, i18n } = useTranslation();
-    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+    const { t } = useTranslation();
+    const { isRTL } = useAppLocale();
 
     if (showCheckout) {
         return (

@@ -1,15 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { createBottomTabNavigator } from 'expo-router/js-tabs';
 import { withLayoutContext } from 'expo-router';
-import { I18nManager } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 
 const Tabs = withLayoutContext(createBottomTabNavigator().Navigator);
 
 export default function TabNavigator() {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
+  const { isRTL } = useAppLocale();
   const screens = [
     { name: 'index', title: t('home'), icon: 'home', outlineIcon: 'home-outline' },
     { name: 'map', title: t('map'), icon: 'map', outlineIcon: 'map-outline' },
@@ -28,7 +29,7 @@ export default function TabNavigator() {
         },
       }}
     >
-      {(I18nManager.isRTL ? [...screens].reverse() : screens).map((screen) => (
+      {(isRTL ? [...screens].reverse() : screens).map((screen) => (
         <Tabs.Screen
           key={screen.name}
           name={screen.name}

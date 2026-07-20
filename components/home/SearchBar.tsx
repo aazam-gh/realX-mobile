@@ -3,7 +3,6 @@ import { GlassView, isGlassEffectAPIAvailable } from "expo-glass-effect";
 import { useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  I18nManager,
   Platform,
   StyleSheet,
   TextInput,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import { Typography } from "../../constants/Typography";
 import { useAppTheme } from "../../context/AppThemeContext";
+import { useAppLocale } from "../../context/LocaleContext";
 
 type Props = {
   placeholder?: string;
@@ -44,7 +44,7 @@ export default function SearchBar({
   const showHighlights = !isDark;
   const [isFocused, setIsFocused] = useState(false);
   const [animatedPlaceholder, setAnimatedPlaceholder] = useState<string | null>(null);
-  const isRTL = I18nManager.isRTL;
+  const { isRTL } = useAppLocale();
   const isActive = isFocused || (value?.length ?? 0) > 0;
   const placeholderText = isActive ? "" : formatPlaceholder(animatedPlaceholder ?? placeholder, isRTL);
 

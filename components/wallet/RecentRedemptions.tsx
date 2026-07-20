@@ -2,7 +2,7 @@ import { getAuth } from '@react-native-firebase/auth';
 import { collection, getFirestore, limit, onSnapshot, orderBy, query, where } from '@react-native-firebase/firestore';
 import { FlashList } from '@shopify/flash-list';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, I18nManager, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -10,6 +10,7 @@ import RedemptionItem, { RedemptionData } from './RedemptionItem';
 import { logger } from '../../utils/logger';
 import { toArabicDigits } from '../../utils/numbers';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { getCachedVendorDisplayFields } from '../../utils/vendorDisplayCache';
 
 const LOGO_COLORS = ['#3D5A80', '#C41E3A', '#8B4513', '#2A9D8F', '#E76F51', '#E9C46A'];
@@ -17,10 +18,10 @@ const LOGO_COLORS = ['#3D5A80', '#C41E3A', '#8B4513', '#2A9D8F', '#E76F51', '#E9
 export default function RecentRedemptions() {
     const [redemptions, setRedemptions] = useState<RedemptionData[]>([]);
     const [loading, setLoading] = useState(true);
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { theme } = useAppTheme();
-    const isRTL = I18nManager.isRTL;
-    const isArabic = i18n.language === 'ar' || isRTL;
+    const { locale } = useAppLocale();
+    const isArabic = locale === 'ar';
 
     useEffect(() => {
         const auth = getAuth();

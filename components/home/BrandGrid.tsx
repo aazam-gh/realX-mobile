@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import {
     ActivityIndicator,
-    I18nManager,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -17,6 +16,7 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../../utils/logger';
 import { useAppTheme } from '../../context/AppThemeContext';
+import { useAppLocale } from '../../context/LocaleContext';
 import { fetchCmsDocument } from '../../utils/firebaseQueries';
 import { queryKeys } from '../../utils/queryClient';
 
@@ -87,7 +87,7 @@ function BrandRow({
 export default function BrandGrid() {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
-    const isRTL = I18nManager.isRTL;
+    const { isRTL } = useAppLocale();
     const {
         data: brands = [],
         error,

@@ -6,7 +6,6 @@ import { logger } from '../utils/logger';
 import {
     ActivityIndicator,
     FlatList,
-    I18nManager,
     StatusBar,
     StyleSheet,
     Text,
@@ -17,6 +16,7 @@ import {
 import { SafeAreaView} from 'react-native-safe-area-context';
 import { RestaurantCard } from '../components/category';
 import { useAppTheme } from '../context/AppThemeContext';
+import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { queryClient, queryKeys } from '../utils/queryClient';
@@ -25,9 +25,10 @@ import { fetchVendorSearchPage, VendorQueryItem } from '../utils/firebaseQueries
 export default function SearchScreen() {
     const { q } = useLocalSearchParams<{ q: string }>();
     const router = useRouter();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { isDark, theme } = useAppTheme();
-    const isArabic = i18n.language === 'ar' || I18nManager.isRTL;
+    const { locale } = useAppLocale();
+    const isArabic = locale === 'ar';
 
     const [searchQuery, setSearchQuery] = useState(q || '');
     const [committedQuery, setCommittedQuery] = useState((q || '').trim().toLowerCase());

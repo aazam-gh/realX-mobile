@@ -4,7 +4,6 @@ import { Image } from 'expo-image';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    I18nManager,
     Linking,
     Platform,
     StyleSheet,
@@ -16,6 +15,7 @@ import {
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { Colors } from '../../constants/Colors';
+import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import { BottomSheetOverscanBackground } from '../../utils/expoUiBottomSheet';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -143,8 +143,8 @@ function FeatureChip({
 
 export default function WaktiSheetContent({ isDark = true, onStoreOpened, fitToContent = false }: WaktiSheetContentProps) {
     const { height, width } = useWindowDimensions();
-    const { t, i18n } = useTranslation();
-    const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+    const { t } = useTranslation();
+    const { isRTL } = useAppLocale();
     const ctaLabel = t('wakti_sheet_cta');
     const sheetBackgroundColor = isDark ? '#050B14' : '#EEF7FF';
     const featureCategories = [

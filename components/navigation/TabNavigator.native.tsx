@@ -3,7 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { BlurView } from 'expo-blur';
 import { createBottomTabNavigator } from 'expo-router/js-tabs';
 import { withLayoutContext } from 'expo-router';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -34,22 +34,35 @@ export default function TabNavigator() {
         tabBarActiveTintColor: theme.brand,
         tabBarInactiveTintColor: theme.iconMuted,
         ...(isIos ? {
-          // Let UIKit provide its adaptive material blur rather than placing a
-          // React Native overlay above the native tab controls.
-          translucent: true,
+          // Keep the native controls, but use an opaque surface so tab
+          // navigation remains visually distinct from scrolling content.
+          translucent: false,
         } : {
           tabBarStyle: {
             backgroundColor: 'transparent',
-            borderTopColor: 'transparent',
+            borderTopColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(15, 37, 23, 0.10)',
+            borderTopWidth: StyleSheet.hairlineWidth,
+            boxShadow: isDark
+              ? '0 -8px 20px rgba(0, 0, 0, 0.18)'
+              : '0 -8px 20px rgba(15, 37, 23, 0.08)',
           },
           tabBarBackground: () => (
-            <BlurView
-              blurMethod="dimezisBlurViewSdk31Plus"
-              blurReductionFactor={3}
-              intensity={72}
-              tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-              style={StyleSheet.absoluteFill}
-            />
+            <>
+              <BlurView
+                blurMethod="dimezisBlurViewSdk31Plus"
+                blurReductionFactor={3}
+                intensity={72}
+                tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+                style={StyleSheet.absoluteFill}
+              />
+              <View
+                pointerEvents="none"
+                style={[
+                  StyleSheet.absoluteFill,
+                  { backgroundColor: isDark ? 'rgba(14, 19, 16, 0.20)' : 'rgba(255, 255, 255, 0.26)' },
+                ]}
+              />
+            </>
           ),
         }),
       } as any}

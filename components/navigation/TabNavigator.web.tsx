@@ -25,7 +25,9 @@ export default function TabNavigator() {
         tabBarInactiveTintColor: theme.iconMuted,
         tabBarStyle: {
           backgroundColor: theme.tabBar,
-          borderTopColor: theme.border,
+          borderTopColor: theme.borderStrong,
+          borderTopWidth: 1,
+          boxShadow: '0 -8px 20px rgba(15, 37, 23, 0.08)',
         },
       }}
     >

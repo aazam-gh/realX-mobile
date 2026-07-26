@@ -50,8 +50,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 16,
-    paddingBottom: 12,
+        paddingVertical: 8,
     },
     textContainer: {
         flex: 1,

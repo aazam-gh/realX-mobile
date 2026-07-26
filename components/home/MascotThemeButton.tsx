@@ -9,14 +9,14 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import DARK_MASCOT from '../../assets/images/user-dark.png';
+import LIGHT_MASCOT from '../../assets/images/user.png';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 
 const AVATAR_SIZE = 60;
-const RADAR_SIZE = 84;
-const LIGHT_MASCOT = require('../../assets/images/user.png');
-const DARK_MASCOT = require('../../assets/images/user-dark.png');
+const RADAR_SIZE = 60;
 
 export default function MascotThemeButton() {
   const { isDark, theme, toggleTheme } = useAppTheme();

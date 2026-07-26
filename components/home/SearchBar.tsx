@@ -246,7 +246,7 @@ function SearchBarContent({
 const styles = StyleSheet.create({
   searchShell: {
     marginHorizontal: 20,
-    marginVertical: 12,
+    marginTop: 12,
     borderRadius: 30,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 10 },
@@ -285,6 +285,8 @@ const styles = StyleSheet.create({
     right: 12,
     bottom: 0,
     height: 1,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   icon: {
     marginEnd: 10,

@@ -45,10 +45,10 @@ export default function HomeScreen() {
   }, [searchQuery, router]);
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.cardMuted }]} edges={['top']}>
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.background}
+        backgroundColor={theme.cardMuted}
       />
       <ScrollView
         style={[styles.container, { backgroundColor: theme.background }]}
@@ -58,16 +58,18 @@ export default function HomeScreen() {
         directionalLockEnabled
         contentContainerStyle={styles.contentContainer}
       >
-        <GreetingHeader
-          userName={isGuest ? t('guest_home_name') : (userName || t('user'))}
-          savings={studentData?.savings ?? 0}
-        />
-        <SearchBar
-          placeholder={t('search_placeholder')}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmit={handleSearch}
-        />
+        <View style={[styles.headerSection, { backgroundColor: theme.cardMuted }]}>
+          <GreetingHeader
+            userName={isGuest ? t('guest_home_name') : (userName || t('user'))}
+            savings={studentData?.savings ?? 0}
+          />
+          <SearchBar
+            placeholder={t('search_placeholder')}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmit={handleSearch}
+          />
+        </View>
         <View style={styles.glowSection}>
           <HomeRowGlow variant="promo" />
           <PromoBanner onBannerPress={(banner) => handleVendorPress(banner.vendorId)} />
@@ -96,6 +98,9 @@ const styles = StyleSheet.create({
     // iOS tab bar is a translucent overlay so content needs clearance; the Android
     // JS tab bar reserves its own layout space, so a large pad just leaves dead space.
     paddingBottom: Platform.OS === 'ios' ? 88 : 24,
+  },
+  headerSection: {
+    paddingBottom: 8,
   },
   glowSection: {
     position: 'relative',

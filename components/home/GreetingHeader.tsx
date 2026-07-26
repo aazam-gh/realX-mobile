@@ -7,11 +7,12 @@ import MascotThemeButton from './MascotThemeButton';
 
 type Props = {
     userName: string;
+    savings: number;
 };
 
 const USER_NAME_PLACEHOLDER = '__USER_NAME__';
 
-export default function GreetingHeader({ userName }: Props) {
+export default function GreetingHeader({ userName, savings }: Props) {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
     const { isRTL } = useAppLocale();
@@ -26,7 +27,12 @@ export default function GreetingHeader({ userName }: Props) {
                 <Text style={{ color: theme.brand, ...Typography.getTextVariantStyle('display') }}>{userName}</Text>
                 {suffix ?? ''}
             </Text>
-            <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.subtitle, textAlignStyle]}>{t('greeting_prompt')}</Text>
+            <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.subtitle, textAlignStyle]}>
+                {t('greeting_savings_prefix')}
+                <Text style={[{ color: theme.brand }, styles.savingsValue]}>
+                    {savings.toFixed(0)} {t('currency_qar')}
+                </Text>
+            </Text>
         </View>
     );
 
@@ -58,7 +64,11 @@ const styles = StyleSheet.create({
         ...Typography.getTextVariantStyle('bodyStrong'),
     },
     subtitle: {
-        fontSize: 28,
+        fontSize: 20,
         ...Typography.getTextVariantStyle('bodyStrong'),
+    },
+    savingsValue: {
+        ...Typography.getTextVariantStyle('display'),
+        fontVariant: ['tabular-nums'],
     },
 });

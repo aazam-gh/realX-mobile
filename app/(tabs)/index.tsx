@@ -58,7 +58,10 @@ export default function HomeScreen() {
         directionalLockEnabled
         contentContainerStyle={styles.contentContainer}
       >
-        <GreetingHeader userName={isGuest ? t('guest_home_name') : (userName || t('user'))} />
+        <GreetingHeader
+          userName={isGuest ? t('guest_home_name') : (userName || t('user'))}
+          savings={studentData?.savings ?? 0}
+        />
         <SearchBar
           placeholder={t('search_placeholder')}
           value={searchQuery}

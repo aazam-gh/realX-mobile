@@ -403,6 +403,22 @@ export async function fetchVendorSearchPage(
     };
 }
 
+export async function fetchTrendingVendorRecommendations(limitCount = 6): Promise<VendorQueryItem[]> {
+    const db = getFirestore();
+    const snapshot = await getDocs(query(
+        collection(db, 'vendors'),
+        where('isTrending', '==', true),
+        limit(limitCount)
+    ));
+
+    return snapshot.docs
+        .map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+        }))
+        .filter(isLiveVendor);
+}
+
 export async function fetchCategoryVendorsPage({
     categoryName,
     searchQuery,

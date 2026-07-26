@@ -29,6 +29,7 @@ export const queryKeys = {
     savedOffers: (userId: string) => ['savedOffers', userId] as const,
     searchVendorsPage: (searchQuery: string, cursorId: string | null) => ['searchVendorsPage', searchQuery, cursorId] as const,
     studentProfile: (userId: string) => ['studentProfile', userId] as const,
+    trendingVendorRecommendations: () => ['trendingVendorRecommendations'] as const,
     trendingOffers: () => ['trendingOffers'] as const,
     vendor: (vendorId: string) => ['vendor', vendorId] as const,
     vendorRoute: (vendorIdOrName: string, language: string) => ['vendorRoute', vendorIdOrName, language] as const,

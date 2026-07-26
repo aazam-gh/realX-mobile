@@ -20,7 +20,9 @@ import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { queryClient, queryKeys } from '../utils/queryClient';
-import { fetchVendorSearchPage, VendorQueryItem } from '../utils/firebaseQueries';
+import { fetchTrendingVendorRecommendations, fetchVendorSearchPage, VendorQueryItem } from '../utils/firebaseQueries';
+
+const RECOMMENDATION_LIMIT = 6;
 
 export default function SearchScreen() {
     const { q } = useLocalSearchParams<{ q: string }>();
@@ -33,9 +35,12 @@ export default function SearchScreen() {
     const [searchQuery, setSearchQuery] = useState(q || '');
     const [committedQuery, setCommittedQuery] = useState((q || '').trim().toLowerCase());
     const [results, setResults] = useState<VendorQueryItem[]>([]);
+    const [recommendations, setRecommendations] = useState<VendorQueryItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [loadingRecommendations, setLoadingRecommendations] = useState(false);
     const cursorRef = useRef<string | null>(null);
+    const searchInputRef = useRef<TextInput>(null);
     const [isListEnd, setIsListEnd] = useState(false);
 
     // Fetch vendors with pagination — only when user has typed a query
@@ -44,6 +49,7 @@ export default function SearchScreen() {
 
         if (!trimmedQuery) {
             setResults([]);
+            setRecommendations([]);
             cursorRef.current = null;
             setIsListEnd(true);
             setLoading(false);
@@ -55,6 +61,7 @@ export default function SearchScreen() {
 
         if (isNew) {
             setLoading(true);
+            setRecommendations([]);
             cursorRef.current = null;
             setIsListEnd(false);
         } else {
@@ -93,6 +100,37 @@ export default function SearchScreen() {
         fetchVendorsRef.current(true, committedQuery);
     }, [committedQuery]);
 
+    const hasNoResults = Boolean(committedQuery) && !loading && isListEnd && results.length === 0;
+
+    useEffect(() => {
+        let isCurrent = true;
+
+        if (!hasNoResults) {
+            setRecommendations([]);
+            setLoadingRecommendations(false);
+            return () => {
+                isCurrent = false;
+            };
+        }
+
+        setLoadingRecommendations(true);
+        void queryClient.fetchQuery({
+            queryKey: queryKeys.trendingVendorRecommendations(),
+            queryFn: () => fetchTrendingVendorRecommendations(RECOMMENDATION_LIMIT),
+        }).then((items) => {
+            if (isCurrent) setRecommendations(items);
+        }).catch((error) => {
+            logger.error('Error fetching search recommendations:', error);
+            if (isCurrent) setRecommendations([]);
+        }).finally(() => {
+            if (isCurrent) setLoadingRecommendations(false);
+        });
+
+        return () => {
+            isCurrent = false;
+        };
+    }, [hasNoResults]);
+
     const handleSubmitSearch = useCallback(() => {
         const trimmed = searchQuery.trim().toLowerCase();
         setCommittedQuery(trimmed);
@@ -110,6 +148,13 @@ export default function SearchScreen() {
             fetchVendors(false);
         }
     };
+
+    const handleTryAnotherSearch = useCallback(() => {
+        triggerSubtleHaptic();
+        setSearchQuery('');
+        setCommittedQuery('');
+        requestAnimationFrame(() => searchInputRef.current?.focus());
+    }, []);
 
     const renderItem = useCallback(
         ({ item, index }: { item: any; index: number }) => (
@@ -178,6 +223,7 @@ export default function SearchScreen() {
                         placeholder={t('search_offers_placeholder')}
                         placeholderTextColor={theme.inputPlaceholder}
                         value={searchQuery}
+                        ref={searchInputRef}
                         onChangeText={setSearchQuery}
                         returnKeyType="search"
                         onSubmitEditing={handleSubmitSearch}
@@ -203,17 +249,66 @@ export default function SearchScreen() {
                 <View style={styles.centeredContainer}>
                     <ActivityIndicator size="large" color={theme.brand} />
                 </View>
+            ) : hasNoResults ? (
+                <FlatList
+                    data={recommendations}
+                    keyExtractor={(item) => item.id}
+                    numColumns={2}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.noResultsContent}
+                    showsVerticalScrollIndicator={false}
+                    ListHeaderComponent={
+                        <View style={styles.noResultsHeader}>
+                            <View style={styles.noOffersEmptyState}>
+                                <View style={[styles.noOffersIcon, { backgroundColor: theme.brandSoft }]}>
+                                    <Ionicons name="search-outline" size={22} color={theme.brand} />
+                                </View>
+                                <Text style={[{ color: theme.text, ...Typography.getLocalizedTextVariantStyle('bodyStrong', locale) }, styles.noOffersTitle, isArabic && styles.textRTL]}>
+                                    {t('search_offers_no_results_title')}
+                                </Text>
+                                <Text style={[{ color: theme.mutedText, ...Typography.getLocalizedTextVariantStyle('body', locale) }, styles.noOffersSubtitle, isArabic && styles.textRTL]}>
+                                    {t('search_offers_no_results_hint', { query: committedQuery })}
+                                </Text>
+                                <TouchableOpacity
+                                    style={styles.tryAnotherButton}
+                                    onPress={handleTryAnotherSearch}
+                                    activeOpacity={0.85}
+                                >
+                                    <Ionicons name="refresh-outline" size={16} color={theme.brand} />
+                                    <Text style={[styles.tryAnotherText, { color: theme.brand, ...Typography.getLocalizedTextVariantStyle('bodyStrong', locale) }, isArabic && styles.textRTL]}>
+                                        {t('search_try_another')}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {loadingRecommendations ? (
+                                <View style={styles.recommendationLoading}>
+                                    <ActivityIndicator size="small" color={theme.brand} />
+                                    <Text style={[{ color: theme.mutedText, ...Typography.getLocalizedTextVariantStyle('body', locale) }, isArabic && styles.textRTL]}>
+                                        {t('search_recommendations_loading')}
+                                    </Text>
+                                </View>
+                            ) : recommendations.length > 0 ? (
+                                <Text style={[styles.recommendationsTitle, { color: theme.text, alignSelf: isArabic ? 'flex-end' : 'flex-start', ...Typography.getLocalizedTextVariantStyle('bodyStrong', locale) }, isArabic && styles.textRTL]}>
+                                    {t('search_recommendations_title')}
+                                </Text>
+                            ) : null}
+                        </View>
+                    }
+                />
             ) : results.length === 0 ? (
                 <View style={styles.centeredContainer}>
-                    <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.emptyEmoji]}>🔍</Text>
-                    <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.emptyTitle, isArabic && styles.textRTL]}>
-                        {committedQuery ? t('search_offers_no_results_title') : t('search_offers_empty_title')}
-                    </Text>
-                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body') }, styles.emptySubtitle, isArabic && styles.textRTL]}>
-                        {committedQuery
-                            ? t('search_offers_no_results_hint', { query: committedQuery })
-                            : t('search_offers_empty_hint')}
-                    </Text>
+                    <View style={styles.noOffersEmptyState}>
+                        <View style={[styles.noOffersIcon, { backgroundColor: theme.brandSoft }]}>
+                            <Ionicons name="search-outline" size={22} color={theme.brand} />
+                        </View>
+                        <Text style={[{ color: theme.text, ...Typography.getLocalizedTextVariantStyle('bodyStrong', locale) }, styles.noOffersTitle, isArabic && styles.textRTL]}>
+                            {t('search_offers_empty_title')}
+                        </Text>
+                        <Text style={[{ color: theme.mutedText, ...Typography.getLocalizedTextVariantStyle('body', locale) }, styles.noOffersSubtitle, isArabic && styles.textRTL]}>
+                            {t('search_offers_empty_hint')}
+                        </Text>
+                    </View>
                 </View>
             ) : (
                 <FlatList
@@ -282,23 +377,67 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 40,
+        paddingHorizontal: 20,
     },
-    emptyEmoji: {
-        fontSize: 60,
-        marginBottom: 16,
+    noOffersEmptyState: {
+        width: '100%',
+        maxWidth: 300,
+        paddingVertical: 24,
+        alignItems: 'center',
     },
-    emptyTitle: {
-        fontSize: 20,
+    noOffersIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 14,
+    },
+    noOffersTitle: {
+        fontSize: 18,
         ...Typography.getTextVariantStyle('bodyStrong'),
         textAlign: 'center',
-        marginBottom: 8,
+        lineHeight: 24,
     },
-    emptySubtitle: {
-        fontSize: 15,
+    noOffersSubtitle: {
+        fontSize: 14,
         ...Typography.getTextVariantStyle('body'),
         textAlign: 'center',
-        lineHeight: 22,
+        lineHeight: 20,
+        maxWidth: 280,
+        marginTop: 6,
+    },
+    noResultsContent: {
+        paddingBottom: 40,
+    },
+    noResultsHeader: {
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+    },
+    tryAnotherButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 16,
+        paddingVertical: 6,
+    },
+    tryAnotherText: {
+        fontSize: 14,
+        ...Typography.getTextVariantStyle('bodyStrong'),
+    },
+    recommendationLoading: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingTop: 28,
+    },
+    recommendationsTitle: {
+        alignSelf: 'flex-start',
+        fontSize: 18,
+        ...Typography.getTextVariantStyle('bodyStrong'),
+        paddingTop: 28,
+        paddingBottom: 16,
     },
     resultCount: {
         fontSize: 14,

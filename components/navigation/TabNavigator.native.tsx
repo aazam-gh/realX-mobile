@@ -1,8 +1,9 @@
 import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BlurView } from 'expo-blur';
 import { createBottomTabNavigator } from 'expo-router/js-tabs';
 import { withLayoutContext } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -12,7 +13,7 @@ const JSTabs = withLayoutContext(createBottomTabNavigator().Navigator);
 
 export default function TabNavigator() {
   const { t } = useTranslation();
-  const { theme } = useAppTheme();
+  const { isDark, theme } = useAppTheme();
   const { direction, isRTL } = useAppLocale();
   const Tabs = Platform.OS === 'ios' ? NativeTabs : JSTabs;
   const isIos = Platform.OS === 'ios';
@@ -29,11 +30,24 @@ export default function TabNavigator() {
       screenOptions={{
         tabBarActiveTintColor: theme.brand,
         tabBarInactiveTintColor: theme.iconMuted,
-        ...(!isIos && {
+        ...(isIos ? {
+          // Let UIKit provide its adaptive material blur rather than placing a
+          // React Native overlay above the native tab controls.
+          translucent: true,
+        } : {
           tabBarStyle: {
-            backgroundColor: theme.tabBar,
-            borderTopColor: theme.border,
+            backgroundColor: 'transparent',
+            borderTopColor: 'transparent',
           },
+          tabBarBackground: () => (
+            <BlurView
+              blurMethod="dimezisBlurViewSdk31Plus"
+              blurReductionFactor={3}
+              intensity={72}
+              tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+              style={StyleSheet.absoluteFill}
+            />
+          ),
         }),
       } as any}
     >

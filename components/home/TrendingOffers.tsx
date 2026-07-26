@@ -73,7 +73,10 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
                 );
                 const snapshot = await getDocs(q);
 
-                return snapshot.docs.map((docSnap: any) => {
+                return snapshot.docs.filter((docSnap: any) => {
+                    const vendorData = docSnap.data();
+                    return vendorData.status !== 'Draft' && vendorData.status !== 'Inactive' && vendorData.isActive !== false;
+                }).map((docSnap: any) => {
                     const vendorData = docSnap.data();
                     queryClient.setQueryData(queryKeys.vendor(docSnap.id), { id: docSnap.id, data: vendorData });
                     return mapVendorDocToCard(docSnap.id, vendorData);

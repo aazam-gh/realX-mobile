@@ -46,6 +46,10 @@ export type CategoryVendorPageOptions = {
     cursor: CategoryVendorCursor | null;
 };
 
+function isLiveVendor(data: Record<string, any>): boolean {
+    return data.status !== 'Draft' && data.status !== 'Inactive' && data.isActive !== false;
+}
+
 export type SavedOfferItem = {
     id: string;
     type?: string;
@@ -121,6 +125,8 @@ export type MapLocationQueryItem = {
     geohash6?: string | null;
     mainCategory?: string | null;
     profilePicture?: string | null;
+    status?: string | null;
+    isActive?: boolean;
     xcard?: boolean;
     offerTypes?: string[];
     hasBuyOneGetOne?: boolean;
@@ -169,7 +175,11 @@ export async function fetchCategory(categoryId: string) {
 export async function fetchVendor(vendorId: string) {
     const db = getFirestore();
     const docSnap = await getDoc(doc(db, 'vendors', vendorId));
-    return docSnap.exists() ? { id: docSnap.id, data: docSnap.data() } : null;
+    if (!docSnap.exists()) return null;
+
+    const data = docSnap.data();
+    if (!data) return null;
+    return isLiveVendor(data) ? { id: docSnap.id, data } : null;
 }
 
 export async function fetchVendorRoute(vendorIdOrName: string, isArabic: boolean) {
@@ -184,8 +194,9 @@ export async function fetchVendorRoute(vendorIdOrName: string, isArabic: boolean
 
     const vendorsRef = collection(db, 'vendors');
     const nameSnap = await getDocs(query(vendorsRef, where('name', '==', vendorIdOrName), limit(1)));
-    if (!nameSnap.empty) {
-        const foundDoc = nameSnap.docs[0];
+    const namedVendor = nameSnap.docs.find((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => isLiveVendor(docSnap.data()));
+    if (namedVendor) {
+        const foundDoc = namedVendor;
         return {
             vendorId: foundDoc.id,
             vendorData: foundDoc.data(),
@@ -194,8 +205,9 @@ export async function fetchVendorRoute(vendorIdOrName: string, isArabic: boolean
 
     if (isArabic) {
         const nameArSnap = await getDocs(query(vendorsRef, where('nameAr', '==', vendorIdOrName), limit(1)));
-        if (!nameArSnap.empty) {
-            const foundDoc = nameArSnap.docs[0];
+        const namedArabicVendor = nameArSnap.docs.find((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => isLiveVendor(docSnap.data()));
+        if (namedArabicVendor) {
+            const foundDoc = namedArabicVendor;
             return {
                 vendorId: foundDoc.id,
                 vendorData: foundDoc.data(),
@@ -279,7 +291,18 @@ export async function fetchRedemptionHistory(userId: string, pageSize = 10): Pro
 export async function fetchMapLocations() {
     const db = getFirestore();
     const locationsSnap = await getDoc(doc(db, 'maps', 'locations'));
-    return locationsSnap.exists() ? locationsSnap.data() : null;
+    if (!locationsSnap.exists()) return null;
+
+    const locations = locationsSnap.data();
+    if (!locations) return null;
+
+    return Object.fromEntries(
+        Object.entries(locations).filter(([, value]) => (
+            typeof value === 'object'
+            && value !== null
+            && isLiveVendor(value as Record<string, any>)
+        ))
+    );
 }
 
 export async function fetchMapLocationsByPrefixes(
@@ -324,7 +347,9 @@ export async function fetchMapLocationsByPrefixes(
         } while (cursor);
     }));
 
-    return Array.from(byId.values()).sort((a, b) => a.id.localeCompare(b.id));
+    return Array.from(byId.values())
+        .filter((item) => item.isActive !== false && item.status !== 'Draft' && item.status !== 'Inactive')
+        .sort((a, b) => a.id.localeCompare(b.id));
 }
 
 export async function searchMapLocations(searchQuery: string, pageSize = 25): Promise<MapLocationQueryItem[]> {
@@ -338,10 +363,12 @@ export async function searchMapLocations(searchQuery: string, pageSize = 25): Pr
         limit(pageSize)
     ));
 
-    return snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-    } as MapLocationQueryItem));
+    return snapshot.docs
+        .map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+        } as MapLocationQueryItem))
+        .filter((item: MapLocationQueryItem) => item.isActive !== false && item.status !== 'Draft' && item.status !== 'Inactive');
 }
 
 export async function fetchStudentProfile(userId: string) {
@@ -367,7 +394,7 @@ export async function fetchVendorSearchPage(
     const items = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
         id: docSnap.id,
         ...docSnap.data(),
-    }));
+    })).filter(isLiveVendor);
 
     return {
         items,
@@ -408,7 +435,7 @@ export async function fetchCategoryVendorsPage({
         id: docSnap.id,
         ...docSnap.data(),
         xcard: docSnap.data().xcard || false,
-    }));
+    })).filter(isLiveVendor);
     const lastItem = items[items.length - 1];
 
     return {
@@ -438,7 +465,7 @@ export async function fetchXcardBrandsPage(
         : brandsQuery.limit(pageSize);
 
     const snapshot = await getDocs(brandsQuery);
-    const items: WalletBrandQueryItem[] = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+    const items: WalletBrandQueryItem[] = snapshot.docs.filter((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => isLiveVendor(docSnap.data())).map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
         const data = docSnap.data();
         return {
             id: docSnap.id,

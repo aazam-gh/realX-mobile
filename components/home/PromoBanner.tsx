@@ -10,7 +10,12 @@ import {
     View,
 } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, {
+    interpolate,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+} from 'react-native-reanimated';
 
 import { useAppTheme } from '../../context/AppThemeContext';
 import { StateSurface } from '../StateSurface';
@@ -23,6 +28,8 @@ const BANNER_HEIGHT = 192;
 const BANNER_SIDE_PADDING = 24;
 const BANNER_GAP = 12;
 const BANNER_AUTO_SCROLL_MS = 4000;
+const INDICATOR_WIDTH = 88;
+const INDICATOR_THUMB_WIDTH = 24;
 
 export type BannerItem = {
     bannerId: string;
@@ -63,6 +70,23 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
     const bannerWidth = screenWidth - (BANNER_SIDE_PADDING * 2);
     const bannerScrollInterval = bannerWidth + BANNER_GAP;
     const maxIndex = Math.max(0, banners.length - 1);
+    const scrollProgress = useSharedValue(0);
+    const handleScroll = useAnimatedScrollHandler({
+        onScroll: (event) => {
+            scrollProgress.value = event.contentOffset.x / bannerScrollInterval;
+        },
+    });
+    const indicatorThumbStyle = useAnimatedStyle(() => ({
+        transform: [
+            {
+                translateX: interpolate(
+                    scrollProgress.value,
+                    [0, Math.max(1, maxIndex)],
+                    [0, INDICATOR_WIDTH - INDICATOR_THUMB_WIDTH],
+                ),
+            },
+        ],
+    }));
 
     useEffect(() => {
         if (error) logger.error('Error fetching banners:', error);
@@ -168,6 +192,7 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
                 directionalLockEnabled
                 canCancelContentTouches
                 keyboardShouldPersistTaps="always"
+                onScroll={handleScroll}
                 snapToInterval={bannerScrollInterval}
                 decelerationRate="fast"
                 disableIntervalMomentum
@@ -216,6 +241,35 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
                     );
                 })}
             </Animated.ScrollView>
+
+            {banners.length > 1 && (
+                <View
+                    style={styles.indicator}
+                    accessibilityRole="adjustable"
+                    accessibilityLabel={`Banner ${currentIndex + 1} of ${banners.length}`}
+                >
+                    <View style={[styles.indicatorTrack, { backgroundColor: theme.cardMuted }]}>
+                        {banners.map((banner, index) => (
+                            <Pressable
+                                key={banner.bannerId || banner.vendorId || banner.id || index}
+                                style={styles.indicatorSegment}
+                                onPress={() => setCurrentIndex(index)}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Show banner ${index + 1} of ${banners.length}`}
+                                accessibilityState={{ selected: currentIndex === index }}
+                            />
+                        ))}
+                        <Animated.View
+                            pointerEvents="none"
+                            style={[
+                                styles.indicatorThumb,
+                                { backgroundColor: theme.brand },
+                                indicatorThumbStyle,
+                            ]}
+                        />
+                    </View>
+                </View>
+            )}
         </View>
     );
 }
@@ -241,6 +295,30 @@ const styles = StyleSheet.create({
     },
     bannerPressed: {
         opacity: 0.9,
+    },
+    indicator: {
+        alignItems: 'center',
+        paddingTop: 10,
+    },
+    indicatorTrack: {
+        width: INDICATOR_WIDTH,
+        height: 6,
+        borderRadius: 3,
+        flexDirection: 'row',
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    indicatorSegment: {
+        flex: 1,
+        zIndex: 1,
+    },
+    indicatorThumb: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: INDICATOR_THUMB_WIDTH,
+        height: 6,
+        borderRadius: 3,
     },
     topPill: {
         flex: 1,

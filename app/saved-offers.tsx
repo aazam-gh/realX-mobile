@@ -19,6 +19,7 @@ import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
 import { fetchSavedOffers, SavedOfferItem } from '../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../utils/queryClient';
+import { useRealXRefresh } from '../components/PullToRefresh';
 
 type SavedOffer = SavedOfferItem;
 
@@ -48,6 +49,7 @@ export default function SavedOffersScreen() {
     enabled: !!userId,
   });
   const { isOnline } = useConnectivity();
+  const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refetch });
 
   useEffect(() => {
     if (error) logger.error('Error loading saved offers:', error);
@@ -170,13 +172,17 @@ export default function SavedOffersScreen() {
       ) : savedOffers.length === 0 ? (
         <StateSurface kind="empty" title={t('no_saved_offers')} message={t('no_saved_offers_hint')} />
       ) : (
-        <FlatList
-          data={savedOffers}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
+        <View style={styles.contentWrapper}>
+          <FlatList
+            data={savedOffers}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={refreshControl}
+          />
+          {refreshOverlay}
+        </View>
       )}
     </SafeAreaView>
   );
@@ -185,6 +191,10 @@ export default function SavedOffersScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  contentWrapper: {
+    flex: 1,
+    position: 'relative',
   },
   header: {
     flexDirection: 'row',

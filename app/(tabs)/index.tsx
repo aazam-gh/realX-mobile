@@ -20,6 +20,8 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useStudent } from '../../context/StudentContext';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
+import { queryClient } from '../../utils/queryClient';
+import { useRealXRefresh } from '../../components/PullToRefresh';
 
 export default function HomeScreen() {
   const { studentData } = useStudent();
@@ -29,6 +31,14 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { isDark, theme } = useAppTheme();
+
+  const refreshHome = useCallback(async () => {
+    await queryClient.refetchQueries({
+      predicate: (query) => ['categories', 'cmsDocument', 'trendingOffers', 'vendor'].includes(String(query.queryKey[0])),
+      type: 'active',
+    });
+  }, []);
+  const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refreshHome });
 
   const handleVendorPress = useCallback((vendorId?: string) => {
     const trimmedVendorId = vendorId?.trim();
@@ -50,14 +60,16 @@ export default function HomeScreen() {
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={theme.cardMuted}
       />
-      <ScrollView
-        style={[styles.container, { backgroundColor: theme.background }]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="always"
-        nestedScrollEnabled
-        directionalLockEnabled
-        contentContainerStyle={styles.contentContainer}
-      >
+      <View style={styles.contentWrapper}>
+        <ScrollView
+          style={[styles.container, { backgroundColor: theme.background }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="always"
+          nestedScrollEnabled
+          directionalLockEnabled
+          contentContainerStyle={styles.contentContainer}
+          refreshControl={refreshControl}
+        >
         <View style={[styles.headerSection, { backgroundColor: theme.cardMuted }]}>
           <GreetingHeader
             userName={isGuest ? t('guest_home_name') : (userName || t('user'))}
@@ -82,7 +94,9 @@ export default function HomeScreen() {
         <BrandGrid />
         <FeaturedBanner />
         <WaktiBanner />
-      </ScrollView>
+        </ScrollView>
+        {refreshOverlay}
+      </View>
     </SafeAreaView>
   );
 }
@@ -93,6 +107,10 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  contentWrapper: {
+    flex: 1,
+    position: 'relative',
   },
   contentContainer: {
     // iOS tab bar is a translucent overlay so content needs clearance; the Android

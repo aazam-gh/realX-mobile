@@ -8,7 +8,7 @@ import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Linking, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,6 +27,7 @@ import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
 import { fetchSavedOfferIds, fetchVendorRoute } from '../../utils/firebaseQueries';
 import { BottomSheetOverscanBackground, getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
 import { queryClient, queryKeys } from '../../utils/queryClient';
+import { useRealXRefresh } from '../../components/PullToRefresh';
 
 type VendorBranch = {
     id: string;
@@ -125,6 +126,16 @@ export default function VendorScreen() {
     });
 
     const { isOnline } = useConnectivity();
+    const refreshVendor = useCallback(async () => {
+        await refetchVendor();
+        if (currentUserId && actualVendorId) {
+            await queryClient.refetchQueries({
+                queryKey: queryKeys.savedOfferIds(currentUserId, actualVendorId),
+                type: 'active',
+            });
+        }
+    }, [actualVendorId, currentUserId, refetchVendor]);
+    const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refreshVendor });
 
     useEffect(() => {
         if (vendorRouteError) logger.error("Error fetching vendor data:", vendorRouteError);
@@ -313,7 +324,11 @@ export default function VendorScreen() {
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={refreshControl}
+            >
                 {/* Header Image Section */}
                 <View style={styles.headerContainer}>
                     <Image
@@ -587,8 +602,9 @@ const isSaved = savedOfferIds.has(savedId);
                                     <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
                                 </View>
                             </View>
-                        </ScrollView>
-                    </View>
+            </ScrollView>
+            {refreshOverlay}
+        </View>
                 </AndroidBottomSheetModal>
             ) : (
                 <BottomSheet

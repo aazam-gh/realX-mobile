@@ -24,6 +24,7 @@ import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import { fetchCmsDocument } from '../utils/firebaseQueries';
 import { queryKeys } from '../utils/queryClient';
+import { useRealXRefresh } from '../components/PullToRefresh';
 
 type University = {
   nameEn?: string;
@@ -54,6 +55,7 @@ export default function XAcademyScreen() {
     },
   });
   const { isOnline } = useConnectivity();
+  const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refetch });
 
   useEffect(() => {
     if (error) logger.error('XAcademyScreen: Error fetching universities:', error);
@@ -85,6 +87,7 @@ export default function XAcademyScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={refreshControl}
       >
         {isLoading ? (
           <StateSurface kind="loading" />
@@ -209,6 +212,7 @@ export default function XAcademyScreen() {
           </>
         )}
       </ScrollView>
+      {refreshOverlay}
     </SafeAreaView>
   );
 }

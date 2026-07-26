@@ -20,6 +20,7 @@ import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import { CategoryVendorCursor, fetchCategory, fetchCategoryVendorsPage } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
+import { useRealXRefresh } from '../../components/PullToRefresh';
 
 const BACKGROUND_ICONS = [
     { name: 'laptop-outline' as const, top: '2%', left: '75%', size: 28, color: '#8E8E93', rotation: '15deg' },
@@ -227,6 +228,7 @@ export default function CategoryScreen() {
         data: categoryData = null,
         error: categoryError,
         isLoading: loading,
+        refetch: refetchCategory,
     } = useQuery({
         queryKey: queryKeys.category(categoryId),
         queryFn: () => fetchCategory(categoryId),
@@ -316,6 +318,14 @@ export default function CategoryScreen() {
     useEffect(() => {
         fetchVendorsRef.current = fetchVendors;
     }, [fetchVendors]);
+
+    const refreshCategory = useCallback(async () => {
+        await refetchCategory();
+        lastDocRef.current = null;
+        setIsListEnd(false);
+        await fetchVendorsRef.current(true);
+    }, [refetchCategory]);
+    const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refreshCategory });
 
     // Initial fetch or filter change
     useEffect(() => {
@@ -430,6 +440,7 @@ export default function CategoryScreen() {
                     numColumns={2}
                     contentContainerStyle={styles.contentContainer}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={refreshControl}
                     onScroll={handleFlashListScroll}
                     scrollEventThrottle={16}
                     ListHeaderComponent={
@@ -485,6 +496,7 @@ export default function CategoryScreen() {
                     style={[styles.container, { backgroundColor: theme.background }]}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.contentContainer}
+                    refreshControl={refreshControl}
                 >
                     <HeaderContent
                         headerTitle={headerTitle}
@@ -510,6 +522,7 @@ export default function CategoryScreen() {
                     />
                 </ScrollView>
             )}
+            {refreshOverlay}
         </SafeAreaView>
     );
 }

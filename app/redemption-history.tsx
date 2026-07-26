@@ -19,6 +19,7 @@ import { logger } from '../utils/logger';
 import { toArabicDigits } from '../utils/numbers';
 import { fetchRedemptionHistory, RedemptionHistoryTransaction } from '../utils/firebaseQueries';
 import { queryKeys } from '../utils/queryClient';
+import { useRealXRefresh } from '../components/PullToRefresh';
 
 /*
   UI Format based on design specs:
@@ -60,6 +61,7 @@ export default function RedemptionHistoryScreen() {
   const transactions = data?.transactions || [];
   const vendorLogos = data?.vendorLogos || {};
   const { isOnline } = useConnectivity();
+  const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refetch });
 
   useEffect(() => {
     if (error) logger.error('Error fetching redemptions:', error);
@@ -178,14 +180,18 @@ export default function RedemptionHistoryScreen() {
       ) : error && transactions.length === 0 ? (
         <StateSurface kind={isOnline ? 'error' : 'offline'} onRetry={() => void refetch()} />
       ) : (
-        <FlatList
-          data={transactions}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<StateSurface kind="empty" title={t('no_redemptions_found')} />}
-        />
+        <View style={styles.contentWrapper}>
+          <FlatList
+            data={transactions}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={refreshControl}
+            ListEmptyComponent={<StateSurface kind="empty" title={t('no_redemptions_found')} />}
+          />
+          {refreshOverlay}
+        </View>
       )}
     </SafeAreaView>
   );
@@ -194,6 +200,10 @@ export default function RedemptionHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  contentWrapper: {
+    flex: 1,
+    position: 'relative',
   },
   header: {
     flexDirection: 'row',

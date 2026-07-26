@@ -21,6 +21,7 @@ import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { queryClient, queryKeys } from '../utils/queryClient';
 import { fetchTrendingVendorRecommendations, fetchVendorSearchPage, VendorQueryItem } from '../utils/firebaseQueries';
+import { useRealXRefresh } from '../components/PullToRefresh';
 
 const RECOMMENDATION_LIMIT = 6;
 
@@ -42,7 +43,6 @@ export default function SearchScreen() {
     const cursorRef = useRef<string | null>(null);
     const searchInputRef = useRef<TextInput>(null);
     const [isListEnd, setIsListEnd] = useState(false);
-
     // Fetch vendors with pagination — only when user has typed a query
     const fetchVendors = useCallback(async (isNew = false, currentQuery?: string) => {
         const trimmedQuery = (currentQuery ?? committedQuery).trim().toLowerCase();
@@ -95,6 +95,13 @@ export default function SearchScreen() {
     useEffect(() => {
         fetchVendorsRef.current = fetchVendors;
     }, [fetchVendors]);
+
+    const refreshSearch = useCallback(async () => {
+        if (!committedQuery) return;
+        await fetchVendorsRef.current(true, committedQuery);
+        await queryClient.refetchQueries({ queryKey: queryKeys.trendingVendorRecommendations(), type: 'active' });
+    }, [committedQuery]);
+    const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refreshSearch });
 
     useEffect(() => {
         fetchVendorsRef.current(true, committedQuery);
@@ -257,6 +264,7 @@ export default function SearchScreen() {
                     renderItem={renderItem}
                     contentContainerStyle={styles.noResultsContent}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={refreshControl}
                     ListHeaderComponent={
                         <View style={styles.noResultsHeader}>
                             <View style={styles.noOffersEmptyState}>
@@ -318,6 +326,7 @@ export default function SearchScreen() {
                     renderItem={renderItem}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={refreshControl}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={renderFooter}
@@ -330,6 +339,7 @@ export default function SearchScreen() {
                     }
                 />
             )}
+            {refreshOverlay}
         </SafeAreaView>
     );
 }

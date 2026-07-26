@@ -16,6 +16,8 @@ import { useStudent } from '../../context/StudentContext';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { Typography } from '../../constants/Typography';
+import { queryClient } from '../../utils/queryClient';
+import { useRealXRefresh } from '../../components/PullToRefresh';
 
 export default function WalletScreen() {
   const insets = useSafeAreaInsets();
@@ -30,6 +32,10 @@ export default function WalletScreen() {
 
   const [isHelpDrawerVisible, setIsHelpDrawerVisible] = useState(false);
   const [isSpendDrawerVisible, setIsSpendDrawerVisible] = useState(false);
+  const refreshWallet = async () => {
+    await queryClient.refetchQueries({ type: 'active' });
+  };
+  const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refreshWallet });
 
   const handleSpendPress = () => {
     if (isGuest && !requireAuth('guest_spend_message')) return;
@@ -54,11 +60,13 @@ export default function WalletScreen() {
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={theme.background}
       />
-      <ScrollView
-        style={[styles.scrollView, { backgroundColor: theme.background }]}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.contentWrapper}>
+        <ScrollView
+          style={[styles.scrollView, { backgroundColor: theme.background }]}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={refreshControl}
+        >
         <XCardHeader />
         <XCard earnings={isGuest ? 0 : balance} currency={currency} creatorCode={isGuest ? undefined : creatorCode} />
         <SpendButton
@@ -103,7 +111,9 @@ export default function WalletScreen() {
         ) : (
           <RecentRedemptions />
         )}
-      </ScrollView>
+        </ScrollView>
+        {refreshOverlay}
+      </View>
 
       <HowItWorksDrawer
         visible={isHelpDrawerVisible}
@@ -123,6 +133,10 @@ export default function WalletScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  contentWrapper: {
+    flex: 1,
+    position: 'relative',
   },
   scrollView: {
     flex: 1,

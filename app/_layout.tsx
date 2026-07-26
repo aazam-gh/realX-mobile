@@ -32,6 +32,7 @@ import {
 import { logger } from '../utils/logger';
 import { AppThemeProvider, useAppTheme } from '../context/AppThemeContext';
 import { AuthAccessProvider, useAuthAccess } from '../context/AuthAccessContext';
+import { ConnectivityProvider } from '../context/ConnectivityContext';
 import { queryClient } from '../utils/queryClient';
 import { clearLocalAuthSession, isInvalidAuthSessionError } from '../utils/auth';
 
@@ -109,9 +110,10 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <LocaleProvider>
           <AppThemeProvider>
-            <AuthAccessProvider>
-              <StudentProvider>
-                <LayoutContent
+            <ConnectivityProvider>
+              <AuthAccessProvider>
+                <StudentProvider>
+                  <LayoutContent
                   user={user}
                   loaded={loaded}
                   error={error}
@@ -120,9 +122,10 @@ export default function RootLayout() {
                   initializing={initializing}
                   showSplash={showSplash}
                   onSplashFinish={() => setShowSplash(false)}
-                />
-              </StudentProvider>
-            </AuthAccessProvider>
+                  />
+                </StudentProvider>
+              </AuthAccessProvider>
+            </ConnectivityProvider>
           </AppThemeProvider>
         </LocaleProvider>
       </SafeAreaProvider>

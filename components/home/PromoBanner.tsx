@@ -6,7 +6,6 @@ import {
     ActivityIndicator,
     Pressable,
     StyleSheet,
-    Text,
     useWindowDimensions,
     View,
 } from 'react-native';
@@ -14,6 +13,7 @@ import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { useAppTheme } from '../../context/AppThemeContext';
+import { StateSurface } from '../StateSurface';
 import { fetchCmsDocument } from '../../utils/firebaseQueries';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
@@ -47,6 +47,7 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
         data: banners = [],
         error,
         isLoading,
+        refetch,
     } = useQuery({
         queryKey: queryKeys.cmsDocument('banner'),
         queryFn: async () => {
@@ -144,10 +145,14 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
         );
     }
 
+    if (error && banners.length === 0) {
+        return <StateSurface kind="error" compact onRetry={() => void refetch()} />;
+    }
+
     if (banners.length === 0) {
         return (
             <View style={[styles.container, styles.loaderContainer]}>
-                <Text style={{ color: theme.subtleText, fontFamily: 'System' }}>No banners available</Text>
+                <StateSurface kind="empty" compact />
             </View>
         );
     }

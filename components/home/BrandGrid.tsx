@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import AppText from '../AppText';
+import { StateSurface } from '../StateSurface';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../../utils/logger';
@@ -92,6 +93,7 @@ export default function BrandGrid() {
         data: brands = [],
         error,
         isLoading,
+        refetch,
     } = useQuery({
         queryKey: queryKeys.cmsDocument('brand'),
         queryFn: async () => {
@@ -153,6 +155,10 @@ export default function BrandGrid() {
                 <ActivityIndicator size="small" color={theme.brand} />
             </View>
         );
+    }
+
+    if (error && displayedBrands.length === 0) {
+        return <StateSurface kind="error" compact onRetry={() => void refetch()} />;
     }
 
     if (displayedBrands.length === 0) {

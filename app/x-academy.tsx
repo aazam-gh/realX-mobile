@@ -6,7 +6,6 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
 import {
-  ActivityIndicator,
   Linking,
   ScrollView,
   StyleSheet,
@@ -18,7 +17,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import AppText from '../components/AppText';
+import { StateSurface } from '../components/StateSurface';
 import { useAppTheme } from '../context/AppThemeContext';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import { fetchCmsDocument } from '../utils/firebaseQueries';
@@ -44,6 +45,7 @@ export default function XAcademyScreen() {
     data: universities = [],
     error,
     isLoading,
+    refetch,
   } = useQuery({
     queryKey: queryKeys.xAcademyUniversities(),
     queryFn: async () => {
@@ -51,6 +53,7 @@ export default function XAcademyScreen() {
       return data?.universities || [];
     },
   });
+  const { isOnline } = useConnectivity();
 
   useEffect(() => {
     if (error) logger.error('XAcademyScreen: Error fetching universities:', error);
@@ -84,7 +87,11 @@ export default function XAcademyScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {isLoading ? (
-          <ActivityIndicator size="large" color={theme.brand} style={styles.loader} />
+          <StateSurface kind="loading" />
+        ) : error && universities.length === 0 ? (
+          <StateSurface kind={isOnline ? 'error' : 'offline'} onRetry={() => void refetch()} />
+        ) : universities.length === 0 ? (
+          <StateSurface kind="empty" />
         ) : (
           <>
             {/* Banners */}

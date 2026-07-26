@@ -344,5 +344,17 @@
   "xp_promotional_reward": "XP هو مكافأة ترويجية وليس عملة قانونية",
   "xp_no_cash_withdrawal": "لا يمكن سحب XP أو استبداله نقدًا أو تحويله",
   "xp_in_app_only": "يمكن استخدام XP فقط داخل التطبيق لدى الشركاء المشاركين",
-  "cashback": "استرداد نقدي"
+  "cashback": "استرداد نقدي",
+  "state_loading_title": "جارٍ التحميل",
+  "state_loading_message": "نجهز كل شيء الآن…",
+  "state_empty_title": "لا يوجد شيء هنا بعد",
+  "state_empty_message": "تحقق لاحقًا من المحتوى الجديد.",
+  "state_filtered_empty_title": "لم يتم العثور على نتائج",
+  "state_filtered_empty_message": "جرّب تغيير البحث أو عوامل التصفية.",
+  "state_error_title": "حدث خطأ ما",
+  "state_error_message": "يرجى المحاولة مرة أخرى.",
+  "state_offline_title": "أنت غير متصل بالإنترنت",
+  "state_offline_message": "أعد الاتصال بالإنترنت ثم حاول مرة أخرى.",
+  "state_not_found_title": "لم نتمكن من العثور على ذلك",
+  "state_not_found_message": "ربما لم يعد متاحًا."
 }

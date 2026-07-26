@@ -344,5 +344,17 @@
   "xp_promotional_reward": "XP is a promotional reward and not legal tender",
   "xp_no_cash_withdrawal": "XP cannot be withdrawn, exchanged for cash, or transferred",
   "xp_in_app_only": "XP can only be used within the app with participating partners",
-  "cashback": "CASHBACK"
+  "cashback": "CASHBACK",
+  "state_loading_title": "Loading",
+  "state_loading_message": "Getting everything ready…",
+  "state_empty_title": "Nothing here yet",
+  "state_empty_message": "Check back soon for new content.",
+  "state_filtered_empty_title": "No matches found",
+  "state_filtered_empty_message": "Try changing your search or filters.",
+  "state_error_title": "Something went wrong",
+  "state_error_message": "Please try again.",
+  "state_offline_title": "You’re offline",
+  "state_offline_message": "Reconnect to the internet and try again.",
+  "state_not_found_title": "We couldn’t find that",
+  "state_not_found_message": "It may no longer be available."
 }

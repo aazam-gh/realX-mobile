@@ -9,16 +9,18 @@ import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Alert, Linking, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import AppText from '../../components/AppText';
+import { StateSurface } from '../../components/StateSurface';
 import AndroidBottomSheetModal from '../../components/AndroidBottomSheetModal';
 import { VendorGallery } from '../../components/vendor/VendorGallery';
 import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
@@ -115,11 +117,14 @@ export default function VendorScreen() {
         data: vendorRouteData,
         error: vendorRouteError,
         isLoading,
+        refetch: refetchVendor,
     } = useQuery({
         queryKey: queryKeys.vendorRoute(vendorLookupId, isArabic ? 'ar' : 'en'),
         queryFn: () => fetchVendorRoute(vendorLookupId, isArabic),
         enabled: vendorLookupId.length > 0,
     });
+
+    const { isOnline } = useConnectivity();
 
     useEffect(() => {
         if (vendorRouteError) logger.error("Error fetching vendor data:", vendorRouteError);
@@ -291,15 +296,15 @@ export default function VendorScreen() {
     if (isLoading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={theme.brand} />
+                <StateSurface kind="loading" />
             </View>
         );
     }
 
     if (!vendor) {
         return (
-                <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
-                <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.errorText]}>{t('vendor_not_found')}</Text>
+            <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
+                <StateSurface kind={vendorRouteError ? (isOnline ? 'error' : 'offline') : 'not-found'} title={vendorRouteError ? undefined : t('vendor_not_found')} onRetry={vendorRouteError ? () => void refetchVendor() : undefined} />
             </View>
         );
     }

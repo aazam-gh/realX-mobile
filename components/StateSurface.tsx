@@ -1,0 +1,69 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+
+import { Typography } from '../constants/Typography';
+import { useAppTheme } from '../context/AppThemeContext';
+import { useAppLocale } from '../context/LocaleContext';
+
+export type StateSurfaceKind = 'loading' | 'empty' | 'filtered-empty' | 'error' | 'offline' | 'not-found';
+
+type Props = {
+  kind: StateSurfaceKind;
+  title?: string;
+  message?: string;
+  onRetry?: () => void;
+  compact?: boolean;
+};
+
+const details: Record<StateSurfaceKind, { icon: keyof typeof Ionicons.glyphMap; titleKey: string; messageKey: string }> = {
+  loading: { icon: 'hourglass-outline', titleKey: 'state_loading_title', messageKey: 'state_loading_message' },
+  empty: { icon: 'folder-open-outline', titleKey: 'state_empty_title', messageKey: 'state_empty_message' },
+  'filtered-empty': { icon: 'search-outline', titleKey: 'state_filtered_empty_title', messageKey: 'state_filtered_empty_message' },
+  error: { icon: 'alert-circle-outline', titleKey: 'state_error_title', messageKey: 'state_error_message' },
+  offline: { icon: 'cloud-offline-outline', titleKey: 'state_offline_title', messageKey: 'state_offline_message' },
+  'not-found': { icon: 'compass-outline', titleKey: 'state_not_found_title', messageKey: 'state_not_found_message' },
+};
+
+export function StateSurface({ kind, title, message, onRetry, compact = false }: Props) {
+  const { t } = useTranslation();
+  const { theme } = useAppTheme();
+  const { isRTL } = useAppLocale();
+  const detail = details[kind];
+
+  if (kind === 'loading') {
+    return (
+      <View style={[styles.container, compact && styles.compact]} accessibilityRole="progressbar" accessibilityLabel={t(detail.titleKey)}>
+        <ActivityIndicator size={compact ? 'small' : 'large'} color={theme.brand} />
+        {!compact && <Text style={[styles.message, { color: theme.mutedText }, isRTL && styles.rtl]}>{message || t(detail.messageKey)}</Text>}
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.container, compact && styles.compact]}>
+      <View style={[styles.icon, { backgroundColor: kind === 'error' ? theme.cardMuted : theme.brandSoft }]}>
+        <Ionicons name={detail.icon} size={compact ? 23 : 30} color={kind === 'error' ? theme.danger : theme.brand} />
+      </View>
+      <Text selectable style={[styles.title, { color: theme.text }, isRTL && styles.rtl]}>{title || t(detail.titleKey)}</Text>
+      <Text selectable style={[styles.message, { color: theme.mutedText }, isRTL && styles.rtl]}>{message || t(detail.messageKey)}</Text>
+      {onRetry && (
+        <Pressable onPress={onRetry} style={({ pressed }) => [styles.retry, { backgroundColor: theme.actionSolid, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button" accessibilityLabel={t('retry')}>
+          <Ionicons name="refresh-outline" size={17} color={theme.onActionSolid} />
+          <Text style={[styles.retryText, { color: theme.onActionSolid }]}>{t('retry')}</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, minHeight: 180, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 32, gap: 10 },
+  compact: { flex: 0, minHeight: 96, paddingVertical: 20 },
+  icon: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  title: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 17, textAlign: 'center' },
+  message: { ...Typography.getTextVariantStyle('body'), fontSize: 14, lineHeight: 21, textAlign: 'center', maxWidth: 320 },
+  rtl: { writingDirection: 'rtl' },
+  retry: { flexDirection: 'row', gap: 7, alignItems: 'center', borderRadius: 999, paddingHorizontal: 18, paddingVertical: 11, marginTop: 6 },
+  retryText: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 14 },
+});

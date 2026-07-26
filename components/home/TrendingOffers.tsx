@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import RestaurantCard from '../category/RestaurantCard';
+import { StateSurface } from '../StateSurface';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import { logger } from '../../utils/logger';
@@ -61,6 +62,7 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
         data: vendors = [],
         error,
         isLoading,
+        refetch,
     } = useQuery({
         queryKey: queryKeys.trendingOffers(),
         queryFn: async () => {
@@ -201,6 +203,10 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
                 <ActivityIndicator size="small" color={theme.brand} />
             </View>
         );
+    }
+
+    if (error && displayedVendors.length === 0) {
+        return <StateSurface kind="error" compact onRetry={() => void refetch()} />;
     }
 
     if (displayedVendors.length === 0) {

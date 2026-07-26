@@ -5,12 +5,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
+import { StateSurface } from '../components/StateSurface';
 import { useAppTheme } from '../context/AppThemeContext';
 import { useAuthAccess } from '../context/AuthAccessContext';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
@@ -39,11 +41,13 @@ export default function SavedOffersScreen() {
     data: savedOffers = [],
     error,
     isLoading,
+    refetch,
   } = useQuery({
     queryKey: userId ? queryKeys.savedOffers(userId) : ['savedOffers', 'anonymous'],
     queryFn: () => userId ? fetchSavedOffers(userId) : Promise.resolve([]),
     enabled: !!userId,
   });
+  const { isOnline } = useConnectivity();
 
   useEffect(() => {
     if (error) logger.error('Error loading saved offers:', error);
@@ -158,19 +162,13 @@ export default function SavedOffersScreen() {
       </View>
 
       {authAccessLoading || (!isAuthenticated && !userId) ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={theme.brand} />
-        </View>
+        <StateSurface kind="loading" />
       ) : !!userId && isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={theme.brand} />
-        </View>
+        <StateSurface kind="loading" />
+      ) : error && savedOffers.length === 0 ? (
+        <StateSurface kind={isOnline ? 'error' : 'offline'} onRetry={() => void refetch()} />
       ) : savedOffers.length === 0 ? (
-        <View style={styles.centered}>
-          <Ionicons name="bookmark-outline" size={58} color={theme.brand} />
-          <Text style={[styles.emptyTitle, { color: theme.text }]}>{t('no_saved_offers')}</Text>
-          <Text style={[styles.emptySubtitle, { color: theme.mutedText }]}>{t('no_saved_offers_hint')}</Text>
-        </View>
+        <StateSurface kind="empty" title={t('no_saved_offers')} message={t('no_saved_offers_hint')} />
       ) : (
         <FlatList
           data={savedOffers}

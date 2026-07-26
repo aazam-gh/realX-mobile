@@ -5,13 +5,15 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../context/AppThemeContext';
 import { useAuthAccess } from '../context/AuthAccessContext';
+import { useConnectivity } from '../context/ConnectivityContext';
 import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import AppText from '../components/AppText';
+import { StateSurface } from '../components/StateSurface';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
 import { toArabicDigits } from '../utils/numbers';
@@ -49,6 +51,7 @@ export default function RedemptionHistoryScreen() {
     data,
     error,
     isLoading,
+    refetch,
   } = useQuery({
     queryKey: userId ? queryKeys.redemptionHistory(userId) : ['redemptionHistory', 'anonymous'],
     queryFn: () => userId ? fetchRedemptionHistory(userId) : Promise.resolve({ transactions: [], vendorLogos: {} }),
@@ -56,6 +59,7 @@ export default function RedemptionHistoryScreen() {
   });
   const transactions = data?.transactions || [];
   const vendorLogos = data?.vendorLogos || {};
+  const { isOnline } = useConnectivity();
 
   useEffect(() => {
     if (error) logger.error('Error fetching redemptions:', error);
@@ -168,13 +172,11 @@ export default function RedemptionHistoryScreen() {
       </View>
 
         {authAccessLoading || (!isAuthenticated && !userId) ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.brand} />
-        </View>
+        <StateSurface kind="loading" />
       ) : !!userId && isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.brand} />
-        </View>
+        <StateSurface kind="loading" />
+      ) : error && transactions.length === 0 ? (
+        <StateSurface kind={isOnline ? 'error' : 'offline'} onRetry={() => void refetch()} />
       ) : (
         <FlatList
           data={transactions}
@@ -182,11 +184,7 @@ export default function RedemptionHistoryScreen() {
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: theme.mutedText }]}>{t('no_redemptions_found')}</Text>
-            </View>
-          }
+          ListEmptyComponent={<StateSurface kind="empty" title={t('no_redemptions_found')} />}
         />
       )}
     </SafeAreaView>

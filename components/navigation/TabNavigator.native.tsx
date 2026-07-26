@@ -26,7 +26,10 @@ export default function TabNavigator() {
 
   return (
     <Tabs
-      {...(isIos ? { layoutDirection: direction } : {})}
+      {...(isIos ? {
+        layoutDirection: direction,
+        minimizeBehavior: 'onScrollDown',
+      } : {})}
       screenOptions={{
         tabBarActiveTintColor: theme.brand,
         tabBarInactiveTintColor: theme.iconMuted,

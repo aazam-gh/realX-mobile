@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -36,6 +36,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     const { locale } = useAppLocale();
     const { theme } = useAppTheme();
     const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+    const drawerTranslateY = useRef(new Animated.Value(height)).current;
 
     const isArabic = locale === 'ar';
 
@@ -65,7 +66,28 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     const displayCategories = hasMoreCategories ? [...visibleCategories, comingSoonItem] : baseCategories;
     const categoryImageSize = Math.min(80, Math.max(64, (width - 64) / 4));
 
-    const closeDrawer = () => setIsDrawerVisible(false);
+    useEffect(() => {
+        if (isDrawerVisible) {
+            drawerTranslateY.setValue(height);
+            Animated.timing(drawerTranslateY, {
+                toValue: 0,
+                duration: 240,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [drawerTranslateY, height, isDrawerVisible]);
+
+    const closeDrawer = () => {
+        Animated.timing(drawerTranslateY, {
+            toValue: height,
+            duration: 200,
+            easing: Easing.in(Easing.cubic),
+            useNativeDriver: true,
+        }).start(({ finished }) => {
+            if (finished) setIsDrawerVisible(false);
+        });
+    };
 
     const handleCategoryPress = (item: CategoryItem) => {
         triggerSubtleHaptic();
@@ -136,11 +158,14 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                 <Modal
                     visible={isDrawerVisible}
                     transparent
-                    animationType="slide"
+                    animationType="none"
                     onRequestClose={closeDrawer}
                 >
                     <Pressable style={[styles.overlay, { backgroundColor: theme.overlay }]} onPress={closeDrawer}>
-                        <Pressable style={[styles.drawerContainer, { backgroundColor: theme.surfaceElevated, maxHeight: height * 0.75 }]} onPress={(e) => e.stopPropagation()}>
+                        <Animated.View
+                            style={[styles.drawerContainer, { backgroundColor: theme.surfaceElevated, maxHeight: height * 0.75, transform: [{ translateY: drawerTranslateY }] }]}
+                        >
+                            <Pressable onPress={(e) => e.stopPropagation()}>
                             <View style={styles.drawerHandleContainer}>
                                 <View style={[styles.drawerHandle, { backgroundColor: theme.borderStrong }]} />
                             </View>
@@ -172,7 +197,8 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-                        </Pressable>
+                            </Pressable>
+                        </Animated.View>
                     </Pressable>
                 </Modal>
             )}

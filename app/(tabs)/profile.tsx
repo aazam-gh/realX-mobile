@@ -17,6 +17,7 @@ import UserAvatar from '../../components/UserAvatar';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useAppLocale } from '../../context/LocaleContext';
+import { useTabBarScrollVisibility } from '../../components/navigation/TabBarScrollVisibility';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function ProfileScreen() {
   const { isRTL, locale, isChanging, changeLocale } = useAppLocale();
   const { studentData: userData } = useStudent();
   const { isGuest, endGuestSession } = useAuthAccess();
+  const tabBarScrollVisibility = useTabBarScrollVisibility();
   const changeLanguage = async (nextLocale: 'en' | 'ar') => {
     try {
       await changeLocale(nextLocale);
@@ -66,6 +68,7 @@ export default function ProfileScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          {...tabBarScrollVisibility}
         >
           <View style={[styles.header, isRTL && styles.headerRTL]}>
             <AppText
@@ -189,6 +192,7 @@ export default function ProfileScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        {...tabBarScrollVisibility}
       >
         <View style={[styles.header, isRTL && styles.headerRTL]}>
           <AppText

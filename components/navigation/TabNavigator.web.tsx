@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 
-const Tabs = withLayoutContext(createBottomTabNavigator().Navigator);
+const Tabs = withLayoutContext(
+  createBottomTabNavigator().Navigator,
+  undefined,
+  true,
+);
 
 export default function TabNavigator() {
   const { t } = useTranslation();
@@ -13,8 +17,8 @@ export default function TabNavigator() {
   const { isRTL } = useAppLocale();
   const screens = [
     { name: 'index', title: t('home'), icon: 'home', outlineIcon: 'home-outline' },
-    { name: 'map', title: t('map'), icon: 'map', outlineIcon: 'map-outline' },
-    { name: 'wallet', title: t('wallet'), icon: 'card', outlineIcon: 'card-outline' },
+    { name: 'explore', title: t('explore'), icon: 'compass', outlineIcon: 'compass-outline' },
+    { name: 'rewards', title: t('wallet'), icon: 'card', outlineIcon: 'card-outline' },
     { name: 'profile', title: t('profile'), icon: 'person', outlineIcon: 'person-outline' },
   ];
 
@@ -48,6 +52,20 @@ export default function TabNavigator() {
           }}
         />
       ))}
+      <Tabs.Screen
+        name="map"
+        options={{
+          headerShown: false,
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="wallet"
+        options={{
+          headerShown: false,
+          tabBarButton: () => null,
+        }}
+      />
     </Tabs>
   );
 }

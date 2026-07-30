@@ -12,6 +12,7 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 import { fetchCategories } from '../../utils/firebaseQueries';
 import { queryKeys } from '../../utils/queryClient';
+import { HOME_HORIZONTAL_GUTTER } from './layout';
 
 type CategoryItem = {
     id: string;
@@ -64,7 +65,8 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
         image: SEE_MORE_IMAGE,
     };
     const displayCategories = hasMoreCategories ? [...visibleCategories, comingSoonItem] : baseCategories;
-    const categoryImageSize = Math.min(80, Math.max(64, (width - 64) / 4));
+    const categoryColumnWidth = (width - (HOME_HORIZONTAL_GUTTER * 2)) / 4;
+    const categoryImageSize = Math.min(80, Math.max(64, categoryColumnWidth - 8));
 
     useEffect(() => {
         if (isDrawerVisible) {
@@ -145,7 +147,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
 
     return (
         <>
-            <View style={[styles.container, { minHeight: Math.ceil((displayCategories.length || 1) / 4) * 130 }]}>
+            <View style={[styles.container, { minHeight: Math.ceil((displayCategories.length || 1) / 4) * 120 }]}>
                 <FlashList
                     data={displayCategories}
                     renderItem={renderCategory}
@@ -208,12 +210,13 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
 
 const styles = StyleSheet.create({
     container: {
-        paddingHorizontal: 16,
-        paddingVertical: 16,
+        paddingHorizontal: HOME_HORIZONTAL_GUTTER,
+        paddingTop: 12,
+        paddingBottom: 0,
     },
     categoryItem: {
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 8,
     },
     imageContainer: {
         marginBottom: 8,

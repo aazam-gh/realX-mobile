@@ -23,10 +23,11 @@ import { fetchCmsDocument } from '../../utils/firebaseQueries';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 import { queryKeys } from '../../utils/queryClient';
+import { HOME_CAROUSEL_GAP, HOME_HORIZONTAL_GUTTER } from './layout';
 
 const BANNER_HEIGHT = 192;
-const BANNER_SIDE_PADDING = 24;
-const BANNER_GAP = 12;
+const BANNER_SIDE_PADDING = HOME_HORIZONTAL_GUTTER;
+const BANNER_GAP = HOME_CAROUSEL_GAP;
 const BANNER_AUTO_SCROLL_MS = 4000;
 const INDICATOR_WIDTH = 88;
 const INDICATOR_THUMB_WIDTH = 24;

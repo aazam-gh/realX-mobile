@@ -20,6 +20,11 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { fetchCmsDocument } from '../../utils/firebaseQueries';
 import { queryKeys } from '../../utils/queryClient';
+import {
+    HOME_HORIZONTAL_GUTTER,
+    HOME_SECTION_HEADER_GAP,
+    HOME_SECTION_TOP_SPACING,
+} from './layout';
 
 type BrandItem = {
     id: string;
@@ -31,7 +36,7 @@ type BrandItem = {
 
 const BRAND_TILE_SIZE = 64;
 const BRAND_TILE_GAP = 14;
-const BRAND_ROW_SIDE_PADDING = 20;
+const BRAND_ROW_SIDE_PADDING = HOME_HORIZONTAL_GUTTER;
 
 function BrandRow({
     items,
@@ -166,7 +171,7 @@ export default function BrandGrid() {
     }
 
     return (
-        <View>
+        <View style={styles.container}>
             <View style={styles.headerContainer}>
                 <View style={styles.headerTitle}>
                     <AppText
@@ -194,9 +199,12 @@ export default function BrandGrid() {
 }
 
 const styles = StyleSheet.create({
+    container: {
+        paddingTop: HOME_SECTION_TOP_SPACING,
+    },
     headerContainer: {
-        paddingHorizontal: 20,
-        marginBottom: 16,
+        paddingHorizontal: HOME_HORIZONTAL_GUTTER,
+        marginBottom: HOME_SECTION_HEADER_GAP,
     },
     headerTitle: {
         flexDirection: 'row',
@@ -231,10 +239,11 @@ const styles = StyleSheet.create({
     rowSegment: {
         flexDirection: 'row',
         gap: BRAND_TILE_GAP,
-        paddingHorizontal: BRAND_ROW_SIDE_PADDING,
+        paddingLeft: BRAND_ROW_SIDE_PADDING - 4,
+        paddingRight: BRAND_ROW_SIDE_PADDING,
     },
     rowSpacing: {
-        marginTop: 18,
+        marginTop: HOME_SECTION_HEADER_GAP,
     },
     brandItem: {
         alignItems: 'center',

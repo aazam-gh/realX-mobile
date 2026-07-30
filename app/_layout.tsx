@@ -35,6 +35,7 @@ import { AuthAccessProvider, useAuthAccess } from '../context/AuthAccessContext'
 import { ConnectivityProvider } from '../context/ConnectivityContext';
 import { queryClient } from '../utils/queryClient';
 import { clearLocalAuthSession, isInvalidAuthSessionError } from '../utils/auth';
+import { trackEvent } from '../utils/analytics';
 
 import CustomSplash from './splash';
 
@@ -200,6 +201,13 @@ function LayoutContent({
     }
   }, [i18nReady, appCheckReady, loaded, error, initializing, guestLoading, user, hasProfile, pendingCheckDone]);
 
+  useEffect(() => {
+    if (!appReady) return;
+    void trackEvent('app_opened', {
+      access_mode: isGuest ? 'guest' : user ? 'student' : 'signed_out',
+    });
+  }, [appReady, isGuest, user]);
+
   // Set up local notification channels when user is authenticated with a profile
   useEffect(() => {
     if (user && hasProfile === true) {
@@ -279,6 +287,7 @@ function LayoutContent({
       'category',
       'search',
       'vendor',
+      'opportunity',
       'terms',
       'privacy',
       'x-academy',
@@ -383,6 +392,7 @@ function LayoutContent({
         <Stack.Screen name="category" options={{ headerShown: false }} />
         <Stack.Screen name="search" options={{ headerShown: false }} />
         <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="opportunity/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="redemption-history" options={{ headerShown: false }} />
         <Stack.Screen name="saved-offers" options={{ headerShown: false }} />

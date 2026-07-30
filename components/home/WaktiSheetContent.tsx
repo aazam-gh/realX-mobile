@@ -4,7 +4,6 @@ import { Image } from 'expo-image';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Linking,
     Platform,
     StyleSheet,
     Text,
@@ -19,12 +18,8 @@ import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import { BottomSheetOverscanBackground } from '../../utils/expoUiBottomSheet';
 import { triggerSubtleHaptic } from '../../utils/haptics';
-import { logger } from '../../utils/logger';
+import { openWaktiStore } from '../../utils/wakti';
 
-const WAKTI_IOS_APP_URL = 'itms-apps://itunes.apple.com/app/id6755150700';
-const WAKTI_IOS_WEB_URL = 'https://apps.apple.com/app/id6755150700';
-const WAKTI_ANDROID_MARKET_URL = 'market://details?id=ai.wakti.app';
-const WAKTI_ANDROID_WEB_URL = 'https://play.google.com/store/apps/details?id=ai.wakti.app';
 const waktiBannerImage = require('../../assets/images/waktilogo.png');
 const gridUnit = 60;
 const gridVerticalOffsets = Array.from({ length: 40 }, (_, index) => index * gridUnit - gridUnit * 12);
@@ -187,30 +182,8 @@ export default function WaktiSheetContent({ isDark = true, onStoreOpened, fitToC
         transform: [{ scale: ctaScale.value }],
     }));
 
-    const openFirstAvailableStoreUrl = async (urls: string[]) => {
-        let lastError: unknown;
-
-        for (const url of urls) {
-            try {
-                await Linking.openURL(url);
-                return true;
-            } catch (error) {
-                lastError = error;
-            }
-        }
-
-        logger.error('Error opening Wakti store URL:', lastError);
-        return false;
-    };
-
     const handleStorePress = async () => {
-        const storeUrls = Platform.OS === 'android'
-            ? [WAKTI_ANDROID_MARKET_URL, WAKTI_ANDROID_WEB_URL]
-            : [WAKTI_IOS_APP_URL, WAKTI_IOS_WEB_URL];
-
-        triggerSubtleHaptic();
-
-        const didOpenStore = await openFirstAvailableStoreUrl(storeUrls);
+        const didOpenStore = await openWaktiStore();
         if (didOpenStore) {
             onStoreOpened?.();
         }

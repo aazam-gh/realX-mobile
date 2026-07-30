@@ -1,4 +1,7 @@
 {
+  "react-native": {
+    "analytics_without_ad_id_support": true
+  },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"

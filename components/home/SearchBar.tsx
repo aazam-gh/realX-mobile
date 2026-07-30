@@ -12,6 +12,7 @@ import {
 import { Typography } from "../../constants/Typography";
 import { useAppTheme } from "../../context/AppThemeContext";
 import { useAppLocale } from "../../context/LocaleContext";
+import { HOME_HORIZONTAL_GUTTER } from "./layout";
 
 type Props = {
   placeholder?: string;
@@ -245,7 +246,7 @@ function SearchBarContent({
 
 const styles = StyleSheet.create({
   searchShell: {
-    marginHorizontal: 20,
+    marginHorizontal: HOME_HORIZONTAL_GUTTER,
     marginTop: 12,
     borderRadius: 30,
     shadowColor: "#000000",

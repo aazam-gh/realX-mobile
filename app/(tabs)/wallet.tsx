@@ -18,6 +18,7 @@ import { useAuthAccess } from '../../context/AuthAccessContext';
 import { Typography } from '../../constants/Typography';
 import { queryClient } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
+import { useTabBarScrollVisibility } from '../../components/navigation/TabBarScrollVisibility';
 
 export default function WalletScreen() {
   const insets = useSafeAreaInsets();
@@ -36,6 +37,7 @@ export default function WalletScreen() {
     await queryClient.refetchQueries({ type: 'active' });
   };
   const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refreshWallet });
+  const tabBarScrollVisibility = useTabBarScrollVisibility();
 
   const handleSpendPress = () => {
     if (isGuest && !requireAuth('guest_spend_message')) return;
@@ -66,6 +68,7 @@ export default function WalletScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           refreshControl={refreshControl}
+          {...tabBarScrollVisibility}
         >
         <XCardHeader />
         <XCard earnings={isGuest ? 0 : balance} currency={currency} creatorCode={isGuest ? undefined : creatorCode} />

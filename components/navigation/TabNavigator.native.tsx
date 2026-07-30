@@ -7,20 +7,38 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
+import { TabBarVisibilityProvider, useTabBarVisibilityContext } from './TabBarScrollVisibility';
 
-const NativeTabs = withLayoutContext(createNativeBottomTabNavigator().Navigator);
-const JSTabs = withLayoutContext(createBottomTabNavigator().Navigator);
+const NativeTabs = withLayoutContext(
+  createNativeBottomTabNavigator().Navigator,
+  undefined,
+  true,
+);
+const JSTabs = withLayoutContext(
+  createBottomTabNavigator().Navigator,
+  undefined,
+  true,
+);
 
 export default function TabNavigator() {
+  return (
+    <TabBarVisibilityProvider>
+      <TabNavigatorContent />
+    </TabBarVisibilityProvider>
+  );
+}
+
+function TabNavigatorContent() {
   const { t } = useTranslation();
   const { isDark, theme } = useAppTheme();
   const { direction, isRTL } = useAppLocale();
+  const { isTabBarVisible } = useTabBarVisibilityContext();
   const Tabs = Platform.OS === 'ios' ? NativeTabs : JSTabs;
   const isIos = Platform.OS === 'ios';
   const screens = [
     { name: 'index', title: t('home'), iosIcon: 'house', icon: 'home', outlineIcon: 'home-outline' },
-    { name: 'map', title: t('map'), iosIcon: 'map.fill', icon: 'map', outlineIcon: 'map-outline' },
-    { name: 'wallet', title: t('wallet'), iosIcon: 'creditcard.fill', icon: 'card', outlineIcon: 'card-outline' },
+    { name: 'explore', title: t('explore'), iosIcon: 'safari.fill', icon: 'compass', outlineIcon: 'compass-outline' },
+    { name: 'rewards', title: t('wallet'), iosIcon: 'creditcard.fill', icon: 'card', outlineIcon: 'card-outline' },
     { name: 'profile', title: t('profile'), iosIcon: 'person.fill', icon: 'person', outlineIcon: 'person-outline' },
   ];
 
@@ -39,6 +57,7 @@ export default function TabNavigator() {
           translucent: false,
         } : {
           tabBarStyle: {
+            display: isTabBarVisible ? 'flex' : 'none',
             backgroundColor: 'transparent',
             borderTopColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(15, 37, 23, 0.10)',
             borderTopWidth: StyleSheet.hairlineWidth,
@@ -86,6 +105,24 @@ export default function TabNavigator() {
           }}
         />
       ))}
+      <Tabs.Screen
+        name="map"
+        options={{
+          headerShown: false,
+          ...(isIos
+            ? { tabBarItemHidden: true }
+            : { tabBarButton: () => null }),
+        } as any}
+      />
+      <Tabs.Screen
+        name="wallet"
+        options={{
+          headerShown: false,
+          ...(isIos
+            ? { tabBarItemHidden: true }
+            : { tabBarButton: () => null }),
+        } as any}
+      />
     </Tabs>
   );
 }

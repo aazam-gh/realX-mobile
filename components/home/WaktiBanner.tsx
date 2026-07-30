@@ -1,9 +1,7 @@
-import { BottomSheet, RNHostView } from '@expo/ui';
 import { Image } from 'expo-image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Platform,
     StyleProp,
     StyleSheet,
     Text,
@@ -23,13 +21,14 @@ import Animated, {
 
 import { Typography } from '../../constants/Typography';
 import { useAppLocale } from '../../context/LocaleContext';
-import AndroidBottomSheetModal from '../AndroidBottomSheetModal';
-import { triggerSubtleHaptic } from '../../utils/haptics';
-import { getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
-import WaktiSheetContent from './WaktiSheetContent';
+import { openWaktiStore } from '../../utils/wakti';
+import {
+    HOME_COMPACT_BANNER_HEIGHT,
+    HOME_HORIZONTAL_GUTTER,
+    HOME_SECTION_TOP_SPACING,
+} from './layout';
 
 const waktiBannerImage = require('../../assets/images/waktilogo.png');
-const waktiSheetBackgroundColor = '#050B14';
 const waktiBannerUsesDarkTheme = true;
 const reduceMotion = ReduceMotion.System;
 const gridUnit = 54;
@@ -44,13 +43,8 @@ type WaktiBannerProps = {
 };
 
 export default function WaktiBanner({ style }: WaktiBannerProps) {
-    const [isSheetPresented, setIsSheetPresented] = useState(false);
     const { isRTL } = useAppLocale();
     const { t } = useTranslation();
-    const sheetBackgroundModifiers = useMemo(
-        () => getBottomSheetBackgroundModifiers(waktiSheetBackgroundColor),
-        [],
-    );
     const prefersReducedMotion = useReducedMotion();
     const gridSweep = useSharedValue(prefersReducedMotion ? 1 : 0);
 
@@ -76,13 +70,7 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
     }));
 
     const handleBannerPress = () => {
-        triggerSubtleHaptic();
-        setIsSheetPresented(true);
-    };
-
-    const closeSheet = () => {
-        triggerSubtleHaptic();
-        setIsSheetPresented(false);
+        void openWaktiStore();
     };
 
     return (
@@ -139,16 +127,19 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                     ))}
                 </View>
                 <View style={[styles.content, isRTL && styles.contentRTL]}>
-                    <View style={styles.copy}>
-                        <View style={styles.headlineBlock}>
-                            <Text style={[styles.headline, waktiBannerUsesDarkTheme ? styles.headlineDark : styles.headlineLight, isRTL && styles.textRTL]} numberOfLines={1}>
-                                {t('wakti_banner_headline_primary')}
-                            </Text>
+                        <View style={styles.copy}>
+                            <View style={styles.headlineBlock}>
                             <Text style={[styles.subheadline, waktiBannerUsesDarkTheme ? styles.headlineDark : styles.headlineLight, isRTL && styles.textRTL]} numberOfLines={2}>
                                 {t('wakti_banner_headline_secondary')}
                             </Text>
                         </View>
-                        <View style={[styles.offerPill, waktiBannerUsesDarkTheme ? styles.offerPillDark : styles.offerPillLight, isRTL && styles.offerPillRTL]}>
+                        <View
+                            style={[
+                                styles.offerPill,
+                                waktiBannerUsesDarkTheme ? styles.offerPillDark : styles.offerPillLight,
+                                isRTL && styles.offerPillRTL,
+                            ]}
+                        >
                             <Text style={[styles.offerText, isRTL && styles.offerTextArabic]} numberOfLines={1}>
                                 {t('wakti_banner_offer')}
                             </Text>
@@ -165,48 +156,17 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
                     </View>
                 </View>
             </TouchableOpacity>
-            {Platform.OS === 'android' ? (
-                <AndroidBottomSheetModal
-                    visible={isSheetPresented}
-                    onClose={closeSheet}
-                    backgroundColor={waktiSheetBackgroundColor}
-                    testID="wakti-bottom-sheet"
-                >
-                    <WaktiSheetContent
-                        isDark
-                        fitToContent
-                        onClose={closeSheet}
-                        onStoreOpened={() => setIsSheetPresented(false)}
-                    />
-                </AndroidBottomSheetModal>
-            ) : (
-                <BottomSheet
-                    isPresented={isSheetPresented}
-                    onDismiss={() => setIsSheetPresented(false)}
-                    snapPoints={['half']}
-                    modifiers={sheetBackgroundModifiers}
-                    testID="wakti-bottom-sheet"
-                >
-                    <RNHostView matchContents>
-                        <WaktiSheetContent
-                            isDark
-                            onClose={closeSheet}
-                            onStoreOpened={() => setIsSheetPresented(false)}
-                        />
-                    </RNHostView>
-                </BottomSheet>
-            )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     section: {
-        paddingTop: 22,
-
+        paddingTop: HOME_SECTION_TOP_SPACING,
     },
     card: {
         position: 'relative',
+        height: HOME_COMPACT_BANNER_HEIGHT,
         overflow: 'hidden',
 
         borderTopLeftRadius: 30,
@@ -215,17 +175,15 @@ const styles = StyleSheet.create({
     cardLight: {
         backgroundColor: 'rgba(239, 247, 255, 0.98)',
         borderColor: 'rgba(82, 148, 241, 0.46)',
-        boxShadow: '0 18px 38px rgba(17, 78, 168, 0.09)',
     },
     cardDark: {
         backgroundColor: '#050B14',
         borderColor: 'rgba(116, 177, 255, 0.32)',
-        boxShadow: '0 18px 40px rgba(0, 0, 0, 0.30)',
     },
     content: {
-        minHeight: 154,
-        paddingVertical: 18,
-        paddingHorizontal: 18,
+        height: HOME_COMPACT_BANNER_HEIGHT,
+        paddingVertical: 12,
+        paddingHorizontal: HOME_HORIZONTAL_GUTTER,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -238,16 +196,10 @@ const styles = StyleSheet.create({
     copy: {
         flex: 1,
         minWidth: 0,
-        gap: 14,
+        gap: 8,
     },
     headlineBlock: {
         gap: 2,
-    },
-    headline: {
-        fontSize: 19,
-        lineHeight: 25,
-        ...Typography.getTextVariantStyle('display'),
-        color: '#FFFFFF',
     },
     headlineLight: {
         color: '#FFFFFF',
@@ -256,16 +208,16 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
     },
     subheadline: {
-        fontSize: 16,
-        lineHeight: 21,
+        fontSize: 20,
+        lineHeight: 25,
         ...Typography.getTextVariantStyle('display'),
         color: '#FFFFFF',
     },
     offerPill: {
         alignSelf: 'flex-start',
         borderRadius: 999,
-        paddingVertical: 7,
-        paddingHorizontal: 12,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
     },
     offerPillRTL: {
         alignSelf: 'flex-end',
@@ -278,8 +230,8 @@ const styles = StyleSheet.create({
     },
     offerText: {
         color: '#FFFFFF',
-        fontSize: 15,
-        lineHeight: 18,
+        fontSize: 13,
+        lineHeight: 16,
         ...Typography.getTextVariantStyle('display'),
         textTransform: 'uppercase',
     },
@@ -290,15 +242,15 @@ const styles = StyleSheet.create({
         writingDirection: 'rtl',
     },
     artWrap: {
-        width: 128,
-        height: 128,
+        width: 88,
+        height: 88,
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
     },
     artImage: {
-        width: 120,
-        height: 120,
+        width: 86,
+        height: 86,
     },
     gridLayer: {
         position: 'absolute',

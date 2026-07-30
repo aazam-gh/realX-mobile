@@ -14,13 +14,19 @@ import { useAppLocale } from '../../context/LocaleContext';
 import { fetchCmsDocument, fetchVendor } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 import AppText from '../AppText';
+import {
+    HOME_CAROUSEL_GAP,
+    HOME_HORIZONTAL_GUTTER,
+    HOME_SECTION_HEADER_GAP,
+    HOME_SECTION_TOP_SPACING,
+} from './layout';
 
 type TrendingOffersProps = {
     onVendorPress?: (vendor: any) => void;
 };
 
-const OFFER_CARD_GAP = 12;
-const OFFER_SIDE_PADDING = 30;
+const OFFER_CARD_GAP = HOME_CAROUSEL_GAP;
+const OFFER_SIDE_PADDING = HOME_HORIZONTAL_GUTTER;
 const OFFER_CARD_WIDTH_RATIO = 0.60;
 const OFFER_AUTO_SCROLL_MS = 4000;
 const TRENDING_FALLBACK_LIMIT = 10;
@@ -280,11 +286,11 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
 
 const styles = StyleSheet.create({
     container: {
-        paddingVertical: 16,
+        paddingTop: HOME_SECTION_TOP_SPACING,
     },
     headerContainer: {
-        paddingHorizontal: 20,
-        marginBottom: 16,
+        paddingHorizontal: HOME_HORIZONTAL_GUTTER,
+        marginBottom: HOME_SECTION_HEADER_GAP,
     },
     headerTitle: {
         flexDirection: 'row',
@@ -308,6 +314,5 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: OFFER_SIDE_PADDING,
         gap: OFFER_CARD_GAP,
-
     },
 });

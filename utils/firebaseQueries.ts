@@ -13,6 +13,7 @@ import {
     where,
 } from '@react-native-firebase/firestore';
 import { getCachedVendorDisplayFields } from './vendorDisplayCache';
+import type { Opportunity, RewardAccount } from '../types/opportunities';
 
 export type FirestorePage<T> = {
     items: T[];
@@ -145,6 +146,65 @@ export async function fetchCmsDocument<T = Record<string, any>>(documentId: stri
     const db = getFirestore();
     const docSnap = await getDoc(doc(db, 'cms', documentId));
     return docSnap.exists() ? (docSnap.data() as T) : null;
+}
+
+export async function fetchPublishedOpportunities(): Promise<Opportunity[]> {
+    const db = getFirestore();
+    const snapshot = await getDocs(query(
+        collection(db, 'opportunities'),
+        where('status', '==', 'published'),
+        orderBy('publishedAt', 'desc'),
+        limit(100)
+    ));
+    const now = Date.now();
+    return snapshot.docs
+        .map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+        } as Opportunity))
+        .filter((item: Opportunity) => {
+            const expiresAt = item.expiresAt as { toMillis?: () => number } | undefined;
+            return !expiresAt?.toMillis || expiresAt.toMillis() > now;
+        });
+}
+
+export async function fetchOpportunity(opportunityId: string): Promise<Opportunity | null> {
+    const db = getFirestore();
+    const snapshot = await getDoc(doc(db, 'opportunities', opportunityId));
+    if (!snapshot.exists()) return null;
+    return { id: snapshot.id, ...snapshot.data() } as Opportunity;
+}
+
+export async function fetchRewardAccount(userId: string): Promise<RewardAccount> {
+    const db = getFirestore();
+    const snapshot = await getDoc(doc(db, 'rewardAccounts', userId));
+    if (!snapshot.exists()) {
+        return { userId, statusPoints: 0, redemptionCount: 0 };
+    }
+    const data = snapshot.data();
+    return {
+        userId,
+        statusPoints: typeof data?.statusPoints === 'number' ? data.statusPoints : 0,
+        redemptionCount: typeof data?.redemptionCount === 'number' ? data.redemptionCount : 0,
+        streakCount: typeof data?.streakCount === 'number' ? data.streakCount : 0,
+        badges: Array.isArray(data?.badges) ? data.badges : [],
+        updatedAt: data?.updatedAt,
+    };
+}
+
+export async function fetchSavedOpportunityKinds(userId: string): Promise<Set<string>> {
+    const db = getFirestore();
+    const snapshot = await getDocs(query(
+        collection(db, 'students', userId, 'savedItems'),
+        limit(100)
+    ));
+    return new Set(
+        snapshot.docs
+            .map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => docSnap.data())
+            .filter((item: Record<string, unknown>) => item.type === 'opportunity')
+            .map((item: Record<string, unknown>) => String(item.kind || ''))
+            .filter(Boolean)
+    );
 }
 
 export async function fetchCategories(isArabic: boolean) {

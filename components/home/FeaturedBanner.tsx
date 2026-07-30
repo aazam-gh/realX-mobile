@@ -1,24 +1,29 @@
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import {
     ActivityIndicator,
     Linking,
     StyleProp,
     StyleSheet,
     TouchableOpacity,
-    useWindowDimensions,
     View,
     ViewStyle,
 } from 'react-native';
 
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { logger } from '../../utils/logger';
 import { fetchCmsDocument } from '../../utils/firebaseQueries';
 import { queryKeys } from '../../utils/queryClient';
 import AppText from '../AppText';
+import {
+    HOME_COMPACT_BANNER_HEIGHT,
+    HOME_HORIZONTAL_GUTTER,
+    HOME_SECTION_TOP_SPACING,
+} from './layout';
 
 export type FeaturedBannerItem = {
     id: string;
@@ -57,7 +62,6 @@ function sortByOrder(a: FeaturedBannerItem, b: FeaturedBannerItem) {
 }
 
 export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
-    const { width } = useWindowDimensions();
     const { isRTL } = useAppLocale();
     const {
         data: cmsItem = null,
@@ -77,23 +81,6 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
     useEffect(() => {
         if (error) logger.error('Error fetching featured banner:', error);
     }, [error]);
-
-    const layout = useMemo(() => {
-        const cardWidth = Math.max(0, width - 40);
-        const cardHeight = Math.max(190, Math.min(255, cardWidth * 0.56));
-        const heroHeight = cardHeight * 0.72;
-        const tileGap = 10;
-        const tileWidth = (cardWidth - (tileGap * 2) - 12) / 3;
-        const tileHeight = cardHeight * 0.58;
-
-        return {
-            cardHeight,
-            heroHeight,
-            tileGap,
-            tileWidth,
-            tileHeight,
-        };
-    }, [width]);
 
     const currentItem = item ?? cmsItem;
     const isCmsLoading = !item && isLoading;
@@ -129,26 +116,34 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
 
     const tileImages = currentItem.tileImageUrls.slice(0, 3);
     const title = isRTL && currentItem.titleAr ? currentItem.titleAr : currentItem.title;
+    const configuredCtaText = currentItem.ctaText?.trim();
+    const ctaText = configuredCtaText?.toLowerCase() === 'order'
+        ? 'GET 10% OFF'
+        : configuredCtaText;
 
     return (
         <View style={[styles.section, style]}>
             <TouchableOpacity
                 activeOpacity={0.9}
                 onPress={handlePress}
-                style={[styles.card, { height: layout.cardHeight }]}
+                style={styles.card}
+                accessibilityRole="button"
+                accessibilityLabel={currentItem.altText || title}
+                accessibilityHint={ctaText}
             >
-                <View style={[styles.hero, { height: layout.heroHeight }]}>
-                    <Image
-                        source={{ uri: currentItem.heroImageUrl }}
-                        style={styles.heroImage}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                        accessibilityLabel={currentItem.altText || title}
-                    />
-                    <View style={styles.overlay} />
-                    <View style={[styles.header, isRTL && styles.headerRTL]}>
+                <Image
+                    source={{ uri: currentItem.heroImageUrl }}
+                    style={styles.heroImage}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    accessibilityLabel={currentItem.altText || title}
+                />
+                <View style={styles.overlay} />
+
+                <View style={[styles.content, isRTL && styles.contentRTL]}>
+                    <View style={styles.copy}>
                         <AppText
-                            numberOfLines={1}
+                            numberOfLines={2}
                             style={[
                                 styles.title,
                                 {
@@ -159,30 +154,41 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
                         >
                             {title}
                         </AppText>
+                        {ctaText ? (
+                            <View style={[styles.ctaPill, isRTL && styles.ctaPillRTL]}>
+                                <AppText
+                                    numberOfLines={1}
+                                    style={[styles.ctaText, isRTL && styles.textRTL]}
+                                >
+                                    {ctaText}
+                                </AppText>
+                            </View>
+                        ) : null}
                     </View>
-                </View>
 
-                <View style={[styles.tilesRow, isRTL && styles.tilesRowRTL, { gap: layout.tileGap }]}>
-                    {tileImages.map((imageUrl, index) => (
-                        <View
-                            key={`${currentItem.id}-tile-${index}`}
-                            style={[
-                                styles.tile,
-                                {
-                                    width: layout.tileWidth,
-                                    height: layout.tileHeight,
-                                },
-                            ]}
-                        >
-                            <Image
-                                source={{ uri: imageUrl }}
-                                style={styles.tileImage}
-                                contentFit="cover"
-                                cachePolicy="memory-disk"
-                                accessibilityLabel={currentItem.altText || title}
-                            />
-                        </View>
-                    ))}
+                    <View style={styles.artWrap} pointerEvents="none">
+                        {tileImages.map((imageUrl, index) => (
+                            <View
+                                key={`${currentItem.id}-tile-${index}`}
+                                style={[
+                                    styles.tile,
+                                    index === 0
+                                        ? styles.tile0
+                                        : index === 1
+                                            ? styles.tile1
+                                            : styles.tile2,
+                                ]}
+                            >
+                                <Image
+                                    source={{ uri: imageUrl }}
+                                    style={styles.tileImage}
+                                    contentFit="cover"
+                                    cachePolicy="memory-disk"
+                                    accessibilityLabel={currentItem.altText || title}
+                                />
+                            </View>
+                        ))}
+                    </View>
                 </View>
             </TouchableOpacity>
         </View>
@@ -191,68 +197,103 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
 
 const styles = StyleSheet.create({
     section: {
-        paddingTop: 40,
-
+        paddingTop: HOME_SECTION_TOP_SPACING,
+        paddingBottom: 0,
     },
     card: {
+        position: 'relative',
         width: '100%',
+        height: HOME_COMPACT_BANNER_HEIGHT,
         overflow: 'hidden',
-    },
-    hero: {
-        width: '100%',
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
-        overflow: 'hidden',
         backgroundColor: '#111111',
     },
     heroImage: {
-        width: '100%',
-        height: '100%',
+        ...StyleSheet.absoluteFill,
     },
     overlay: {
         ...StyleSheet.absoluteFill,
-        backgroundColor: 'rgba(0, 0, 0, 0.36)',
+        backgroundColor: 'rgba(0, 0, 0, 0.52)',
     },
-    header: {
-        position: 'absolute',
-        top: 16,
-        left: 8,
-        right: 24,
+    content: {
+        height: HOME_COMPACT_BANNER_HEIGHT,
+        paddingVertical: 10,
+        paddingHorizontal: HOME_HORIZONTAL_GUTTER,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 14,
+        zIndex: 1,
     },
-    headerRTL: {
+    contentRTL: {
         flexDirection: 'row-reverse',
-        left: 24,
-        right: 8,
+    },
+    copy: {
+        flex: 1,
+        minWidth: 0,
+        gap: 10,
     },
     title: {
-        flex: 1,
         color: '#FFFFFF',
         fontSize: 20,
-        letterSpacing: 0,
+        lineHeight: 25,
+        ...Typography.getTextVariantStyle('display'),
         includeFontPadding: false,
     },
-    tilesRow: {
-        position: 'absolute',
-        left: 4,
-        right: 4,
-        bottom: 0,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'flex-end',
+    ctaPill: {
+        alignSelf: 'flex-start',
+        borderRadius: 999,
+        paddingVertical: 7,
+        paddingHorizontal: 12,
+        backgroundColor: '#18B852',
     },
-    tilesRowRTL: {
-        flexDirection: 'row-reverse',
+    ctaPillRTL: {
+        alignSelf: 'flex-end',
+    },
+    ctaText: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        lineHeight: 18,
+        ...Typography.getTextVariantStyle('display'),
+        textTransform: 'uppercase',
+    },
+    textRTL: {
+        textAlign: 'right',
+        writingDirection: 'rtl',
+        textTransform: 'none',
+    },
+    artWrap: {
+        position: 'relative',
+        width: 100,
+        height: 92,
+        flexShrink: 0,
     },
     tile: {
-        borderRadius: 20,
+        position: 'absolute',
+        width: 44,
+        height: 76,
+        borderRadius: 17,
         borderWidth: 1,
         borderColor: '#FFFFFF',
         overflow: 'hidden',
         backgroundColor: '#f0f0f0',
+        boxShadow: '0 12px 24px rgba(0, 0, 0, 0.24)',
+    },
+    tile0: {
+        left: 0,
+        top: 12,
+        transform: [{ rotate: '-5deg' }],
+    },
+    tile1: {
+        left: 28,
+        top: 3,
+        zIndex: 2,
+    },
+    tile2: {
+        left: 56,
+        top: 12,
+        transform: [{ rotate: '5deg' }],
     },
     tileImage: {
         width: '100%',

@@ -37,6 +37,7 @@ import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { fetchMapLocations, fetchMapLocationsByPrefixes, fetchSavedMapPlaceIds, searchMapLocations } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
+import { useRestoreTabBarOnFocus } from '../../components/navigation/TabBarScrollVisibility';
 
 function clampRegion(region: Region): Region {
   const minLatDelta = 0.05;
@@ -160,6 +161,7 @@ function mapFetchKey(region: Region) {
 }
 
 export default function MapScreen() {
+  useRestoreTabBarOnFocus();
   const { t } = useTranslation();
   const { isDark, theme } = useAppTheme();
   const { requireAuth } = useAuthAccess();

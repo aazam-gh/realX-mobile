@@ -10,6 +10,7 @@ import {
   FeaturedBanner,
   GreetingHeader,
   HomeRowGlow,
+  OpportunityHighlights,
   PromoBanner,
   SearchBar,
   TrendingOffers,
@@ -22,6 +23,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { queryClient } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
+import { useTabBarScrollVisibility } from '../../components/navigation/TabBarScrollVisibility';
 
 export default function HomeScreen() {
   const { studentData } = useStudent();
@@ -39,6 +41,7 @@ export default function HomeScreen() {
     });
   }, []);
   const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refreshHome });
+  const tabBarScrollVisibility = useTabBarScrollVisibility();
 
   const handleVendorPress = useCallback((vendorId?: string) => {
     const trimmedVendorId = vendorId?.trim();
@@ -69,6 +72,7 @@ export default function HomeScreen() {
           directionalLockEnabled
           contentContainerStyle={styles.contentContainer}
           refreshControl={refreshControl}
+          {...tabBarScrollVisibility}
         >
         <View style={[styles.headerSection, { backgroundColor: theme.cardMuted }]}>
           <GreetingHeader
@@ -87,13 +91,14 @@ export default function HomeScreen() {
           <PromoBanner onBannerPress={(banner) => handleVendorPress(banner.vendorId)} />
         </View>
         <CategoryGrid />
+        <WaktiBanner />
         <View style={styles.glowSection}>
           <HomeRowGlow variant="offers" />
           <TrendingOffers onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
         </View>
-        <BrandGrid />
         <FeaturedBanner />
-        <WaktiBanner />
+        <BrandGrid />
+        <OpportunityHighlights />
         </ScrollView>
         {refreshOverlay}
       </View>

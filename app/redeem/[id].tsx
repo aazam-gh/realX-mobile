@@ -593,7 +593,7 @@ export default function RedeemScreen() {
                 rows={receiptRows}
                 metaLines={metaLines}
                 primaryActionLabel={t('done')}
-                onPrimaryAction={() => router.replace('/wallet')}
+                onPrimaryAction={() => router.replace('/(tabs)/rewards')}
                 onClose={() => router.replace('/')}
                 isRTL={isArabic}
             />

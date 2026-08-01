@@ -24,6 +24,7 @@ import { useAuthAccess } from '../../context/AuthAccessContext';
 import { queryClient } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
 import { useTabBarScrollVisibility } from '../../components/navigation/TabBarScrollVisibility';
+import VerificationStatusBanner from '../../components/onboarding/VerificationStatusBanner';
 
 export default function HomeScreen() {
   const { studentData } = useStudent();
@@ -79,13 +80,14 @@ export default function HomeScreen() {
             userName={isGuest ? t('guest_home_name') : (userName || t('user'))}
             savings={studentData?.savings ?? 0}
           />
-          <SearchBar
-            placeholder={t('search_placeholder')}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmit={handleSearch}
-          />
         </View>
+        <SearchBar
+          placeholder={t('search_placeholder')}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onSubmit={handleSearch}
+        />
+        <VerificationStatusBanner />
         <View style={styles.glowSection}>
           <HomeRowGlow variant="promo" />
           <PromoBanner onBannerPress={(banner) => handleVendorPress(banner.vendorId)} />
@@ -124,6 +126,9 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     paddingBottom: 8,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    overflow: 'hidden',
   },
   glowSection: {
     position: 'relative',

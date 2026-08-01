@@ -5,6 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useReducedMotion,
   withTiming,
 } from "react-native-reanimated";
 
@@ -13,23 +14,33 @@ export default function CustomSplash({ onFinish }: { onFinish: () => void }) {
   const scale = useSharedValue(0.8);
   const opacity = useSharedValue(0);
   const imageSize = Math.min(width * 0.9, 420);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
+    let cancelled = false;
+    let finishTimer: ReturnType<typeof setTimeout> | undefined;
+
     async function start() {
       await SplashScreen.hideAsync();
+      if (cancelled) return;
 
       // Animate in
-      opacity.value = withTiming(1, { duration: 600 });
-      scale.value = withTiming(1, { duration: 600 });
+      const duration = prefersReducedMotion ? 0 : 320;
+      opacity.value = withTiming(1, { duration });
+      scale.value = withTiming(1, { duration });
 
       // Wait then finish
-      setTimeout(() => {
+      finishTimer = setTimeout(() => {
         onFinish();
-      }, 1800);
+      }, prefersReducedMotion ? 120 : 700);
     }
 
-    start();
-  }, [onFinish, opacity, scale]);
+    void start();
+    return () => {
+      cancelled = true;
+      if (finishTimer) clearTimeout(finishTimer);
+    };
+  }, [onFinish, opacity, prefersReducedMotion, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

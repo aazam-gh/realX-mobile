@@ -47,3 +47,10 @@ export async function getPendingVerification(): Promise<PendingVerificationData 
 export async function clearPendingVerification(): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEY);
 }
+
+export async function clearPendingVerificationForEmail(email: string): Promise<void> {
+  const pending = await getPendingVerification();
+  if (pending?.email.trim().toLowerCase() === email.trim().toLowerCase()) {
+    await clearPendingVerification();
+  }
+}

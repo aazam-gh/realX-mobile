@@ -1,273 +1,158 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as ImagePicker from 'expo-image-picker';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { Image } from 'expo-image';
-import { Colors } from '../../constants/Colors';
-import { useAppTheme } from '../../context/AppThemeContext';
-import { useAppLocale } from '../../context/LocaleContext';
-import { Typography } from '../../constants/Typography';
-import AppText from '../../components/AppText';
-import {
-  OnboardingButtonMotion,
-  OnboardingCardMotion,
-  OnboardingScreenMotion,
-  OnboardingStateMotion,
-  OnboardingStaggerItem,
-} from '../../components/onboarding/OnboardingMotion';
+import * as ImagePicker from 'expo-image-picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { setVerificationImage } from '../../utils/verificationStore';
 
-const MAX_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
+import { OnboardingPrimaryButton, OnboardingScaffold } from '../../components/onboarding/OnboardingUI';
+import { Typography } from '../../constants/Typography';
+import { useAppTheme } from '../../context/AppThemeContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
+import { logger } from '../../utils/logger';
+import { getOnboardingErrorKey, trackOnboarding } from '../../utils/onboarding';
+import { savePendingVerification } from '../../utils/verificationPending';
+
+const MAX_SIZE_BYTES = 3 * 1024 * 1024;
 
 export default function UploadIdScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { theme } = useAppTheme();
-  const { isRTL } = useAppLocale();
-  const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
-  const { role } = useLocalSearchParams<{ role?: string }>();
-
+  const { role, email } = useLocalSearchParams<{ role?: string; email?: string }>();
+  const { isOnline } = useConnectivity();
   const [uploadedImage, setUploadedImage] = useState<{ uri: string; base64: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [uploadPhase, setUploadPhase] = useState<'preparing' | 'uploading' | 'submitting' | null>(null);
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.7,
-      base64: true,
-    });
+    setErrorKey(null);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, base64: true });
+      if (result.canceled || !result.assets?.[0]) return;
 
-    if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      if (asset.mimeType && !['image/jpeg', 'image/png'].includes(asset.mimeType)) {
+        setErrorKey('onboarding_upload_unsupported');
+      } else if (!asset.width || !asset.height || Math.min(asset.width, asset.height) < 480) {
+        setErrorKey('onboarding_upload_too_small');
+      } else if (!asset.base64) {
+        setErrorKey('onboarding_upload_unreadable');
+      } else if (Math.ceil((asset.base64.length * 3) / 4) > MAX_SIZE_BYTES) {
+        setErrorKey('onboarding_upload_image_too_large');
+      } else {
+        setUploadedImage({ uri: asset.uri, base64: asset.base64 });
+      }
+    } catch (error) {
+      logger.error('Unable to open image picker', error);
+      setErrorKey('onboarding_upload_picker_failed');
+    }
+  };
 
-    const asset = result.assets[0];
-
-    if (asset.base64 && Math.ceil((asset.base64.length * 3) / 4) > MAX_SIZE_BYTES) {
-      Alert.alert(t('error'), t('onboarding_upload_image_too_large'));
+  const handleContinue = async () => {
+    if (!uploadedImage?.base64 || !email || isLoading) return;
+    if (!isOnline) {
+      setErrorKey('onboarding_error_network');
       return;
     }
 
-    const imageData = {
-      uri: asset.uri,
-      base64: asset.base64 || '',
-    };
-
-    setUploadedImage(imageData);
-  };
-
-  const handleContinue = () => {
-    if (!uploadedImage || isLoading) return;
-
     setIsLoading(true);
+    setUploadPhase('preparing');
+    setErrorKey(null);
     try {
-      setVerificationImage(uploadedImage.base64);
-      router.push({
-        pathname: '/(onboarding)/verify-email',
-        params: { mode: 'verification', role },
-      } as any);
-    } catch (err: any) {
-      Alert.alert(t('error'), err.message || t('onboarding_generic_error_message'));
+      setUploadPhase('uploading');
+      const submitFn = httpsCallable(getFunctions(undefined, 'me-central1'), 'submitVerificationRequest');
+      void trackOnboarding('verification_upload_started', { source: 'photo_library' });
+      const submission = await submitFn({ email, idImageBase64: uploadedImage.base64, role: role || 'student' });
+      setUploadPhase('submitting');
+      const { statusToken } = submission.data as { statusToken: string };
+      await savePendingVerification(email, role || 'student', statusToken);
+      void trackOnboarding('verification_submitted', { method: 'student_id', role: role || 'student' });
+      router.replace({ pathname: '/(onboarding)/pending', params: { email, role: role || 'student', statusToken } });
+    } catch (error) {
+      logger.error('Unable to submit verification request', error);
+      const nextErrorKey = getOnboardingErrorKey(error);
+      setErrorKey(nextErrorKey);
+      void trackOnboarding('manual_verification_failed', { error_code: nextErrorKey });
     } finally {
       setIsLoading(false);
+      setUploadPhase(null);
     }
   };
 
-  const handleBack = () => {
-    router.back();
-  };
-
-  const canContinue = Boolean(uploadedImage && !isLoading);
+  const canContinue = Boolean(uploadedImage?.base64 && email && !isLoading);
+  const title = `${t('onboarding_upload_id_title_prefix')} ${t('onboarding_upload_id_title_suffix')}`;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar style="light" />
-
-      <OnboardingScreenMotion style={styles.headerBackground}>
-        <SafeAreaView edges={['top']} style={styles.headerContent}>
-          <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
-            <TouchableOpacity onPress={handleBack} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
-              <Ionicons name={arrowIconName} size={24} color={theme.logoTileText} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/')} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
-              <Ionicons name="close" size={24} color={theme.logoTileText} />
-            </TouchableOpacity>
+    <OnboardingScaffold
+      title={title}
+      subtitle={t('onboarding_upload_id_description')}
+      onBack={() => router.back()}
+      onClose={() => router.replace('/(onboarding)' as any)}
+      progress={{ current: 4, total: 5 }}
+      footer={<OnboardingPrimaryButton label={t('onboarding_upload_continue')} loadingLabel={t(`onboarding_upload_${uploadPhase || 'preparing'}`)} loading={isLoading} disabled={!canContinue} onPress={() => void handleContinue()} />}
+    >
+      <TouchableOpacity
+        accessibilityLabel={uploadedImage ? t('onboarding_upload_replace') : t('onboarding_upload_id_single')}
+        accessibilityRole="button"
+        activeOpacity={0.82}
+        onPress={() => void pickImage()}
+        style={[styles.uploadZone, { backgroundColor: uploadedImage ? theme.brandSoft : theme.cardMuted, borderColor: uploadedImage ? theme.brand : theme.border }]}
+      >
+        {uploadedImage ? (
+          <>
+            <Image source={{ uri: uploadedImage.uri }} style={styles.previewImage} contentFit="contain" />
+            <View style={[styles.replaceBadge, { backgroundColor: theme.actionSolid }]}><Text style={[styles.replaceText, { color: theme.onActionSolid }]}>{t('onboarding_upload_replace')}</Text></View>
+          </>
+        ) : (
+          <View style={styles.uploadPlaceholder}>
+            <Ionicons name="images-outline" size={36} color={theme.iconMuted} />
+            <Text style={[styles.uploadLabel, { color: theme.text }]}>{t('onboarding_upload_id_single')}</Text>
+            <Text style={[styles.uploadInfo, { color: theme.subtleText }]}>{t('onboarding_upload_id_info')}</Text>
           </View>
-        </SafeAreaView>
-      </OnboardingScreenMotion>
+        )}
+      </TouchableOpacity>
 
-      <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: theme.background }]}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.card}
-        >
-          <OnboardingStaggerItem delay={120}>
-          <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
-            <Ionicons name="card-outline" size={32} color={theme.brand} />
+      <View style={styles.qualityList}>
+        {['corners', 'readable', 'glare'].map((item) => (
+          <View key={item} style={styles.qualityItem}>
+            <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+            <Text style={[styles.qualityText, { color: theme.mutedText }]}>{t(`onboarding_upload_quality_${item}`)}</Text>
           </View>
-          </OnboardingStaggerItem>
+        ))}
+      </View>
 
-          <OnboardingStaggerItem delay={170}>
-          <View style={styles.textContainer}>
-            <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{t('onboarding_upload_id_title_prefix')}</Text>
-            <AppText style={styles.titleLarge}>
-              <Text style={[styles.greenText, { color: theme.brand }]}>{t('onboarding_upload_id_title_suffix')}</Text>
-            </AppText>
-          </View>
-          </OnboardingStaggerItem>
-
-          <OnboardingStaggerItem delay={220}>
-          <Text style={[styles.subtitle, { color: theme.mutedText }]}>{t('onboarding_upload_id_description')}</Text>
-          </OnboardingStaggerItem>
-
-          <OnboardingStaggerItem delay={270} style={styles.uploadContainer}>
-            <TouchableOpacity
-              style={[
-                styles.uploadZone,
-                { backgroundColor: theme.cardMuted, borderColor: theme.border },
-                uploadedImage && { backgroundColor: theme.brandSoft, borderColor: theme.brand, borderStyle: 'solid' },
-              ]}
-              onPress={pickImage}
-              activeOpacity={0.7}
-            >
-              {uploadedImage ? (
-                <OnboardingStateMotion key="upload-preview" style={styles.previewContainer}>
-                  <Image source={{ uri: uploadedImage.uri }} style={styles.previewImage} contentFit="contain" />
-                  <View style={styles.replaceBadge}>
-                    <Text style={styles.replaceText}>{t('onboarding_upload_replace')}</Text>
-                  </View>
-                </OnboardingStateMotion>
-              ) : (
-                <OnboardingStateMotion key="upload-placeholder" style={styles.uploadPlaceholder}>
-                  <Ionicons name="camera-outline" size={32} color={theme.iconMuted} />
-                  <Text style={[styles.uploadLabel, { color: theme.subtleText }]}>{t('onboarding_upload_id_single')}</Text>
-                </OnboardingStateMotion>
-              )}
-            </TouchableOpacity>
-          </OnboardingStaggerItem>
-
-          <OnboardingStaggerItem delay={330}>
-          <Text style={[styles.infoText, { color: theme.subtleText }]}>{t('onboarding_upload_id_info')}</Text>
-          </OnboardingStaggerItem>
-        </KeyboardAvoidingView>
-
-        <View style={styles.footer}>
-          <OnboardingButtonMotion enabled={canContinue}>
-          <TouchableOpacity
-            style={[styles.button, canContinue && styles.buttonEnabled]}
-            onPress={handleContinue}
-            disabled={!uploadedImage || isLoading}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={theme.onActionSolid} />
-            ) : (
-              <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>{t('onboarding_continue')}</Text>
-            )}
-          </TouchableOpacity>
-          </OnboardingButtonMotion>
+      <View style={[styles.privacy, { backgroundColor: theme.cardMuted }]}>
+        <Text style={[styles.privacyText, { color: theme.mutedText }]}>{t('onboarding_upload_privacy_explanation')}</Text>
+        <View style={styles.privacyLinks}>
+          <TouchableOpacity accessibilityRole="link" onPress={() => router.push('/privacy' as any)}><Text style={[styles.privacyLink, { color: theme.brandText }]}>{t('privacy_policy')}</Text></TouchableOpacity>
+          <TouchableOpacity accessibilityRole="link" onPress={() => router.push('/terms' as any)}><Text style={[styles.privacyLink, { color: theme.brandText }]}>{t('terms_and_conditions')}</Text></TouchableOpacity>
         </View>
-      </OnboardingCardMotion>
-    </View>
+      </View>
+
+      {errorKey ? <View><Text selectable accessibilityLiveRegion="polite" style={[styles.inlineError, { color: theme.danger }]}>{t(errorKey)}</Text>{errorKey === 'onboarding_upload_picker_failed' ? <TouchableOpacity accessibilityRole="button" onPress={() => void Linking.openSettings()} style={styles.settingsButton}><Text style={[styles.privacyLink, { color: theme.brandText }]}>{t('onboarding_v2_open_settings')}</Text></TouchableOpacity> : null}</View> : null}
+    </OnboardingScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  headerBackground: { height: 250, backgroundColor: Colors.brandGreen },
-  headerContent: { paddingHorizontal: 20, paddingTop: 10 },
-  topButtons: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 },
-  topButtonsRTL: { flexDirection: 'row-reverse' },
-  iconButton: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 1)',
-    justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
-  },
-  cardContainer: {
-    flex: 1,
-    borderTopLeftRadius: 50, borderTopRightRadius: 50,
-    marginTop: -80, paddingHorizontal: 28, paddingTop: 36,
-  },
-  card: { flex: 1, alignItems: 'center' },
-  iconCircle: {
-    width: 72, height: 72, borderRadius: 36,
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 12, marginTop: 4,
-  },
-  textContainer: { marginBottom: 12, alignItems: 'center' },
-  titleSmall: {
-    fontSize: 14, ...Typography.getTextVariantStyle('body'),
-    textTransform: 'uppercase', letterSpacing: 2,
-    marginBottom: 4, textAlign: 'center',
-  },
-  titleLarge: { fontSize: 32, textAlign: 'center', lineHeight: 38 },
-  greenText: {},
-  subtitle: {
-    fontSize: 14, textAlign: 'center',
-    lineHeight: 20, ...Typography.getTextVariantStyle('body'),
-    marginBottom: 24, paddingHorizontal: 10,
-  },
-  uploadContainer: {
-    flexDirection: 'row', gap: 14, marginBottom: 20, width: '100%',
-  },
-  uploadZone: {
-    flex: 1, height: 170, borderRadius: 20,
-    borderWidth: 2, borderStyle: 'dashed',
-    justifyContent: 'center', alignItems: 'center',
-    overflow: 'hidden',
-  },
-  uploadZoneFilled: {
-    borderWidth: 2,
-  },
-  uploadPlaceholder: {
-    justifyContent: 'center', alignItems: 'center', gap: 8,
-  },
-  uploadLabel: {
-    fontSize: 13, ...Typography.getTextVariantStyle('body'),
-    textAlign: 'center',
-  },
-  previewContainer: {
-    width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center',
-  },
-  previewImage: {
-    width: '100%', height: '100%', borderRadius: 18,
-  },
-  replaceBadge: {
-    position: 'absolute', bottom: 8, right: 8,
-    backgroundColor: Colors.brandGreen, borderRadius: 12,
-    paddingHorizontal: 10, paddingVertical: 4,
-  },
-  replaceText: {
-    color: '#fff', fontSize: 11, ...Typography.getTextVariantStyle('bodyStrong'),
-  },
-  infoText: {
-    fontSize: 13, textAlign: 'center',
-    lineHeight: 18, ...Typography.getTextVariantStyle('body'),
-    paddingHorizontal: 10,
-  },
-  footer: { paddingBottom: 40, marginTop: 'auto' },
-  button: {
-    backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 20,
-  },
-  buttonEnabled: {
-    opacity: 1,
-    shadowColor: Colors.brandGreen,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
-  },
-  buttonText: { fontSize: 17, ...Typography.getTextVariantStyle('bodyStrong') },
+  uploadZone: { height: 230, borderWidth: 1.5, borderRadius: 20, borderStyle: 'dashed', overflow: 'hidden' },
+  uploadPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 9, paddingHorizontal: 24 },
+  uploadLabel: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 16 },
+  uploadInfo: { ...Typography.getTextVariantStyle('body'), fontSize: 13, textAlign: 'center' },
+  previewImage: { width: '100%', height: '100%' },
+  replaceBadge: { position: 'absolute', right: 12, bottom: 12, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8 },
+  replaceText: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 13 },
+  qualityList: { gap: 10 },
+  qualityItem: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  qualityText: { flex: 1, ...Typography.getTextVariantStyle('body'), fontSize: 14, lineHeight: 20 },
+  privacy: { borderRadius: 16, padding: 16, gap: 12 },
+  privacyText: { ...Typography.getTextVariantStyle('body'), fontSize: 13, lineHeight: 19 },
+  privacyLinks: { flexDirection: 'row', gap: 20, flexWrap: 'wrap' },
+  privacyLink: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 13, textDecorationLine: 'underline' },
+  inlineError: { ...Typography.getTextVariantStyle('body'), fontSize: 13, lineHeight: 19 },
+  settingsButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
 });

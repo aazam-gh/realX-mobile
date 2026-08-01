@@ -1,6 +1,6 @@
 import { getAuth, onAuthStateChanged, type FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { logger } from '../utils/logger';
 
 type StudentData = {
@@ -19,6 +19,8 @@ type StudentContextValue = {
   studentData: StudentData | null;
   loading: boolean;
   docExists: boolean | null; // null = not yet checked, true = exists, false = doesn't exist
+  error: Error | null;
+  refreshProfile: () => void;
 };
 
 const StudentContext = createContext<StudentContextValue | undefined>(undefined);
@@ -27,6 +29,8 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [docExists, setDocExists] = useState<boolean | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -41,10 +45,12 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
         setStudentData(null);
         setDocExists(null);
         setLoading(false);
+        setError(null);
         return;
       }
 
       setLoading(true);
+      setError(null);
       const db = getFirestore();
       const studentDocRef = doc(db, 'students', user.uid);
 
@@ -59,12 +65,14 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
             setDocExists(false);
           }
           setLoading(false);
+          setError(null);
         },
         (error) => {
           logger.error('StudentContext snapshot error:', error);
           setStudentData(null);
           // A listener failure does not mean the student's profile is missing.
           setDocExists(null);
+          setError(error);
           setLoading(false);
         }
       );
@@ -76,10 +84,16 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
         unsubscribeRef.current();
       }
     };
+  }, [refreshKey]);
+
+  const refreshProfile = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setRefreshKey((value) => value + 1);
   }, []);
 
   return (
-    <StudentContext.Provider value={{ studentData, loading, docExists }}>
+    <StudentContext.Provider value={{ studentData, loading, docExists, error, refreshProfile }}>
       {children}
     </StudentContext.Provider>
   );

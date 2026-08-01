@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
   Easing,
@@ -20,18 +20,10 @@ const RADAR_SIZE = 60;
 
 export default function MascotThemeButton() {
   const { isDark, theme, toggleTheme } = useAppTheme();
-  const imageMix = useSharedValue(isDark ? 1 : 0);
   const nextPulseRef = useRef(false);
   const pulseA = useSharedValue(1);
   const pulseB = useSharedValue(1);
   const pressScale = useSharedValue(1);
-
-  useEffect(() => {
-    imageMix.value = withTiming(isDark ? 1 : 0, {
-      duration: 150,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [imageMix, isDark]);
 
   const handlePress = useCallback(() => {
     triggerSubtleHaptic();
@@ -59,14 +51,6 @@ export default function MascotThemeButton() {
     transform: [{ scale: pressScale.value }],
   }));
 
-  const lightImageStyle = useAnimatedStyle(() => ({
-    opacity: 1 - imageMix.value,
-  }));
-
-  const darkImageStyle = useAnimatedStyle(() => ({
-    opacity: imageMix.value,
-  }));
-
   return (
     <Pressable
       accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -84,8 +68,10 @@ export default function MascotThemeButton() {
         backgroundColor: theme.logoTile,
         borderColor: theme.brand,
       }, pressStyle]}>
-        <Animated.Image source={LIGHT_MASCOT} style={[styles.avatarImage, lightImageStyle]} />
-        <Animated.Image source={DARK_MASCOT} style={[styles.avatarImage, darkImageStyle]} />
+        <Animated.Image
+          source={isDark ? DARK_MASCOT : LIGHT_MASCOT}
+          style={styles.avatarImage}
+        />
       </Animated.View>
     </Pressable>
   );

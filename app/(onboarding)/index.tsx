@@ -2,10 +2,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import AppText from '../../components/AppText';
 import {
     OnboardingButtonMotion,
@@ -95,6 +96,7 @@ export default function OnboardingScreen() {
     const { theme } = useAppTheme();
     const { continueAsGuest } = useAuthAccess();
     const { locale, isRTL, isChanging, changeLocale } = useAppLocale();
+    const languageSliderX = useSharedValue(locale === 'ar' ? 66 : 0);
     const compactHeight = height < 820;
     const mascotWidth = Math.min(width * 1.75, 650);
     const mascotFrameHeight = Math.min(height * (compactHeight ? 0.31 : 0.33), 270);
@@ -108,6 +110,17 @@ export default function OnboardingScreen() {
             Alert.alert(t('error'), t('language_change_failed'));
         }
     };
+
+    useEffect(() => {
+        languageSliderX.value = withTiming(locale === 'ar' ? 66 : 0, {
+            duration: 250,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        });
+    }, [languageSliderX, locale]);
+
+    const languageSliderStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: languageSliderX.value }],
+    }));
 
     const completeDiscoverTransition = useCallback(() => {
         setStep(1);
@@ -222,21 +235,6 @@ export default function OnboardingScreen() {
                 <SafeAreaView style={styles.safeArea}>
                     <View style={styles.content}>
                         <View style={styles.topSection}>
-                        <View style={styles.logoContainer}>
-                            <Image
-                                source={require('../../assets/images/logo.png')}
-                                style={[styles.logo, { tintColor: theme.brand }]}
-                                contentFit="contain"
-                            />
-                            <View pointerEvents="none" style={styles.logoXClip}>
-                                <Image
-                                    source={require('../../assets/images/logo.png')}
-                                    style={styles.logoXOverlay}
-                                    contentFit="contain"
-                                />
-                            </View>
-                        </View>
-
                         <View style={[styles.headlineContainer, compactHeight && styles.headlineContainerCompact]}>
                             <StaggeredHeadingText
                                 text={t('onboarding_headline_broke')}
@@ -273,12 +271,29 @@ export default function OnboardingScreen() {
                         {/* Footer */}
                         <View style={styles.footer}>
                             <View style={styles.languageSwitcher}>
-                                <TouchableOpacity disabled={isChanging} onPress={() => void changeLanguage('en')}>
-                                    <Text style={[styles.langText, locale === 'en' && styles.langTextActive]}>English</Text>
+                                <Animated.View
+                                    pointerEvents="none"
+                                    style={[styles.languageSlider, { backgroundColor: theme.actionSolid }, languageSliderStyle]}
+                                />
+                                <TouchableOpacity
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: locale === 'en', disabled: isChanging }}
+                                    disabled={isChanging}
+                                    onPress={() => void changeLanguage('en')}
+                                    style={styles.languageOption}
+                                    activeOpacity={1}
+                                >
+                                    <Text style={[styles.langText, locale === 'en' && styles.langTextActive]}>EN</Text>
                                 </TouchableOpacity>
-                                <Text style={styles.langSeparator}> | </Text>
-                                <TouchableOpacity disabled={isChanging} onPress={() => void changeLanguage('ar')}>
-                                    <Text style={[styles.langText, locale === 'ar' && styles.langTextActive]}>العربية</Text>
+                                <TouchableOpacity
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: locale === 'ar', disabled: isChanging }}
+                                    disabled={isChanging}
+                                    onPress={() => void changeLanguage('ar')}
+                                    style={styles.languageOption}
+                                    activeOpacity={1}
+                                >
+                                    <Text style={[styles.langText, styles.langTextArabic, locale === 'ar' && styles.langTextActive]}>ع</Text>
                                 </TouchableOpacity>
                             </View>
                             <OnboardingButtonMotion enabled>
@@ -347,39 +362,12 @@ const styles = StyleSheet.create({
     topSection: {
         width: '100%',
     },
-    logoContainer: {
-        marginTop: 20,
-        height: 60,
-        width: 150,
-        alignSelf: 'center',
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-    },
-    logo: {
-        height: 48,
-        width: 150,
-    },
-    logoXClip: {
-        position: 'absolute',
-        top: 6,
-        right: 0,
-        width: 48,
-        height: 48,
-        overflow: 'hidden',
-    },
-    logoXOverlay: {
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        width: 150,
-        height: 48,
-    },
     headlineContainer: {
-        marginTop: 36,
+        marginTop: 20,
         alignSelf: 'flex-start',
         paddingStart: 10,
         maxWidth: 250,
+        transform: [{ translateY: 32 }],
     },
     headlineContainerCompact: {
         marginTop: 24,
@@ -477,21 +465,43 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 30,
+        alignSelf: 'center',
+        padding: 4,
+        borderRadius: 26,
+        backgroundColor: '#F8FBF8',
+        borderWidth: 1,
+        borderColor: '#DCE5DE',
+        position: 'relative',
+        direction: 'ltr',
+    },
+    languageSlider: {
+        position: 'absolute',
+        top: 4,
+        left: 4,
+        width: 66,
+        height: 44,
+        borderRadius: 22,
+    },
+    languageOption: {
+        width: 66,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1,
     },
     langText: {
-        ...Typography.getTextVariantStyle('body'),
-        fontSize: 20,
-      color: '#0A0F0C',
-      opacity: 0.75,
+        ...Typography.getTextVariantStyle('bodyStrong'),
+        fontSize: 14,
+        color: '#0A0F0C',
     },
     langTextActive: {
-        opacity: 1,
-        ...Typography.getTextVariantStyle('bodyStrong'),
+        color: '#FFFFFF',
     },
-    langSeparator: {
-        fontSize: 16,
-        color: '#0A0F0C',
-        marginHorizontal: 15,
+    langTextArabic: {
+        ...Typography.getTextVariantStyle('displayArabicBlack'),
+        fontSize: 18,
+        lineHeight: 22,
     },
     cardsWrapper: {
         width: '100%',

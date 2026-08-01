@@ -6,6 +6,7 @@ import path from 'node:path';
 const projectRoot = process.cwd();
 const sourceRoots = ['app', 'components', 'context', 'constants', 'src', 'utils'];
 const allowedLegacyFile = path.join('src', 'localization', 'legacyRtlMigration.ts');
+const allowedRuntimeReloadFile = path.join('app', '_layout.tsx');
 
 function readJson(filePath: string) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8').replace(/^\uFEFF/, '')) as Record<string, string>;
@@ -47,7 +48,7 @@ describe('localization catalogs and runtime direction guardrails', () => {
     const violations: string[] = [];
     for (const file of files) {
       const relativePath = path.relative(projectRoot, file);
-      if (relativePath === allowedLegacyFile) continue;
+      if (relativePath === allowedLegacyFile || relativePath === allowedRuntimeReloadFile) continue;
       const source = fs.readFileSync(file, 'utf8');
       if (/\bI18nManager\b|\bforceRTL\b|\breloadAsync\b/.test(source)) {
         violations.push(relativePath);

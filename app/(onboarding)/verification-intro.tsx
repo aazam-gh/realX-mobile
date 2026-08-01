@@ -77,7 +77,7 @@ export default function VerificationIntroScreen() {
 }
 
 const styles = StyleSheet.create({
-  steps: { gap: 18 }, stepCopy: { flex: 1 },
+  steps: { gap: 18 }, step: { flexDirection: 'row', alignItems: 'flex-start' }, stepCopy: { flex: 1 },
   stepTitle: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 15 }, stepBody: { ...Typography.getTextVariantStyle('body'), fontSize: 13, lineHeight: 19, paddingTop: 3 },
   privacy: { borderRadius: 16, padding: 16, flexDirection: 'row', gap: 12, alignItems: 'flex-start' }, privacyText: { flex: 1, ...Typography.getTextVariantStyle('body'), fontSize: 13, lineHeight: 19 },
   link: { minHeight: 44, justifyContent: 'center', alignItems: 'center' }, linkText: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 14 },

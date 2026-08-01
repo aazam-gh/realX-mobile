@@ -2,7 +2,7 @@
   "expo": {
     "name": "realX",
     "slug": "reelx",
-    "version": "1.2.4",
+    "version": "1.2.5",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.reelx.app",
-      "versionCode": 7,
+      "versionCode": 32,
       "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {

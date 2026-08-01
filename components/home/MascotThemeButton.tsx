@@ -7,6 +7,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import DARK_MASCOT from '../../assets/images/user-dark.png';
 import LIGHT_MASCOT from '../../assets/images/user.png';

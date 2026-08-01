@@ -1,286 +1,165 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
+import { getAuth, signInWithCustomToken } from '@react-native-firebase/auth';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '../../constants/Colors';
-import { useAppTheme } from '../../context/AppThemeContext';
-import { useAppLocale } from '../../context/LocaleContext';
-import { Typography } from '../../constants/Typography';
-import AppText from '../../components/AppText';
-import {
-  OnboardingButtonMotion,
-  OnboardingCardMotion,
-  OnboardingScreenMotion,
-  OnboardingStaggerItem,
-} from '../../components/onboarding/OnboardingMotion';
-import { logger } from '../../utils/logger';
+import { useEffect, useRef, useState } from 'react';
+import { Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-// Email normalization (strict identity)
-const normalizeEmail = (email: string): string => {
-  const trimmed = email.trim().toLowerCase();
-  const [local, domain] = trimmed.split('@');
+import { InlineNotice, OnboardingField, OnboardingPrimaryButton, OnboardingScaffold, OnboardingSecondaryButton } from '../../components/onboarding/OnboardingUI';
+import { Typography } from '../../constants/Typography';
+import { useAppTheme } from '../../context/AppThemeContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
+import { logger } from '../../utils/logger';
+import { clearPendingVerificationForEmail } from '../../utils/verificationPending';
+import { getOnboardingErrorKey, isValidEmail, normalizeCallableCode, normalizeEmail, trackOnboarding } from '../../utils/onboarding';
 
-  if (!domain) return trimmed;
-
-  if (domain === 'gmail.com' || domain === 'googlemail.com') {
-    const cleanLocal = local.split('+')[0].replace(/\./g, '');
-    return `${cleanLocal}@gmail.com`;
-  }
-
-  return trimmed;
-};
+type AuthMode = 'signup' | 'login';
+type RouteResolution = 'existing_account' | 'no_account' | 'student_id' | null;
 
 export default function EmailOnboarding() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ role?: string; mode?: string }>();
-  const { role, mode } = params;
+  const params = useLocalSearchParams<{ mode?: AuthMode; prefillEmail?: string; role?: string }>();
   const { t } = useTranslation();
   const { theme } = useAppTheme();
-
-  const { isRTL } = useAppLocale();
-  const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
-  const inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
-  const roleTitle = role === 'creator' ? t('onboarding_email_title_creator') : t('onboarding_email_title_student');
-  const titleSuffix = t('onboarding_email_title_suffix');
-
-  const [email, setEmail] = useState('');
-  const isNewUser = mode === 'signup';
-  const [isLoading, setIsLoading] = useState(false);
+  const { isOnline } = useConnectivity();
   const inputRef = useRef<TextInput>(null);
+  const [mode, setMode] = useState<AuthMode>(params.mode === 'login' ? 'login' : 'signup');
+  const [email, setEmail] = useState(params.prefillEmail || '');
+  const [loading, setLoading] = useState(false);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [resolution, setResolution] = useState<RouteResolution>(null);
 
-  const handleBack = () => {
-    router.back();
-  };
+  useEffect(() => { void trackOnboarding('email_viewed', { auth_mode: mode, flow_version: 'onboarding_v2' }); }, [mode]);
 
-  const handleSendOtp = async () => {
+  const sendCode = async (purpose: 'signup' | 'login' | 'verification') => {
     const normalizedEmail = normalizeEmail(email);
-    if (!normalizedEmail) return;
-
-    setIsLoading(true);
+    setLoading(true);
+    setErrorKey(null);
     try {
-      // Signup: check if account already exists
-      if (isNewUser) {
-        const fnInstance = getFunctions(undefined, 'me-central1');
-        const checkStudent = httpsCallable(fnInstance, 'checkStudentExists');
-        const result = await checkStudent({ email: normalizedEmail });
-
-        if ((result.data as { exists: boolean }).exists) {
-          Alert.alert(t('onboarding_account_exists_title'), t('onboarding_account_exists_message'));
-          return;
-        }
+      const functions = getFunctions(undefined, 'me-central1');
+      const sendOtp = httpsCallable(functions, 'sendOtp');
+      const response = await sendOtp({ email: normalizedEmail, purpose });
+      const immediateToken = (response.data as { customToken?: string }).customToken;
+      if (immediateToken) {
+        await signInWithCustomToken(getAuth(), immediateToken);
+        await clearPendingVerificationForEmail(normalizedEmail);
+        void trackOnboarding('auth_code_verified', { auth_mode: 'login', verification_method: 'review_bypass' });
+        return;
       }
-
-      // Send OTP
-      const fnInstance = getFunctions(undefined, 'me-central1');
-      const sendOtp = httpsCallable(fnInstance, 'sendOtp');
-      await sendOtp({ email: normalizedEmail, purpose: isNewUser ? 'signup' : 'login' });
-
-      // Navigate to verification screen
+      void trackOnboarding('auth_code_sent', { auth_mode: mode, verification_method: purpose === 'verification' ? 'student_id' : 'school_email' });
       router.replace({
         pathname: '/(onboarding)/verify',
-        params: { email: normalizedEmail, purpose: isNewUser ? 'signup' : 'login', role },
+        params: {
+          email: normalizedEmail,
+          purpose,
+          ...(params.role ? { role: params.role } : purpose !== 'login' ? { role: 'student' } : {}),
+        },
       });
-    } catch (err: any) {
-      logger.error(err);
-      Alert.alert(t('error'), err.message || t('onboarding_generic_error_message'));
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      logger.error('Unable to send onboarding code', error);
+      const code = normalizeCallableCode(error);
+      if (mode === 'signup' && (code === 'permission-denied' || getOnboardingErrorKey(error) === 'onboarding_error_school_email_required')) {
+        setResolution('student_id');
+        void trackOnboarding('auth_route_resolved', { auth_mode: mode, next_route: 'student_id', verification_method: 'student_id' });
+      } else if (mode === 'login' && code === 'not-found') {
+        setResolution('no_account');
+        void trackOnboarding('auth_route_resolved', { auth_mode: mode, next_route: 'signup' });
+      } else if (mode === 'signup' && code === 'already-exists') {
+        setResolution('existing_account');
+        void trackOnboarding('auth_route_resolved', { auth_mode: mode, next_route: 'login' });
+      } else {
+        const next = getOnboardingErrorKey(error);
+        setErrorKey(next);
+        void trackOnboarding('auth_error_shown', { step: 'email', error_code: next, recoverable: true });
+      }
+    } finally { setLoading(false); }
+  };
+
+  const submit = async () => {
+    const normalizedEmail = normalizeEmail(email);
+    if (!isValidEmail(normalizedEmail)) { setErrorKey('onboarding_error_email_invalid'); inputRef.current?.focus(); return; }
+    if (!isOnline) { setErrorKey('onboarding_error_network'); return; }
+    setResolution(null);
+    void trackOnboarding('auth_email_submitted', { auth_mode: mode });
+
+    if (mode === 'login') { await sendCode('login'); return; }
+    setLoading(true);
+    try {
+      const functions = getFunctions(undefined, 'me-central1');
+      const checkStudent = httpsCallable(functions, 'checkStudentExists');
+      const result = await checkStudent({ email: normalizedEmail });
+      if ((result.data as { exists?: boolean }).exists) {
+        setResolution('existing_account');
+        void trackOnboarding('auth_route_resolved', { auth_mode: mode, next_route: 'login' });
+        return;
+      }
+    } catch (error) {
+      const code = normalizeCallableCode(error);
+      if (code !== 'permission-denied') {
+        const next = getOnboardingErrorKey(error);
+        setErrorKey(next);
+        void trackOnboarding('auth_error_shown', { step: 'email', error_code: next, recoverable: true });
+        setLoading(false);
+        return;
+      }
     }
+    setLoading(false);
+    await sendCode('signup');
   };
 
-  const handleContinue = async () => {
-    await handleSendOtp();
+  const handleStudentId = () => {
+    const normalizedEmail = normalizeEmail(email);
+    void trackOnboarding('auth_email_submitted', { auth_mode: mode, verification_method: 'student_id' });
+    router.push({
+      pathname: '/(onboarding)/verification-intro',
+      params: {
+        role: params.role || 'student',
+        ...(isValidEmail(normalizedEmail) ? { email: normalizedEmail } : {}),
+      },
+    });
   };
 
-  return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
-    >
-      <StatusBar style="light" />
+  const switchMode = (next: AuthMode) => { setMode(next); setResolution(null); setErrorKey(null); };
+  const notice = resolution === 'student_id'
+    ? <InlineNotice tone="info" actionLabel={t('onboarding_v2_verify_student_id')} onAction={handleStudentId}>{t('onboarding_v2_student_id_fallback')}</InlineNotice>
+    : resolution === 'existing_account'
+      ? <InlineNotice tone="success" actionLabel={t('onboarding_v2_send_signin_code')} onAction={() => { switchMode('login'); void sendCode('login'); }}>{t('onboarding_v2_existing_account')}</InlineNotice>
+      : resolution === 'no_account'
+        ? <InlineNotice tone="info" actionLabel={t('onboarding_v2_create_account')} onAction={() => switchMode('signup')}>{t('onboarding_v2_no_account')}</InlineNotice>
+        : null;
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <OnboardingScreenMotion style={styles.headerBackground}>
-          <SafeAreaView edges={['top']} style={styles.headerContent}>
-            <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
-              <TouchableOpacity onPress={handleBack} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
-                <Ionicons name={arrowIconName} size={24} color={theme.logoTileText} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.replace('/')} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
-                <Ionicons name="close" size={24} color={theme.logoTileText} />
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
-        </OnboardingScreenMotion>
-
-        <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: theme.background, flex: 1 }]}>
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.card}>
-              <OnboardingStaggerItem delay={120}>
-              <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
-                <Ionicons name="person-add-outline" size={36} color={theme.brand} />
-              </View>
-              </OnboardingStaggerItem>
-
-              <OnboardingStaggerItem delay={170}>
-              <View style={styles.textContainer}>
-                <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{t('onboarding_email_title_prefix')}</Text>
-                <View style={styles.titleRow}>
-                  <AppText style={[styles.titleLarge, isRTL && styles.titleLargeRTL]}>
-                    {isRTL ? (
-                      <>
-                        <Text style={[styles.blackText, { color: theme.text }]}>{titleSuffix}</Text>
-                        <Text> </Text>
-                        <Text style={[styles.greenText, { color: theme.brand }]}>{roleTitle}</Text>
-                      </>
-                    ) : (
-                      <>
-                        <Text style={[styles.greenText, { color: theme.brand }]}>{roleTitle}</Text>
-                        <Text style={[styles.blackText, { color: theme.text }]}> {titleSuffix}</Text>
-                      </>
-                    )}
-                  </AppText>
-                </View>
-              </View>
-              </OnboardingStaggerItem>
-
-              <OnboardingStaggerItem delay={220} style={styles.inputWrapper}>
-                <View
-                  style={[
-                    styles.singleInputContainer,
-                    { backgroundColor: email ? theme.brandSoft : theme.cardMuted, borderColor: email ? theme.brand : 'transparent' },
-                  ]}
-                >
-                  <Ionicons name="mail-outline" size={20} color={email ? theme.brand : theme.iconMuted} style={styles.inputIcon} />
-                  <TextInput
-                    ref={inputRef}
-                    style={[styles.input, { color: theme.text, textAlign: inputTextAlign, flex: 1 }]}
-                    placeholder={t('onboarding_email_placeholder')}
-                    placeholderTextColor={theme.inputPlaceholder}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    value={email}
-                    onChangeText={setEmail}
-                    editable={!isLoading}
-                  />
-                </View>
-              </OnboardingStaggerItem>
-
-              <OnboardingStaggerItem delay={310}>
-              <TouchableOpacity onPress={() => router.push({ pathname: '/(onboarding)/upload-id', params: { role } } as any)} style={styles.linkButton}>
-                <Text style={[styles.linkText, { color: theme.brandText }]}>{t('onboarding_no_edu_email_link')}</Text>
-              </TouchableOpacity>
-              </OnboardingStaggerItem>
-            </View>
-          </TouchableWithoutFeedback>
-
-          <View style={styles.footer}>
-            <OnboardingButtonMotion enabled={Boolean(email && !isLoading)}>
-            <TouchableOpacity
-              style={[styles.button, email && !isLoading && styles.buttonEnabled]}
-              onPress={handleContinue}
-              disabled={isLoading || !email}
-              activeOpacity={0.8}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={theme.onActionSolid} />
-              ) : (
-                <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>{t('onboarding_continue')}</Text>
-              )}
-            </TouchableOpacity>
-            </OnboardingButtonMotion>
-          </View>
-        </OnboardingCardMotion>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+  return <OnboardingScaffold
+    title={mode === 'login' ? t('onboarding_v2_login_title') : t('onboarding_v2_email_title')}
+    subtitle={mode === 'login' ? t('onboarding_v2_login_subtitle') : undefined}
+    onBack={() => router.back()}
+    onClose={() => router.replace('/(onboarding)' as any)}
+    progress={mode === 'signup' ? { current: 2, total: 4 } : undefined}
+    footer={<OnboardingPrimaryButton label={mode === 'login' ? t('onboarding_v2_send_signin_code') : t('onboarding_email_continue')} loadingLabel={t('onboarding_v2_checking_email')} loading={loading} disabled={!isValidEmail(email)} onPress={() => void submit()} />}
+  >
+    <OnboardingField
+      inputRef={inputRef}
+      label={t('onboarding_email_placeholder')}
+      error={errorKey ? t(errorKey) : null}
+      value={email}
+      onChangeText={(value) => { setEmail(value); setErrorKey(null); setResolution(null); }}
+      keyboardType="email-address"
+      autoCapitalize="none"
+      autoCorrect={false}
+      autoComplete="email"
+      textContentType="emailAddress"
+      returnKeyType="done"
+      editable={!loading}
+      onSubmitEditing={() => void submit()}
+      style={{ writingDirection: 'ltr', textAlign: 'left' }}
+    />
+    {mode === 'signup' ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
+      <Text style={{ color: theme.mutedText, ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 13, letterSpacing: 1.2 }}>{t('onboarding_or')}</Text>
+      <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
+    </View> : null}
+    {mode === 'signup' ? <OnboardingSecondaryButton label={t('onboarding_v2_verify_student_id')} disabled={loading} onPress={handleStudentId} /> : null}
+    {notice}
+    {mode === 'signup' ? <Text style={{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), fontSize: 13, lineHeight: 19 }}>{t('onboarding_v2_legal')}</Text> : null}
+    <OnboardingSecondaryButton label={mode === 'login' ? t('onboarding_v2_create_account') : t('onboarding_login_action')} onPress={() => switchMode(mode === 'login' ? 'signup' : 'login')} />
+  </OnboardingScaffold>;
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollContent: { flexGrow: 1 },
-  headerBackground: { height: 250, backgroundColor: Colors.brandGreen },
-  headerContent: { paddingHorizontal: 20, paddingTop: 10 },
-  topButtons: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 },
-  topButtonsRTL: { flexDirection: 'row-reverse' },
-  iconButton: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 1)',
-    justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
-  },
-  cardContainer: {
-    flex: 1,
-    borderTopLeftRadius: 50, borderTopRightRadius: 50,
-    marginTop: -80, paddingHorizontal: 28, paddingTop: 36,
-  },
-  card: { flex: 1, alignItems: 'center' },
-  iconCircle: {
-    width: 72, height: 72, borderRadius: 36,
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 16, marginTop: 8,
-  },
-  textContainer: { marginBottom: 32, alignItems: 'center' },
-  titleSmall: {
-    fontSize: 14, ...Typography.getTextVariantStyle('body'),
-    textTransform: 'uppercase', letterSpacing: 2,
-    marginBottom: 4, textAlign: 'center',
-  },
-  titleRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-  titleLarge: { fontSize: 32, textAlign: 'center', lineHeight: 38 },
-  titleLargeRTL: { writingDirection: 'rtl' },
-  greenText: { color: Colors.brandGreen },
-  blackText: {},
-  inputWrapper: { marginBottom: 20, width: '100%' },
-  singleInputContainer: {
-    borderRadius: 16,
-    height: 58, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 18, borderWidth: 2, borderColor: 'transparent',
-  },
-  inputFocused: {},
-  inputIcon: { marginRight: 10 },
-  input: { fontSize: 16, ...Typography.getTextVariantStyle('body'), paddingVertical: 0, includeFontPadding: false },
-  linkButton: { paddingVertical: 8, paddingHorizontal: 16 },
-  linkText: {
-    fontSize: 16, color: Colors.brandGreen, textAlign: 'center',
-    lineHeight: 20, ...Typography.getTextVariantStyle('bodyStrong'),
-  },
-  footer: { paddingBottom: 40, marginTop: 'auto' },
-  button: {
-    backgroundColor: Colors.brandGreen, height: 62, borderRadius: 31,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 20,
-  },
-  buttonEnabled: {
-    opacity: 1,
-    shadowColor: Colors.brandGreen,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
-  },
-  buttonText: { fontSize: 17, ...Typography.getTextVariantStyle('bodyStrong') },
-});

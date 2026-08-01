@@ -1,511 +1,136 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth, signInWithCustomToken } from '@react-native-firebase/auth';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  useWindowDimensions,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '../../constants/Colors';
-import { useAppTheme } from '../../context/AppThemeContext';
-import { useAppLocale } from '../../context/LocaleContext';
-import { Typography } from '../../constants/Typography';
-import AppText from '../../components/AppText';
-import {
-  OnboardingButtonMotion,
-  OnboardingCardMotion,
-  OnboardingScreenMotion,
-  OnboardingShakeMotion,
-  OnboardingStateMotion,
-  OnboardingStaggerItem,
-} from '../../components/onboarding/OnboardingMotion';
-import { logger } from '../../utils/logger';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { savePendingVerification } from '../../utils/verificationPending';
-import { getVerificationImage, clearVerificationImage } from '../../utils/verificationStore';
+
+import { InlineNotice, OnboardingPrimaryButton, OnboardingScaffold } from '../../components/onboarding/OnboardingUI';
+import { Typography } from '../../constants/Typography';
+import { useAppTheme } from '../../context/AppThemeContext';
+import { useConnectivity } from '../../context/ConnectivityContext';
+import { clearPendingVerificationForEmail } from '../../utils/verificationPending';
+import { getOnboardingErrorKey, normalizeCallableCode, trackOnboarding } from '../../utils/onboarding';
+import { logger } from '../../utils/logger';
 
 const OTP_LENGTH = 6;
 
+function OtpCodeField({ value, onChange, disabled, error }: { value: string; onChange: (value: string) => void; disabled: boolean; error?: string | null }) {
+  const { theme } = useAppTheme();
+  const { t } = useTranslation();
+  const inputRef = useRef<TextInput>(null);
+  return <View>
+    <TouchableOpacity activeOpacity={1} onPress={() => inputRef.current?.focus()} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <View style={styles.cells}>{Array.from({ length: OTP_LENGTH }).map((_, index) => <View key={index} style={[styles.cell, { backgroundColor: value[index] ? theme.brandSoft : theme.cardMuted, borderColor: error ? theme.danger : index === value.length ? theme.brand : theme.border }]}><Text style={[styles.digit, { color: theme.text }]}>{value[index] || ''}</Text></View>)}</View>
+    </TouchableOpacity>
+    <TextInput
+      ref={inputRef}
+      value={value}
+      onChangeText={(next) => onChange(next.replace(/\D/g, '').slice(0, OTP_LENGTH))}
+      keyboardType="number-pad"
+      textContentType="oneTimeCode"
+      autoComplete="one-time-code"
+      maxLength={OTP_LENGTH}
+      autoFocus
+      editable={!disabled}
+      caretHidden
+      style={styles.logicalInput}
+      accessibilityLabel={t('onboarding_v2_otp_accessibility')}
+      accessibilityValue={{ text: value }}
+    />
+  </View>;
+}
+
 export default function VerifyOtpScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ email?: string; purpose?: string; role?: string }>();
-  const { email, purpose, role } = params;
-  const { width } = useWindowDimensions();
+  const { email, purpose, role } = useLocalSearchParams<{ email?: string; purpose?: 'signup' | 'login' | 'verification'; role?: string }>();
   const { t } = useTranslation();
   const { theme } = useAppTheme();
+  const { isOnline } = useConnectivity();
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useState(60);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const autoSubmitted = useRef('');
 
-  const { isRTL } = useAppLocale();
-  const arrowIconName = isRTL ? 'arrow-forward' : 'arrow-back';
-  const _inputTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
-  void _inputTextAlign;
-
-  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [errorAnimationKey, setErrorAnimationKey] = useState(0);
-  const [cooldownSeconds, setCooldownSeconds] = useState(60);
-  const [resendLoading, setResendLoading] = useState(false);
-
-  const inputRefs = useRef<(TextInput | null)[]>([]);
-  const otpBoxWidth = Math.min(50, Math.max(42, (width - 96) / OTP_LENGTH));
-  const otpBoxHeight = Math.max(54, otpBoxWidth + 8);
-
-  // Countdown timer
   useEffect(() => {
-    if (cooldownSeconds <= 0) return;
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((value) => Math.max(0, value - 1)), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
-    const timer = setInterval(() => {
-      setCooldownSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [cooldownSeconds]);
-
-  const handleOtpChange = (value: string, index: number) => {
-    if (!/^\d*$/.test(value)) return;
-
-    const newOtp = [...otp];
-
-    // Handle paste of full code
-    if (value.length > 1) {
-      const digits = value.replace(/\D/g, '').slice(0, OTP_LENGTH);
-      for (let i = 0; i < OTP_LENGTH; i++) {
-        newOtp[i] = digits[i] || '';
-      }
-      setOtp(newOtp);
-      const focusIndex = Math.min(digits.length, OTP_LENGTH - 1);
-      inputRefs.current[focusIndex]?.focus();
+  const verify = useCallback(async () => {
+    if (code.length !== OTP_LENGTH || !email || !purpose || loading || !isOnline) {
+      if (!isOnline) setErrorKey('onboarding_error_network');
       return;
     }
-
-    newOtp[index] = value;
-    setOtp(newOtp);
-    setError(null);
-
-    // Auto-advance
-    if (value && index < OTP_LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (key: string, index: number) => {
-    if (key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-      const newOtp = [...otp];
-      newOtp[index - 1] = '';
-      setOtp(newOtp);
-    }
-  };
-
-  const isOtpComplete = otp.every((digit) => digit !== '');
-
-  const handleVerify = useCallback(async () => {
-    if (!isOtpComplete || !email || !purpose || isLoading) return;
-
-    setIsLoading(true);
-    setError(null);
-
+    setLoading(true); setErrorKey(null);
     try {
-      const fnInstance = getFunctions(undefined, 'me-central1');
-      const verifyOtpFn = httpsCallable(fnInstance, 'verifyOtp');
-      const result = await verifyOtpFn({
-        email,
-        code: otp.join(''),
-        purpose,
-      });
-
-      // Handle verification purpose (student ID verification)
+      const functions = getFunctions(undefined, 'me-central1');
+      const verifyOtp = httpsCallable(functions, 'verifyOtp');
+      const result = await verifyOtp({ email, code, purpose });
+      void trackOnboarding('auth_code_verified', { auth_mode: purpose === 'login' ? 'login' : 'signup', verification_method: purpose === 'verification' ? 'student_id' : 'school_email' });
       if (purpose === 'verification') {
-        const { emailVerified } = result.data as { emailVerified: boolean };
-        if (emailVerified) {
-          // Submit the verification request with the stored student ID image.
-          const imageBase64 = getVerificationImage();
-          if (!imageBase64) {
-            throw new Error(t('onboarding_generic_error_message'));
-          }
-          const submitFn = httpsCallable(fnInstance, 'submitVerificationRequest');
-          const submission = await submitFn({
-            email,
-            idImageBase64: imageBase64,
-            role: role || 'student',
-          });
-          const { statusToken } = submission.data as { statusToken: string };
-          clearVerificationImage();
-          await savePendingVerification(email, role || 'student', statusToken);
-          router.replace({
-            pathname: '/(onboarding)/pending',
-            params: { email, statusToken },
-          });
-        }
+        void trackOnboarding('verification_started', { method: 'student_id' });
+        router.replace({ pathname: '/(onboarding)/upload-id', params: { email, role: role || 'student' } });
         return;
       }
-
       const { customToken } = result.data as { customToken: string };
+      await signInWithCustomToken(getAuth(), customToken);
+      await clearPendingVerificationForEmail(email);
+      if (purpose === 'signup' || role) router.replace({ pathname: '/(onboarding)/details', params: { email, role: role || 'student' } });
+    } catch (error) {
+      logger.error('Unable to verify onboarding code', error);
+      const key = getOnboardingErrorKey(error);
+      setErrorKey(key);
+      void trackOnboarding('auth_error_shown', { step: 'code', error_code: key, recoverable: normalizeCallableCode(error) !== 'resource-exhausted' });
+      autoSubmitted.current = '';
+    } finally { setLoading(false); }
+  }, [code, email, isOnline, loading, purpose, role, router]);
 
-      // Sign in with custom token
-      const authInstance = getAuth();
-      await signInWithCustomToken(authInstance, customToken);
-
-      // Navigate based on purpose
-      if (purpose === 'signup') {
-        router.replace({
-          pathname: '/(onboarding)/details',
-          params: { role: role || 'student', email },
-        });
-      }
-      // Login: _layout.tsx auto-routes to (tabs) via onAuthStateChanged
-    } catch (err: any) {
-      logger.error(err);
-
-      const code = err.code || '';
-      const message = err.message || t('onboarding_otp_generic_error');
-
-      if (code === 'invalid-argument') {
-        // Wrong code
-        setError(message);
-        setErrorAnimationKey((value) => value + 1);
-        // Clear OTP input
-        setOtp(Array(OTP_LENGTH).fill(''));
-        inputRefs.current[0]?.focus();
-      } else if (code === 'deadline-exceeded' || code === 'permission-denied' || code === 'resource-exhausted') {
-        setError(message);
-      } else if (code === 'not-found') {
-        setError(message);
-      } else {
-        Alert.alert(t('error'), message);
-      }
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (code.length === OTP_LENGTH && code !== autoSubmitted.current) {
+      autoSubmitted.current = code;
+      void verify();
     }
-  }, [otp, email, purpose, role, isLoading, router, t, isOtpComplete]);
+  }, [code, verify]);
 
-  const handleResend = async () => {
-    if (cooldownSeconds > 0 || resendLoading || !email || !purpose) return;
-
-    setResendLoading(true);
-    setError(null);
-    setOtp(Array(OTP_LENGTH).fill(''));
-
+  const resend = async () => {
+    if (!email || !purpose || cooldown > 0 || resending) return;
+    if (!isOnline) { setErrorKey('onboarding_error_network'); return; }
+    setResending(true); setErrorKey(null); setCode(''); autoSubmitted.current = '';
     try {
-      const fnInstance = getFunctions(undefined, 'me-central1');
-      const sendOtpFn = httpsCallable(fnInstance, 'sendOtp');
-      await sendOtpFn({ email, purpose });
-      setCooldownSeconds(60);
-      inputRefs.current[0]?.focus();
-    } catch (err: any) {
-      logger.error(err);
-      Alert.alert(t('error'), err.message || t('onboarding_otp_send_failed'));
-    } finally {
-      setResendLoading(false);
-    }
+      const sendOtp = httpsCallable(getFunctions(undefined, 'me-central1'), 'sendOtp');
+      await sendOtp({ email, purpose });
+      setCooldown(60);
+      void trackOnboarding('auth_code_sent', { auth_mode: purpose === 'login' ? 'login' : 'signup', resend: true });
+    } catch (error) { setErrorKey(getOnboardingErrorKey(error)); } finally { setResending(false); }
   };
 
-  const handleBack = () => {
-    router.back();
-  };
+  const editEmail = () => purpose === 'verification'
+    ? router.replace({ pathname: '/(onboarding)/verification-intro', params: { email, role: role || 'student' } })
+    : router.replace({ pathname: '/(onboarding)/email', params: { mode: purpose === 'login' ? 'login' : 'signup', prefillEmail: email, role } });
 
-  const titleText = purpose === 'login'
-    ? t('onboarding_otp_check_email_title')
-    : purpose === 'verification'
-    ? t('onboarding_otp_verify_title')
-    : t('onboarding_otp_verify_title');
-
-  // Split title into first words and last word for visual hierarchy
-  const titleWords = titleText.split(' ');
-  const titlePrefix = titleWords.slice(0, -1).join(' ');
-  const titleSuffix = titleWords[titleWords.length - 1];
-
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar style="light" />
-
-      <OnboardingScreenMotion style={styles.headerBackground}>
-        <SafeAreaView edges={['top']} style={styles.headerContent}>
-          <View style={[styles.topButtons, isRTL && styles.topButtonsRTL]}>
-            <TouchableOpacity onPress={handleBack} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
-              <Ionicons name={arrowIconName} size={24} color={theme.logoTileText} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/')} style={[styles.iconButton, { backgroundColor: theme.logoTile }]}>
-              <Ionicons name="close" size={24} color={theme.logoTileText} />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </OnboardingScreenMotion>
-
-      <OnboardingCardMotion style={[styles.cardContainer, { backgroundColor: theme.background, flex: 1 }]}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.card}>
-            <OnboardingStaggerItem delay={120}>
-            <View style={[styles.iconCircle, { backgroundColor: theme.brandSoft }]}>
-              <Ionicons name="mail-open-outline" size={40} color={theme.brand} />
-            </View>
-            </OnboardingStaggerItem>
-
-            <OnboardingStaggerItem delay={170}>
-            <View style={styles.textContainer}>
-              <Text style={[styles.titleSmall, { color: theme.mutedText }]}>{titlePrefix}</Text>
-              <AppText style={styles.titleLarge}>
-                <Text style={[styles.greenText, { color: theme.brand }]}>{titleSuffix}</Text>
-              </AppText>
-            </View>
-            </OnboardingStaggerItem>
-
-            <OnboardingStaggerItem delay={220}>
-            <Text style={[styles.subtitle, { color: theme.subtleText }]}>
-              {t('onboarding_otp_subtitle', { email: '' })}
-            </Text>
-            {email ? <Text style={[styles.emailText, { color: theme.text }]} numberOfLines={1}>{email}</Text> : null}
-            </OnboardingStaggerItem>
-
-            <OnboardingShakeMotion trigger={errorAnimationKey}>
-            <View style={[styles.otpContainer, isRTL && styles.otpContainerRTL]}>
-              {Array.from({ length: OTP_LENGTH }).map((_, index) => (
-                <OnboardingStateMotion key={index} delay={260 + index * 25} style={[
-                  styles.otpBox,
-                  {
-                    width: otpBoxWidth,
-                    height: otpBoxHeight,
-                  },
-                  {
-                    backgroundColor: otp[index] ? theme.brandSoft : theme.cardMuted,
-                    borderColor: otp[index]
-                      ? theme.brand
-                      : (!otp[index] && index === otp.findIndex(d => d === '') ? theme.borderStrong : 'transparent'),
-                  },
-                ]}>
-                  <TextInput
-                    ref={(ref) => { inputRefs.current[index] = ref; }}
-                    style={[styles.otpInput, { color: theme.text }]}
-                    keyboardType="number-pad"
-                    maxLength={OTP_LENGTH}
-                    value={otp[index]}
-                    onChangeText={(value) => handleOtpChange(value, index)}
-                    onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
-                    editable={!isLoading}
-                    autoFocus={index === 0}
-                    selectTextOnFocus
-                  />
-                </OnboardingStateMotion>
-              ))}
-            </View>
-            </OnboardingShakeMotion>
-
-            {error && (
-              <OnboardingStateMotion>
-              <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle-outline" size={16} color="#E53935" />
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-              </OnboardingStateMotion>
-            )}
-
-            <OnboardingStaggerItem delay={430}>
-            <View style={styles.resendContainer}>
-              {cooldownSeconds > 0 ? (
-                <Text style={[styles.cooldownText, { color: theme.subtleText }]}>
-                  {t('onboarding_otp_resend_in', { seconds: cooldownSeconds })}
-                </Text>
-              ) : (
-                <TouchableOpacity onPress={handleResend} disabled={resendLoading} style={styles.resendButton}>
-                  {resendLoading ? (
-                    <ActivityIndicator size="small" color={theme.brand} />
-                  ) : (
-                    <Text style={[styles.resendText, { color: theme.brandText }]}>{t('onboarding_otp_resend')}</Text>
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
-            </OnboardingStaggerItem>
-          </View>
-        </TouchableWithoutFeedback>
-      </OnboardingCardMotion>
-
-      <View style={[styles.footer, { backgroundColor: theme.background }]}>
-        <OnboardingButtonMotion enabled={Boolean(isOtpComplete && !isLoading)}>
-        <TouchableOpacity
-          style={[styles.button, isOtpComplete && !isLoading && styles.buttonEnabled]}
-          onPress={handleVerify}
-          disabled={!isOtpComplete || isLoading}
-          activeOpacity={0.8}
-        >
-          {isLoading ? (
-            <ActivityIndicator color={theme.onActionSolid} />
-          ) : (
-            <Text style={[styles.buttonText, { color: theme.onActionSolid }]}>{t('onboarding_otp_verify_button')}</Text>
-          )}
-        </TouchableOpacity>
-        </OnboardingButtonMotion>
-      </View>
-    </View>
-  );
+  return <OnboardingScaffold
+    title={t('onboarding_v2_code_title')}
+    subtitle={t('onboarding_v2_code_subtitle')}
+    onBack={editEmail}
+    onClose={() => router.replace('/(onboarding)' as any)}
+    progress={purpose === 'login' ? undefined : purpose === 'verification' ? { current: 3, total: 5 } : { current: 3, total: 4 }}
+    footer={<OnboardingPrimaryButton label={t('onboarding_otp_verify_button')} loading={loading} disabled={code.length !== OTP_LENGTH} onPress={() => void verify()} />}
+  >
+    {email ? <View style={styles.emailRow}><Text selectable style={[styles.email, { color: theme.text }]}>{email}</Text><TouchableOpacity accessibilityRole="button" onPress={editEmail} style={styles.textAction}><Text style={[styles.actionText, { color: theme.brandText }]}>{t('onboarding_otp_change_email')}</Text></TouchableOpacity></View> : null}
+    <OtpCodeField value={code} onChange={(value) => { setCode(value); setErrorKey(null); }} disabled={loading} error={errorKey} />
+    {errorKey ? <InlineNotice tone="error">{t(errorKey)}</InlineNotice> : null}
+    <View style={styles.resendWrap}>{cooldown > 0 ? <Text style={[styles.resendMuted, { color: theme.mutedText }]}>{t('onboarding_otp_resend_in', { seconds: cooldown })}</Text> : <TouchableOpacity accessibilityRole="button" accessibilityState={{ busy: resending }} disabled={resending} onPress={() => void resend()} style={styles.textAction}>{resending ? <ActivityIndicator color={theme.brand} /> : <Text style={[styles.actionText, { color: theme.brandText }]}>{t('onboarding_otp_resend')}</Text>}</TouchableOpacity>}</View>
+    <Text style={[styles.deliveryHint, { color: theme.mutedText }]}>{t('onboarding_v2_code_delay')}</Text>
+  </OnboardingScaffold>;
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  headerBackground: { height: 250, backgroundColor: Colors.brandGreen },
-  headerContent: { paddingHorizontal: 20, paddingTop: 10 },
-  topButtons: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 },
-  topButtonsRTL: { flexDirection: 'row-reverse' },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardContainer: {
-    flex: 1,
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 50,
-    marginTop: -80,
-    paddingHorizontal: 28,
-    paddingTop: 36,
-  },
-  card: { flex: 1, alignItems: 'center' },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 8,
-  },
-  textContainer: { marginBottom: 12, alignItems: 'center' },
-  titleSmall: {
-    fontSize: 16,
-    ...Typography.getTextVariantStyle('body'),
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  titleLarge: { fontSize: 36, textAlign: 'center', lineHeight: 42 },
-  greenText: {},
-  subtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-    ...Typography.getTextVariantStyle('body'),
-    marginBottom: 2,
-    paddingHorizontal: 10,
-  },
-  emailText: {
-    fontSize: 14,
-    textAlign: 'center',
-    ...Typography.getTextVariantStyle('bodyStrong'),
-    marginBottom: 28,
-  },
-  otpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
-  otpContainerRTL: {
-    flexDirection: 'row-reverse',
-  },
-  otpBox: {
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  otpBoxFilled: {},
-  otpBoxActive: {},
-  otpInput: {
-    width: '100%',
-    height: '100%',
-    fontSize: 24,
-    ...Typography.getTextVariantStyle('bodyStrong'),
-    textAlign: 'center',
-    backgroundColor: 'transparent',
-    paddingVertical: 0,
-    includeFontPadding: false,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF5F5',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 8,
-    gap: 6,
-  },
-  errorText: {
-    fontSize: 13,
-    color: '#E53935',
-    ...Typography.getTextVariantStyle('body'),
-    flex: 1,
-  },
-  resendContainer: {
-    marginTop: 12,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  resendButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  cooldownText: {
-    fontSize: 14,
-    ...Typography.getTextVariantStyle('body'),
-  },
-  resendText: {
-    fontSize: 14,
-    ...Typography.getTextVariantStyle('bodyStrong'),
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 28,
-    paddingBottom: 40,
-  },
-  button: {
-    backgroundColor: Colors.brandGreen,
-    height: 62,
-    borderRadius: 31,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  buttonEnabled: {
-    opacity: 1,
-    shadowColor: Colors.brandGreen,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  buttonText: {
-    fontSize: 17,
-    ...Typography.getTextVariantStyle('bodyStrong'),
-  },
+  emailRow: { alignItems: 'center', gap: 4 }, email: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 15, writingDirection: 'ltr' },
+  textAction: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8 }, actionText: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 14 },
+  cells: { flexDirection: 'row', gap: 7, justifyContent: 'center' }, cell: { flex: 1, maxWidth: 52, minWidth: 38, height: 58, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' }, digit: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 24, fontVariant: ['tabular-nums'] },
+  logicalInput: { position: 'absolute', width: 1, height: 1, opacity: 0 }, resendWrap: { alignItems: 'center' }, resendMuted: { ...Typography.getTextVariantStyle('body'), fontSize: 14, fontVariant: ['tabular-nums'] }, deliveryHint: { ...Typography.getTextVariantStyle('body'), fontSize: 13, lineHeight: 19, textAlign: 'center' },
 });

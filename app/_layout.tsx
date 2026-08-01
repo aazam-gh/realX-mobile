@@ -11,10 +11,13 @@ import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { StudentProvider, useStudent } from '../context/StudentContext';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
+import * as Updates from 'expo-updates';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import AppUpdatePrompt from '../components/AppUpdatePrompt';
 import { LocaleProvider } from '../context/LocaleContext';
@@ -32,12 +35,14 @@ import {
 import { logger } from '../utils/logger';
 import { AppThemeProvider, useAppTheme } from '../context/AppThemeContext';
 import { AuthAccessProvider, useAuthAccess } from '../context/AuthAccessContext';
-import { ConnectivityProvider } from '../context/ConnectivityContext';
+import { ConnectivityProvider, useConnectivity } from '../context/ConnectivityContext';
 import { queryClient } from '../utils/queryClient';
 import { clearLocalAuthSession, isInvalidAuthSessionError } from '../utils/auth';
 import { trackEvent } from '../utils/analytics';
+import { trackOnboarding } from '../utils/onboarding';
 
 import CustomSplash from './splash';
+import { StateSurface } from '../components/StateSurface';
 
 
 
@@ -153,15 +158,19 @@ function LayoutContent({
   showSplash: boolean;
   onSplashFinish: () => void;
 }) {
-  const { docExists: hasProfile } = useStudent();
+  const { docExists: hasProfile, error: profileError, refreshProfile } = useStudent();
   const { isGuest, loading: guestLoading } = useAuthAccess();
   const { isDark, theme } = useAppTheme();
+  const { isOnline } = useConnectivity();
+  const { t } = useTranslation();
   const router = useRouter();
   const segments = useSegments();
   const [appReady, setAppReady] = useState(false);
   const [pendingVerification, setPendingVerification] = useState<PendingVerificationData | null>(null);
   const [pendingCheckDone, setPendingCheckDone] = useState(false);
   const [validatedMissingProfileUid, setValidatedMissingProfileUid] = useState<string | null>(null);
+  const [startupTimedOut, setStartupTimedOut] = useState(false);
+  const startupStartedAt = useRef<number | null>(null);
   const navigationTheme = useMemo(() => {
     const baseTheme = isDark ? DarkTheme : DefaultTheme;
 
@@ -181,6 +190,7 @@ function LayoutContent({
   }, [isDark, theme]);
 
   useEffect(() => {
+    if (startupStartedAt.current === null) startupStartedAt.current = Date.now();
     getPendingVerification().then((data) => {
       setPendingVerification(data);
       setPendingCheckDone(true);
@@ -194,19 +204,32 @@ function LayoutContent({
       (loaded || error) &&
       !initializing &&
       !guestLoading &&
-      (user === null || hasProfile !== null) &&
+      (user === null || hasProfile !== null || profileError !== null) &&
       pendingCheckDone
     ) {
       setAppReady(true);
     }
-  }, [i18nReady, appCheckReady, loaded, error, initializing, guestLoading, user, hasProfile, pendingCheckDone]);
+  }, [i18nReady, appCheckReady, loaded, error, initializing, guestLoading, user, hasProfile, profileError, pendingCheckDone]);
+
+  useEffect(() => {
+    if (appReady) { setStartupTimedOut(false); return; }
+    const timer = setTimeout(() => setStartupTimedOut(true), 8000);
+    return () => clearTimeout(timer);
+  }, [appReady]);
 
   useEffect(() => {
     if (!appReady) return;
+    const destination = isGuest ? 'home_guest' : pendingVerification ? 'verification_pending' : user && hasProfile ? 'home_authenticated' : user ? 'profile' : 'welcome';
+    const startupDuration = Date.now() - (startupStartedAt.current ?? Date.now());
+    void trackOnboarding('onboarding_route_resolved', {
+      destination,
+      duration_bucket: startupDuration < 2000 ? 'under_2s' : startupDuration < 8000 ? '2_to_8s' : 'over_8s',
+      online: isOnline,
+    });
     void trackEvent('app_opened', {
       access_mode: isGuest ? 'guest' : user ? 'student' : 'signed_out',
     });
-  }, [appReady, isGuest, user]);
+  }, [appReady, hasProfile, isGuest, isOnline, pendingVerification, user]);
 
   // Set up local notification channels when user is authenticated with a profile
   useEffect(() => {
@@ -278,7 +301,7 @@ function LayoutContent({
 
   useEffect(() => {
     if (initializing || guestLoading || !loaded || !i18nReady || !pendingCheckDone) return;
-    if (user && hasProfile === null) return;
+    if (user && hasProfile === null && !profileError) return;
 
     const inAuthGroup = (segments as string[]).indexOf('(onboarding)') !== -1;
     const currentPath = segments.join('/');
@@ -294,6 +317,7 @@ function LayoutContent({
       'wakti',
     ]);
     const isGuestAllowedRoute = guestAllowedRootSegments.has(String(segments[0] || ''));
+    const isSignedOutPublicRoute = ['terms', 'privacy'].includes(String(segments[0] || ''));
 
     if (!user) {
       if (isGuest) {
@@ -312,7 +336,7 @@ function LayoutContent({
             },
           } as any);
         }
-      } else if (!inAuthGroup) {
+      } else if (!inAuthGroup && !isSignedOutPublicRoute) {
         router.replace('/(onboarding)' as any);
       }
     } else {
@@ -351,12 +375,15 @@ function LayoutContent({
         }
       }
     }
-  }, [user, initializing, guestLoading, isGuest, loaded, i18nReady, pendingCheckDone, segments, hasProfile, pendingVerification, router, validatedMissingProfileUid]);
+  }, [user, initializing, guestLoading, isGuest, loaded, i18nReady, pendingCheckDone, segments, hasProfile, profileError, pendingVerification, router, validatedMissingProfileUid]);
 
   // Clear pending verification once user authenticates
   useEffect(() => {
-    if (user && pendingVerification) {
-      clearPendingVerification();
+    if (
+      user?.email &&
+      pendingVerification?.email.trim().toLowerCase() === user.email.trim().toLowerCase()
+    ) {
+      void clearPendingVerification();
       setPendingVerification(null);
     }
   }, [user, pendingVerification]);
@@ -374,12 +401,31 @@ function LayoutContent({
     return () => subscription.remove();
   }, [router]);
 
+  if ((!appReady && startupTimedOut) || (showSplash && startupTimedOut)) {
+    return <ThemeProvider value={navigationTheme}><View style={[startupStyles.screen, { backgroundColor: theme.background }]}>
+      <ActivityIndicator size="large" color={theme.brand} />
+      <Text style={[startupStyles.title, { color: theme.text }]}>{t('onboarding_v2_startup_title')}</Text>
+      <Text style={[startupStyles.body, { color: theme.mutedText }]}>{t('onboarding_v2_startup_body')}</Text>
+      <TouchableOpacity accessibilityRole="button" onPress={() => void Updates.reloadAsync()} style={[startupStyles.button, { backgroundColor: theme.actionSolid }]}><Text style={[startupStyles.buttonText, { color: theme.onActionSolid }]}>{t('retry')}</Text></TouchableOpacity>
+    </View></ThemeProvider>;
+  }
+
   if (!appReady || showSplash) {
     return (
       <ThemeProvider value={navigationTheme}>
         <CustomSplash
           onFinish={onSplashFinish}
         />
+      </ThemeProvider>
+    );
+  }
+
+  if (user && profileError) {
+    return (
+      <ThemeProvider value={navigationTheme}>
+        <View style={{ flex: 1, backgroundColor: theme.background }}>
+          <StateSurface kind={isOnline ? 'error' : 'offline'} onRetry={refreshProfile} />
+        </View>
       </ThemeProvider>
     );
   }
@@ -407,3 +453,11 @@ function LayoutContent({
     </ThemeProvider>
   );
 }
+
+const startupStyles = StyleSheet.create({
+  screen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 14 },
+  title: { fontSize: 24, fontWeight: '700', textAlign: 'center' },
+  body: { fontSize: 15, lineHeight: 22, textAlign: 'center' },
+  button: { minWidth: 160, minHeight: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, marginTop: 10 },
+  buttonText: { fontSize: 16, fontWeight: '700' },
+});

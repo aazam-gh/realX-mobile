@@ -111,10 +111,10 @@ export default function SearchBar({
     <View style={[styles.searchShell, isDark && styles.searchShellDark]}>
       {useNativeGlass ? (
         <GlassView
-          style={[styles.searchSurface, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }]}
+          style={[styles.searchSurface, { backgroundColor: "#FFFFFF", borderColor: theme.inputBorder }]}
           glassEffectStyle="regular"
           colorScheme={isDark ? "dark" : "light"}
-          tintColor={theme.inputBackground}
+          tintColor="#FFFFFF"
         >
           {showHighlights ? <GlassHighlights topColor={theme.inputHighlight} bottomColor={theme.inputShade} /> : null}
           <SearchBarContent
@@ -134,7 +134,7 @@ export default function SearchBar({
           />
         </GlassView>
       ) : (
-        <View style={[styles.searchSurface, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }]}>
+        <View style={[styles.searchSurface, { backgroundColor: "#FFFFFF", borderColor: theme.inputBorder }]}>
           {showHighlights ? <GlassHighlights topColor={theme.inputHighlight} bottomColor={theme.inputShade} /> : null}
           <SearchBarContent
             placeholder={placeholderText}
@@ -248,6 +248,7 @@ const styles = StyleSheet.create({
   searchShell: {
     marginHorizontal: HOME_HORIZONTAL_GUTTER,
     marginTop: 12,
+    backgroundColor: "#FFFFFF",
     borderRadius: 30,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 10 },

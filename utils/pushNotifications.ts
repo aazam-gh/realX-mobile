@@ -45,7 +45,7 @@ export const getExpoProjectId = () => {
   );
 };
 
-export const registerForExpoPushNotificationsAsync = async () => {
+export const registerForExpoPushNotificationsAsync = async (allowPermissionPrompt = true) => {
   if (!Device.isDevice) {
     logger.warn('Push notifications require a physical device');
     return null;
@@ -55,6 +55,7 @@ export const registerForExpoPushNotificationsAsync = async () => {
   let finalStatus = existingStatus;
 
   if (existingStatus !== 'granted') {
+    if (!allowPermissionPrompt) return null;
     const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
@@ -113,8 +114,8 @@ const isUnauthenticatedError = (error: unknown) => {
   return code.includes('unauthenticated') || message.includes('unauthenticated');
 };
 
-export const syncExpoPushTokenForUser = async (uid: string) => {
-  const token = await registerForExpoPushNotificationsAsync();
+export const syncExpoPushTokenForUser = async (uid: string, allowPermissionPrompt = false) => {
+  const token = await registerForExpoPushNotificationsAsync(allowPermissionPrompt);
   if (!token) return null;
 
   const storedSync = await getStoredPushTokenSync();

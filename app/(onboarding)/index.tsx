@@ -1,22 +1,20 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
 import {
     OnboardingButtonMotion,
+    OnboardingDiscoverTransitionMotion,
     OnboardingGlowMotion,
-    OnboardingIntroFooterMotion,
-    OnboardingIntroHeadlineMotion,
-    OnboardingIntroLogoMotion,
-    OnboardingIntroMascotMotion,
-    OnboardingScreenMotion,
-    OnboardingStaggerItem,
+    OnboardingPressableMotion,
+    OnboardingRoleCardMotion,
 } from '../../components/onboarding/OnboardingMotion';
+import { OnboardingScaffold, OnboardingSecondaryButton } from '../../components/onboarding/OnboardingUI';
 import StaggeredHeadingText from '../../components/onboarding/StaggeredHeadingText';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
@@ -28,16 +26,23 @@ export default function OnboardingScreen() {
     const router = useRouter();
     const { width, height } = useWindowDimensions();
     const [step, setStep] = useState(0);
+    const [isDiscoverTransitioning, setIsDiscoverTransitioning] = useState(false);
+    const [selectedRole, setSelectedRole] = useState<'student' | 'creator' | null>(null);
+
+    useFocusEffect(
+        useCallback(() => {
+            setSelectedRole(null);
+        }, [])
+    );
 
     const { t } = useTranslation();
     const { theme } = useAppTheme();
     const { continueAsGuest } = useAuthAccess();
     const { locale, isRTL, isChanging, changeLocale } = useAppLocale();
-    const compactWidth = width < 390;
     const compactHeight = height < 820;
-    const mascotWidth = width * (isRTL ? (compactWidth ? 0.88 : 0.92) : (compactWidth ? 0.8 : 0.85));
-    const mascotHeight = height * (compactHeight ? 0.36 : 0.45);
-    const roleImageSize = compactWidth ? 84 : 100;
+    const mascotWidth = Math.min(width * 1.75, 650);
+    const mascotFrameHeight = Math.min(height * (compactHeight ? 0.31 : 0.33), 270);
+    const mascotImageHeight = Math.min(height * 0.38, 300);
 
     const changeLanguage = async (lang: 'en' | 'ar') => {
         try {
@@ -48,82 +53,146 @@ export default function OnboardingScreen() {
         }
     };
 
-    const handleGetStarted = () => {
+    const completeDiscoverTransition = useCallback(() => {
         setStep(1);
+        setIsDiscoverTransitioning(false);
+    }, []);
+
+    const handleGetStarted = () => {
+        if (isDiscoverTransitioning) {
+            return;
+        }
+
+        setIsDiscoverTransitioning(true);
     };
 
     const handleSelectRole = (role: 'student' | 'creator') => {
-        router.push({
-            pathname: '/(onboarding)/email',
-            params: { role, mode: 'signup' }
-        } as any);
+        if (selectedRole) {
+            return;
+        }
+
+        setSelectedRole(role);
+        setTimeout(() => {
+            router.push({
+                pathname: '/(onboarding)/email',
+                params: { role, mode: 'signup' }
+            } as any);
+        }, 180);
     };
 
     const handleLogin = () => {
-        router.push('/(onboarding)/login' as any);
+        router.push({
+            pathname: '/(onboarding)/email',
+            params: { mode: 'login' },
+        } as any);
     };
+
+    if (step === 1) {
+        return (
+            <>
+                <StatusBar style="dark" />
+                <OnboardingScaffold
+                    title={t('onboarding_v2_role_title')}
+                    subtitle={t('onboarding_v2_role_subtitle')}
+                    onBack={() => setStep(0)}
+                    onClose={() => setStep(0)}
+                    progress={{ current: 1, total: 4 }}
+                >
+                <View style={styles.cardsWrapper}>
+                    <OnboardingRoleCardMotion
+                        delay={80}
+                        dimmed={selectedRole !== null && selectedRole !== 'student'}
+                        selected={selectedRole === 'student'}
+                    >
+                        <OnboardingPressableMotion
+                            disabled={selectedRole !== null}
+                            onPress={() => handleSelectRole('student')}
+                            style={[styles.roleCard, { backgroundColor: theme.actionSolid }]}
+                        >
+                            <AppText style={[styles.roleTitle, { color: theme.onActionSolid }]}>{t('onboarding_join_as_student')}</AppText>
+                            <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={22} color={theme.onActionSolid} />
+                        </OnboardingPressableMotion>
+                    </OnboardingRoleCardMotion>
+
+                    <OnboardingRoleCardMotion
+                        delay={150}
+                        dimmed={selectedRole !== null && selectedRole !== 'creator'}
+                        selected={selectedRole === 'creator'}
+                    >
+                        <OnboardingPressableMotion
+                            disabled={selectedRole !== null}
+                            onPress={() => handleSelectRole('creator')}
+                            style={[styles.roleCard, { backgroundColor: theme.actionSolid }]}
+                        >
+                            <AppText style={[styles.roleTitle, { color: theme.onActionSolid }]}>{t('onboarding_join_as_creator')}</AppText>
+                            <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={22} color={theme.onActionSolid} />
+                        </OnboardingPressableMotion>
+                    </OnboardingRoleCardMotion>
+                </View>
+
+                <OnboardingSecondaryButton label={t('onboarding_login_action')} onPress={handleLogin} />
+                <OnboardingSecondaryButton label={t('continue_as_guest')} onPress={() => void continueAsGuest()} />
+                </OnboardingScaffold>
+            </>
+        );
+    }
 
     return (
         <View style={[styles.container, { backgroundColor: theme.brand }]}>
             <StatusBar style="light" />
 
-            <SafeAreaView style={styles.safeArea}>
-                {step === 0 ? (
-                    <OnboardingScreenMotion key="intro" style={styles.motionFill}>
+            <OnboardingDiscoverTransitionMotion
+                active={isDiscoverTransitioning}
+                backgroundColor={theme.background}
+                onComplete={completeDiscoverTransition}
+                style={styles.motionFill}
+            >
+                <SafeAreaView style={styles.safeArea}>
                     <View style={styles.content}>
-                        {/* Logo */}
-                        <OnboardingIntroLogoMotion style={styles.logoContainer}>
+                        <View style={styles.topSection}>
+                        <View style={styles.logoContainer}>
                             <Image
                                 source={require('../../assets/images/logo.png')}
                                 style={styles.logo}
                                 contentFit="contain"
                             />
-                        </OnboardingIntroLogoMotion>
-
-                        {/* Headline */}
-                        <View style={[styles.headlineContainer, compactHeight && styles.headlineContainerCompact]}>
-                            <OnboardingIntroHeadlineMotion delay={180}>
-                                <StaggeredHeadingText
-                                    text={t('onboarding_headline_broke')}
-                                    textStyle={[styles.headlineBroke, isRTL && styles.arHeadline]}
-                                    fontHeight={isRTL ? 56 : 34}
-                                    delay={980}
-                                />
-                            </OnboardingIntroHeadlineMotion>
-                            <OnboardingIntroHeadlineMotion delay={260}>
-                                <StaggeredHeadingText
-                                    text={t('onboarding_headline_not_anymore')}
-                                    textStyle={[styles.headlineNotAnymore, isRTL && styles.arHeadline]}
-                                    fontHeight={isRTL ? 56 : 34}
-                                    delay={1120}
-                                />
-                            </OnboardingIntroHeadlineMotion>
                         </View>
 
-                        {/* Character Graphic */}
-                        <OnboardingIntroMascotMotion
+                        <View style={[styles.headlineContainer, compactHeight && styles.headlineContainerCompact]}>
+                            <StaggeredHeadingText
+                                text={t('onboarding_headline_broke')}
+                                textStyle={[styles.headlineBroke, isRTL && styles.arHeadline]}
+                                fontHeight={isRTL ? 56 : 44}
+                                delay={180}
+                            />
+                            <StaggeredHeadingText
+                                text={t('onboarding_headline_not_anymore')}
+                                textStyle={[styles.headlineNotAnymore, isRTL && styles.arHeadline]}
+                                fontHeight={isRTL ? 56 : 44}
+                                delay={320}
+                            />
+                        </View>
+                        </View>
+
+                        <View
                             style={[
                                 styles.graphicContainer,
-                                { width, marginTop: compactHeight ? 24 : 50 },
+                                { width, height: mascotFrameHeight },
                                 isRTL && styles.graphicContainerRTL,
                             ]}
                         >
                             <View style={isRTL ? styles.mascotFlip : undefined}>
                                 <Image
                                     source={require('../../assets/images/onboarding.png')}
-                                    style={[styles.characterImage, { width: mascotWidth, height: mascotHeight }]}
+                                    style={{ width: mascotWidth, height: mascotImageHeight }}
                                     contentFit="contain"
                                     contentPosition="left"
                                 />
                             </View>
-                        </OnboardingIntroMascotMotion>
+                        </View>
 
                         {/* Footer */}
-                        <OnboardingIntroFooterMotion style={styles.footer}>
-                            <Text style={[styles.subtext, isRTL && styles.arSubtext]}>
-                                {t('onboarding_student_subtext')}
-                            </Text>
-
+                        <View style={styles.footer}>
                             <View style={styles.languageSwitcher}>
                                 <TouchableOpacity disabled={isChanging} onPress={() => void changeLanguage('en')}>
                                     <Text style={[styles.langText, locale === 'en' && styles.langTextActive]}>English</Text>
@@ -140,118 +209,34 @@ export default function OnboardingScreen() {
                                 >
                                     <TouchableOpacity
                                         style={[styles.button, { backgroundColor: theme.logoTile }]}
+                                        disabled={isDiscoverTransitioning}
                                         onPress={handleGetStarted}
                                         activeOpacity={0.9}
                                     >
-                                        <AppText style={[styles.buttonText, { color: theme.brand }, isRTL && styles.arButtonText]}>
+                                        <Text style={[styles.buttonText, { color: theme.brand }, isRTL && styles.arButtonText]}>
                                             {t('onboarding_get_started')}
-                                        </AppText>
-                                        <View style={[styles.arrowCircle, { backgroundColor: theme.brand }]}>
+                                        </Text>
+                                        <View
+                                            style={[styles.arrowCircle, { backgroundColor: theme.brand }]}
+                                        >
                                             <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={24} color="white" />
                                         </View>
                                     </TouchableOpacity>
                                 </OnboardingGlowMotion>
                             </OnboardingButtonMotion>
                             <TouchableOpacity
-                                style={styles.guestButton}
+                                style={[styles.guestButton, { backgroundColor: '#FFFFFF' }]}
                                 onPress={() => void continueAsGuest()}
                                 activeOpacity={0.85}
                             >
-                                <Text style={[styles.guestButtonText, isRTL && styles.subtextRTL]}>
-                                    {t('continue_as_guest')}
+                                <Text style={[styles.guestButtonText, { color: theme.brand }, isRTL && styles.subtextRTL]}>
+                                    {t('onboarding_continue_as_guest')}
                                 </Text>
                             </TouchableOpacity>
-                        </OnboardingIntroFooterMotion>
-                    </View>
-                    </OnboardingScreenMotion>
-                ) : (
-                    <OnboardingScreenMotion key="roles" style={styles.motionFill}>
-                    <View style={[styles.roleSelectionContent, compactHeight && styles.roleSelectionContentCompact]}>
-                        {/* Logo */}
-                        <View style={[styles.roleLogoContainer, compactHeight && styles.roleLogoContainerCompact]}>
-                            <Image
-                                source={require('../../assets/images/logo.png')}
-                                style={styles.roleLogo}
-                                contentFit="contain"
-                            />
                         </View>
-
-                        {/* Role Cards */}
-                        <View style={styles.cardsWrapper}>
-                            <OnboardingStaggerItem delay={80}>
-                            <TouchableOpacity
-                                style={[styles.roleCard, { backgroundColor: theme.logoTile }]}
-                                activeOpacity={0.9}
-                                onPress={() => handleSelectRole('student')}
-                            >
-                                <View style={[styles.roleImageCircle, { width: roleImageSize, height: roleImageSize }]}>
-                                    <Image
-                                        source={require('../../assets/images/join-student.png')}
-                                        style={styles.roleImage}
-                                        contentFit="contain"
-                                    />
-                                </View>
-                                <View style={[styles.roleTextContainer, isRTL && styles.roleTextContainerRTL]}>
-                                    <AppText style={[styles.roleTitle, { color: theme.logoTileText }]}>{t('onboarding_join_as_student')}</AppText>
-                                    <Text style={[styles.roleDescription, { color: theme.logoTileText }, isRTL && styles.subtextRTL]}>
-                                        {t('onboarding_student_role_description')}
-                                    </Text>
-                                </View>
-                                <Ionicons name={isRTL ? 'chevron-back-outline' : 'chevron-forward-outline'} size={32} color={theme.iconMuted} />
-                            </TouchableOpacity>
-                            </OnboardingStaggerItem>
-
-                            <OnboardingStaggerItem delay={150}>
-                            <TouchableOpacity
-                                style={[styles.roleCard, { backgroundColor: theme.logoTile }]}
-                                activeOpacity={0.9}
-                                onPress={() => handleSelectRole('creator')}
-                            >
-                                <View style={[styles.roleImageCircle, { width: roleImageSize, height: roleImageSize }]}>
-                                    <Image
-                                        source={require('../../assets/images/join-creator.png')}
-                                        style={styles.roleImage}
-                                        contentFit="contain"
-                                    />
-                                </View>
-                                <View style={[styles.roleTextContainer, isRTL && styles.roleTextContainerRTL]}>
-                                    <AppText style={[styles.roleTitle, { color: theme.logoTileText }]}>{t('onboarding_join_as_creator')}</AppText>
-                                    <Text style={[styles.roleDescription, { color: theme.logoTileText }, isRTL && styles.subtextRTL]}>
-                                        {t('onboarding_creator_role_description')}
-                                    </Text>
-                                </View>
-                                <Ionicons name={isRTL ? 'chevron-back-outline' : 'chevron-forward-outline'} size={32} color={theme.iconMuted} />
-                            </TouchableOpacity>
-                            </OnboardingStaggerItem>
-                        </View>
-
-                        {/* Login Pill */}
-                        <OnboardingStaggerItem delay={220}>
-                        <TouchableOpacity
-                            activeOpacity={0.9}
-                            onPress={handleLogin}
-                            style={[styles.loginPill, { backgroundColor: theme.logoTile }]}
-                        >
-                            <Text style={[styles.loginText, { color: theme.logoTileText }, isRTL && styles.subtextRTL]}>
-                                {t('onboarding_login_prompt')} <Text style={[styles.loginBold, { color: theme.brand }]}>{t('onboarding_login_action')}</Text>
-                            </Text>
-                        </TouchableOpacity>
-                        </OnboardingStaggerItem>
-                        <OnboardingStaggerItem delay={280}>
-                        <TouchableOpacity
-                            activeOpacity={0.85}
-                            onPress={() => void continueAsGuest()}
-                            style={styles.roleGuestButton}
-                        >
-                            <Text style={[styles.roleGuestText, isRTL && styles.subtextRTL]}>
-                                {t('continue_as_guest')}
-                            </Text>
-                        </TouchableOpacity>
-                        </OnboardingStaggerItem>
                     </View>
-                    </OnboardingScreenMotion>
-                )}
-            </SafeAreaView>
+                </SafeAreaView>
+            </OnboardingDiscoverTransitionMotion>
         </View>
     );
 }
@@ -270,6 +255,11 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         paddingHorizontal: 24,
+        paddingBottom: 4,
+        justifyContent: 'space-between',
+    },
+    topSection: {
+        width: '100%',
     },
     logoContainer: {
         marginTop: 20,
@@ -282,32 +272,32 @@ const styles = StyleSheet.create({
         width: 150,
     },
     headlineContainer: {
-        marginTop: 40,
+        marginTop: 36,
         alignSelf: 'flex-start',
         paddingStart: 10,
+        maxWidth: 250,
     },
     headlineContainerCompact: {
         marginTop: 24,
     },
     headlineBroke: {
+        ...Typography.getTextVariantStyle('display'),
         fontSize: 32,
         color: '#FFFFFF',
         lineHeight: 44,
     },
     headlineNotAnymore: {
+        ...Typography.getTextVariantStyle('display'),
         fontSize: 32,
         color: '#FFFFFF',
         lineHeight: 44,
     },
     graphicContainer: {
-        flex: 1,
         justifyContent: 'center',
         alignItems: 'flex-start',
         alignSelf: 'flex-start',
         marginStart: -24,
-    },
-    characterImage: {
-        maxWidth: '100%',
+        transform: [{ translateY: 16 }],
     },
     mascotFlip: {
         transform: [{ scaleX: -1 }],
@@ -316,27 +306,21 @@ const styles = StyleSheet.create({
         width: '100%',
         paddingBottom: 8,
         paddingHorizontal: 10,
+        zIndex: 2,
     },
     guestButton: {
+        width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 44,
-        marginTop: 8,
+        minHeight: 56,
+        marginTop: 18,
+        borderRadius: 28,
+        borderWidth: 1.5,
+        borderColor: '#FFFFFF',
     },
     guestButtonText: {
         ...Typography.getTextVariantStyle('bodyStrong'),
-        color: '#FFFFFF',
-        fontSize: 16,
-        textDecorationLine: 'underline',
-    },
-    subtext: {
-        ...Typography.getTextVariantStyle('body'),
-        fontSize: 18,
-        color: '#FFFFFF',
-        textAlign: 'left',
-        width: '100%',
-        marginBottom: 32,
-        lineHeight: 24,
+        fontSize: 17,
     },
     button: {
         width: '100%',
@@ -373,6 +357,7 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     buttonText: {
+        ...Typography.getTextVariantStyle('display'),
         fontSize: 18,
         color: '#18B852',
     },
@@ -404,63 +389,21 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         marginHorizontal: 15,
     },
-    // Role selection styles
-    roleSelectionContent: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center', // Center content vertically as in screenshot
-        paddingHorizontal: 16,
-    },
-    roleSelectionContentCompact: {
-        justifyContent: 'flex-start',
-        paddingTop: 24,
-    },
-    roleLogoContainer: {
-        marginBottom: 60,
-    },
-    roleLogoContainerCompact: {
-        marginBottom: 32,
-    },
-    roleLogo: {
-        height: 80,
-        width: 240,
-    },
     cardsWrapper: {
         width: '100%',
         gap: 16,
     },
     roleCard: {
-        borderRadius: 45,
-        paddingVertical: 8,
+        minHeight: 64,
+        borderRadius: 32,
+        paddingHorizontal: 24,
+        paddingVertical: 14,
         flexDirection: 'row',
         alignItems: 'center',
-        // Shadow
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 15,
-        elevation: 6,
-    },
-    roleImageCircle: {
-        width: 100,
-        height: 100,
-    },
-    roleImage: {
-        width: '100%',
-        height: '100%',
-    },
-    roleTextContainer: {
-        flex: 1
+        justifyContent: 'space-between',
     },
     roleTitle: {
-        fontSize: 20,
-        marginBottom: 8,
-    },
-    roleDescription: {
-        ...Typography.getTextVariantStyle('body'),
-        fontSize: 12,
-        lineHeight: 16,
-        paddingRight: 10,
+        fontSize: 17,
     },
     arHeadline: {
         ...Typography.getTextVariantStyle('displayArabicBlack'),
@@ -477,51 +420,10 @@ const styles = StyleSheet.create({
         textAlign: 'right',
         writingDirection: 'rtl',
     },
-    arSubtext: {
-        fontSize: 21,
-        lineHeight: 30,
-        writingDirection: 'rtl',
-    },
-    roleTextContainerRTL: {
-        marginLeft: 0,
-        marginRight: 4,
-    },
     arButtonText: {
         ...Typography.getTextVariantStyle('displayArabicBlack'),
         fontSize: 24,
         textAlign: 'right',
         writingDirection: 'rtl',
-    },
-    loginPill: {
-        paddingVertical: 15,
-        paddingHorizontal: 35,
-        borderRadius: 100,
-        marginTop: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 5,
-    },
-    roleGuestButton: {
-        alignSelf: 'center',
-        paddingHorizontal: 18,
-        paddingVertical: 12,
-        marginTop: 12,
-    },
-    roleGuestText: {
-        ...Typography.getTextVariantStyle('bodyStrong'),
-        color: '#FFFFFF',
-        fontSize: 15,
-        textDecorationLine: 'underline',
-    },
-    loginText: {
-        ...Typography.getTextVariantStyle('body'),
-        fontSize: 16,
-    },
-    loginBold: {
-        ...Typography.getTextVariantStyle('bodyStrong'),
     },
 });

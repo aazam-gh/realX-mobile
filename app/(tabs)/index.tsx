@@ -126,6 +126,9 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     paddingBottom: 8,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    overflow: 'hidden',
   },
   glowSection: {
     position: 'relative',

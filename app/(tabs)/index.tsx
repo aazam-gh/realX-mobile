@@ -10,6 +10,7 @@ import {
   FeaturedBanner,
   GreetingHeader,
   HomeRowGlow,
+  NewDeals,
   OpportunityHighlights,
   PromoBanner,
   SearchBar,
@@ -37,7 +38,7 @@ export default function HomeScreen() {
 
   const refreshHome = useCallback(async () => {
     await queryClient.refetchQueries({
-      predicate: (query) => ['categories', 'cmsDocument', 'trendingOffers', 'vendor'].includes(String(query.queryKey[0])),
+      predicate: (query) => ['categories', 'cmsDocument', 'newDeals', 'trendingOffers', 'vendor'].includes(String(query.queryKey[0])),
       type: 'active',
     });
   }, []);
@@ -97,6 +98,10 @@ export default function HomeScreen() {
         <View style={styles.glowSection}>
           <HomeRowGlow variant="offers" />
           <TrendingOffers onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
+        </View>
+        <View style={styles.glowSection}>
+          <HomeRowGlow variant="offers" />
+          <NewDeals onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
         </View>
         <FeaturedBanner />
         <BrandGrid />

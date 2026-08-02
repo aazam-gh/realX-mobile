@@ -5,6 +5,8 @@
   "trending": "Trending",
   "trending_label_prefix": "TRENDING ",
   "trending_label_highlight": "OFFERS",
+  "new_deals_label_prefix": "NEW ",
+  "new_deals_label_highlight": "DEALS",
   "wakti_banner_headline_primary": "WAKTI",
   "wakti_banner_headline_secondary": "All in one AI App",
   "wakti_banner_offer": "GET 20% OFF WAKTI",

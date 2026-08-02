@@ -23,6 +23,7 @@ import {
 
 type TrendingOffersProps = {
     onVendorPress?: (vendor: any) => void;
+    variant?: 'trending' | 'newDeals';
 };
 
 const OFFER_CARD_GAP = HOME_CAROUSEL_GAP;
@@ -41,7 +42,12 @@ type TrendingOfferBannerItem = {
     isActive?: boolean;
 };
 
-const mapVendorDocToCard = (vendorId: string, vendorData: any, customBannerImage?: string) => ({
+const mapVendorDocToCard = (
+    vendorId: string,
+    vendorData: any,
+    customBannerImage?: string,
+    isTrending = true,
+) => ({
     id: vendorId,
     vendorId,
     nameEn: vendorData.nameEn || vendorData.name,
@@ -57,10 +63,10 @@ const mapVendorDocToCard = (vendorId: string, vendorData: any, customBannerImage
     coverImage: vendorData.coverImage,
     bannerImage: customBannerImage || vendorData.bannerImage,
     xcard: vendorData.xcard || false,
-    isTrending: true,
+    isTrending,
 });
 
-export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
+export default function TrendingOffers({ onVendorPress, variant = 'trending' }: TrendingOffersProps) {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
     const { isRTL } = useAppLocale();
@@ -70,13 +76,16 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
         isLoading,
         refetch,
     } = useQuery({
-        queryKey: queryKeys.trendingOffers(),
+        queryKey: variant === 'trending' ? queryKeys.trendingOffers() : queryKeys.newDeals(),
         queryFn: async () => {
             const db = getFirestore();
+            const isTrendingSection = variant === 'trending';
+            const vendorFlag = isTrendingSection ? 'isTrending' : 'isNewDeal';
+            const cmsDocumentId = isTrendingSection ? 'trending-offer-banners' : 'new-deal-banners';
             const fetchLegacyTrendingVendors = async () => {
                 const q = query(
                     collection(db, 'vendors'),
-                    where('isTrending', '==', true),
+                    where(vendorFlag, '==', true),
                     limit(TRENDING_FALLBACK_LIMIT)
                 );
                 const snapshot = await getDocs(q);
@@ -87,11 +96,11 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
                 }).map((docSnap: any) => {
                     const vendorData = docSnap.data();
                     queryClient.setQueryData(queryKeys.vendor(docSnap.id), { id: docSnap.id, data: vendorData });
-                    return mapVendorDocToCard(docSnap.id, vendorData);
+                    return mapVendorDocToCard(docSnap.id, vendorData, undefined, isTrendingSection);
                 });
             };
 
-            const cmsData = await fetchCmsDocument<{ items?: TrendingOfferBannerItem[] }>('trending-offer-banners');
+            const cmsData = await fetchCmsDocument<{ items?: TrendingOfferBannerItem[] }>(cmsDocumentId);
             const cmsItems = cmsData?.items || [];
 
             const activeCmsItems = cmsItems.filter(item => (
@@ -114,14 +123,14 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
                     });
                     if (!vendorResult) return null;
 
-                    return mapVendorDocToCard(vendorResult.id, vendorResult.data, customBannerImage);
+                    return mapVendorDocToCard(vendorResult.id, vendorResult.data, customBannerImage, isTrendingSection);
                 }));
 
                 fetchedResults = vendorResults.filter(Boolean);
             }
 
             if (fetchedResults.length === 0) {
-                logger.warn('[TrendingOffers] Using bounded legacy vendor fallback', {
+                logger.warn(`[${isTrendingSection ? 'TrendingOffers' : 'NewDeals'}] Using bounded legacy vendor fallback`, {
                     limit: TRENDING_FALLBACK_LIMIT,
                 });
                 fetchedResults = await fetchLegacyTrendingVendors();
@@ -138,12 +147,12 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
     const displayedVendors = useMemo(() => (isRTL ? [...vendors].reverse() : vendors), [vendors, isRTL]);
     const offerCardWidth = screenWidth * OFFER_CARD_WIDTH_RATIO;
     const offerScrollInterval = offerCardWidth + OFFER_CARD_GAP;
-    const trendingLabelPrefix = t('trending_label_prefix');
-    const trendingLabelHighlight = t('trending_label_highlight');
+    const labelPrefix = t(variant === 'trending' ? 'trending_label_prefix' : 'new_deals_label_prefix');
+    const labelHighlight = t(variant === 'trending' ? 'trending_label_highlight' : 'new_deals_label_highlight');
 
     useEffect(() => {
-        if (error) logger.error('Error fetching trending vendors:', error);
-    }, [error]);
+        if (error) logger.error(`Error fetching ${variant === 'trending' ? 'trending' : 'new deal'} vendors:`, error);
+    }, [error, variant]);
 
     useEffect(() => {
         if (displayedVendors.length <= 1) {
@@ -225,14 +234,14 @@ export default function TrendingOffers({ onVendorPress }: TrendingOffersProps) {
                 <View style={styles.headerTitle}>
                     <AppText
                         style={[
-                            styles.trendingText,
+                            styles.sectionText,
                             Typography.getTextDirectionStyle({ isRTL }),
                             { color: theme.text },
                         ]}
                     >
-                        {trendingLabelPrefix}
+                        {labelPrefix}
                         <Text style={[styles.offersText, { color: theme.brand }]}>
-                            {trendingLabelHighlight}
+                            {labelHighlight}
                         </Text>
                     </AppText>
                 </View>
@@ -296,7 +305,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    trendingText: {
+    sectionText: {
         fontSize: 20,
         letterSpacing: 1,
     },

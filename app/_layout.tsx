@@ -46,6 +46,10 @@ import { StateSurface } from '../components/StateSurface';
 
 
 
+SplashScreen.setOptions({
+  duration: 200,
+  fade: true,
+});
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -170,6 +174,7 @@ function LayoutContent({
   const [pendingCheckDone, setPendingCheckDone] = useState(false);
   const [validatedMissingProfileUid, setValidatedMissingProfileUid] = useState<string | null>(null);
   const [startupTimedOut, setStartupTimedOut] = useState(false);
+  const [startupRouteResolved, setStartupRouteResolved] = useState(false);
   const startupStartedAt = useRef<number | null>(null);
   const navigationTheme = useMemo(() => {
     const baseTheme = isDark ? DarkTheme : DefaultTheme;
@@ -377,6 +382,45 @@ function LayoutContent({
     }
   }, [user, initializing, guestLoading, isGuest, loaded, i18nReady, pendingCheckDone, segments, hasProfile, profileError, pendingVerification, router, validatedMissingProfileUid]);
 
+  // Keep the startup splash visible until the navigator has committed the route
+  // chosen from the resolved auth/profile state. Without this gate, Expo Router
+  // mounts its first root screen (onboarding) before the redirect to the tabs.
+  useEffect(() => {
+    if (startupRouteResolved || !appReady || profileError) return;
+
+    const rootSegment = String(segments[0] || '');
+    const currentPath = segments.join('/');
+    const inAuthGroup = (segments as string[]).includes('(onboarding)');
+    const isSignedOutPublicRoute = ['terms', 'privacy'].includes(rootSegment);
+    const isGuestAllowedRoute = new Set([
+      '(tabs)',
+      'category',
+      'search',
+      'vendor',
+      'opportunity',
+      'terms',
+      'privacy',
+      'x-academy',
+      'wakti',
+    ]).has(rootSegment);
+
+    const routeIsReady = !user
+      ? isGuest
+        ? isGuestAllowedRoute && !inAuthGroup
+        : pendingVerification
+          ? currentPath.includes('pending')
+          : inAuthGroup || isSignedOutPublicRoute
+      : hasProfile === true
+        ? !inAuthGroup
+        : hasProfile === false && validatedMissingProfileUid === user.uid
+          ? currentPath.includes('details')
+          : false;
+
+    if (routeIsReady) {
+      setStartupRouteResolved(true);
+    }
+  }, [appReady, hasProfile, isGuest, pendingVerification, profileError, segments, startupRouteResolved, user, validatedMissingProfileUid]);
+
   // Clear pending verification once user authenticates
   useEffect(() => {
     if (
@@ -410,46 +454,42 @@ function LayoutContent({
     </View></ThemeProvider>;
   }
 
-  if (!appReady || showSplash) {
-    return (
-      <ThemeProvider value={navigationTheme}>
-        <CustomSplash
-          onFinish={onSplashFinish}
-        />
-      </ThemeProvider>
-    );
-  }
-
-  if (user && profileError) {
-    return (
-      <ThemeProvider value={navigationTheme}>
-        <View style={{ flex: 1, backgroundColor: theme.background }}>
-          <StateSurface kind={isOnline ? 'error' : 'offline'} onRetry={refreshProfile} />
-        </View>
-      </ThemeProvider>
-    );
-  }
-
   return (
     <ThemeProvider value={navigationTheme}>
-      <Stack>
-        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="category" options={{ headerShown: false }} />
-        <Stack.Screen name="search" options={{ headerShown: false }} />
-        <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="opportunity/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="redemption-history" options={{ headerShown: false }} />
-        <Stack.Screen name="saved-offers" options={{ headerShown: false }} />
-        <Stack.Screen name="profile-details" options={{ headerShown: false }} />
-        <Stack.Screen name="terms" options={{ headerShown: false }} />
-        <Stack.Screen name="privacy" options={{ headerShown: false }} />
-        <Stack.Screen name="x-academy" options={{ headerShown: false }} />
-        <Stack.Screen name="wakti" options={{ headerShown: false, presentation: 'modal' }} />
-        <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
-      </Stack>
-      <AppUpdatePrompt />
+      <View style={{ flex: 1 }}>
+        {appReady && !profileError ? (
+          <>
+            <Stack>
+              <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="category" options={{ headerShown: false }} />
+              <Stack.Screen name="search" options={{ headerShown: false }} />
+              <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="opportunity/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="redeem/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="redemption-history" options={{ headerShown: false }} />
+              <Stack.Screen name="saved-offers" options={{ headerShown: false }} />
+              <Stack.Screen name="profile-details" options={{ headerShown: false }} />
+              <Stack.Screen name="terms" options={{ headerShown: false }} />
+              <Stack.Screen name="privacy" options={{ headerShown: false }} />
+              <Stack.Screen name="x-academy" options={{ headerShown: false }} />
+              <Stack.Screen name="wakti" options={{ headerShown: false, presentation: 'modal' }} />
+              <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
+            </Stack>
+            <AppUpdatePrompt />
+          </>
+        ) : appReady && profileError ? (
+          <View style={{ flex: 1, backgroundColor: theme.background }}>
+            <StateSurface kind={isOnline ? 'error' : 'offline'} onRetry={refreshProfile} />
+          </View>
+        ) : null}
+
+        {(!appReady || showSplash || (!startupRouteResolved && !profileError)) ? (
+          <View style={StyleSheet.absoluteFill}>
+            <CustomSplash onFinish={onSplashFinish} />
+          </View>
+        ) : null}
+      </View>
     </ThemeProvider>
   );
 }

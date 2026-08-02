@@ -22,6 +22,7 @@ export const queryKeys = {
     mapLocations: () => ['mapLocations'] as const,
     mapLocationTiles: (precision: number, prefixes: string[]) => ['mapLocationTiles', precision, prefixes.join(',')] as const,
     mapLocationSearch: (searchQuery: string) => ['mapLocationSearch', searchQuery] as const,
+    newDeals: () => ['newDeals'] as const,
     onlineVendorOffer: (vendorId: string) => ['onlineVendorOffer', vendorId] as const,
     opportunities: () => ['opportunities'] as const,
     opportunity: (opportunityId: string) => ['opportunity', opportunityId] as const,

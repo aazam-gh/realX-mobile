@@ -100,6 +100,8 @@ type VendorMapItem = {
   distanceKm?: number;
 };
 
+type MapCategoryFilter = 'cafe' | 'gym' | 'restaurant' | 'salon';
+
 type TileCachePayload = {
   fetchedAt: number;
   vendors: VendorMapItem[];
@@ -122,8 +124,31 @@ const CATEGORY_COLORS: Record<string, string> = {
   service: '#5856D6',
 };
 
+const MAP_CATEGORY_TERMS: Record<MapCategoryFilter, string[]> = {
+  cafe: ['cafe', 'cafes', 'coffee'],
+  gym: ['gym', 'gyms', 'fitness'],
+  restaurant: ['restaurant', 'restaurants', 'food'],
+  salon: ['salon', 'salons', 'beauty'],
+};
+
 function normalizeFilterLabel(value?: string | null) {
   return (value || '').trim().toLowerCase();
+}
+
+function vendorMatchesCategory(vendor: VendorMapItem, category: MapCategoryFilter) {
+  const categoryTerms = MAP_CATEGORY_TERMS[category];
+  const searchableValues = [
+    vendor.mainCategory,
+    vendor.name,
+    vendor.nameAr,
+    ...(vendor.searchTokens || []),
+  ]
+    .filter(Boolean)
+    .map((value) => normalizeFilterLabel(String(value)));
+
+  return searchableValues.some((value) => categoryTerms.some((term) => (
+    value === term || value.includes(` ${term} `) || value.startsWith(`${term} `) || value.endsWith(` ${term}`)
+  )));
 }
 
 function markerColorForVendor(vendor: VendorMapItem) {
@@ -192,6 +217,7 @@ export default function MapScreen() {
   const [animatedSearchPlaceholder, setAnimatedSearchPlaceholder] = useState<string | null>(null);
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState('');
   const [searchedVendorIds, setSearchedVendorIds] = useState<Set<string> | null>(null);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<MapCategoryFilter | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedMapVendor, setSelectedMapVendor] = useState<VendorMapItem | null>(null);
   const [savedMapPlaceIds, setSavedMapPlaceIds] = useState<Set<string>>(new Set());
@@ -380,6 +406,9 @@ export default function MapScreen() {
     if (searchedVendorIds) {
       filteredVendors = vendors.filter((v) => searchedVendorIds.has(v.vendorId));
     }
+    if (selectedCategoryFilter) {
+      filteredVendors = filteredVendors.filter((vendor) => vendorMatchesCategory(vendor, selectedCategoryFilter));
+    }
 
     return filteredVendors.map((vendor) => ({
       type: 'Feature' as const,
@@ -396,7 +425,7 @@ export default function MapScreen() {
         coordinates: [vendor.longitude, vendor.latitude] as [number, number],
       },
     }));
-  }, [vendors, searchedVendorIds]);
+  }, [vendors, searchedVendorIds, selectedCategoryFilter]);
 
   const vendorById = useMemo(() => {
     return new Map(vendors.map((vendor) => [vendor.id, vendor]));
@@ -776,6 +805,34 @@ export default function MapScreen() {
     setSubmittedSearchQuery(searchQuery.trim().toLowerCase());
   };
 
+  const handleCategoryFilterPress = async (category: MapCategoryFilter) => {
+    const isSelected = selectedCategoryFilter === category;
+    setSelectedCategoryFilter(isSelected ? null : category);
+
+    if (isSelected) return;
+
+    try {
+      const categoryResults = await queryClient.fetchQuery({
+        queryKey: queryKeys.mapLocationSearch(MAP_CATEGORY_TERMS[category][0]),
+        queryFn: () => searchMapLocations(MAP_CATEGORY_TERMS[category][0]),
+      });
+      const categoryVendors = parseMapLocationDocs(categoryResults);
+      categoryVendors.forEach((vendor) => vendorCacheRef.current.set(vendor.id, vendor));
+
+      if (categoryVendors.length > 0) {
+        const allVendors = sortVendorsByDistance(Array.from(vendorCacheRef.current.values()), userLocation);
+        vendorsRef.current = allVendors;
+        setVendors(allVendors);
+        mapRef.current?.fitToCoordinates(
+          categoryVendors.map((vendor) => ({ latitude: vendor.latitude, longitude: vendor.longitude })),
+          { edgePadding: { top: 130, right: 80, bottom: 160, left: 80 }, animated: true },
+        );
+      }
+    } catch (categoryError) {
+      logger.error(`Error fetching ${category} map locations:`, categoryError);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
       <StatusBar
@@ -821,6 +878,7 @@ export default function MapScreen() {
 
             const vendorId = String(cluster.properties.id);
             const vendor = vendorById.get(vendorId);
+            const isHighlighted = Boolean(vendor && selectedCategoryFilter && vendorMatchesCategory(vendor, selectedCategoryFilter));
 
             return (
               <Marker
@@ -832,7 +890,11 @@ export default function MapScreen() {
                   }
                 }}
               >
-                <View style={[styles.vendorDot, { borderColor: markerColorForVendor(vendor || {} as VendorMapItem) }]}>
+                <View style={[
+                  styles.vendorDot,
+                  isHighlighted && styles.vendorDotHighlighted,
+                  { borderColor: markerColorForVendor(vendor || {} as VendorMapItem) },
+                ]}>
                   {(vendor?.xcard || vendor?.hasBuyOneGetOne) && (
                     <View style={[styles.vendorDotCore, { backgroundColor: markerColorForVendor(vendor || {} as VendorMapItem) }]} />
                   )}
@@ -895,6 +957,34 @@ export default function MapScreen() {
                 <Ionicons name="close-circle" size={18} color={theme.iconMuted} />
               </TouchableOpacity>
             )}
+          </View>
+          <View style={[styles.filterRow, { direction: isArabic ? 'rtl' : 'ltr' }]}>
+            {([
+              { id: 'cafe' as const, icon: 'cafe-outline' as const, label: t('map_filter_cafe') },
+              { id: 'gym' as const, icon: 'barbell-outline' as const, label: t('map_filter_gym') },
+              { id: 'restaurant' as const, icon: 'restaurant-outline' as const, label: t('map_filter_restaurant') },
+              { id: 'salon' as const, icon: 'cut-outline' as const, label: t('map_filter_salon') },
+            ]).map((filter) => {
+              const isSelected = selectedCategoryFilter === filter.id;
+              return (
+                <Pressable
+                  key={filter.id}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  style={[
+                    styles.filterChip,
+                    {
+                      backgroundColor: isSelected ? theme.brand : theme.inputBackground,
+                      borderColor: isSelected ? theme.brand : theme.inputBorder,
+                    },
+                  ]}
+                  onPress={() => void handleCategoryFilterPress(filter.id)}
+                >
+                  <Ionicons name={filter.icon} size={16} color={isSelected ? theme.textInverse : theme.iconMuted} />
+                  <Text style={[styles.filterChipText, { color: isSelected ? theme.textInverse : theme.text }]}>{filter.label}</Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 
@@ -1258,6 +1348,27 @@ const styles = StyleSheet.create({
     ...Typography.getTextVariantStyle('body'),
     padding: 0,
   },
+  filterRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  filterChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 8,
+  },
+  filterChipText: {
+    fontSize: 13,
+    ...Typography.getTextVariantStyle('bodyStrong'),
+  },
   mapContainer: {
     flex: 1,
   },
@@ -1302,6 +1413,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.brandGreen,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  vendorDotHighlighted: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 5,
   },
   vendorDotCore: {
     width: 8,

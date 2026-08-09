@@ -13,7 +13,6 @@ import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import * as Updates from 'expo-updates';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -41,16 +40,7 @@ import { clearLocalAuthSession, isInvalidAuthSessionError } from '../utils/auth'
 import { trackEvent } from '../utils/analytics';
 import { trackOnboarding } from '../utils/onboarding';
 
-import CustomSplash from './splash';
 import { StateSurface } from '../components/StateSurface';
-
-
-
-SplashScreen.setOptions({
-  duration: 200,
-  fade: true,
-});
-void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -65,7 +55,6 @@ export default function RootLayout() {
   const [appCheckReady, setAppCheckReady] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
-  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -130,8 +119,6 @@ export default function RootLayout() {
                   i18nReady={i18nReady}
                   appCheckReady={appCheckReady}
                   initializing={initializing}
-                  showSplash={showSplash}
-                  onSplashFinish={() => setShowSplash(false)}
                   />
                 </StudentProvider>
               </AuthAccessProvider>
@@ -150,8 +137,6 @@ function LayoutContent({
   i18nReady,
   appCheckReady,
   initializing,
-  showSplash,
-  onSplashFinish,
 }: {
   user: FirebaseAuthTypes.User | null;
   loaded: boolean;
@@ -159,8 +144,6 @@ function LayoutContent({
   i18nReady: boolean;
   appCheckReady: boolean;
   initializing: boolean;
-  showSplash: boolean;
-  onSplashFinish: () => void;
 }) {
   const { docExists: hasProfile, error: profileError, refreshProfile } = useStudent();
   const { isGuest, loading: guestLoading } = useAuthAccess();
@@ -445,7 +428,7 @@ function LayoutContent({
     return () => subscription.remove();
   }, [router]);
 
-  if ((!appReady && startupTimedOut) || (showSplash && startupTimedOut)) {
+  if (!appReady && startupTimedOut) {
     return <ThemeProvider value={navigationTheme}><View style={[startupStyles.screen, { backgroundColor: theme.background }]}>
       <ActivityIndicator size="large" color={theme.brand} />
       <Text style={[startupStyles.title, { color: theme.text }]}>{t('onboarding_v2_startup_title')}</Text>
@@ -477,6 +460,12 @@ function LayoutContent({
               <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
             </Stack>
             <AppUpdatePrompt />
+            {!startupRouteResolved ? (
+              <View
+                pointerEvents="auto"
+                style={[startupStyles.routeCover, { backgroundColor: theme.background }]}
+              />
+            ) : null}
           </>
         ) : appReady && profileError ? (
           <View style={{ flex: 1, backgroundColor: theme.background }}>
@@ -484,11 +473,6 @@ function LayoutContent({
           </View>
         ) : null}
 
-        {(!appReady || showSplash || (!startupRouteResolved && !profileError)) ? (
-          <View style={StyleSheet.absoluteFill}>
-            <CustomSplash onFinish={onSplashFinish} />
-          </View>
-        ) : null}
       </View>
     </ThemeProvider>
   );
@@ -496,6 +480,9 @@ function LayoutContent({
 
 const startupStyles = StyleSheet.create({
   screen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 14 },
+  routeCover: {
+    ...StyleSheet.absoluteFill,
+  },
   title: { fontSize: 24, fontWeight: '700', textAlign: 'center' },
   body: { fontSize: 15, lineHeight: 22, textAlign: 'center' },
   button: { minWidth: 160, minHeight: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, marginTop: 10 },

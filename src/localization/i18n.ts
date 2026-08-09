@@ -13,11 +13,29 @@ const resources = {
   ar: { translation: ar },
 };
 
+// Register the React adapter before any component calls useTranslation.
+// Initialize a synchronous device-language fallback, then apply any stored
+// preference during app startup.
+// eslint-disable-next-line import/no-named-as-default-member
+i18next.use(initReactI18next);
+
 function getDeviceLanguage(): 'en' | 'ar' {
   const locales = getLocales();
   const languageCode = locales?.[0]?.languageCode ?? 'en';
   return languageCode === 'ar' ? 'ar' : 'en';
 }
+
+// eslint-disable-next-line import/no-named-as-default-member
+void i18next.init({
+  compatibilityJSON: 'v4',
+  resources,
+  lng: getDeviceLanguage(),
+  fallbackLng: 'en',
+  interpolation: {
+    escapeValue: false,
+  },
+  initImmediate: false,
+});
 
 export async function getStoredLanguage(): Promise<'en' | 'ar' | null> {
   try {
@@ -42,15 +60,7 @@ export async function initI18n() {
   const initialLanguage = storedLanguage ?? getDeviceLanguage();
 
   // eslint-disable-next-line import/no-named-as-default-member
-  await i18next.use(initReactI18next).init({
-    compatibilityJSON: 'v4',
-    resources,
-    lng: initialLanguage,
-    fallbackLng: 'en',
-    interpolation: {
-      escapeValue: false,
-    },
-  });
+  await i18next.changeLanguage(initialLanguage);
 
   return initialLanguage;
 }

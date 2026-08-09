@@ -1,5 +1,4 @@
 import { pickLocalizedText } from '../../utils/textFallback';
-import { BottomSheet, RNHostView } from '@expo/ui';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { deleteDoc, doc, getFirestore, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
@@ -9,7 +8,7 @@ import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Alert, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -21,11 +20,9 @@ import { logger } from '../../utils/logger';
 import { Typography } from '../../constants/Typography';
 import AppText from '../../components/AppText';
 import { StateSurface } from '../../components/StateSurface';
-import AndroidBottomSheetModal from '../../components/AndroidBottomSheetModal';
 import { VendorGallery } from '../../components/vendor/VendorGallery';
 import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
 import { fetchSavedOfferIds, fetchVendorRoute } from '../../utils/firebaseQueries';
-import { BottomSheetOverscanBackground, getBottomSheetBackgroundModifiers } from '../../utils/expoUiBottomSheet';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
 
@@ -96,16 +93,15 @@ export default function VendorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+    const { height: windowHeight } = useWindowDimensions();
     const { t } = useTranslation();
     const { isDark, theme } = useAppTheme();
     const { requireAuth } = useAuthAccess();
     const { locale } = useAppLocale();
     const isArabic = locale === 'ar';
-    const termsSheetWidth = Math.max(0, windowWidth - 32);
     const [vendor, setVendor] = useState<any>(null);
     const [offers, setOffers] = useState<any[]>([]);
-    const [selectedOfferForTC, setSelectedOfferForTC] = useState<any>(null);
+    const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
     const [actualVendorId, setActualVendorId] = useState<string | null>(null);
     const [savedOfferIds, setSavedOfferIds] = useState<Set<string>>(new Set());
     const [savingOfferIds, setSavingOfferIds] = useState<Set<string>>(new Set());
@@ -219,13 +215,6 @@ export default function VendorScreen() {
 
     const nearestBranch = branches[0] || null;
     const branchListMaxHeight = Math.max(260, Math.min(520, windowHeight * 0.58 - insets.bottom));
-    const termsSheetMaxHeight = Math.max(0, windowHeight * 0.5 - insets.bottom);
-    const termsSheetBodyMaxHeight = Math.max(0, termsSheetMaxHeight - 120);
-    const termsSheetBackgroundModifiers = useMemo(
-        () => getBottomSheetBackgroundModifiers(theme.card),
-        [theme.card],
-    );
-
     const openBranchOnMap = (branch: VendorBranch) => {
         if (!isValidLatLng(branch.latitude, branch.longitude)) return;
         router.push({
@@ -489,6 +478,10 @@ const offerTitle = isArabic
 const offerIndex = offer.offerIndex ?? offers.indexOf(offer);
 const savedId = `${actualVendorId || id}_offer_${offerIndex}`;
 const isSaved = savedOfferIds.has(savedId);
+const isDetailsExpanded = expandedOfferId === offer.id;
+const offerDescription = isArabic
+    ? (offer.descriptionAr || offer.descriptionEn || t('no_specific_terms'))
+    : (offer.descriptionEn || offer.descriptionAr || t('no_specific_terms'));
                             return (
                                 <View key={offer.id} style={styles.offerCard}>
                                     {offer.xcard && (
@@ -525,16 +518,27 @@ const isSaved = savedOfferIds.has(savedId);
                                                     )
                                                 )}
                                             </AppText>
+                                            {!isDetailsExpanded && (
+                                                <Text
+                                                    style={[styles.offerSummary, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}
+                                                    numberOfLines={2}
+                                                >
+                                                    {offerDescription}
+                                                </Text>
+                                            )}
                                         </View>
                                     </View>
                                     {/* Bottom Button Pills */}
                                     <View style={[styles.offerActionsRow, { backgroundColor: theme.cardMuted }]}>
                                         <TouchableOpacity
                                             style={[styles.pillButton, { backgroundColor: theme.card }]}
-                                            onPress={() => setSelectedOfferForTC(offer)}
+                                            onPress={() => setExpandedOfferId((current) => current === offer.id ? null : offer.id)}
+                                            accessibilityState={{ expanded: isDetailsExpanded }}
                                         >
-                                            <Ionicons name="alert-circle-outline" size={22} color={theme.iconMuted} />
-                                            <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.pillButtonTextSmall]}>{t('view_tc')}</Text>
+                                            <Ionicons name={isDetailsExpanded ? 'chevron-up' : 'chevron-down'} size={20} color={theme.iconMuted} />
+                                            <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.pillButtonTextSmall]}>
+                                                {isDetailsExpanded ? t('hide_details') : t('offer_details')}
+                                            </Text>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
@@ -549,6 +553,36 @@ const isSaved = savedOfferIds.has(savedId);
                                         </TouchableOpacity>
 
                                     </View>
+                                    {isDetailsExpanded && (
+                                        <View
+                                            testID={`vendor-offer-details-${offerIndex}`}
+                                            style={[styles.offerDetailsPanel, { backgroundColor: theme.cardMuted, borderTopColor: theme.border }]}
+                                        >
+                                            <View style={[styles.offerDetailsHeadingRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                                <Ionicons name="information-circle-outline" size={20} color={theme.brand} />
+                                                <AppText style={[styles.offerDetailsHeadingText, styles.offerDetailsTitle, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
+                                                    {t('offer_details_caps')}
+                                                </AppText>
+                                            </View>
+                                            <Text style={[styles.offerDetailsDescription, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
+                                                {offerDescription}
+                                            </Text>
+
+                                            <View style={[styles.offerTermsSection, { borderTopColor: theme.border }]}>
+                                                <AppText style={[styles.offerDetailsTitle, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
+                                                    {t('terms_and_conditions_caps')}
+                                                </AppText>
+                                                <View style={styles.inlineTermsList}>
+                                                    {[t('in_store_only'), t('cannot_be_combined'), t('xp_promotional_reward'), t('xp_no_cash_withdrawal'), t('xp_in_app_only')].map((term) => (
+                                                        <View key={term} style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                                            <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
+                                                            <Text style={[styles.termText, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>{term}</Text>
+                                                        </View>
+                                                    ))}
+                                                </View>
+                                            </View>
+                                        </View>
+                                    )}
                                 </View>
                             );
                         })
@@ -556,118 +590,7 @@ const isSaved = savedOfferIds.has(savedId);
                     </View>
                 </View>
             </ScrollView>
-
-            {Platform.OS === 'android' ? (
-                <AndroidBottomSheetModal
-                    visible={!!selectedOfferForTC}
-                    onClose={() => setSelectedOfferForTC(null)}
-                    backgroundColor={theme.card}
-                    testID="vendor-terms-bottom-sheet"
-                >
-                    <View style={styles.termsSheetContent}>
-                        <View style={styles.termsSheetHeader}>
-                            <AppText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</AppText>
-                        </View>
-
-                        <ScrollView
-                            showsVerticalScrollIndicator={false}
-                            nestedScrollEnabled
-                            style={styles.termsSheetBody}
-                        >
-                            <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
-                                {isArabic
-                                    ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || t('no_specific_terms'))
-                                    : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || t('no_specific_terms'))}
-                            </Text>
-
-                            <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
-                                <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
-                                </View>
-                                <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
-                                </View>
-                                <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
-                                </View>
-                                <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
-                                </View>
-                                <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                    <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                    <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
-                                </View>
-                            </View>
-            </ScrollView>
             {refreshOverlay}
-        </View>
-                </AndroidBottomSheetModal>
-            ) : (
-                <BottomSheet
-                    isPresented={!!selectedOfferForTC}
-                    onDismiss={() => setSelectedOfferForTC(null)}
-                    modifiers={termsSheetBackgroundModifiers}
-                    testID="vendor-terms-bottom-sheet"
-                >
-                    <RNHostView matchContents>
-                        <View
-                            style={[
-                                styles.termsSheetContent,
-                                {
-                                    backgroundColor: theme.card,
-                                    width: termsSheetWidth,
-                                    maxHeight: termsSheetMaxHeight,
-                                    paddingBottom: 0,
-                                },
-                            ]}
-                        >
-                            <BottomSheetOverscanBackground backgroundColor={theme.card} />
-                            <View style={styles.termsSheetHeader}>
-                                <AppText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>{t('terms_and_conditions_caps')}</AppText>
-                            </View>
-
-                            <ScrollView
-                                showsVerticalScrollIndicator={false}
-                                nestedScrollEnabled
-                                style={[styles.termsSheetBody, { maxHeight: termsSheetBodyMaxHeight }]}
-                            >
-                                <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.descriptionText]}>
-                                    {isArabic
-                                        ? (selectedOfferForTC?.descriptionAr || selectedOfferForTC?.descriptionEn || t('no_specific_terms'))
-                                        : (selectedOfferForTC?.descriptionEn || selectedOfferForTC?.descriptionAr || t('no_specific_terms'))}
-                                </Text>
-
-                                <View style={[styles.commonTerms, { borderTopColor: theme.border }]}>
-                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('in_store_only')}</Text>
-                                    </View>
-                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('cannot_be_combined')}</Text>
-                                    </View>
-                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_promotional_reward')}</Text>
-                                    </View>
-                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_no_cash_withdrawal')}</Text>
-                                    </View>
-                                    <View style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                        <Text style={[{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), textAlign: isArabic ? 'right' : 'left' }, styles.termText]}>{t('xp_in_app_only')}</Text>
-                                    </View>
-                                </View>
-                            </ScrollView>
-                        </View>
-                    </RNHostView>
-                </BottomSheet>
-            )}
 
             <Modal
                 visible={branchPickerVisible}
@@ -1014,6 +937,48 @@ const styles = StyleSheet.create({
         ...Typography.getTextVariantStyle('body'),
         color: '#8E8E93',
     },
+    offerSummary: {
+        fontSize: 14,
+        ...Typography.getTextVariantStyle('body'),
+        lineHeight: 20,
+        paddingEnd: 8,
+    },
+    offerDetailsPanel: {
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        paddingHorizontal: 24,
+        paddingTop: 18,
+        paddingBottom: 20,
+        gap: 10,
+    },
+    offerDetailsHeadingRow: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    offerDetailsTitle: {
+        fontSize: 14,
+        ...Typography.getTextVariantStyle('bodyStrong'),
+        textTransform: 'uppercase',
+        letterSpacing: 0.4,
+    },
+    offerDetailsHeadingText: {
+        flex: 1,
+    },
+    offerDetailsDescription: {
+        fontSize: 15,
+        ...Typography.getTextVariantStyle('body'),
+        lineHeight: 22,
+    },
+    offerTermsSection: {
+        borderTopWidth: StyleSheet.hairlineWidth,
+        marginTop: 8,
+        paddingTop: 16,
+        gap: 12,
+    },
+    inlineTermsList: {
+        gap: 10,
+    },
     offerActionsRow: {
         flexDirection: 'row',
         gap: 12,
@@ -1089,34 +1054,14 @@ const styles = StyleSheet.create({
         fontSize: 20,
         letterSpacing: 0.5,
     },
-    termsSheetContent: {
-        position: 'relative',
-        paddingHorizontal: 16,
-        paddingTop: 20,
-    },
-    termsSheetHeader: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    termsSheetBody: {
-        flexGrow: 0,
-    },
     descriptionText: {
         fontSize: 16,
         ...Typography.getTextVariantStyle('body'),
         lineHeight: 24,
     },
-    commonTerms: {
-        marginTop: 24,
-        gap: 12,
-        paddingTop: 24,
-        borderTopWidth: 1,
-    },
     termRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: 10,
     },
     branchListScroll: {

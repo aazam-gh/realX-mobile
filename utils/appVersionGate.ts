@@ -3,6 +3,8 @@ import * as Application from 'expo-application';
 import Constants from 'expo-constants';
 import { Linking, Platform } from 'react-native';
 
+import { classifyFirebaseError } from './firebaseError';
+
 const MOBILE_VERSION_GATE_PATH = ['appConfig', 'mobileVersionGate'] as const;
 const REALX_ANDROID_PACKAGE = 'com.reelx.app';
 const REALX_IOS_APP_ID = '6759960382';
@@ -141,55 +143,63 @@ function getStoreUrls(platformConfig: PlatformUpdateConfig) {
 }
 
 export async function fetchAppUpdatePromptState(): Promise<AppUpdatePromptState> {
-    const firestore = getFirestore();
-    const gateRef = doc(firestore, MOBILE_VERSION_GATE_PATH[0], MOBILE_VERSION_GATE_PATH[1]);
-    const snapshot = await getDoc(gateRef);
+    try {
+        const firestore = getFirestore();
+        const gateRef = doc(firestore, MOBILE_VERSION_GATE_PATH[0], MOBILE_VERSION_GATE_PATH[1]);
+        const snapshot = await getDoc(gateRef);
 
-    if (!snapshot.exists()) {
-        return defaultAppUpdatePromptState;
+        if (!snapshot.exists()) {
+            return defaultAppUpdatePromptState;
+        }
+
+        const config = normalizeGateConfig(snapshot.data());
+        if (!config?.enabled) {
+            return defaultAppUpdatePromptState;
+        }
+
+        const platformConfig = getPlatformConfig(config);
+        if (!platformConfig) {
+            return defaultAppUpdatePromptState;
+        }
+
+        const currentVersion = getCurrentVersion();
+        const currentBuild = getCurrentBuild();
+        const currentBuildNumber = toNumber(currentBuild);
+
+        const isBelowMinimumVersion = Boolean(
+            platformConfig.minimumVersion &&
+            currentVersion &&
+            compareVersions(currentVersion, platformConfig.minimumVersion) < 0,
+        );
+        const isBelowLatestVersion = Boolean(
+            platformConfig.latestVersion &&
+            currentVersion &&
+            compareVersions(currentVersion, platformConfig.latestVersion) < 0,
+        );
+        const isBelowMinimumBuild = Boolean(
+            platformConfig.minimumBuild &&
+            currentBuildNumber !== null &&
+            currentBuildNumber < platformConfig.minimumBuild,
+        );
+
+        const shouldPrompt = isBelowMinimumVersion || isBelowLatestVersion || isBelowMinimumBuild;
+        const { storeUrl, fallbackUrl } = getStoreUrls(platformConfig);
+
+        return {
+            shouldPrompt,
+            force: platformConfig.force === true || isBelowMinimumVersion || isBelowMinimumBuild,
+            storeUrl,
+            fallbackUrl,
+            currentVersion,
+            currentBuild,
+        };
+    } catch (error) {
+        if (classifyFirebaseError(error).kind === 'permission') {
+            return defaultAppUpdatePromptState;
+        }
+
+        throw error;
     }
-
-    const config = normalizeGateConfig(snapshot.data());
-    if (!config?.enabled) {
-        return defaultAppUpdatePromptState;
-    }
-
-    const platformConfig = getPlatformConfig(config);
-    if (!platformConfig) {
-        return defaultAppUpdatePromptState;
-    }
-
-    const currentVersion = getCurrentVersion();
-    const currentBuild = getCurrentBuild();
-    const currentBuildNumber = toNumber(currentBuild);
-
-    const isBelowMinimumVersion = Boolean(
-        platformConfig.minimumVersion &&
-        currentVersion &&
-        compareVersions(currentVersion, platformConfig.minimumVersion) < 0,
-    );
-    const isBelowLatestVersion = Boolean(
-        platformConfig.latestVersion &&
-        currentVersion &&
-        compareVersions(currentVersion, platformConfig.latestVersion) < 0,
-    );
-    const isBelowMinimumBuild = Boolean(
-        platformConfig.minimumBuild &&
-        currentBuildNumber !== null &&
-        currentBuildNumber < platformConfig.minimumBuild,
-    );
-
-    const shouldPrompt = isBelowMinimumVersion || isBelowLatestVersion || isBelowMinimumBuild;
-    const { storeUrl, fallbackUrl } = getStoreUrls(platformConfig);
-
-    return {
-        shouldPrompt,
-        force: platformConfig.force === true || isBelowMinimumVersion || isBelowMinimumBuild,
-        storeUrl,
-        fallbackUrl,
-        currentVersion,
-        currentBuild,
-    };
 }
 
 export async function openAppUpdateStore(promptState: AppUpdatePromptState) {

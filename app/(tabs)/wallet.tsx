@@ -11,7 +11,6 @@ import {
   SpendButton,
   SpendCardDrawer,
   XCard,
-  XCardHeader,
 } from '../../components/wallet';
 import { useStudent } from '../../context/StudentContext';
 import { useAppTheme } from '../../context/AppThemeContext';
@@ -73,7 +72,6 @@ export default function WalletScreen() {
           refreshControl={refreshControl}
           {...tabBarScrollVisibility}
         >
-        <XCardHeader />
         <XCard earnings={isGuest ? 0 : balance} currency={currency} creatorCode={isGuest ? undefined : creatorCode} />
         <SpendButton
           onPress={handleSpendPress}

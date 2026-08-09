@@ -39,7 +39,6 @@ import { useAppLocale } from '../../context/LocaleContext';
 import { fetchMapLocations, fetchMapLocationsByPrefixes, fetchSavedMapPlaceIds, searchMapLocations } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 import { useRestoreTabBarOnFocus } from '../../components/navigation/TabBarScrollVisibility';
-import AppHeader from '../../components/navigation/AppHeader';
 
 function clampRegion(region: Region): Region {
   const minLatDelta = 0.05;
@@ -783,21 +782,6 @@ export default function MapScreen() {
         style={isDark ? 'light' : 'dark'}
         animated
         hidden
-      />
-
-      <AppHeader
-        variant="root"
-        title={isArabic ? (
-          <>
-            <Text style={{ color: theme.text }}>الخريطة </Text>
-            <Text style={{ color: theme.brand }}>إكس</Text>
-          </>
-        ) : (
-          <>
-            <Text style={{ color: theme.brand }}>X </Text>
-            <Text style={{ color: theme.text }}>MAP</Text>
-          </>
-        )}
       />
 
       <View style={styles.mapContainer}>

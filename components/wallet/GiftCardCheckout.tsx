@@ -8,7 +8,6 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -23,6 +22,7 @@ import { Typography } from '../../constants/Typography';
 import AppText from '../AppText';
 import RewardSuccessScreen from '../rewards/RewardSuccessScreen';
 import TransactionLoadingOverlay from '../TransactionLoadingOverlay';
+import GiftCardFlowScaffold from './GiftCardFlowScaffold';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { showLocalNotification } from '../../utils/notifications';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +39,7 @@ type GiftCardCheckoutProps = {
     selectedAmount: number;
     currency: string;
     onBack: () => void;
+    onClose?: () => void;
     onSuccess?: () => void;
 };
 
@@ -47,6 +48,7 @@ export default function GiftCardCheckout({
     selectedAmount,
     currency,
     onBack,
+    onClose,
     onSuccess,
 }: GiftCardCheckoutProps) {
     const [pin, setPin] = useState('');
@@ -146,7 +148,7 @@ export default function GiftCardCheckout({
                 ]}
                 primaryActionLabel={t('done')}
                 onPrimaryAction={() => onSuccess?.()}
-                onClose={() => onSuccess?.()}
+                onClose={() => onClose?.() ?? onSuccess?.()}
                 isRTL={isRTL}
             />
         );
@@ -157,29 +159,17 @@ export default function GiftCardCheckout({
             style={[styles.container, { backgroundColor: theme.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
-                    onPress={() => {
-                        triggerSubtleHaptic();
-                        onBack();
-                    }}
-                    activeOpacity={0.7}
-                >
-                    <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
-                </TouchableOpacity>
-                <View style={styles.logoContainer}>
-                    <AppText style={[styles.logoX, { color: theme.brand }]}>X</AppText>
-                    <AppText style={[styles.logoCard, { color: theme.text }]}>CARD</AppText>
-                </View>
-                <View style={styles.headerSpacer} />
-            </View>
-
-            <ScrollView
+            <GiftCardFlowScaffold
+                title={t('gift_card_flow_checkout_title')}
+                subtitle={t('gift_card_flow_checkout_subtitle')}
+                step={3}
+                totalSteps={3}
+                onBack={() => {
+                    triggerSubtleHaptic();
+                    onBack();
+                }}
+                onClose={onClose}
                 contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
             >
                 {/* Gift Card Display Card */}
                 <View style={styles.offerCardWrapper}>
@@ -211,6 +201,9 @@ export default function GiftCardCheckout({
                     {/* PIN Entry */}
                     <Text style={[styles.inputLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                         {t('enter_vendor_pin')}
+                    </Text>
+                    <Text style={[styles.inputHint, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                        {t('gift_card_flow_enter_pin_hint')}
                     </Text>
                     <TouchableOpacity
                         activeOpacity={1}
@@ -249,6 +242,9 @@ export default function GiftCardCheckout({
                     {/* Total Bill */}
                     <Text style={[styles.inputLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                         {t('total_bill')}
+                    </Text>
+                    <Text style={[styles.inputHint, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
+                        {t('gift_card_flow_bill_hint')}
                     </Text>
                     <View style={[styles.amountInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }, isRTL && styles.amountInputContainerRTL]}>
                         <Text style={[styles.currencyPrefix, { color: theme.mutedText }, isRTL && styles.currencyPrefixRTL]}>
@@ -290,16 +286,8 @@ export default function GiftCardCheckout({
                     )}
                 </View>
 
-                {/* Spacer */}
-                <View style={{ height: 20 }} />
-
-                {/* Redeem Button */}
                 <TouchableOpacity
-                    style={[
-                        styles.redeemButton,
-                        { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid },
-                        !canRedeem && styles.redeemButtonDisabled,
-                    ]}
+                    style={[styles.redeemButton, { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid }, !canRedeem && styles.redeemButtonDisabled]}
                     activeOpacity={0.9}
                     onPress={handleRedeem}
                     disabled={!canRedeem || isRedeeming}
@@ -313,7 +301,8 @@ export default function GiftCardCheckout({
                         </>
                     )}
                 </TouchableOpacity>
-            </ScrollView>
+
+            </GiftCardFlowScaffold>
 
             <TransactionLoadingOverlay visible={isRedeeming} />
         </KeyboardAvoidingView>
@@ -352,8 +341,7 @@ const styles = StyleSheet.create({
         width: 40,
     },
     scrollContent: {
-        paddingHorizontal: 24,
-        paddingBottom: 40,
+        paddingBottom: 32,
     },
     offerCardWrapper: {
         position: 'relative',
@@ -424,6 +412,13 @@ const styles = StyleSheet.create({
     inputLabel: {
         fontSize: 16,
         ...Typography.getTextVariantStyle('bodyStrong'),
+        marginBottom: 12,
+    },
+    inputHint: {
+        fontSize: 13,
+        lineHeight: 19,
+        ...Typography.getTextVariantStyle('body'),
+        marginTop: -6,
         marginBottom: 12,
     },
     pinContainer: {
@@ -531,7 +526,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
-        marginBottom: 10,
+        marginTop: 20,
+        marginBottom: 8,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 12,

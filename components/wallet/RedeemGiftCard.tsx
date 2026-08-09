@@ -2,7 +2,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
-    ScrollView,
     StyleSheet,
     Text,
     View,
@@ -12,6 +11,7 @@ import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import ScalePressable from '../ScalePressable';
 import AppText from '../AppText';
+import GiftCardFlowScaffold from './GiftCardFlowScaffold';
 import GiftCardCheckout from './GiftCardCheckout';
 import GiftCardTermsDrawer from './GiftCardTermsDrawer';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -24,6 +24,7 @@ type RedeemGiftCardProps = {
     maxLimit: number;
     currency: string;
     onSuccess?: () => void;
+    onClose?: () => void;
 };
 
 
@@ -33,6 +34,7 @@ export default function RedeemGiftCard({
     maxLimit,
     currency,
     onSuccess,
+    onClose,
 }: RedeemGiftCardProps) {
     const amounts = brand.loyalty && brand.loyalty.length > 0 ? brand.loyalty : [25, 50, 75];
     const { theme } = useAppTheme();
@@ -49,6 +51,7 @@ export default function RedeemGiftCard({
                 selectedAmount={selectedAmount}
                 currency={currency}
                 onBack={() => setShowCheckout(false)}
+                onClose={onClose}
                 onSuccess={onSuccess}
             />
         );
@@ -56,38 +59,17 @@ export default function RedeemGiftCard({
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            {/* Header */}
-            <View style={styles.header}>
-                <ScalePressable
-                    style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
-                    onPress={() => {
-                        triggerSubtleHaptic();
-                        onBack();
-                    }}
-                    pressedScale={0.9}
-                >
-                    <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
-                </ScalePressable>
-                <View style={styles.logoContainer}>
-                    {isRTL ? (
-                        <Text style={styles.logoArabicText}>
-                            <Text style={[styles.logoCardArabic, { color: theme.text }]}>{t('xcard_title_card')}</Text>
-                            {' '}
-                            <Text style={[styles.logoXArabic, { color: theme.brand }]}>{t('xcard_title_x')}</Text>
-                        </Text>
-                    ) : (
-                        <>
-                            <AppText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</AppText>
-                            <AppText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</AppText>
-                        </>
-                    )}
-                </View>
-                <View style={styles.headerSpacer} />
-            </View>
-
-            <ScrollView
+            <GiftCardFlowScaffold
+                title={t('gift_card_flow_amount_title')}
+                subtitle={t('gift_card_flow_amount_subtitle')}
+                step={2}
+                totalSteps={3}
+                onBack={() => {
+                    triggerSubtleHaptic();
+                    onBack();
+                }}
+                onClose={onClose}
                 contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
             >
                 {/* Main Card */}
                 <View style={[styles.mainCard, { backgroundColor: theme.cardMuted }]}>
@@ -173,6 +155,19 @@ export default function RedeemGiftCard({
                     </View>
                 </View>
 
+                <ScalePressable
+                    style={[styles.redeemButton, { backgroundColor: theme.actionSolid }, selectedAmount > maxLimit && styles.redeemButtonDisabled]}
+                    onPress={() => {
+                        triggerSubtleHaptic();
+                        setShowCheckout(true);
+                    }}
+                    disabled={selectedAmount > maxLimit}
+                    pressedScale={0.975}
+                >
+                    <Ionicons name="flash" size={20} color={theme.onActionSolid} style={styles.redeemIcon} />
+                    <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{t('gift_card_flow_continue')}</AppText>
+                </ScalePressable>
+
                 {/* Insufficient Balance Warning */}
                 {selectedAmount > maxLimit && (
                     <View style={[styles.insufficientContainer, { backgroundColor: theme.cardMuted }]}>
@@ -187,25 +182,7 @@ export default function RedeemGiftCard({
                     </View>
                 )}
 
-                {/* Redeem Button */}
-                <ScalePressable
-                    style={[
-                        styles.redeemButton,
-                        { backgroundColor: theme.actionSolid },
-                        selectedAmount > maxLimit && styles.redeemButtonDisabled,
-                    ]}
-                    onPress={() => {
-                        triggerSubtleHaptic();
-                        setShowCheckout(true);
-                    }}
-                    disabled={selectedAmount > maxLimit}
-                    pressedScale={0.975}
-                >
-                    <Ionicons name="flash" size={20} color={theme.onActionSolid} style={styles.redeemIcon} />
-                    <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{t('redeem_button_text')}</AppText>
-                </ScalePressable>
-            </ScrollView>
-
+            </GiftCardFlowScaffold>
             <GiftCardTermsDrawer
                 visible={showTerms}
                 onClose={() => setShowTerms(false)}
@@ -262,30 +239,29 @@ const styles = StyleSheet.create({
         width: 40,
     },
     scrollContent: {
-        paddingHorizontal: 24,
-        paddingBottom: 40,
+        paddingBottom: 32,
     },
     mainCard: {
         borderRadius: 40,
-        padding: 30,
+        padding: 24,
         alignItems: 'center',
-        marginTop: 40,
+        marginTop: 24,
         position: 'relative',
     },
     inStoreBadge: {
         position: 'absolute',
-        top: 30,
-        left: 30,
+        top: 24,
+        left: 24,
         fontSize: 14,
         ...Typography.getTextVariantStyle('body'),
     },
     inStoreBadgeRTL: {
         left: undefined,
-        right: 30,
+        right: 24,
         textAlign: 'right',
     },
     logoWrapper: {
-        marginTop: -70, // Offset to make logo pop out
+        marginTop: -52,
         padding: 10,
         borderRadius: 30,
         shadowColor: '#000',
@@ -295,8 +271,8 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     brandLogoContainer: {
-        width: 100,
-        height: 100,
+        width: 84,
+        height: 84,
         borderRadius: 25,
         alignItems: 'center',
         justifyContent: 'center',
@@ -311,35 +287,35 @@ const styles = StyleSheet.create({
         ...Typography.getTextVariantStyle('bodyStrong'),
     },
     brandName: {
-        fontSize: 18,
+        fontSize: 17,
         ...Typography.getTextVariantStyle('body'),
-        marginTop: 16,
+        marginTop: 12,
     },
     generateGiftCardWrapper: {
         alignItems: 'center',
-        marginTop: 12,
+        marginTop: 10,
     },
     generateText: {
-        fontSize: 28,
-        lineHeight: 32,
+        fontSize: 24,
+        lineHeight: 28,
     },
     giftCardText: {
-        fontSize: 28,
-        lineHeight: 32,
+        fontSize: 24,
+        lineHeight: 28,
     },
     selectedAmountContainer: {
-        paddingHorizontal: 40,
-        paddingVertical: 16,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
         borderRadius: 30,
-        marginTop: 30,
+        marginTop: 16,
         width: '100%',
         alignItems: 'center',
     },
     selectedAmountText: {
-        fontSize: 24,
+        fontSize: 22,
     },
     selectionSection: {
-        marginTop: 30,
+        marginTop: 8,
     },
     amountOptions: {
         flexDirection: 'row',
@@ -374,7 +350,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 24,
+        marginTop: 16,
     },
     redeemButtonDisabled: {
         opacity: 0.4,
@@ -402,7 +378,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 20,
+        marginTop: 10,
         paddingVertical: 10,
     },
     tcButtonRTL: {

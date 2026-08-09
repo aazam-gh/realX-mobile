@@ -16,11 +16,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { logger } from '../../utils/logger';
-import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import AppText from '../AppText';
 import ScalePressable from '../ScalePressable';
+import GiftCardFlowScaffold from './GiftCardFlowScaffold';
 import RedeemGiftCard from './RedeemGiftCard';
 import type { WalletBrand } from './types';
 import { useTranslation } from 'react-i18next';
@@ -238,34 +238,26 @@ export default function SpendCardDrawer({
             transparent={false}
             onRequestClose={handleClose}
         >
-            <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top }]}>
+            <View style={[styles.container, { backgroundColor: theme.background }]}>
                 {selectedBrand ? (
                     <RedeemGiftCard
                         brand={selectedBrand}
                         onBack={() => setSelectedBrandId(null)}
+                        onClose={handleClose}
                         maxLimit={balance}
                         currency={currency}
                         onSuccess={onClose}
                     />
                 ) : (
-                    <>
-                        {/* Header */}
-                        <View style={styles.header}>
-                            <ScalePressable
-                                style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
-                                onPress={handleClose}
-                                pressedScale={0.9}
-                            >
-                                <Text style={[styles.backArrow, { color: theme.text }]}>{isArabic ? '→' : '←'}</Text>
-                            </ScalePressable>
-                            <View style={[styles.logoContainer, isArabic && styles.logoContainerRTL]}>
-                                <AppText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</AppText>
-                                <AppText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</AppText>
-                            </View>
-                            <View style={styles.headerSpacer} />
-                        </View>
-
-                        {/* Balance Card */}
+                    <GiftCardFlowScaffold
+                        title={t('gift_card_flow_brand_title')}
+                        subtitle={t('gift_card_flow_brand_subtitle')}
+                        step={1}
+                        totalSteps={3}
+                        onBack={handleClose}
+                        onClose={handleClose}
+                        scroll={false}
+                    >
                         <View style={[styles.balanceCard, { backgroundColor: theme.cardMuted }]}>
                             <Text style={[styles.balanceLabel, { color: theme.mutedText }]} numberOfLines={2}>{t('available_balance')}</Text>
                             <AppText style={[styles.balanceValue, { color: theme.text }]} numberOfLines={1}>
@@ -273,7 +265,6 @@ export default function SpendCardDrawer({
                             </AppText>
                         </View>
 
-                        {/* Search Bar */}
                         <View style={[styles.searchContainer, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }, isRTL && styles.searchContainerRTL]}>
                             <Ionicons
                                 name="search"
@@ -304,10 +295,9 @@ export default function SpendCardDrawer({
                             ) : null}
                         </View>
 
-                        {/* Brand List */}
                         {loading && brands.length === 0 ? (
-                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                                <ActivityIndicator size="large" color={Colors.brandGreen} />
+                            <View style={styles.loadingState}>
+                                <ActivityIndicator size="large" color={theme.brand} />
                             </View>
                         ) : (
                             <View style={styles.brandList}>
@@ -339,11 +329,11 @@ export default function SpendCardDrawer({
                                     }}
                                     onEndReachedThreshold={0.2}
                                     ListFooterComponent={loadingMore ? (
-                                        <ActivityIndicator size="small" color={Colors.brandGreen} style={{ paddingVertical: 16 }} />
+                                        <ActivityIndicator size="small" color={theme.brand} style={{ paddingVertical: 16 }} />
                                     ) : null}
                                     ListEmptyComponent={
                                         <View style={styles.emptyState}>
-                                            <Text style={styles.emptyStateEmoji}>🔍</Text>
+                                            <Ionicons name="search-outline" size={30} color={theme.brand} />
                                             <Text style={[styles.emptyStateTitle, { color: theme.text }]}>
                                                 {emptyTitle}
                                             </Text>
@@ -367,7 +357,7 @@ export default function SpendCardDrawer({
                                 />
                             </View>
                         )}
-                    </>
+                    </GiftCardFlowScaffold>
                 )}
             </View>
         </Modal>
@@ -466,6 +456,11 @@ const styles = StyleSheet.create({
     },
     brandList: {
         flex: 1,
+    },
+    loadingState: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     brandListContent: {
         paddingHorizontal: 16,

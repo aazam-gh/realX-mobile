@@ -199,6 +199,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 40,

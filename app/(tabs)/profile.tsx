@@ -187,20 +187,26 @@ export default function ProfileScreen() {
       >
         <View style={[styles.savingsCard, { backgroundColor: theme.surfaceElevated }]}>
           <View style={[styles.profileSavingsRow, isRTL && styles.profileSavingsRowRTL]}>
-            <View style={[styles.savingsDetails, { borderColor: theme.border }]}>
-              <AppText
-                style={[
-                  { color: theme.text, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' },
-                  styles.savingsLabel,
-                ]}
-              >
-                {t('savings_so_far')}
-              </AppText>
-              <View style={[styles.savingsAmountContainer, isRTL && styles.savingsAmountContainerRTL]}>
-                <AppText style={[{ color: theme.brandText, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }, styles.savingsAmountGreen]}>
-                  {t('amount_with_currency', { amount: isRTL ? toArabicDigits((userData?.savings ?? 0).toFixed(2)) : (userData?.savings ?? 0).toFixed(2), currency: t('currency_qar') })}
+            <View style={[styles.savingsDetails, { borderColor: theme.border }, isRTL && styles.savingsDetailsRTL]}>
+              {isRTL ? (
+                <AppText style={[styles.savingsInlineRTL, { color: theme.text }] }>
+                  {t('savings_so_far')}{' '}
+                  <AppText style={[styles.savingsAmountGreen, styles.savingsAmountGreenRTL, { color: theme.brandText }] }>
+                    {t('amount_with_currency', { amount: toArabicDigits((userData?.savings ?? 0).toFixed(2)), currency: t('currency_qar') })}
+                  </AppText>
                 </AppText>
-              </View>
+              ) : (
+                <>
+                  <AppText style={[styles.savingsLabel, { color: theme.text }]}>
+                    {t('savings_so_far')}
+                  </AppText>
+                  <View style={styles.savingsAmountContainer}>
+                    <AppText style={[styles.savingsAmountGreen, { color: theme.brandText }] }>
+                      {t('amount_with_currency', { amount: (userData?.savings ?? 0).toFixed(2), currency: t('currency_qar') })}
+                    </AppText>
+                  </View>
+                </>
+              )}
             </View>
             <TouchableOpacity
               style={styles.profileAvatarButton}
@@ -255,8 +261,29 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <View style={styles.menuContainer}>
-          <MenuItem icon="bookmark-outline" label={t('saved_offers')} onPress={() => router.push('/saved-offers' as any)} isRTL={isRTL} />
-          <MenuItem icon="time-outline" label={t('redemption_history')} onPress={() => router.push('/redemption-history' as any)} isRTL={isRTL} />
+          <View style={[styles.savedHistoryBar, { backgroundColor: theme.cardMuted }, isRTL && styles.savedHistoryBarRTL]}>
+            <TouchableOpacity
+              style={styles.savedHistoryAction}
+              onPress={() => router.push('/saved-offers' as any)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('saved')}
+            >
+              <Ionicons name="bookmark-outline" size={22} color={theme.icon} />
+              <AppText style={[styles.savedHistoryLabel, { color: theme.text }]}>{t('saved')}</AppText>
+            </TouchableOpacity>
+            <View style={[styles.savedHistoryDivider, { backgroundColor: theme.border }]} />
+            <TouchableOpacity
+              style={styles.savedHistoryAction}
+              onPress={() => router.push('/redemption-history' as any)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('history')}
+            >
+              <Ionicons name="time-outline" size={22} color={theme.icon} />
+              <AppText style={[styles.savedHistoryLabel, { color: theme.text }]}>{t('history')}</AppText>
+            </TouchableOpacity>
+          </View>
           <LanguageToggle
             locale={locale}
             englishLabel={t('english')}
@@ -457,6 +484,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    minHeight: 64,
+  },
+  savingsDetailsRTL: {
+    direction: 'rtl',
+    justifyContent: 'center',
   },
   profileAvatarButton: {
     borderRadius: 30,
@@ -527,17 +559,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     ...Typography.getTextVariantStyle('body'),
     marginBottom: 2,
+    width: '100%',
+  },
+  savingsInlineRTL: {
+    width: '100%',
+    textAlign: 'center',
+    writingDirection: 'rtl',
+    fontSize: 20,
+    lineHeight: 30,
+    ...Typography.getTextVariantStyle('body'),
   },
   savingsAmountContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 8,
+    width: '100%',
   },
   savingsAmountContainerRTL: {
-    alignSelf: 'flex-start',
+    justifyContent: 'flex-start',
   },
   savingsAmountGreen: {
     fontSize: 24,
+    width: '100%',
+  },
+  savingsAmountGreenRTL: {
+    fontSize: 26,
+    width: 'auto',
   },
   universityBanner: {
     marginBottom: 24,
@@ -596,6 +643,33 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     gap: 12,
+  },
+  savedHistoryBar: {
+    minHeight: 64,
+    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  savedHistoryBarRTL: {
+    flexDirection: 'row-reverse',
+  },
+  savedHistoryAction: {
+    flex: 1,
+    minHeight: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+  },
+  savedHistoryDivider: {
+    width: 1,
+    height: 32,
+  },
+  savedHistoryLabel: {
+    fontSize: 16,
+    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   menuItem: {
     flexDirection: 'row',

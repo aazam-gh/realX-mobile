@@ -1,7 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
-import { Image } from 'expo-image';
 import React, { useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -161,7 +160,6 @@ export default function GiftCardCheckout({
         >
             <GiftCardFlowScaffold
                 title={t('gift_card_flow_checkout_title')}
-                subtitle={t('gift_card_flow_checkout_subtitle')}
                 step={3}
                 totalSteps={3}
                 onBack={() => {
@@ -171,33 +169,8 @@ export default function GiftCardCheckout({
                 onClose={onClose}
                 contentContainerStyle={styles.scrollContent}
             >
-                {/* Gift Card Display Card */}
-                <View style={styles.offerCardWrapper}>
-                    <View style={[styles.offerCard, { backgroundColor: theme.cardMuted }]}>
-                        <AppText style={[styles.offerTitle, { color: theme.text }]}>
-                            {selectedAmount.toFixed(2)}
-                            <Text style={[styles.greenText, { color: theme.brand }]}>{currency}</Text>
-                        </AppText>
-                        <AppText style={[styles.offerSubtitleLabel, { color: theme.brand }]}>{t('gift_card_text')}</AppText>
-                        <Text style={[styles.offerSubtitle, { color: theme.mutedText }]}>{t('in_store_badge')}</Text>
-                    </View>
-
-                    {/* Logo Overlay */}
-                    <View style={[styles.brandLogoOverlay, { backgroundColor: theme.logoTile, borderColor: theme.logoTile, shadowColor: theme.shadow }]}>
-                        <View style={[styles.brandLogoInner, { backgroundColor: brand.backgroundColor || '#1E2A38' }]}>
-                            {brand.logo ? (
-                                <Image source={{ uri: brand.logo }} style={styles.brandLogoImage} contentFit="contain" />
-                            ) : (
-                                <Text style={[styles.brandLogoPlaceholder, { color: theme.logoTileText }]}>
-                                    {brand.name.charAt(0)}
-                                </Text>
-                            )}
-                        </View>
-                    </View>
-                </View>
-
-                {/* Redemption Card */}
-                <View style={[styles.redemptionCard, { backgroundColor: theme.cardMuted }]}>
+                <View style={styles.formSections}>
+                    <View style={[styles.formSection, { backgroundColor: theme.cardMuted }]}>
                     {/* PIN Entry */}
                     <Text style={[styles.inputLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                         {t('enter_vendor_pin')}
@@ -228,6 +201,7 @@ export default function GiftCardCheckout({
                             </View>
                         ))}
                     </TouchableOpacity>
+                    </View>
 
                     <TextInput
                         ref={pinInputRef}
@@ -240,6 +214,7 @@ export default function GiftCardCheckout({
                     />
 
                     {/* Total Bill */}
+                    <View style={[styles.formSection, { backgroundColor: theme.cardMuted }]}>
                     <Text style={[styles.inputLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
                         {t('total_bill')}
                     </Text>
@@ -284,6 +259,7 @@ export default function GiftCardCheckout({
                             </View>
                         </View>
                     )}
+                    </View>
                 </View>
 
                 <TouchableOpacity
@@ -343,80 +319,22 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: 32,
     },
-    offerCardWrapper: {
-        position: 'relative',
-        width: '100%',
-        marginTop: 50,
-    },
-    offerCard: {
-        borderRadius: 35,
-        paddingTop: 70,
-        paddingBottom: 40,
-        paddingHorizontal: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    offerTitle: {
-        fontSize: 32,
-        color: '#00',
-        textAlign: 'center',
-    },
-    greenText: {
-    },
-    offerSubtitleLabel: {
-        fontSize: 28,
-        marginTop: 2,
-    },
-    offerSubtitle: {
-        fontSize: 16,
-        ...Typography.getTextVariantStyle('body'),
-        marginTop: 4,
-    },
-    brandLogoOverlay: {
-        position: 'absolute',
-        top: -50,
-        alignSelf: 'center',
-        width: 100,
-        height: 100,
-        borderRadius: 25,
-        borderWidth: 4,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 6,
-    },
-    brandLogoInner: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 21,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
-    },
-    brandLogoImage: {
-        width: '60%',
-        height: '60%',
-    },
-    brandLogoPlaceholder: {
-        fontSize: 40,
-        ...Typography.getTextVariantStyle('bodyStrong'),
-    },
-    redemptionCard: {
-        borderRadius: 35,
-        padding: 24,
+    formSections: {
+        gap: 16,
         marginTop: 20,
     },
+    formSection: {
+        borderRadius: 28,
+        padding: 22,
+    },
     inputLabel: {
-        fontSize: 16,
+        fontSize: 18,
         ...Typography.getTextVariantStyle('bodyStrong'),
         marginBottom: 12,
     },
     inputHint: {
-        fontSize: 13,
-        lineHeight: 19,
+        fontSize: 14,
+        lineHeight: 20,
         ...Typography.getTextVariantStyle('body'),
         marginTop: -6,
         marginBottom: 12,
@@ -424,7 +342,7 @@ const styles = StyleSheet.create({
     pinContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 24,
+        marginTop: 4,
     },
     pinContainerRTL: {
         flexDirection: 'row-reverse',
@@ -449,7 +367,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderRadius: 25,
-        height: 55,
+        height: 64,
         paddingHorizontal: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -475,7 +393,7 @@ const styles = StyleSheet.create({
         ...Typography.getTextVariantStyle('bodyStrong'),
     },
     breakdownContainer: {
-        marginTop: 20,
+        marginTop: 16,
         borderRadius: 20,
         padding: 20,
     },
@@ -526,7 +444,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
-        marginTop: 20,
+        marginTop: 18,
         marginBottom: 8,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,

@@ -19,7 +19,6 @@ import { OnboardingFlowSectionMotion } from '../onboarding/OnboardingMotion';
 
 type Props = {
     title: string;
-    subtitle?: string;
     step: number;
     totalSteps: number;
     onBack?: () => void;
@@ -32,7 +31,6 @@ type Props = {
 
 export default function GiftCardFlowScaffold({
     title,
-    subtitle,
     step,
     totalSteps,
     onBack,
@@ -105,7 +103,6 @@ export default function GiftCardFlowScaffold({
 
             <View style={[styles.heading, isRTL && styles.headingRTL]}>
                 <Text style={[styles.title, Typography.getLocalizedTextVariantStyle('display', locale), { color: theme.text }, isRTL && styles.textRTL]}>{title}</Text>
-                {subtitle ? <Text style={[styles.subtitle, { color: theme.mutedText }, isRTL && styles.textRTL]}>{subtitle}</Text> : null}
             </View>
 
             {scroll ? (
@@ -199,15 +196,9 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     title: {
-        fontSize: 30,
-        lineHeight: 38,
+        fontSize: 20,
+        lineHeight: 28,
         ...Typography.getTextVariantStyle('display'),
-    },
-    subtitle: {
-        paddingTop: 8,
-        fontSize: 16,
-        lineHeight: 24,
-        ...Typography.getTextVariantStyle('body'),
     },
     textRTL: {
         textAlign: 'right',

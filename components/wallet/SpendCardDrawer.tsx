@@ -251,7 +251,6 @@ export default function SpendCardDrawer({
                 ) : (
                     <GiftCardFlowScaffold
                         title={t('gift_card_flow_brand_title')}
-                        subtitle={t('gift_card_flow_brand_subtitle')}
                         step={1}
                         totalSteps={3}
                         onBack={handleClose}

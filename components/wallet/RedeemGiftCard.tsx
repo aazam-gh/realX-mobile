@@ -61,7 +61,6 @@ export default function RedeemGiftCard({
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <GiftCardFlowScaffold
                 title={t('gift_card_flow_amount_title')}
-                subtitle={t('gift_card_flow_amount_subtitle')}
                 step={2}
                 totalSteps={3}
                 onBack={() => {

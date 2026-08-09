@@ -67,12 +67,6 @@ export default function HomeScreen() {
         hidden
       />
       <View collapsable={false} style={styles.contentWrapper}>
-        <GreetingHeader
-          userName={userName}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onSearchSubmit={handleSearch}
-        />
         <ScrollView
           style={[styles.container, { backgroundColor: theme.background }]}
           contentInsetAdjustmentBehavior="automatic"
@@ -102,6 +96,14 @@ export default function HomeScreen() {
         <BrandGrid />
         <OpportunityHighlights />
         </ScrollView>
+        <View style={styles.header}>
+          <GreetingHeader
+            userName={userName}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSearchSubmit={handleSearch}
+          />
+        </View>
         {refreshOverlay}
       </View>
     </SafeAreaView>
@@ -122,7 +124,16 @@ const styles = StyleSheet.create({
   contentContainer: {
     // iOS tab bar is a translucent overlay so content needs clearance; the Android
     // JS tab bar reserves its own layout space, so a large pad just leaves dead space.
+    paddingTop: 64,
     paddingBottom: Platform.OS === 'ios' ? 88 : 24,
+  },
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    elevation: 10,
   },
   glowSection: {
     position: 'relative',

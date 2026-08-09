@@ -239,11 +239,13 @@ function LayoutContent({
   const [validatedMissingProfileUid, setValidatedMissingProfileUid] = useState<string | null>(null);
   const [startupTimedOut, setStartupTimedOut] = useState(false);
   const [homePreloadReady, setHomePreloadReady] = useState(false);
+  const [startupRevealComplete, setStartupRevealComplete] = useState(false);
   const [rootLaidOut, setRootLaidOut] = useState(false);
   const startupStartedAt = useRef<number | null>(null);
   const splashHiddenRef = useRef(false);
   const splashHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileNavigationStartedRef = useRef(false);
+  const preloadedHomeLocaleRef = useRef<string | null>(null);
   const navigationTheme = useMemo(() => {
     const baseTheme = isDark ? DarkTheme : DefaultTheme;
 
@@ -277,7 +279,7 @@ function LayoutContent({
   const startupRouteReady = startupDestination
     ? isStartupRouteReady(startupDestination, segments as string[])
     : false;
-  const startupCanReveal = Boolean(
+  const startupPrerequisitesReady = Boolean(
     appReady
     && (
       profileError
@@ -288,6 +290,7 @@ function LayoutContent({
       )
     ),
   );
+  const startupCanReveal = startupRevealComplete || startupPrerequisitesReady;
 
   useEffect(() => {
     if (startupStartedAt.current === null) startupStartedAt.current = Date.now();
@@ -318,6 +321,10 @@ function LayoutContent({
   }, [i18nReady, appCheckReady, loaded, error, authReady, guestLoading, user, hasProfile, profileError, pendingCheckDone]);
 
   useEffect(() => {
+    if (startupPrerequisitesReady) setStartupRevealComplete(true);
+  }, [startupPrerequisitesReady]);
+
+  useEffect(() => {
     if (startupCanReveal) {
       setStartupTimedOut(false);
       return;
@@ -332,8 +339,14 @@ function LayoutContent({
       return;
     }
 
+    if (preloadedHomeLocaleRef.current === locale) {
+      setHomePreloadReady(true);
+      return;
+    }
+
     let cancelled = false;
-    setHomePreloadReady(false);
+    preloadedHomeLocaleRef.current = locale;
+    if (!startupRevealComplete) setHomePreloadReady(false);
     const preload = preloadHomeData(locale);
 
     void preload.criticalReady.finally(() => {
@@ -343,7 +356,7 @@ function LayoutContent({
     return () => {
       cancelled = true;
     };
-  }, [locale, startupDestination]);
+  }, [locale, startupDestination, startupRevealComplete]);
 
   useEffect(() => {
     if (!appReady) return;

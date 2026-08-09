@@ -138,7 +138,7 @@ export default function EmailOnboarding() {
   >
     <OnboardingField
       inputRef={inputRef}
-      label={t('onboarding_email_placeholder')}
+      label={mode === 'login' ? t('onboarding_login_email_placeholder') : t('onboarding_email_placeholder')}
       error={errorKey ? t(errorKey) : null}
       value={email}
       onChangeText={(value) => { setEmail(value); setErrorKey(null); setResolution(null); }}
@@ -160,6 +160,6 @@ export default function EmailOnboarding() {
     {mode === 'signup' ? <OnboardingSecondaryButton label={t('onboarding_v2_verify_student_id')} disabled={loading} onPress={handleStudentId} /> : null}
     {notice}
     {mode === 'signup' ? <Text style={{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), fontSize: 13, lineHeight: 19 }}>{t('onboarding_v2_legal')}</Text> : null}
-    <OnboardingSecondaryButton label={mode === 'login' ? t('onboarding_v2_create_account') : t('onboarding_login_action')} onPress={() => switchMode(mode === 'login' ? 'signup' : 'login')} />
+    {mode === 'signup' ? <OnboardingSecondaryButton label={t('onboarding_login_action')} onPress={() => switchMode('login')} /> : null}
   </OnboardingScaffold>;
 }

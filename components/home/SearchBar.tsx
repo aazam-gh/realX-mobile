@@ -16,6 +16,7 @@ import { HOME_HORIZONTAL_GUTTER } from "./layout";
 
 type Props = {
   placeholder?: string;
+  compact?: boolean;
   value?: string;
   onChangeText?: (text: string) => void;
   onSubmit?: () => void;
@@ -34,6 +35,7 @@ function canUseNativeGlass() {
 
 export default function SearchBar({
   placeholder = "Search for anything...",
+  compact = false,
   value,
   onChangeText,
   onSubmit,
@@ -44,10 +46,10 @@ export default function SearchBar({
   const useNativeGlass = !isDark && canUseNativeGlass();
   const showHighlights = !isDark;
   const [isFocused, setIsFocused] = useState(false);
-  const [animatedPlaceholder, setAnimatedPlaceholder] = useState<string | null>(null);
+  const [animatedPlaceholder, setAnimatedPlaceholder] = useState("");
   const { isRTL } = useAppLocale();
   const isActive = isFocused || (value?.length ?? 0) > 0;
-  const placeholderText = isActive ? "" : formatPlaceholder(animatedPlaceholder ?? placeholder, isRTL);
+  const placeholderText = isActive ? "" : formatPlaceholder(animatedPlaceholder, isRTL);
 
   useEffect(() => {
     if (!onChangeText) return;
@@ -60,11 +62,9 @@ export default function SearchBar({
   }, [navigation, onChangeText]);
 
   useEffect(() => {
-    let frame: ReturnType<typeof setTimeout>;
     let index = 0;
     let direction: "typing" | "deleting" = "typing";
-
-    setAnimatedPlaceholder("");
+    let frame: ReturnType<typeof setTimeout>;
 
     const tick = () => {
       if (direction === "typing") {
@@ -77,7 +77,7 @@ export default function SearchBar({
           return;
         }
 
-        frame = setTimeout(tick, 80);
+        frame = setTimeout(tick, 55);
         return;
       }
 
@@ -93,7 +93,8 @@ export default function SearchBar({
       frame = setTimeout(tick, 26);
     };
 
-    frame = setTimeout(tick, 350);
+    setAnimatedPlaceholder("");
+    frame = setTimeout(tick, 55);
 
     return () => clearTimeout(frame);
   }, [placeholder]);
@@ -108,13 +109,13 @@ export default function SearchBar({
   };
 
   return (
-    <View style={[styles.searchShell, isDark && styles.searchShellDark]}>
+    <View style={[styles.searchShell, { backgroundColor: theme.inputBackground }, compact && styles.searchShellCompact]}>
       {useNativeGlass ? (
         <GlassView
-          style={[styles.searchSurface, { backgroundColor: "#FFFFFF", borderColor: theme.inputBorder }]}
+          style={[styles.searchSurface, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }]}
           glassEffectStyle="regular"
           colorScheme={isDark ? "dark" : "light"}
-          tintColor="#FFFFFF"
+          tintColor={theme.inputBackground}
         >
           {showHighlights ? <GlassHighlights topColor={theme.inputHighlight} bottomColor={theme.inputShade} /> : null}
           <SearchBarContent
@@ -134,7 +135,7 @@ export default function SearchBar({
           />
         </GlassView>
       ) : (
-        <View style={[styles.searchSurface, { backgroundColor: "#FFFFFF", borderColor: theme.inputBorder }]}>
+        <View style={[styles.searchSurface, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }]}>
           {showHighlights ? <GlassHighlights topColor={theme.inputHighlight} bottomColor={theme.inputShade} /> : null}
           <SearchBarContent
             placeholder={placeholderText}
@@ -250,16 +251,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     backgroundColor: "#FFFFFF",
     borderRadius: 30,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.16,
-    shadowRadius: 22,
-    elevation: 8,
   },
-  searchShellDark: {
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
+  searchShellCompact: {
+    flex: 1,
+    marginHorizontal: 0,
+    marginTop: 0,
   },
   searchSurface: {
     borderRadius: 30,

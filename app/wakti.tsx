@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import {
-    StatusBar,
     StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,7 +27,7 @@ export default function WaktiModal() {
 
     return (
         <SafeAreaView style={styles.screen}>
-            <StatusBar barStyle="light-content" backgroundColor="#000000" />
+            <StatusBar style="light" hidden />
             <WaktiSheetContent onClose={dismissModal} onStoreOpened={closeAfterStoreOpen} />
         </SafeAreaView>
     );

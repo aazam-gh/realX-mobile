@@ -26,6 +26,7 @@ import { useAuthAccess } from '../context/AuthAccessContext';
 import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import AppText from '../components/AppText';
+import AppHeader from '../components/navigation/AppHeader';
 import UserAvatar from '../components/UserAvatar';
 import { fetchStudentProfile } from '../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../utils/queryClient';
@@ -36,7 +37,6 @@ export default function ProfileDetailsScreen() {
     const { t } = useTranslation();
     const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
     const { isRTL } = useAppLocale();
-    const backIconName: keyof typeof Ionicons.glyphMap = isRTL ? 'arrow-forward' : 'arrow-back';
 
     // Form states
     const [firstName, setFirstName] = useState('');
@@ -221,25 +221,21 @@ export default function ProfileDetailsScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-        <View style={styles.header}>
-            <TouchableOpacity
-                onPress={handleBack}
-                style={[styles.backButton, { backgroundColor: theme.cardMuted }]}
-            >
-                <Ionicons name={backIconName} size={24} color={theme.icon} />
-            </TouchableOpacity>
-                <AppText style={[styles.headerTitle, { color: theme.text }, isRTL && styles.headerTitleRTL]}>
-                    {t('profile_details_title')}
-                </AppText>
-            <TouchableOpacity
-                onPress={handleToggleEdit}
-                style={[styles.editButton, { backgroundColor: theme.cardMuted }]}
-            >
-                <AppText style={[styles.editButtonText, { color: isEditing ? theme.brand : theme.text }]}>
-                    {isEditing ? t('save') : t('edit')}
-                </AppText>
-            </TouchableOpacity>
-        </View>
+        <AppHeader
+            title={t('profile_details_title')}
+            onBackPress={handleBack}
+            trailing={(
+                <TouchableOpacity
+                    onPress={handleToggleEdit}
+                    activeOpacity={0.72}
+                    style={[styles.editButton, { backgroundColor: theme.cardMuted, borderColor: theme.border }]}
+                >
+                    <AppText variant="bodyStrong" style={[styles.editButtonText, { color: isEditing ? theme.brand : theme.text }]}>
+                        {isEditing ? t('save') : t('edit')}
+                    </AppText>
+                </TouchableOpacity>
+            )}
+        />
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -394,35 +390,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 24,
-        paddingVertical: 16,
-        gap: 16,
-    },
-    backButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerTitle: {
-        fontSize: 20,
-        flex: 1,
-        textAlign: 'center',
-        letterSpacing: 0.5,
-    },
-    headerTitleRTL: {
-        textAlign: 'right',
-        writingDirection: 'rtl',
-    },
     editButton: {
-        borderRadius: 24,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        
+        minHeight: 40,
+        borderRadius: 20,
+        borderWidth: StyleSheet.hairlineWidth,
+        paddingVertical: 9,
+        paddingHorizontal: 16,
+        justifyContent: 'center',
     },
     editButtonText: {
         fontSize: 14,

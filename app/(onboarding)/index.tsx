@@ -159,7 +159,7 @@ export default function OnboardingScreen() {
     if (step === 1) {
         return (
             <>
-                <StatusBar style="dark" />
+                <StatusBar style="dark" hidden />
                 <OnboardingScaffold
                     title={t('onboarding_v2_role_title')}
                     subtitle={t('onboarding_v2_role_subtitle')}
@@ -208,7 +208,7 @@ export default function OnboardingScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar style="dark" />
+            <StatusBar style="dark" hidden />
             {backgroundIcons.map((icon, index) => (
                 <View
                     key={`${icon.name}-${index}`}

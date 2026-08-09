@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
+import { StatusBar } from 'expo-status-bar';
 import type { ComponentProps } from 'react';
 import { useEffect, useState } from 'react';
-import { StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   interpolateColor,
@@ -218,7 +219,7 @@ export default function RewardSuccessScreen({
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.brand }]}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar style="light" hidden />
 
       <TouchableOpacity
         style={[

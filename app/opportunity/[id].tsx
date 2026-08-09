@@ -11,13 +11,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import {
   Alert,
   Linking,
   Pressable,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -26,6 +26,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { StateSurface } from '../../components/StateSurface';
+import AppHeader, { HeaderIconButton } from '../../components/navigation/AppHeader';
 import { Typography } from '../../constants/Typography';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -146,28 +147,22 @@ export default function OpportunityDetailsScreen() {
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]} edges={['top']}>
       <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.background}
+        style={isDark ? 'light' : 'dark'}
+        animated
+        hidden
       />
-      <View style={[styles.header, isRTL && styles.rowReverse, { borderBottomColor: theme.border }]}>
-        <Pressable onPress={() => router.back()} style={styles.iconButton}>
-          <Ionicons
-            name={isRTL ? 'arrow-forward' : 'arrow-back'}
-            size={24}
-            color={theme.icon}
+      <AppHeader
+        title={t(`opportunity_kind_${opportunity.kind}`)}
+        onBackPress={() => router.back()}
+        trailing={(
+          <HeaderIconButton
+            icon={saved ? 'bookmark' : 'bookmark-outline'}
+            accessibilityLabel={saved ? t('saved') : t('save')}
+            selected={saved}
+            onPress={() => void toggleSave()}
           />
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>
-          {t(`opportunity_kind_${opportunity.kind}`)}
-        </Text>
-        <Pressable onPress={() => void toggleSave()} style={styles.iconButton}>
-          <Ionicons
-            name={saved ? 'bookmark' : 'bookmark-outline'}
-            size={24}
-            color={saved ? theme.brand : theme.icon}
-          />
-        </Pressable>
-      </View>
+        )}
+      />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
@@ -278,25 +273,7 @@ export default function OpportunityDetailsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: {
-    minHeight: 58,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-  },
   rowReverse: { flexDirection: 'row-reverse' },
-  iconButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 15,
-    ...Typography.getTextVariantStyle('bodyStrong'),
-  },
   content: { paddingBottom: 44 },
   hero: {
     width: '100%',

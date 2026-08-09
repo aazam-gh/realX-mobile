@@ -13,6 +13,7 @@ import { useConnectivity } from '../context/ConnectivityContext';
 import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import AppText from '../components/AppText';
+import AppHeader from '../components/navigation/AppHeader';
 import { StateSurface } from '../components/StateSurface';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
@@ -158,20 +159,7 @@ export default function RedemptionHistoryScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => {
-            triggerSubtleHaptic();
-            router.back();
-          }}
-        >
-          <Ionicons name={isArabic ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.text }, isArabic && styles.headerTitleRTL]}>
-          {t('redemption_history')}
-        </Text>
-      </View>
+      <AppHeader title={t('redemption_history')} onBackPress={() => router.back()} />
 
         {authAccessLoading || (!isAuthenticated && !userId) ? (
         <StateSurface kind="loading" />
@@ -204,24 +192,6 @@ const styles = StyleSheet.create({
   contentWrapper: {
     flex: 1,
     position: 'relative',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 22,
-    ...Typography.getTextVariantStyle('body'),
-  },
-  headerTitleRTL: {
-    textAlign: 'right',
-    writingDirection: 'rtl',
   },
   loadingContainer: {
     flex: 1,

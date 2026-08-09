@@ -10,9 +10,10 @@ import {
 } from '@react-native-firebase/firestore';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, Polyline, Region } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Supercluster, { ClusterFeature, PointFeature } from 'supercluster';
@@ -38,6 +39,7 @@ import { useAppLocale } from '../../context/LocaleContext';
 import { fetchMapLocations, fetchMapLocationsByPrefixes, fetchSavedMapPlaceIds, searchMapLocations } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 import { useRestoreTabBarOnFocus } from '../../components/navigation/TabBarScrollVisibility';
+import AppHeader from '../../components/navigation/AppHeader';
 
 function clampRegion(region: Region): Region {
   const minLatDelta = 0.05;
@@ -778,25 +780,25 @@ export default function MapScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
       <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.background}
+        style={isDark ? 'light' : 'dark'}
+        animated
+        hidden
       />
 
-      <View style={[styles.titleBar, { backgroundColor: theme.background }, isArabic && { alignItems: 'flex-start' }]}>
-        <AppText style={[styles.headerTitle]}>
-          {isArabic ? (
-            <>
-              <Text style={{ color: theme.text }}>الخريطة </Text>
-              <Text style={{ color: theme.brand }}>إكس</Text>
-            </>
-          ) : (
-            <>
-              <Text style={{ color: theme.brand }}>X </Text>
-              <Text style={{ color: theme.text }}>MAP</Text>
-            </>
-          )}
-        </AppText>
-      </View>
+      <AppHeader
+        variant="root"
+        title={isArabic ? (
+          <>
+            <Text style={{ color: theme.text }}>الخريطة </Text>
+            <Text style={{ color: theme.brand }}>إكس</Text>
+          </>
+        ) : (
+          <>
+            <Text style={{ color: theme.brand }}>X </Text>
+            <Text style={{ color: theme.text }}>MAP</Text>
+          </>
+        )}
+      />
 
       <View style={styles.mapContainer}>
         <MapView
@@ -874,7 +876,6 @@ export default function MapScreen() {
               {
                 backgroundColor: theme.inputBackground,
                 borderColor: theme.inputBorder,
-                shadowColor: theme.shadow,
               },
             ]}
             pointerEvents="auto"
@@ -1247,21 +1248,12 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  titleBar: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 4,
-    flexDirection: 'column',
-  },
   floatingSearch: {
     position: 'absolute',
     left: 0,
     right: 0,
     paddingHorizontal: 20,
     zIndex: 10,
-  },
-  headerTitle: {
-    fontSize: 28,
   },
   headerMeta: {
     marginTop: 4,
@@ -1270,16 +1262,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    borderRadius: 24,
+    borderRadius: 28,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderWidth: 1,
     marginTop: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
   },
   searchInput: {
     flex: 1,

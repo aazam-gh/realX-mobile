@@ -18,6 +18,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { useTabBarScrollVisibility } from '../../components/navigation/TabBarScrollVisibility';
+import AppHeader from '../../components/navigation/AppHeader';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -34,6 +35,18 @@ export default function ProfileScreen() {
       Alert.alert(t('error'), t('language_change_failed'));
     }
   };
+
+  const profileHeaderTitle = isRTL ? (
+    <>
+      <Text style={{ color: theme.text }}>{t('profile')}</Text>{' '}
+      <Text style={{ color: theme.brand }}>{t('xcard_title_x')}</Text>
+    </>
+  ) : (
+    <>
+      <Text style={{ color: theme.brand }}>{t('xcard_title_x')} </Text>
+      <Text style={{ color: theme.text }}>{t('profile')}</Text>
+    </>
+  );
 
   const handleLogout = () => {
     Alert.alert(
@@ -65,22 +78,12 @@ export default function ProfileScreen() {
   if (isGuest) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+        <AppHeader title={profileHeaderTitle} variant="root" />
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
           {...tabBarScrollVisibility}
         >
-          <View style={[styles.header, isRTL && styles.headerRTL]}>
-            <AppText
-              style={[
-                { color: theme.text, textAlign: isRTL ? 'right' : 'left' },
-                styles.headerText,
-              ]}
-            >
-              {t('profile')}
-            </AppText>
-          </View>
-
           <View style={[styles.topPill, { backgroundColor: theme.cardMuted }]}>
             <View style={styles.profileTopRow}>
               <UserAvatar
@@ -189,22 +192,12 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+      <AppHeader title={profileHeaderTitle} variant="root" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         {...tabBarScrollVisibility}
       >
-        <View style={[styles.header, isRTL && styles.headerRTL]}>
-          <AppText
-            style={[
-              { color: theme.text, textAlign: isRTL ? 'right' : 'left' },
-              styles.headerText,
-            ]}
-          >
-            {t('profile')}
-          </AppText>
-        </View>
-
         <View style={[styles.topPill, { backgroundColor: theme.cardMuted }]}>
           <View style={styles.profileTopRow}>
             <UserAvatar
@@ -475,16 +468,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 8,
     paddingBottom: 100,
-  },
-  header: {
-    marginBottom: 16,
-  },
-  headerRTL: {
-    alignItems: 'flex-start',
-  },
-  headerText: {
-    fontSize: 28,
-    letterSpacing: 0.5,
   },
   topPill: {
     borderRadius: 30,

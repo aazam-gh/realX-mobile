@@ -7,8 +7,9 @@ import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -311,7 +312,7 @@ export default function VendorScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
+            <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -331,7 +332,7 @@ export default function VendorScreen() {
                     <SafeAreaView style={styles.headerOverlay} edges={['top']}>
                         <View style={styles.headerButtonsRow}>
                             <TouchableOpacity
-                                style={[styles.roundButton, { backgroundColor: theme.logoTile, shadowColor: theme.shadow }]}
+                                style={[styles.roundButton, { backgroundColor: theme.logoTile, borderColor: theme.logoTileBorder }]}
                                 onPress={() => router.back()}
                                 activeOpacity={0.8}
                             >
@@ -751,13 +752,9 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
+        borderWidth: StyleSheet.hairlineWidth,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3,
     },
     logoContainer: {
         position: 'absolute',

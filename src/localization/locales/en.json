@@ -42,6 +42,7 @@
   "redeem": "Redeem Discount",
   "search": "Search",
   "search_placeholder": "Search offers, places and brands",
+  "home_search_placeholder": "{{name}}, search for anything!",
   "search_offers_placeholder": "Search for offers...",
   "search_offers_empty_title": "Search for offers",
   "search_offers_empty_hint": "Type a keyword to find deals and discounts",

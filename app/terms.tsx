@@ -1,10 +1,10 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../context/AppThemeContext';
 import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
+import AppHeader from '../components/navigation/AppHeader';
 
 export default function TermsScreen() {
     const router = useRouter();
@@ -17,14 +17,10 @@ export default function TermsScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-            <View style={[styles.header, isRTL && styles.headerRTL]}>
-                <TouchableOpacity onPress={handleBack} style={[styles.backButton, { borderColor: theme.border }]}>
-                    <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={24} color={theme.icon} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.text }, isRTL && styles.textRTL]}>
-                    {isRTL ? 'الشروط والأحكام' : 'Terms and Conditions'}
-                </Text>
-            </View>
+            <AppHeader
+                title={isRTL ? 'الشروط والأحكام' : 'Terms and Conditions'}
+                onBackPress={handleBack}
+            />
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -107,28 +103,6 @@ export default function TermsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 15,
-        gap: 20,
-    },
-    headerRTL: {
-        flexDirection: 'row-reverse',
-    },
-    backButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        borderWidth: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerTitle: {
-        fontSize: 24,
-        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     scrollContent: {
         paddingHorizontal: 24,

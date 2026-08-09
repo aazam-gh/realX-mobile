@@ -1,12 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
 import {
     ActivityIndicator,
     FlatList,
-    StatusBar,
     StyleSheet,
     Text,
     TextInput,
@@ -22,6 +22,7 @@ import { triggerSubtleHaptic } from '../utils/haptics';
 import { queryClient, queryKeys } from '../utils/queryClient';
 import { fetchTrendingVendorRecommendations, fetchVendorSearchPage, VendorQueryItem } from '../utils/firebaseQueries';
 import { useRealXRefresh } from '../components/PullToRefresh';
+import { HeaderIconButton } from '../components/navigation/AppHeader';
 
 const RECOMMENDATION_LIMIT = 6;
 
@@ -201,22 +202,17 @@ export default function SearchScreen() {
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.background} />
+            <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
 
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity
-                    style={[styles.backButton, { backgroundColor: theme.card, shadowColor: theme.shadow }]}
-                    onPress={() => {
-                        triggerSubtleHaptic();
-                        router.back();
-                    }}
-                    activeOpacity={0.8}
-                >
-                    <Ionicons name={isArabic ? 'arrow-forward' : 'arrow-back'} size={22} color={theme.icon} />
-                </TouchableOpacity>
+                <HeaderIconButton
+                    icon={isArabic ? 'arrow-forward' : 'arrow-back'}
+                    onPress={() => router.back()}
+                    accessibilityLabel={t('back')}
+                />
 
-                <View style={[styles.searchContainer, { backgroundColor: theme.cardMuted, borderColor: theme.border }]}>
+                <View style={[styles.searchContainer, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }]}>
                     <Ionicons name="search" size={18} color={theme.brand} />
                     <TextInput
                         style={[
@@ -355,26 +351,14 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         gap: 12,
     },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
     searchContainer: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        borderRadius: 24,
+        borderRadius: 28,
         paddingHorizontal: 14,
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderWidth: 1,
     },
     searchInput: {

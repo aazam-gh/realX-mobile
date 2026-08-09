@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import AppText from '../components/AppText';
+import AppHeader from '../components/navigation/AppHeader';
 import { StateSurface } from '../components/StateSurface';
 import { useAppTheme } from '../context/AppThemeContext';
 import { useConnectivity } from '../context/ConnectivityContext';
@@ -69,20 +70,15 @@ export default function XAcademyScreen() {
       style={[styles.container, { backgroundColor: theme.background }]}
       edges={['top']}
     >
-      <View style={[styles.header, { borderBottomColor: theme.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons
-            name={isRTL ? 'arrow-forward' : 'arrow-back'}
-            size={28}
-            color={theme.icon}
-          />
-        </TouchableOpacity>
-
-        <AppText style={[styles.headerTitle, isRTL && styles.headerTitleRTL]}>
-          <Text style={{ color: theme.brand }}>{isRTL ? 'إكس' : t('x_academy_title_x')} </Text>
-          <Text style={{ color: theme.text }}>{t('x_academy_title_academy')}</Text>
-        </AppText>
-      </View>
+      <AppHeader
+        title={(
+          <>
+            <Text style={{ color: theme.brand }}>{isRTL ? 'إكس' : t('x_academy_title_x')} </Text>
+            <Text style={{ color: theme.text }}>{t('x_academy_title_academy')}</Text>
+          </>
+        )}
+        onBackPress={() => router.back()}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -220,20 +216,6 @@ export default function XAcademyScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   rowReverse: { flexDirection: 'row-reverse' },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-
-  backButton: {},
-
-  headerTitle: { fontSize: 24, letterSpacing: 0.5 },
-  headerTitleRTL: { textAlign: 'right', writingDirection: 'rtl' },
 
   scrollContent: { paddingBottom: 40 },
 

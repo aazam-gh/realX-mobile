@@ -1,10 +1,11 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { memo, useMemo } from 'react';
-import { ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
+import { HeaderIconButton } from '../navigation/AppHeader';
 
 type Props = {
     title: string;
@@ -15,6 +16,7 @@ type Props = {
 function CategoryHeader({ title, icon, onBackPress }: Props) {
     const { theme } = useAppTheme();
     const { isRTL } = useAppLocale();
+    const { t } = useTranslation();
     const imageSource = useMemo(() => {
         if (typeof icon === 'string') {
             return { uri: icon };
@@ -24,13 +26,11 @@ function CategoryHeader({ title, icon, onBackPress }: Props) {
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity
-                style={styles.backButton}
-                onPress={onBackPress}
-                activeOpacity={0.7}
-            >
-                <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={theme.icon} />
-            </TouchableOpacity>
+            <HeaderIconButton
+                icon={isRTL ? 'arrow-forward' : 'arrow-back'}
+                onPress={() => onBackPress?.()}
+                accessibilityLabel={t('back')}
+            />
 
 
             <View style={styles.titleContainer}>
@@ -54,16 +54,10 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        minHeight: 56,
+        gap: 12,
         paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
+        paddingVertical: 8,
     },
     titleContainer: {
         flexDirection: 'row',
@@ -71,7 +65,8 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     title: {
-        fontSize: 22,
+        fontSize: 21,
+        lineHeight: 28,
         ...Typography.getTextVariantStyle('bodyStrong'),
     },
     titleRTL: {
@@ -79,8 +74,8 @@ const styles = StyleSheet.create({
         writingDirection: 'rtl',
     },
     imageIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
     },
 });

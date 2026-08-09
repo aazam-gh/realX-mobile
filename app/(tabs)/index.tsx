@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { Platform, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -13,7 +14,6 @@ import {
   NewDeals,
   OpportunityHighlights,
   PromoBanner,
-  SearchBar,
   TrendingOffers,
   WaktiBanner
 } from '../../components/home';
@@ -30,9 +30,9 @@ import VerificationStatusBanner from '../../components/onboarding/VerificationSt
 export default function HomeScreen() {
   const { studentData } = useStudent();
   const { isGuest } = useAuthAccess();
-  const userName = studentData?.firstName || '';
-  const [searchQuery, setSearchQuery] = useState('');
   const { t } = useTranslation();
+  const userName = isGuest ? t('guest_home_name') : (studentData?.firstName || t('user'));
+  const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
   const { isDark, theme } = useAppTheme();
 
@@ -60,12 +60,19 @@ export default function HomeScreen() {
   }, [searchQuery, router]);
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.cardMuted }]} edges={['top']}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]} edges={['top']}>
       <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.cardMuted}
+        style={isDark ? 'light' : 'dark'}
+        animated
+        hidden
       />
       <View style={styles.contentWrapper}>
+        <GreetingHeader
+          userName={userName}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchSubmit={handleSearch}
+        />
         <ScrollView
           style={[styles.container, { backgroundColor: theme.background }]}
           showsVerticalScrollIndicator={false}
@@ -76,18 +83,6 @@ export default function HomeScreen() {
           refreshControl={refreshControl}
           {...tabBarScrollVisibility}
         >
-        <View style={[styles.headerSection, { backgroundColor: theme.cardMuted }]}>
-          <GreetingHeader
-            userName={isGuest ? t('guest_home_name') : (userName || t('user'))}
-            savings={studentData?.savings ?? 0}
-          />
-        </View>
-        <SearchBar
-          placeholder={t('search_placeholder')}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmit={handleSearch}
-        />
         <VerificationStatusBanner />
         <View style={styles.glowSection}>
           <HomeRowGlow variant="promo" />
@@ -128,12 +123,6 @@ const styles = StyleSheet.create({
     // iOS tab bar is a translucent overlay so content needs clearance; the Android
     // JS tab bar reserves its own layout space, so a large pad just leaves dead space.
     paddingBottom: Platform.OS === 'ios' ? 88 : 24,
-  },
-  headerSection: {
-    paddingBottom: 8,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    overflow: 'hidden',
   },
   glowSection: {
     position: 'relative',

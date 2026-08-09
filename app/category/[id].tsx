@@ -1,8 +1,9 @@
 import { FlashList } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, ImageSourcePropType, Keyboard, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, View, Image } from 'react-native';
+import { ActivityIndicator, ImageSourcePropType, Keyboard, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StyleSheet, Text, useWindowDimensions, View, Image } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { logger } from '../../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -412,7 +413,7 @@ export default function CategoryScreen() {
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.background} />
+            <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
             {showComingSoon && !loading && (
                 <View style={styles.backgroundIconsOverlay} pointerEvents="none">
                     {BACKGROUND_ICONS.map((icon, i) => (

@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
-import AppText from '../AppText';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
+import AppHeader from '../navigation/AppHeader';
 
 export default function XCardHeader() {
     const { t } = useTranslation();
@@ -12,56 +12,30 @@ export default function XCardHeader() {
     const isArabic = locale === 'ar';
 
     return (
-        <View style={styles.container}>
-            {isArabic ? (
-                <Text style={styles.titleArabic}>
-                    <Text style={[styles.titleCardArabic, { color: theme.text }]}>{t('xcard_title_card')}</Text>
+        <AppHeader
+            variant="root"
+            titleStyle={isArabic ? styles.titleArabic : undefined}
+            title={isArabic ? (
+                <>
+                    <Text style={{ color: theme.text }}>{t('xcard_title_card')}</Text>
                     {' '}
-                    <Text style={[styles.titleXArabic, { color: theme.brand }]}>{t('xcard_title_x')}</Text>
-                </Text>
+                    <Text style={{ color: theme.brand }}>{t('xcard_title_x')}</Text>
+                </>
             ) : (
-                <View style={styles.titleRow}>
-                    <AppText style={[styles.titleX, { color: theme.brand }]}>{t('xcard_title_x')}</AppText>
-                    <AppText style={[styles.titleCard, { color: theme.text }]}>{t('xcard_title_card')}</AppText>
-                </View>
+                <>
+                    <Text style={{ color: theme.brand }}>{t('xcard_title_x')} </Text>
+                    <Text style={{ color: theme.text }}>{t('xcard_title_card')}</Text>
+                </>
             )}
-        </View>
+        />
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        width: '100%',
-        alignItems: 'flex-start',
-        paddingStart: 20,
-        paddingEnd: 20,
-        paddingTop: 16,
-        paddingBottom: 12,
-    },
-    titleRow: {
-        flexDirection: 'row',
-        gap: 4,
-    },
-    titleX: {
-        fontSize: 28,
-    },
-    titleCard: {
-        fontSize: 28,
-    },
     titleArabic: {
-        textAlign: 'right',
-        writingDirection: 'rtl',
-    },
-    titleXArabic: {
         ...Typography.getTextVariantStyle('displayArabicBlack'),
-        fontSize: 32,
-        lineHeight: 40,
-        writingDirection: 'rtl',
-    },
-    titleCardArabic: {
-        ...Typography.getTextVariantStyle('displayArabicBlack'),
-        fontSize: 32,
-        lineHeight: 40,
+        fontSize: 28,
+        lineHeight: 34,
         writingDirection: 'rtl',
     },
 });

@@ -4,11 +4,13 @@ import { deleteDoc, doc, getFirestore } from '@react-native-firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
+import AppHeader from '../components/navigation/AppHeader';
 import { StateSurface } from '../components/StateSurface';
 import { useAppTheme } from '../context/AppThemeContext';
 import { useAuthAccess } from '../context/AuthAccessContext';
@@ -149,19 +151,8 @@ export default function SavedOffersScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.background} />
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={[styles.backButton, { backgroundColor: theme.card }]}
-          onPress={() => router.back()}
-          activeOpacity={0.8}
-        >
-          <Ionicons name={isArabic ? 'arrow-forward' : 'arrow-back'} size={22} color={theme.icon} />
-        </TouchableOpacity>
-        <AppText style={[styles.headerTitle, { color: theme.text }, isArabic && styles.headerTitleRTL]}>
-          {t('saved_offers')}
-        </AppText>
-      </View>
+      <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
+      <AppHeader title={t('saved_offers')} onBackPress={() => router.back()} />
 
       {authAccessLoading || (!isAuthenticated && !userId) ? (
         <StateSurface kind="loading" />
@@ -195,27 +186,6 @@ const styles = StyleSheet.create({
   contentWrapper: {
     flex: 1,
     position: 'relative',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 24,
-  },
-  headerTitleRTL: {
-    textAlign: 'right',
-    writingDirection: 'rtl',
   },
   listContent: {
     paddingHorizontal: 20,

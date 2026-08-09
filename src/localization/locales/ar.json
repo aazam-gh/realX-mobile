@@ -42,6 +42,7 @@
   "redeem": "استخدم الخصم",
   "search": "بحث",
   "search_placeholder": "ابحث عن العروض والأماكن والعلامات التجارية",
+  "home_search_placeholder": "{{name}}، ابحث عن أي شيء!",
   "search_offers_placeholder": "ابحث عن العروض",
   "search_offers_empty_title": "ابحث عن العروض",
   "search_offers_empty_hint": "اكتب كلمة للعثور على العروض والخصومات",

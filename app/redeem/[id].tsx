@@ -6,6 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { logger } from '../../utils/logger';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -15,7 +16,6 @@ import {
     Linking,
     Platform,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TextInput,
@@ -27,6 +27,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
 import RewardSuccessScreen from '../../components/rewards/RewardSuccessScreen';
 import TransactionLoadingOverlay from '../../components/TransactionLoadingOverlay';
+import { HeaderIconButton } from '../../components/navigation/AppHeader';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -419,18 +420,14 @@ export default function RedeemScreen() {
 
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-                <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+                <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
                 <View style={styles.innerContainer}>
                     <View style={styles.header}>
-                        <TouchableOpacity
-                            style={[styles.backButton, { backgroundColor: theme.card, shadowColor: theme.shadow }]}
-                            onPress={() => {
-                                triggerSubtleHaptic();
-                                router.back();
-                            }}
-                        >
-                            <Ionicons name={isArabic ? "arrow-forward" : "arrow-back"} size={24} color={theme.icon} />
-                        </TouchableOpacity>
+                        <HeaderIconButton
+                            icon={isArabic ? 'arrow-forward' : 'arrow-back'}
+                            accessibilityLabel={t('back')}
+                            onPress={() => router.back()}
+                        />
                     </View>
 
                     <ScrollView
@@ -602,7 +599,7 @@ export default function RedeemScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+            <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
             <KeyboardAvoidingView
                 style={styles.keyboardAware}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -610,10 +607,10 @@ export default function RedeemScreen() {
                 <View style={styles.innerContainer}>
                         {/* Header */}
                         <View style={styles.header}>
-                            <TouchableOpacity
-                                style={[styles.backButton, { backgroundColor: theme.card, shadowColor: theme.shadow }]}
+                            <HeaderIconButton
+                                icon={isArabic ? 'arrow-forward' : 'arrow-back'}
+                                accessibilityLabel={t('back')}
                                 onPress={() => {
-                                    triggerSubtleHaptic();
                                     if (step === 'pin' && vendor.xcard === true) {
                                         setStep('creator');
                                         Keyboard.dismiss();
@@ -621,9 +618,7 @@ export default function RedeemScreen() {
                                         router.back();
                                     }
                                 }}
-                            >
-                                <Ionicons name={isArabic ? "arrow-forward" : "arrow-back"} size={24} color={theme.icon} />
-                            </TouchableOpacity>
+                            />
                         </View>
 
                         <ScrollView
@@ -877,19 +872,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingTop: 10,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3,
+        minHeight: 56,
+        paddingVertical: 8,
     },
     scrollContent: {
         flexGrow: 1,

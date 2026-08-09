@@ -185,69 +185,40 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         {...tabBarScrollVisibility}
       >
-        <View style={[styles.topPill, { backgroundColor: theme.cardMuted }]}>
-          <View style={styles.profileTopRow}>
-            <UserAvatar
-              firstName={userData?.firstName}
-              lastName={userData?.lastName}
-              email={userData?.email || getAuth().currentUser?.email}
-              photoURL={userData?.photoURL || getAuth().currentUser?.photoURL}
-              role={userData?.role}
-              seed={getAuth().currentUser?.uid}
-              size={80}
-            />
-            <View style={[styles.badge, { backgroundColor: theme.brand }]}>
-              <AppText style={[{ color: '#FFFFFF', textAlign: isRTL ? 'right' : 'left' }, styles.badgeText]}>{t('rookie_badge')}</AppText>
-            </View>
-          </View>
-        </View>
-
-        <View style={[styles.bottomPill, { backgroundColor: theme.cardMuted }]}>
-          <View style={styles.profileBottomRow}>
-            <View style={[styles.userInfo, isRTL && styles.userInfoRTL]}>
-              <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body'), textAlign: isRTL ? 'right' : 'left' }, styles.userName]}>
-                {userData ? `${userData.firstName} ${userData.lastName}` : 'Darren Watkins'}
-              </Text>
+        <View style={[styles.savingsCard, { backgroundColor: theme.surfaceElevated }]}>
+          <View style={[styles.profileSavingsRow, isRTL && styles.profileSavingsRowRTL]}>
+            <View style={[styles.savingsDetails, { borderColor: theme.border }]}>
+              <AppText
+                style={[
+                  { color: theme.text, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' },
+                  styles.savingsLabel,
+                ]}
+              >
+                {t('savings_so_far')}
+              </AppText>
+              <View style={[styles.savingsAmountContainer, isRTL && styles.savingsAmountContainerRTL]}>
+                <AppText style={[{ color: theme.brandText, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }, styles.savingsAmountGreen]}>
+                  {t('amount_with_currency', { amount: isRTL ? toArabicDigits((userData?.savings ?? 0).toFixed(2)) : (userData?.savings ?? 0).toFixed(2), currency: t('currency_qar') })}
+                </AppText>
+              </View>
             </View>
             <TouchableOpacity
-              style={[styles.editButton, { backgroundColor: theme.surfaceElevated }]}
+              style={styles.profileAvatarButton}
               onPress={() => router.push('/profile-details')}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile')}
             >
-              <Ionicons name="create-outline" size={16} color={theme.iconMuted} />
-              <AppText style={[{ color: theme.text, textAlign: isRTL ? 'right' : 'left' }, styles.editButtonText]}>
-                {t('profile')}
-              </AppText>
+              <UserAvatar
+                firstName={userData?.firstName}
+                lastName={userData?.lastName}
+                email={userData?.email || getAuth().currentUser?.email}
+                photoURL={userData?.photoURL || getAuth().currentUser?.photoURL}
+                role={userData?.role}
+                seed={getAuth().currentUser?.uid}
+                size={60}
+              />
             </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={[styles.sectionHeader, isRTL && styles.sectionHeaderRTL]}>
-          <AppText
-            style={[
-              { color: theme.text },
-              styles.sectionTitle,
-              { textTransform: isRTL ? 'none' : 'uppercase' },
-              isRTL && styles.sectionTitleRTL,
-            ]}
-          >
-            {t('savings_tracker')}
-          </AppText>
-        </View>
-
-        <View style={[styles.savingsCard, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }, isRTL && styles.savingsCardRTL]}>
-          <Text
-            style={[
-              { color: theme.text, ...Typography.getTextVariantStyle('body') },
-              styles.savingsLabel,
-              isRTL && styles.savingsLabelRTL,
-            ]}
-          >
-            {t('all_time_saved')}
-          </Text>
-          <View style={[styles.savingsAmountContainer, isRTL && styles.savingsAmountContainerRTL]}>
-            <AppText style={[{ color: theme.brandText, textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' }, styles.savingsAmountGreen]}>
-              {t('amount_with_currency', { amount: isRTL ? toArabicDigits((userData?.savings ?? 0).toFixed(2)) : (userData?.savings ?? 0).toFixed(2), currency: t('currency_qar') })}
-            </AppText>
           </View>
         </View>
 
@@ -452,13 +423,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingHorizontal: 20,
+    paddingTop: 0,
     paddingBottom: 100,
   },
   topPill: {
     borderRadius: 30,
-    padding: 8,
+    padding: 16,
+    marginBottom: 16,
   },
   bottomPill: {
     borderRadius: 30,
@@ -471,6 +443,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  profileSavingsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  profileSavingsRowRTL: {
+    flexDirection: 'row-reverse',
+  },
+  savingsDetails: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  profileAvatarButton: {
+    borderRadius: 30,
+  },
   badge: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -479,18 +469,6 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#FFFFFF',
     fontSize: 16,
-  },
-  profileBottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  userInfo: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  userInfoRTL: {
-    justifyContent: 'flex-start',
   },
   userName: {
     fontSize: 20,
@@ -540,49 +518,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     ...Typography.getTextVariantStyle('bodyStrong'),
   },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 30,
-    gap: 6,
-  },
-  editButtonText: {
-    fontSize: 16,
-    color: '#8E8E93',
-  },
-  sectionHeader: {
-    marginBottom: 8,
-  },
-  sectionHeaderRTL: {
-    alignItems: 'flex-start',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    textTransform: 'uppercase',
-  },
-  sectionTitleRTL: {
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  },
   savingsCard: {
     borderRadius: 32,
-    padding: 16,
-    marginTop: 8,
+    padding: 0,
     marginBottom: 16,
-    borderWidth: 2,
-  },
-  savingsCardRTL: {
-    alignItems: 'flex-start',
   },
   savingsLabel: {
     fontSize: 14,
     ...Typography.getTextVariantStyle('body'),
-  },
-  savingsLabelRTL: {
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    marginBottom: 2,
   },
   savingsAmountContainer: {
     flexDirection: 'row',
@@ -593,7 +537,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   savingsAmountGreen: {
-    fontSize: 32,
+    fontSize: 24,
   },
   universityBanner: {
     marginBottom: 24,

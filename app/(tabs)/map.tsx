@@ -1481,7 +1481,8 @@ const styles = StyleSheet.create({
   calloutCard: {
     borderRadius: 24,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
@@ -1492,10 +1493,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   calloutVendorName: {
     fontSize: 20,
+    lineHeight: 26,
   },
   calloutTitleBlock: {
     flex: 1,
@@ -1503,8 +1505,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   calloutBranchText: {
-    marginTop: 2,
+    marginTop: 3,
     fontSize: 13,
+    lineHeight: 18,
     color: '#6E6E73',
     ...Typography.getTextVariantStyle('body'),
   },
@@ -1516,7 +1519,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     alignSelf: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 12,
     maxWidth: '100%',
   },
   calloutOfferText: {
@@ -1527,7 +1530,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   calloutDistanceText: {
     fontSize: 13,
@@ -1542,7 +1545,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 16,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   calloutPhoneText: {
     flexShrink: 1,
@@ -1551,6 +1554,7 @@ const styles = StyleSheet.create({
   },
   calloutActions: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   calloutIconBtn: {
@@ -1566,7 +1570,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
+    minHeight: 44,
     borderRadius: 24,
   },
   calloutDirectionsBtn: {
@@ -1575,7 +1579,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
+    minHeight: 44,
     borderRadius: 24,
   },
   calloutBtnText: {

@@ -12,7 +12,7 @@ const LOGO_WIDTH_RATIO = 0.25;
 const LOGO_LEFT_RATIO = 0.072;
 const LOGO_BOTTOM_RATIO = 0.095;
 const LOGO_RELIEF_OUTSET = 2;
-const xCardLogo = require('../../assets/images/xcard-logo.png');
+const xCardLogo = require('../../assets/images/xcard-logo.webp');
 
 type Props = {
   cardHeight: number;

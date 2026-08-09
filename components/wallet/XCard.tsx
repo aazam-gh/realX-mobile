@@ -25,7 +25,7 @@ import { resolveTiltConfig, type XCardTilt, type XCardTiltConfig, useXCardTilt }
 
 export type { XCardGlass, XCardGlassConfig, XCardGlassPreset, XCardTilt, XCardTiltConfig };
 
-const xCardBackground = require('../../assets/images/xcard-background.png');
+const xCardBackground = require('../../assets/images/xcard-background.webp');
 
 type Props = {
   earnings?: number;
@@ -90,9 +90,6 @@ export default function XCard({ earnings = 0, currency = 'XP', creatorCode, glas
 
           <View style={[styles.cardContent, isRTL && styles.cardContentRTL]}>
             <View style={styles.earningsSection}>
-              <Text style={[styles.earningsLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
-                {t('xcard_cashback_label')}
-              </Text>
               <Text style={[styles.earningsAmount, { textAlign: isRTL ? 'right' : 'left' }]}>
                 {amount} {currency}
               </Text>
@@ -151,15 +148,6 @@ const styles = StyleSheet.create({
   },
   earningsSection: {
     maxWidth: '78%',
-  },
-  earningsLabel: {
-    fontSize: 17,
-    lineHeight: 22,
-    ...Typography.getTextVariantStyle('bodyStrong'),
-    color: '#FFFFFF',
-    marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.18)',
-    textShadowRadius: 8,
   },
   earningsAmount: {
     fontSize: 29,

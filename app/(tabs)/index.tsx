@@ -10,7 +10,6 @@ import {
   CategoryGrid,
   FeaturedBanner,
   GreetingHeader,
-  HomeRowGlow,
   NewDeals,
   OpportunityHighlights,
   PromoBanner,
@@ -78,20 +77,11 @@ export default function HomeScreen() {
           {...tabBarScrollVisibility}
         >
         <VerificationStatusBanner />
-        <View style={styles.glowSection}>
-          <HomeRowGlow variant="promo" />
-          <PromoBanner onBannerPress={(banner) => handleVendorPress(banner.vendorId)} />
-        </View>
+        <PromoBanner onBannerPress={(banner) => handleVendorPress(banner.vendorId)} />
         <CategoryGrid />
         <WaktiBanner />
-        <View style={styles.glowSection}>
-          <HomeRowGlow variant="offers" />
-          <TrendingOffers onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
-        </View>
-        <View style={styles.glowSection}>
-          <HomeRowGlow variant="offers" />
-          <NewDeals onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
-        </View>
+        <TrendingOffers onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
+        <NewDeals onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
         <FeaturedBanner />
         <BrandGrid />
         <OpportunityHighlights />
@@ -134,9 +124,5 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
     elevation: 10,
-  },
-  glowSection: {
-    position: 'relative',
-    overflow: 'visible',
   },
 });

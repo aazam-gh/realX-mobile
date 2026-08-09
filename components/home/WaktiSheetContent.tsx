@@ -20,7 +20,7 @@ import { BottomSheetOverscanBackground } from '../../utils/expoUiBottomSheet';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { openWaktiStore } from '../../utils/wakti';
 
-const waktiBannerImage = require('../../assets/images/waktilogo.png');
+const waktiBannerImage = require('../../assets/images/waktilogo.webp');
 const gridUnit = 60;
 const gridVerticalOffsets = Array.from({ length: 40 }, (_, index) => index * gridUnit - gridUnit * 12);
 const gridHorizontalOffsets = Array.from({ length: 64 }, (_, index) => index * gridUnit - gridUnit * 14.5);

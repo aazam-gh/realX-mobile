@@ -121,7 +121,7 @@ export default function ProfileScreen() {
             activeOpacity={0.9}
           >
             <ImageBackground
-              source={require('../../assets/images/uni.png')}
+              source={require('../../assets/images/uni.webp')}
               style={styles.universityBannerBg}
               imageStyle={{ borderRadius: 20 }}
             >
@@ -234,7 +234,7 @@ export default function ProfileScreen() {
           activeOpacity={0.9}
         >
           <ImageBackground
-            source={require('../../assets/images/uni.png')}
+            source={require('../../assets/images/uni.webp')}
             style={styles.universityBannerBg}
             imageStyle={{ borderRadius: 20 }}
           >

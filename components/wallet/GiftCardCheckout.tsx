@@ -123,7 +123,7 @@ export default function GiftCardCheckout({
     if (showSuccess) {
         return (
             <RewardSuccessScreen
-                mascotSource={require('../../assets/images/realx-mascot-run-gift-both-hands.png')}
+                mascotSource={require('../../assets/images/realx-mascot-run-gift-both-hands.webp')}
                 badgeText={t('gift_card_text')}
                 merchantLabel={t('reward_success_merchant_label')}
                 merchantName={brand.name}

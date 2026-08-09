@@ -485,7 +485,7 @@ const offerDescription = isArabic
                                 <View key={offer.id} style={styles.offerCard}>
                                     {offer.xcard && (
                                         <Image
-                                            source={require('../../assets/images/cashback.png')}
+                                            source={require('../../assets/images/cashback.webp')}
                                             style={styles.xcardBadge}
                                         />
                                     )}

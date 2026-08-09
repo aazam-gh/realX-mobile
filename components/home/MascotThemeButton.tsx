@@ -9,8 +9,8 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import DARK_MASCOT from '../../assets/images/user-dark.png';
-import LIGHT_MASCOT from '../../assets/images/user.png';
+import DARK_MASCOT from '../../assets/images/user-dark.webp';
+import LIGHT_MASCOT from '../../assets/images/user.webp';
 import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';

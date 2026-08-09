@@ -179,7 +179,7 @@ const HeaderContent = memo(({
             ) : (
                 <View style={[styles.comingSoonContainer, { minHeight: comingSoonMinHeight }]}>
                     <Image
-                        source={require('../../assets/images/comingsoon.png')}
+                        source={require('../../assets/images/comingsoon.webp')}
                         style={[styles.comingSoonImage, { width: comingSoonImageSize, height: comingSoonImageSize }]}
                         resizeMode="contain"
                     />

@@ -580,7 +580,7 @@ export default function RedeemScreen() {
 
         return (
             <RewardSuccessScreen
-                mascotSource={require('../../assets/images/realx-mascot-run-cash-both-hands.png')}
+                mascotSource={require('../../assets/images/realx-mascot-run-cash-both-hands.webp')}
                 badgeText={discountBadgeText}
                 badgeFinalPercent={roundedDiscountPercent}
                 badgeCountUpSuffix={`%${t('flat_off_suffix')}`}

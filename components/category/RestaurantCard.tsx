@@ -6,7 +6,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 
-const cashbackBadgeIcon = require('../../assets/images/cashback.png');
+const cashbackBadgeIcon = require('../../assets/images/cashback.webp');
 
 type Props = {
   id: string;

@@ -28,7 +28,7 @@ import {
     HOME_SECTION_TOP_SPACING,
 } from './layout';
 
-const waktiBannerImage = require('../../assets/images/waktilogo.png');
+const waktiBannerImage = require('../../assets/images/waktilogo.webp');
 const waktiBannerUsesDarkTheme = true;
 const reduceMotion = ReduceMotion.System;
 const gridUnit = 54;

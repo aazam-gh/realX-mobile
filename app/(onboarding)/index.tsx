@@ -260,7 +260,7 @@ export default function OnboardingScreen() {
                         >
                             <View style={isRTL ? styles.mascotFlip : undefined}>
                                 <Image
-                                    source={require('../../assets/images/onboarding.png')}
+                                    source={require('../../assets/images/onboarding.webp')}
                                     style={{ width: mascotWidth, height: mascotImageHeight }}
                                     contentFit="contain"
                                     contentPosition="left"

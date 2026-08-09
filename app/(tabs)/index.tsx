@@ -96,7 +96,7 @@ export default function HomeScreen() {
         <BrandGrid />
         <OpportunityHighlights />
         </ScrollView>
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}>
           <GreetingHeader
             userName={userName}
             searchQuery={searchQuery}

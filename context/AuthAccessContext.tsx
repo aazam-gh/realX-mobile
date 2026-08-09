@@ -35,14 +35,16 @@ async function getStoredGuestSession() {
 
 export function AuthAccessProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseAuthTypes.User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseAuthTypes.User | null>(() => getAuth().currentUser);
   const [isGuest, setIsGuest] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => getAuth().currentUser === null);
 
   useEffect(() => {
     let cancelled = false;
 
-    const authSubscriber = onAuthStateChanged(getAuth(), async (user) => {
+    const auth = getAuth();
+    const authSubscriber = onAuthStateChanged(auth, async (observedUser) => {
+      const user = observedUser ?? auth.currentUser;
       setFirebaseUser(user);
 
       if (user) {

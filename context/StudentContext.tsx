@@ -34,7 +34,9 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    const authSubscriber = onAuthStateChanged(getAuth(), (user: FirebaseAuthTypes.User | null) => {
+    const auth = getAuth();
+    const handleAuthState = (observedUser: FirebaseAuthTypes.User | null) => {
+      const user = observedUser ?? auth.currentUser;
       // Clean up previous snapshot listener
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
@@ -76,7 +78,10 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
         }
       );
-    });
+    };
+
+    if (auth.currentUser) handleAuthState(auth.currentUser);
+    const authSubscriber = onAuthStateChanged(auth, handleAuthState);
 
     return () => {
       authSubscriber();

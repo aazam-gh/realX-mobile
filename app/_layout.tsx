@@ -11,15 +11,16 @@ import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { StudentProvider, useStudent } from '../context/StudentContext';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
+import * as SplashScreen from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import AppUpdatePrompt from '../components/AppUpdatePrompt';
-import { LocaleProvider } from '../context/LocaleContext';
+import { LocaleProvider, useAppLocale } from '../context/LocaleContext';
 import { initI18n } from '../src/localization/i18n';
 import { migrateLegacyGlobalRTL } from '../src/localization/legacyRtlMigration';
 import {
@@ -37,10 +38,34 @@ import { AuthAccessProvider, useAuthAccess } from '../context/AuthAccessContext'
 import { ConnectivityProvider, useConnectivity } from '../context/ConnectivityContext';
 import { queryClient } from '../utils/queryClient';
 import { clearLocalAuthSession, isInvalidAuthSessionError } from '../utils/auth';
+import {
+  clearStoredAuthSessionHint,
+  getStoredAuthSessionHint,
+  setStoredAuthSessionHint,
+} from '../utils/authSessionHint';
 import { trackEvent } from '../utils/analytics';
+import { preloadHomeData } from '../utils/homeQueries';
 import { trackOnboarding } from '../utils/onboarding';
+import {
+  getStartupInitialRootRoute,
+  isStartupRouteReady,
+  resolveStartupDestination,
+} from '../utils/startupRouting';
 
 import { StateSurface } from '../components/StateSurface';
+
+SplashScreen.setOptions({
+  duration: 450,
+  fade: true,
+});
+
+void SplashScreen.preventAutoHideAsync().catch((error) => {
+  logger.warn('Unable to hold the native splash screen:', error);
+});
+
+const AUTH_RESTORE_GRACE_MS = 2500;
+const MIN_NATIVE_SPLASH_VISIBLE_MS = 700;
+const nativeSplashStartedAt = Date.now();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -53,8 +78,11 @@ export default function RootLayout() {
 
   const [i18nReady, setI18nReady] = useState(false);
   const [appCheckReady, setAppCheckReady] = useState(false);
-  const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
+  const [initializing, setInitializing] = useState(() => getAuth().currentUser === null);
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(() => getAuth().currentUser);
+  const [authHintChecked, setAuthHintChecked] = useState(false);
+  const [hadAuthenticatedSession, setHadAuthenticatedSession] = useState(false);
+  const [authRestoreGraceDone, setAuthRestoreGraceDone] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,12 +125,64 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    const subscriber = onAuthStateChanged(getAuth(), (currentUser) => {
-      setUser(currentUser);
+    const auth = getAuth();
+    const subscriber = onAuthStateChanged(auth, (currentUser) => {
+      const resolvedUser = currentUser ?? auth.currentUser;
+      setUser(resolvedUser);
+      if (resolvedUser) {
+        setHadAuthenticatedSession(true);
+        void setStoredAuthSessionHint().catch((error) => {
+          logger.warn('Unable to store the authenticated-session hint:', error);
+        });
+      }
       setInitializing(false);
     });
     return subscriber;
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void getStoredAuthSessionHint()
+      .then((hasHint) => {
+        if (!cancelled) setHadAuthenticatedSession(hasHint || Boolean(getAuth().currentUser));
+      })
+      .catch((error) => {
+        logger.warn('Unable to read the authenticated-session hint:', error);
+      })
+      .finally(() => {
+        if (!cancelled) setAuthHintChecked(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!authHintChecked) return;
+    if (user || !hadAuthenticatedSession) {
+      setAuthRestoreGraceDone(true);
+      return;
+    }
+
+    setAuthRestoreGraceDone(false);
+    const timer = setTimeout(() => {
+      setHadAuthenticatedSession(false);
+      setAuthRestoreGraceDone(true);
+      void clearStoredAuthSessionHint().catch((error) => {
+        logger.warn('Unable to clear the stale authenticated-session hint:', error);
+      });
+    }, AUTH_RESTORE_GRACE_MS);
+
+    return () => clearTimeout(timer);
+  }, [authHintChecked, hadAuthenticatedSession, user]);
+
+  const authReady = Boolean(
+    !initializing
+    && authHintChecked
+    && (user || !hadAuthenticatedSession || authRestoreGraceDone),
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -118,7 +198,7 @@ export default function RootLayout() {
                   error={error}
                   i18nReady={i18nReady}
                   appCheckReady={appCheckReady}
-                  initializing={initializing}
+                  authReady={authReady}
                   />
                 </StudentProvider>
               </AuthAccessProvider>
@@ -136,18 +216,19 @@ function LayoutContent({
   error,
   i18nReady,
   appCheckReady,
-  initializing,
+  authReady,
 }: {
   user: FirebaseAuthTypes.User | null;
   loaded: boolean;
   error: Error | null;
   i18nReady: boolean;
   appCheckReady: boolean;
-  initializing: boolean;
+  authReady: boolean;
 }) {
   const { docExists: hasProfile, error: profileError, refreshProfile } = useStudent();
   const { isGuest, loading: guestLoading } = useAuthAccess();
   const { isDark, theme } = useAppTheme();
+  const { locale } = useAppLocale();
   const { isOnline } = useConnectivity();
   const { t } = useTranslation();
   const router = useRouter();
@@ -157,8 +238,12 @@ function LayoutContent({
   const [pendingCheckDone, setPendingCheckDone] = useState(false);
   const [validatedMissingProfileUid, setValidatedMissingProfileUid] = useState<string | null>(null);
   const [startupTimedOut, setStartupTimedOut] = useState(false);
-  const [startupRouteResolved, setStartupRouteResolved] = useState(false);
+  const [homePreloadReady, setHomePreloadReady] = useState(false);
+  const [rootLaidOut, setRootLaidOut] = useState(false);
   const startupStartedAt = useRef<number | null>(null);
+  const splashHiddenRef = useRef(false);
+  const splashHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profileNavigationStartedRef = useRef(false);
   const navigationTheme = useMemo(() => {
     const baseTheme = isDark ? DarkTheme : DefaultTheme;
 
@@ -177,12 +262,45 @@ function LayoutContent({
     };
   }, [isDark, theme]);
 
+  const startupDestination = useMemo(() => {
+    if (!appReady || profileError) return null;
+    return resolveStartupDestination({
+      hasUser: Boolean(user),
+      hasProfile,
+      isGuest,
+      hasPendingVerification: Boolean(pendingVerification),
+      missingProfileValidated: Boolean(user && validatedMissingProfileUid === user.uid),
+      segments: segments as string[],
+    });
+  }, [appReady, hasProfile, isGuest, pendingVerification, profileError, segments, user, validatedMissingProfileUid]);
+
+  const startupRouteReady = startupDestination
+    ? isStartupRouteReady(startupDestination, segments as string[])
+    : false;
+  const startupCanReveal = Boolean(
+    appReady
+    && (
+      profileError
+      || (
+        startupDestination
+        && startupRouteReady
+        && (startupDestination !== 'home' || homePreloadReady)
+      )
+    ),
+  );
+
   useEffect(() => {
     if (startupStartedAt.current === null) startupStartedAt.current = Date.now();
-    getPendingVerification().then((data) => {
-      setPendingVerification(data);
-      setPendingCheckDone(true);
-    });
+    void getPendingVerification()
+      .then((data) => {
+        setPendingVerification(data);
+      })
+      .catch((error) => {
+        logger.warn('Unable to read pending verification state:', error);
+      })
+      .finally(() => {
+        setPendingCheckDone(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -190,20 +308,42 @@ function LayoutContent({
       i18nReady &&
       appCheckReady &&
       (loaded || error) &&
-      !initializing &&
+      authReady &&
       !guestLoading &&
       (user === null || hasProfile !== null || profileError !== null) &&
       pendingCheckDone
     ) {
       setAppReady(true);
     }
-  }, [i18nReady, appCheckReady, loaded, error, initializing, guestLoading, user, hasProfile, profileError, pendingCheckDone]);
+  }, [i18nReady, appCheckReady, loaded, error, authReady, guestLoading, user, hasProfile, profileError, pendingCheckDone]);
 
   useEffect(() => {
-    if (appReady) { setStartupTimedOut(false); return; }
+    if (startupCanReveal) {
+      setStartupTimedOut(false);
+      return;
+    }
     const timer = setTimeout(() => setStartupTimedOut(true), 8000);
     return () => clearTimeout(timer);
-  }, [appReady]);
+  }, [startupCanReveal]);
+
+  useEffect(() => {
+    if (startupDestination !== 'home') {
+      setHomePreloadReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    setHomePreloadReady(false);
+    const preload = preloadHomeData(locale);
+
+    void preload.criticalReady.finally(() => {
+      if (!cancelled) setHomePreloadReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, startupDestination]);
 
   useEffect(() => {
     if (!appReady) return;
@@ -288,121 +428,71 @@ function LayoutContent({
   }, [user, hasProfile]);
 
   useEffect(() => {
-    if (initializing || guestLoading || !loaded || !i18nReady || !pendingCheckDone) return;
-    if (user && hasProfile === null && !profileError) return;
+    if (!appReady || !startupDestination) return;
 
-    const inAuthGroup = (segments as string[]).indexOf('(onboarding)') !== -1;
-    const currentPath = segments.join('/');
-    const guestAllowedRootSegments = new Set([
-      '(tabs)',
-      'category',
-      'search',
-      'vendor',
-      'opportunity',
-      'terms',
-      'privacy',
-      'x-academy',
-      'wakti',
-    ]);
-    const isGuestAllowedRoute = guestAllowedRootSegments.has(String(segments[0] || ''));
-    const isSignedOutPublicRoute = ['terms', 'privacy'].includes(String(segments[0] || ''));
-
-    if (!user) {
-      if (isGuest) {
-        if (inAuthGroup || !isGuestAllowedRoute) {
-          router.replace('/(tabs)' as any);
-        }
-      } else if (pendingVerification) {
-        // Has a pending verification request — show pending screen
-        if (!currentPath.includes('pending')) {
-          router.replace({
-            pathname: '/(onboarding)/pending',
-            params: {
-              email: pendingVerification.email,
-              role: pendingVerification.role,
-              statusToken: pendingVerification.statusToken,
-            },
-          } as any);
-        }
-      } else if (!inAuthGroup && !isSignedOutPublicRoute) {
-        router.replace('/(onboarding)' as any);
-      }
-    } else {
-      if (hasProfile === true) {
-        if (inAuthGroup) {
-          router.replace('/(tabs)' as any);
-        }
-      } else if (hasProfile === false && validatedMissingProfileUid === user.uid) {
-        const currentPath = segments.join('/');
-        if (!currentPath.includes('details')) {
-          // Fetch role from verification request for users who came through ID verification
-          const fetchRoleAndNavigate = async () => {
-            let role: string | undefined;
-            try {
-              if (user.email && pendingVerification?.statusToken) {
-                const fnInstance = getFunctions(undefined, 'me-central1');
-                const checkStatus = httpsCallable(fnInstance, 'checkVerificationStatus');
-                const result = await checkStatus({
-                  email: user.email,
-                  statusToken: pendingVerification.statusToken,
-                });
-                const data = result.data as { status: string; role?: string };
-                if (data.status !== 'none') {
-                  role = data.role;
-                }
-              }
-            } catch {
-              // Fall through with no role — details.tsx defaults to 'student'
-            }
-            router.replace({
-              pathname: '/(onboarding)/details',
-              params: role ? { role } : undefined,
-            } as any);
-          };
-          fetchRoleAndNavigate();
-        }
-      }
-    }
-  }, [user, initializing, guestLoading, isGuest, loaded, i18nReady, pendingCheckDone, segments, hasProfile, profileError, pendingVerification, router, validatedMissingProfileUid]);
-
-  // Keep the startup splash visible until the navigator has committed the route
-  // chosen from the resolved auth/profile state. Without this gate, Expo Router
-  // mounts its first root screen (onboarding) before the redirect to the tabs.
-  useEffect(() => {
-    if (startupRouteResolved || !appReady || profileError) return;
-
-    const rootSegment = String(segments[0] || '');
-    const currentPath = segments.join('/');
     const inAuthGroup = (segments as string[]).includes('(onboarding)');
-    const isSignedOutPublicRoute = ['terms', 'privacy'].includes(rootSegment);
-    const isGuestAllowedRoute = new Set([
-      '(tabs)',
-      'category',
-      'search',
-      'vendor',
-      'opportunity',
-      'terms',
-      'privacy',
-      'x-academy',
-      'wakti',
-    ]).has(rootSegment);
+    const currentPath = segments.join('/');
 
-    const routeIsReady = !user
-      ? isGuest
-        ? isGuestAllowedRoute && !inAuthGroup
-        : pendingVerification
-          ? currentPath.includes('pending')
-          : inAuthGroup || isSignedOutPublicRoute
-      : hasProfile === true
-        ? !inAuthGroup
-        : hasProfile === false && validatedMissingProfileUid === user.uid
-          ? currentPath.includes('details')
-          : false;
-
-    if (routeIsReady) {
-      setStartupRouteResolved(true);
+    if (startupDestination !== 'profile-completion') {
+      profileNavigationStartedRef.current = false;
     }
-  }, [appReady, hasProfile, isGuest, pendingVerification, profileError, segments, startupRouteResolved, user, validatedMissingProfileUid]);
+
+    if (startupDestination === 'home' && String(segments[0] || '') !== '(tabs)') {
+      router.replace('/(tabs)' as any);
+      return;
+    }
+
+    if (startupDestination === 'onboarding' && !inAuthGroup) {
+      router.replace('/(onboarding)' as any);
+      return;
+    }
+
+    if (startupDestination === 'pending-verification' && !currentPath.includes('pending')) {
+      if (!pendingVerification) return;
+      router.replace({
+        pathname: '/(onboarding)/pending',
+        params: {
+          email: pendingVerification.email,
+          role: pendingVerification.role,
+          statusToken: pendingVerification.statusToken,
+        },
+      } as any);
+      return;
+    }
+
+    if (
+      startupDestination === 'profile-completion'
+      && !currentPath.includes('details')
+      && !profileNavigationStartedRef.current
+    ) {
+      profileNavigationStartedRef.current = true;
+
+      const fetchRoleAndNavigate = async () => {
+        let role: string | undefined;
+        try {
+          if (user?.email && pendingVerification?.statusToken) {
+            const fnInstance = getFunctions(undefined, 'me-central1');
+            const checkStatus = httpsCallable(fnInstance, 'checkVerificationStatus');
+            const result = await checkStatus({
+              email: user.email,
+              statusToken: pendingVerification.statusToken,
+            });
+            const data = result.data as { status: string; role?: string };
+            if (data.status !== 'none') role = data.role;
+          }
+        } catch {
+          // details.tsx safely defaults to the student role.
+        }
+
+        router.replace({
+          pathname: '/(onboarding)/details',
+          params: role ? { role } : undefined,
+        } as any);
+      };
+
+      void fetchRoleAndNavigate();
+    }
+  }, [appReady, pendingVerification, router, segments, startupDestination, user]);
 
   // Clear pending verification once user authenticates
   useEffect(() => {
@@ -428,8 +518,36 @@ function LayoutContent({
     return () => subscription.remove();
   }, [router]);
 
-  if (!appReady && startupTimedOut) {
-    return <ThemeProvider value={navigationTheme}><View style={[startupStyles.screen, { backgroundColor: theme.background }]}>
+  useEffect(() => {
+    if (!rootLaidOut || splashHiddenRef.current) return;
+    if (!startupTimedOut && !startupCanReveal) return;
+
+    const remainingVisibleMs = Math.max(
+      0,
+      MIN_NATIVE_SPLASH_VISIBLE_MS - (Date.now() - nativeSplashStartedAt),
+    );
+
+    splashHideTimerRef.current = setTimeout(() => {
+      splashHideTimerRef.current = null;
+      if (splashHiddenRef.current) return;
+
+      splashHiddenRef.current = true;
+      void SplashScreen.hideAsync().catch((error) => {
+        splashHiddenRef.current = false;
+        logger.warn('Unable to hide the native splash screen:', error);
+      });
+    }, remainingVisibleMs);
+
+    return () => {
+      if (splashHideTimerRef.current) {
+        clearTimeout(splashHideTimerRef.current);
+        splashHideTimerRef.current = null;
+      }
+    };
+  }, [rootLaidOut, startupCanReveal, startupTimedOut]);
+
+  if (startupTimedOut) {
+    return <ThemeProvider value={navigationTheme}><View onLayout={() => setRootLaidOut(true)} style={[startupStyles.screen, { backgroundColor: theme.background }]}>
       <ActivityIndicator size="large" color={theme.brand} />
       <Text style={[startupStyles.title, { color: theme.text }]}>{t('onboarding_v2_startup_title')}</Text>
       <Text style={[startupStyles.body, { color: theme.mutedText }]}>{t('onboarding_v2_startup_body')}</Text>
@@ -439,10 +557,16 @@ function LayoutContent({
 
   return (
     <ThemeProvider value={navigationTheme}>
-      <View style={{ flex: 1 }}>
-        {appReady && !profileError ? (
-          <>
-            <Stack>
+      <View
+        onLayout={() => setRootLaidOut(true)}
+        style={{ flex: 1, backgroundColor: theme.background }}
+      >
+        {appReady && !profileError && startupDestination ? (
+          <View
+            pointerEvents={startupCanReveal ? 'auto' : 'none'}
+            style={[startupStyles.navigation, !startupCanReveal && startupStyles.navigationPending]}
+          >
+            <Stack initialRouteName={getStartupInitialRootRoute(startupDestination)}>
               <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="category" options={{ headerShown: false }} />
@@ -459,17 +583,19 @@ function LayoutContent({
               <Stack.Screen name="wakti" options={{ headerShown: false, presentation: 'modal' }} />
               <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
             </Stack>
-            <AppUpdatePrompt />
-            {!startupRouteResolved ? (
-              <View
-                pointerEvents="auto"
-                style={[startupStyles.routeCover, { backgroundColor: theme.background }]}
-              />
-            ) : null}
-          </>
+            {startupCanReveal ? <AppUpdatePrompt /> : null}
+          </View>
         ) : appReady && profileError ? (
           <View style={{ flex: 1, backgroundColor: theme.background }}>
             <StateSurface kind={isOnline ? 'error' : 'offline'} onRetry={refreshProfile} />
+          </View>
+        ) : !startupTimedOut ? (
+          <View style={[startupStyles.splash, { backgroundColor: theme.background }]}>
+            <Image
+              accessibilityLabel="realX"
+              source={require('../assets/images/icon.png')}
+              style={startupStyles.splashIcon}
+            />
           </View>
         ) : null}
 
@@ -479,10 +605,11 @@ function LayoutContent({
 }
 
 const startupStyles = StyleSheet.create({
+  navigation: { flex: 1 },
+  navigationPending: { opacity: 0 },
+  splash: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
+  splashIcon: { width: 112, height: 112, resizeMode: 'contain' },
   screen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 14 },
-  routeCover: {
-    ...StyleSheet.absoluteFill,
-  },
   title: { fontSize: 24, fontWeight: '700', textAlign: 'center' },
   body: { fontSize: 15, lineHeight: 22, textAlign: 'center' },
   button: { minWidth: 160, minHeight: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, marginTop: 10 },

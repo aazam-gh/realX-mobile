@@ -15,9 +15,12 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import {
+    homeQueryOptions,
+    isValidHomeFeaturedBanner,
+    type HomeFeaturedBannerItem,
+} from '../../utils/homeQueries';
 import { logger } from '../../utils/logger';
-import { fetchCmsDocument } from '../../utils/firebaseQueries';
-import { queryKeys } from '../../utils/queryClient';
 import AppText from '../AppText';
 import {
     HOME_COMPACT_BANNER_HEIGHT,
@@ -25,41 +28,12 @@ import {
     HOME_SECTION_TOP_SPACING,
 } from './layout';
 
-export type FeaturedBannerItem = {
-    id: string;
-    title: string;
-    titleAr?: string;
-    ctaText?: string;
-    orderUrl: string;
-    isActive: boolean;
-    heroImageUrl: string;
-    tileImageUrls: string[];
-    altText?: string;
-    order?: number;
-};
+export type FeaturedBannerItem = HomeFeaturedBannerItem;
 
 type FeaturedBannerProps = {
     item?: FeaturedBannerItem;
     style?: StyleProp<ViewStyle>;
 };
-
-function isValidBannerItem(item: any): item is FeaturedBannerItem {
-    return Boolean(
-        item &&
-        item.isActive === true &&
-        typeof item.id === 'string' &&
-        typeof item.title === 'string' &&
-        typeof item.orderUrl === 'string' &&
-        typeof item.heroImageUrl === 'string' &&
-        Array.isArray(item.tileImageUrls) &&
-        item.tileImageUrls.length >= 3 &&
-        item.tileImageUrls.slice(0, 3).every((url: unknown) => typeof url === 'string' && url.length > 0)
-    );
-}
-
-function sortByOrder(a: FeaturedBannerItem, b: FeaturedBannerItem) {
-    return (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER);
-}
 
 export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
     const { isRTL } = useAppLocale();
@@ -68,13 +42,7 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
         error,
         isLoading,
     } = useQuery({
-        queryKey: queryKeys.cmsDocument('featuredBrandShowcase'),
-        queryFn: async () => {
-            const data = await fetchCmsDocument<{ items?: FeaturedBannerItem[] }>('featuredBrandShowcase');
-            return (data?.items || [])
-                .filter(isValidBannerItem)
-                .sort(sortByOrder)[0] ?? null;
-        },
+        ...homeQueryOptions.featuredBanner(),
         enabled: !item,
     });
 
@@ -110,7 +78,7 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
         );
     }
 
-    if (!currentItem || !isValidBannerItem(currentItem)) {
+    if (!currentItem || !isValidHomeFeaturedBanner(currentItem)) {
         return null;
     }
 

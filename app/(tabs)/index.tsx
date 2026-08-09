@@ -66,7 +66,7 @@ export default function HomeScreen() {
         animated
         hidden
       />
-      <View style={styles.contentWrapper}>
+      <View collapsable={false} style={styles.contentWrapper}>
         <GreetingHeader
           userName={userName}
           searchQuery={searchQuery}
@@ -75,9 +75,9 @@ export default function HomeScreen() {
         />
         <ScrollView
           style={[styles.container, { backgroundColor: theme.background }]}
+          contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="always"
-          nestedScrollEnabled
           directionalLockEnabled
           contentContainerStyle={styles.contentContainer}
           refreshControl={refreshControl}

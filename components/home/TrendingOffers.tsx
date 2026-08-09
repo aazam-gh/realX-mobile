@@ -1,4 +1,3 @@
-import { collection, getDocs, getFirestore, limit, query, where } from '@react-native-firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -11,8 +10,7 @@ import { Typography } from '../../constants/Typography';
 import { logger } from '../../utils/logger';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
-import { fetchCmsDocument, fetchVendor } from '../../utils/firebaseQueries';
-import { queryClient, queryKeys } from '../../utils/queryClient';
+import { homeQueryOptions } from '../../utils/homeQueries';
 import AppText from '../AppText';
 import {
     HOME_CAROUSEL_GAP,
@@ -30,42 +28,6 @@ const OFFER_CARD_GAP = HOME_CAROUSEL_GAP;
 const OFFER_SIDE_PADDING = HOME_HORIZONTAL_GUTTER;
 const OFFER_CARD_WIDTH_RATIO = 0.60;
 const OFFER_AUTO_SCROLL_MS = 4000;
-const TRENDING_FALLBACK_LIMIT = 10;
-
-type TrendingOfferBannerItem = {
-    trendingOfferBannerId?: string;
-    vendorId?: string;
-    images?: {
-        mobile?: string;
-    };
-    altText?: string;
-    isActive?: boolean;
-};
-
-const mapVendorDocToCard = (
-    vendorId: string,
-    vendorData: any,
-    customBannerImage?: string,
-    isTrending = true,
-) => ({
-    id: vendorId,
-    vendorId,
-    nameEn: vendorData.nameEn || vendorData.name,
-    nameAr: vendorData.nameAr || vendorData.name,
-    vendorName: vendorData.name,
-    vendorNameAr: vendorData.nameAr,
-    shortDescription: vendorData.shortDescription,
-    shortDescriptionAr: vendorData.shortDescriptionAr || vendorData.shortDescriptionAR,
-    brandDescription: vendorData.brandDescription,
-    descriptionEn: vendorData.descriptionEn,
-    descriptionAr: vendorData.descriptionAr,
-    vendorProfilePicture: vendorData.profilePicture,
-    coverImage: vendorData.coverImage,
-    bannerImage: customBannerImage || vendorData.bannerImage,
-    xcard: vendorData.xcard || false,
-    isTrending,
-});
-
 export default function TrendingOffers({ onVendorPress, variant = 'trending' }: TrendingOffersProps) {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
@@ -75,70 +37,7 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
         error,
         isLoading,
         refetch,
-    } = useQuery({
-        queryKey: variant === 'trending' ? queryKeys.trendingOffers() : queryKeys.newDeals(),
-        queryFn: async () => {
-            const db = getFirestore();
-            const isTrendingSection = variant === 'trending';
-            const vendorFlag = isTrendingSection ? 'isTrending' : 'isNewDeal';
-            const cmsDocumentId = isTrendingSection ? 'trending-offer-banners' : 'new-deal-banners';
-            const fetchLegacyTrendingVendors = async () => {
-                const q = query(
-                    collection(db, 'vendors'),
-                    where(vendorFlag, '==', true),
-                    limit(TRENDING_FALLBACK_LIMIT)
-                );
-                const snapshot = await getDocs(q);
-
-                return snapshot.docs.filter((docSnap: any) => {
-                    const vendorData = docSnap.data();
-                    return vendorData.status !== 'Draft' && vendorData.status !== 'Inactive' && vendorData.isActive !== false;
-                }).map((docSnap: any) => {
-                    const vendorData = docSnap.data();
-                    queryClient.setQueryData(queryKeys.vendor(docSnap.id), { id: docSnap.id, data: vendorData });
-                    return mapVendorDocToCard(docSnap.id, vendorData, undefined, isTrendingSection);
-                });
-            };
-
-            const cmsData = await fetchCmsDocument<{ items?: TrendingOfferBannerItem[] }>(cmsDocumentId);
-            const cmsItems = cmsData?.items || [];
-
-            const activeCmsItems = cmsItems.filter(item => (
-                item.isActive !== false
-                && !!item.vendorId?.trim()
-                && !!item.images?.mobile?.trim()
-            ));
-
-            let fetchedResults: any[] = [];
-
-            if (activeCmsItems.length > 0) {
-                const vendorResults = await Promise.all(activeCmsItems.map(async (item) => {
-                    const vendorId = item.vendorId?.trim();
-                    const customBannerImage = item.images?.mobile?.trim();
-                    if (!vendorId || !customBannerImage) return null;
-
-                    const vendorResult = await queryClient.fetchQuery({
-                        queryKey: queryKeys.vendor(vendorId),
-                        queryFn: () => fetchVendor(vendorId),
-                    });
-                    if (!vendorResult) return null;
-
-                    return mapVendorDocToCard(vendorResult.id, vendorResult.data, customBannerImage, isTrendingSection);
-                }));
-
-                fetchedResults = vendorResults.filter(Boolean);
-            }
-
-            if (fetchedResults.length === 0) {
-                logger.warn(`[${isTrendingSection ? 'TrendingOffers' : 'NewDeals'}] Using bounded legacy vendor fallback`, {
-                    limit: TRENDING_FALLBACK_LIMIT,
-                });
-                fetchedResults = await fetchLegacyTrendingVendors();
-            }
-
-            return fetchedResults;
-        },
-    });
+    } = useQuery(homeQueryOptions.offers(variant));
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollViewRef = useRef<ScrollView | null>(null);
     const isUserInteractingRef = useRef(false);

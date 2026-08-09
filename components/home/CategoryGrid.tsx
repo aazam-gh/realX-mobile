@@ -9,18 +9,11 @@ import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import { homeQueryOptions, type HomeCategoryItem } from '../../utils/homeQueries';
 import { logger } from '../../utils/logger';
-import { fetchCategories } from '../../utils/firebaseQueries';
-import { queryKeys } from '../../utils/queryClient';
 import { HOME_HORIZONTAL_GUTTER } from './layout';
 
-type CategoryItem = {
-    id: string;
-    name: string;
-    englishName?: string;
-    image?: string | any;
-    icon?: string;
-};
+type CategoryItem = HomeCategoryItem;
 
 type Props = {
     categories?: CategoryItem[];
@@ -45,9 +38,8 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
         data: fetchedCategories = [],
         error,
         isLoading,
-    } = useQuery<CategoryItem[]>({
-        queryKey: queryKeys.categories(isArabic ? 'ar' : 'en'),
-        queryFn: () => fetchCategories(isArabic),
+    } = useQuery({
+        ...homeQueryOptions.categories(isArabic ? 'ar' : 'en'),
         enabled: !propCategories,
     });
 

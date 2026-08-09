@@ -64,10 +64,11 @@ export default function WalletScreen() {
         animated
         hidden
       />
-      <View style={styles.contentWrapper}>
+      <View collapsable={false} style={styles.contentWrapper}>
         <ScrollView
           style={[styles.scrollView, { backgroundColor: theme.background }]}
           contentContainerStyle={styles.scrollContent}
+          contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
           refreshControl={refreshControl}
           {...tabBarScrollVisibility}

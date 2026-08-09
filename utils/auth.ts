@@ -1,6 +1,7 @@
 import { getAuth, signOut } from '@react-native-firebase/auth';
 import { unregisterExpoPushTokenForCurrentUser } from './pushNotifications';
 import { clearStoredGuestSession } from '../context/AuthAccessContext';
+import { clearStoredAuthSessionHint } from './authSessionHint';
 
 // Auth utility helpers
 // Magic link helpers have been removed — OTP auth is now used instead.
@@ -21,6 +22,7 @@ export const clearLocalAuthSession = async () => {
   try {
     await unregisterExpoPushTokenForCurrentUser();
     await clearStoredGuestSession();
+    await clearStoredAuthSessionHint();
     await signOut(getAuth());
   } catch (error) {
     const code = String((error as { code?: unknown } | null)?.code || '').toLowerCase();

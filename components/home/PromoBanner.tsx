@@ -19,10 +19,9 @@ import Animated, {
 
 import { useAppTheme } from '../../context/AppThemeContext';
 import { StateSurface } from '../StateSurface';
-import { fetchCmsDocument } from '../../utils/firebaseQueries';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import { homeQueryOptions, type HomeBannerItem } from '../../utils/homeQueries';
 import { logger } from '../../utils/logger';
-import { queryKeys } from '../../utils/queryClient';
 import { HOME_CAROUSEL_GAP, HOME_HORIZONTAL_GUTTER } from './layout';
 
 const BANNER_HEIGHT = 192;
@@ -32,18 +31,7 @@ const BANNER_AUTO_SCROLL_MS = 4000;
 const INDICATOR_WIDTH = 88;
 const INDICATOR_THUMB_WIDTH = 24;
 
-export type BannerItem = {
-    bannerId: string;
-    altText: string;
-    id?: string;
-    images: {
-        desktop?: string;
-        mobile?: string;
-    };
-    isActive: boolean;
-    vendorId?: string;
-    lastUpdated?: string;
-};
+export type BannerItem = HomeBannerItem;
 
 type PromoBannerProps = {
     onBannerPress?: (banner: BannerItem) => void;
@@ -56,13 +44,7 @@ export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
         error,
         isLoading,
         refetch,
-    } = useQuery({
-        queryKey: queryKeys.cmsDocument('banner'),
-        queryFn: async () => {
-            const data = await fetchCmsDocument<{ banners?: BannerItem[] }>('banner');
-            return (data?.banners || []).filter((banner: BannerItem) => banner.isActive);
-        },
-    });
+    } = useQuery(homeQueryOptions.promoBanners());
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollViewRef = useRef<Animated.ScrollView | null>(null);
     const isUserInteractingRef = useRef(false);

@@ -80,6 +80,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
         <AppHeader title={profileHeaderTitle} variant="root" />
         <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
           {...tabBarScrollVisibility}
@@ -194,6 +195,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <AppHeader title={profileHeaderTitle} variant="root" />
       <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         {...tabBarScrollVisibility}

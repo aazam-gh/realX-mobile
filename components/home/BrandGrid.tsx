@@ -18,21 +18,14 @@ import { useTranslation } from 'react-i18next';
 import { logger } from '../../utils/logger';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
-import { fetchCmsDocument } from '../../utils/firebaseQueries';
-import { queryKeys } from '../../utils/queryClient';
+import { homeQueryOptions, type HomeBrandItem } from '../../utils/homeQueries';
 import {
     HOME_HORIZONTAL_GUTTER,
     HOME_SECTION_HEADER_GAP,
     HOME_SECTION_TOP_SPACING,
 } from './layout';
 
-type BrandItem = {
-    id: string;
-    name: string;
-    logoUrl: string;
-    vendorId: string;
-    isActive: boolean;
-};
+type BrandItem = HomeBrandItem;
 
 const BRAND_TILE_SIZE = 64;
 const BRAND_TILE_GAP = 14;
@@ -99,21 +92,7 @@ export default function BrandGrid() {
         error,
         isLoading,
         refetch,
-    } = useQuery({
-        queryKey: queryKeys.cmsDocument('brand'),
-        queryFn: async () => {
-            const data = await fetchCmsDocument<{ brands?: BrandItem[] }>('brand');
-            return (data?.brands || [])
-                .filter((b: BrandItem) => b.isActive)
-                .map((b: BrandItem) => ({
-                    id: b.id,
-                    name: b.name,
-                    logoUrl: b.logoUrl,
-                    vendorId: b.vendorId,
-                    isActive: b.isActive,
-                }));
-        },
-    });
+    } = useQuery(homeQueryOptions.brands());
     const router = useRouter();
     const displayedBrands = useMemo(() => (isRTL ? [...brands].reverse() : brands), [brands, isRTL]);
     const brandLabelPrefix = t('brand_header_prefix');

@@ -6,8 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import { useAppLocale } from '../../context/LocaleContext';
 import { useAppTheme } from '../../context/AppThemeContext';
-import { fetchPublishedOpportunities } from '../../utils/firebaseQueries';
-import { queryKeys } from '../../utils/queryClient';
+import { homeQueryOptions } from '../../utils/homeQueries';
 import { OpportunityCard } from '../opportunities/OpportunityCard';
 import {
   HOME_CAROUSEL_GAP,
@@ -21,10 +20,7 @@ export function OpportunityHighlights() {
   const router = useRouter();
   const { isRTL } = useAppLocale();
   const { theme } = useAppTheme();
-  const { data = [] } = useQuery({
-    queryKey: queryKeys.opportunities(),
-    queryFn: fetchPublishedOpportunities,
-  });
+  const { data = [] } = useQuery(homeQueryOptions.opportunities());
   const highlights = data.filter((item) => item.featured).slice(0, 5);
   const items = highlights.length > 0 ? highlights : data.slice(0, 5);
 

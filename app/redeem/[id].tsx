@@ -28,6 +28,7 @@ import AppText from '../../components/AppText';
 import RewardSuccessScreen from '../../components/rewards/RewardSuccessScreen';
 import TransactionLoadingOverlay from '../../components/TransactionLoadingOverlay';
 import { HeaderIconButton } from '../../components/navigation/AppHeader';
+import GiftCardFlowScaffold from '../../components/wallet/GiftCardFlowScaffold';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -147,7 +148,6 @@ export default function RedeemScreen() {
     const creatorInputRef = useRef<TextInput>(null);
     const pinInputRef = useRef<TextInput>(null);
     const amountInputRef = useRef<TextInput>(null);
-    const scrollRef = useRef<ScrollView>(null);
     const currentVendorId = vendorId || id || '';
 
     useEffect(() => {
@@ -597,245 +597,180 @@ export default function RedeemScreen() {
         );
     }
 
+    const totalFlowSteps = vendor.xcard === true ? 2 : 1;
+    const flowStep = vendor.xcard === true && step === 'creator' ? 1 : totalFlowSteps;
+    const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
+    const discountLabel = inStoreOffer.discountType === 'buy1get1'
+        ? t('buy1get1_label')
+        : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`;
+
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
-            <KeyboardAvoidingView
-                style={styles.keyboardAware}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        <KeyboardAvoidingView
+            style={[styles.container, { backgroundColor: theme.background }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+            <GiftCardFlowScaffold
+                title={step === 'creator' ? t('vendor_flow_creator_title') : t('vendor_flow_details_title')}
+                step={flowStep}
+                totalSteps={totalFlowSteps}
+                onBack={() => {
+                    triggerSubtleHaptic();
+                    if (step === 'pin' && vendor.xcard === true) {
+                        setStep('creator');
+                        Keyboard.dismiss();
+                    } else {
+                        router.back();
+                    }
+                }}
+                onClose={() => router.back()}
+                contentContainerStyle={styles.vendorScrollContent}
             >
-                <View style={styles.innerContainer}>
-                        {/* Header */}
-                        <View style={styles.header}>
-                            <HeaderIconButton
-                                icon={isArabic ? 'arrow-forward' : 'arrow-back'}
-                                accessibilityLabel={t('back')}
+                <View style={[styles.vendorSummary, { backgroundColor: theme.cardMuted }]}>
+                    <View style={[styles.vendorLogo, { backgroundColor: theme.logoTile, shadowColor: theme.shadow }]}>
+                        {vendor.profilePicture ? (
+                            <Image source={{ uri: vendor.profilePicture }} style={styles.vendorLogoImage} contentFit="cover" />
+                        ) : (
+                            <Text style={[styles.vendorLogoPlaceholder, { color: theme.logoTileText }]}>{(vendorName || t('unknown')).charAt(0)}</Text>
+                        )}
+                    </View>
+                    <View style={[styles.vendorSummaryCopy, isArabic && styles.vendorSummaryCopyRTL]}>
+                        <Text style={[styles.vendorSummaryKicker, { color: theme.subtleText }, isArabic && styles.textRTL]}>{t('in_store_badge')}</Text>
+                        <AppText style={[styles.vendorSummaryName, { color: theme.text }, isArabic && styles.textRTL]} numberOfLines={2}>{vendorName || t('unknown_vendor')}</AppText>
+                        <View style={[styles.discountBadge, { backgroundColor: theme.brandSoft }, isArabic && styles.discountBadgeRTL]}>
+                            <Ionicons name="pricetag" size={15} color={theme.brandText} />
+                            <Text style={[styles.discountBadgeText, { color: theme.brandText }]}>{t('flat_off_prefix')}{discountLabel}{t('flat_off_suffix')}</Text>
+                        </View>
+                    </View>
+                </View>
+
+                {step === 'creator' ? (
+                    <View style={[styles.formSection, { backgroundColor: theme.cardMuted }]}>
+                        <Text style={[styles.inputLabel, { color: theme.text }, isArabic && styles.textRTL]}>
+                            {t('have_creator_code')} <Text style={[styles.optionalText, { color: theme.subtleText }]}>{t('optional')}</Text>
+                        </Text>
+                        <Text style={[styles.inputHint, { color: theme.mutedText }, isArabic && styles.textRTL]}>{t('vendor_flow_creator_hint')}</Text>
+                        <TouchableOpacity
+                            activeOpacity={1}
+                            style={[styles.textInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }]}
+                            onPress={() => {
+                                triggerSubtleHaptic();
+                                creatorInputRef.current?.focus();
+                            }}
+                        >
+                            <TextInput
+                                ref={creatorInputRef}
+                                style={[styles.creatorInput, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
+                                value={creatorCode}
+                                onChangeText={(text) => setCreatorCode(normalizeDigits(text).toUpperCase())}
+                                placeholder={t('creator_code_placeholder')}
+                                placeholderTextColor={theme.inputPlaceholder}
+                                autoCapitalize="characters"
+                                maxLength={4}
+                                returnKeyType="next"
+                                onSubmitEditing={handleAction}
+                                autoCorrect={false}
+                            />
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={styles.formSections}>
+                        <View style={[styles.formSection, { backgroundColor: theme.cardMuted }]}>
+                            <Text style={[styles.inputLabel, { color: theme.text }, isArabic && styles.textRTL]}>{t('enter_vendor_pin')}</Text>
+                            <Text style={[styles.inputHint, { color: theme.mutedText }, isArabic && styles.textRTL]}>{t('vendor_flow_pin_hint')}</Text>
+                            <TouchableOpacity
+                                activeOpacity={1}
+                                style={[styles.pinVisualContainer, isArabic && styles.pinVisualContainerRTL]}
                                 onPress={() => {
-                                    if (step === 'pin' && vendor.xcard === true) {
-                                        setStep('creator');
-                                        Keyboard.dismiss();
-                                    } else {
-                                        router.back();
-                                    }
+                                    triggerSubtleHaptic();
+                                    pinInputRef.current?.focus();
                                 }}
+                            >
+                                {[0, 1, 2, 3].map((index) => (
+                                    <View key={index} style={[styles.pinBox, { backgroundColor: theme.card, shadowColor: theme.shadow }, pin.length === index && { borderColor: theme.brand }]}>
+                                        <Text style={[styles.pinText, { color: theme.subtleText }, pin.length > index && { color: theme.text, marginTop: 0 }]}>{pin.length > index ? '●' : '*'}</Text>
+                                    </View>
+                                ))}
+                            </TouchableOpacity>
+                            <TextInput
+                                ref={pinInputRef}
+                                style={styles.hiddenPinInput}
+                                value={pin}
+                                onChangeText={(text) => {
+                                    const numericText = normalizeDigits(text).replace(/[^0-9]/g, '');
+                                    if (numericText.length <= 4) setPin(numericText);
+                                    if (numericText.length === 4) amountInputRef.current?.focus();
+                                }}
+                                keyboardType="number-pad"
+                                maxLength={4}
+                                onSubmitEditing={() => amountInputRef.current?.focus()}
                             />
                         </View>
 
-                        <ScrollView
-                            ref={scrollRef}
-                            style={{ flex: 1 }}
-                            contentContainerStyle={styles.scrollContent}
-                            showsVerticalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled"
-                            keyboardDismissMode="on-drag"
-                        >
-                            {/* Offer Card */}
-                            <View style={styles.offerCardWrapper}>
-                                <View style={[styles.offerCard, { backgroundColor: theme.cardMuted }]}>
-                                    <AppText style={[styles.offerTitle, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
-                                        {t('flat_off_prefix')}<Text style={[styles.greenText, { color: theme.brand }]}>
-                                            {inStoreOffer.discountType === 'buy1get1' ? t('buy1get1_label') : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`}
-                                        </Text>{t('flat_off_suffix')}
-                                    </AppText>
-                                </View>
-
-                                {/* Logo Overlay */}
-                                <View style={[styles.logoContainer, { backgroundColor: theme.logoTile, borderColor: theme.logoTile, shadowColor: theme.shadow }]}>
-                                    <Image
-                                        source={{ uri: vendor.profilePicture }}
-                                        style={styles.logoImage}
-                                        contentFit="cover"
-                                    />
-                                </View>
+                        <View style={[styles.formSection, { backgroundColor: theme.cardMuted }]}>
+                            <Text style={[styles.inputLabel, { color: theme.text }, isArabic && styles.textRTL]}>{t('total_bill')}</Text>
+                            <Text style={[styles.inputHint, { color: theme.mutedText }, isArabic && styles.textRTL]}>{t('vendor_flow_bill_hint')}</Text>
+                            <View style={[styles.amountInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }, isArabic && styles.amountInputContainerRTL]}>
+                                <Text style={[styles.currencyPrefix, { color: theme.mutedText }, isArabic && styles.currencyPrefixRTL]}>{t('currency_qar')}</Text>
+                                <TextInput
+                                    ref={amountInputRef}
+                                    style={[styles.amountInput, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
+                                    value={amount}
+                                    onChangeText={(text) => {
+                                        const filtered = normalizeDigits(text).replace(/[^0-9.]/g, '');
+                                        const parts = filtered.split('.');
+                                        setAmount(parts[0].slice(0, 4) + (parts.length > 1 ? `.${parts.slice(1).join('')}` : ''));
+                                    }}
+                                    keyboardType="decimal-pad"
+                                    placeholder="0"
+                                    placeholderTextColor={theme.inputPlaceholder}
+                                    onSubmitEditing={handleAction}
+                                />
                             </View>
-
-                            {/* Creator Code Step (xcard vendors only) */}
-                            {step === 'creator' && (
-                                <View style={[styles.creatorCard, { backgroundColor: theme.cardMuted }]}>
-                                    <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
-                                        {t('have_creator_code')} <Text style={[styles.optionalText, { color: theme.subtleText }]}>{t('optional')}</Text>
-                                    </Text>
-                                    <TouchableOpacity
-                                        activeOpacity={1}
-                                        style={[
-                                            styles.creatorInputContainer,
-                                            {
-                                                backgroundColor: theme.card,
-                                                shadowColor: theme.shadow,
-                                                flexDirection: isArabic ? 'row-reverse' : 'row',
-                                            },
-                                        ]}
-                                        onPress={() => {
-                                            triggerSubtleHaptic();
-                                            creatorInputRef.current?.focus();
-                                        }}
-                                    >
-                                        <TextInput
-                                            ref={creatorInputRef}
-                                            style={[styles.creatorInput, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
-                                            value={creatorCode}
-                                            onChangeText={(text) => setCreatorCode(normalizeDigits(text).toUpperCase())}
-                                            placeholder={t('creator_code_placeholder')}
-                                            placeholderTextColor={theme.inputPlaceholder}
-                                            autoCapitalize="characters"
-                                            maxLength={4}
-                                            returnKeyType="next"
-                                            onSubmitEditing={handleAction}
-                                            autoCorrect={false}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            )}
-
-                            {/* PIN + Amount Step */}
-                            {step === 'pin' && (
-                                <View style={[styles.redemptionCard, { backgroundColor: theme.cardMuted }]}>
-                                    <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>{t('enter_vendor_pin')}</Text>
-                                    <View style={styles.pinContainer}>
-                                        <TouchableOpacity
-                                            activeOpacity={1}
-                                            style={[styles.pinVisualContainer, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}
-                                            onPress={() => {
-                                                triggerSubtleHaptic();
-                                                pinInputRef.current?.focus();
-                                            }}
-                                        >
-                                            {[0, 1, 2, 3].map((index) => (
-                                                <View
-                                                    key={index}
-                                                    style={[
-                                                        styles.pinBox,
-                                                        { backgroundColor: theme.card, shadowColor: theme.shadow },
-                                                        pin.length === index && { borderColor: theme.brand },
-                                                    ]}
-                                                >
-                                                    <Text style={[styles.pinText, { color: theme.subtleText }, pin.length > index && { color: theme.text, marginTop: 0 }]}>
-                                                        {pin.length > index ? '●' : '*'}
-                                                    </Text>
-                                                </View>
-                                            ))}
-                                        </TouchableOpacity>
-
-                                        <TextInput
-                                            ref={pinInputRef}
-                                            style={styles.hiddenPinInput}
-                                            value={pin}
-                                            onChangeText={(text) => {
-                                                const normalized = normalizeDigits(text);
-                                                const numericText = normalized.replace(/[^0-9]/g, '');
-                                                if (numericText.length <= 4) {
-                                                    setPin(numericText);
-                                                }
-                                                if (numericText.length === 4) {
-                                                    amountInputRef.current?.focus();
-                                                }
-                                            }}
-                                            keyboardType="number-pad"
-                                            maxLength={4}
-                                            onSubmitEditing={() => amountInputRef.current?.focus()}
-                                        />
+                            {totalAmount > 0 && (
+                                <View style={[styles.breakdownContainer, { backgroundColor: theme.card }]}>
+                                    <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Text style={[styles.breakdownLabel, { color: theme.mutedText }, isArabic && styles.textRTL]}>{t('total_bill')}</Text>
+                                        <Text style={[styles.breakdownValue, { color: theme.mutedText }]}>{t('amount_with_currency', { amount: totalAmount.toFixed(2), currency: t('currency_qar') })}</Text>
                                     </View>
-
-                                    <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>{t('total_bill')}:</Text>
-                                    <View style={[styles.amountInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow, flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                        <Text style={[styles.currencyPrefix, { color: theme.mutedText, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('currency_qar')}</Text>
-                                        <TextInput
-                                            ref={amountInputRef}
-                                            style={[styles.amountInput, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}
-                                            value={amount}
-                                            onFocus={() => {
-                                                setTimeout(() => {
-                                                    scrollRef.current?.scrollToEnd({ animated: true });
-                                                }, 150);
-                                            }}
-                                            onChangeText={(text) => {
-                                                const normalized = normalizeDigits(text);
-                                                // Allow only digits and one decimal point
-                                                const filtered = normalized.replace(/[^0-9.]/g, '');
-                                                // Ensure only one dot
-                                                const parts = filtered.split('.');
-                                                const integerPart = parts[0].slice(0, 4);
-                                                const decimalPart = parts.length > 1 ? `.${parts.slice(1).join('')}` : '';
-                                                const final = integerPart + decimalPart;
-                                                setAmount(final);
-                                            }}
-                                            keyboardType="decimal-pad"
-                                            placeholder="0"
-                                            placeholderTextColor={theme.inputPlaceholder}
-                                            onSubmitEditing={handleAction}
-                                        />
+                                    {inStoreOffer.discountType !== 'buy1get1' && (
+                                        <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                            <Text style={[styles.breakdownLabelGreen, { color: theme.brandText }, isArabic && styles.textRTL]}>{t('saved_amount_label')}</Text>
+                                            <Text style={[styles.breakdownValueGreen, { color: theme.brandText }]}>{t('amount_with_currency_negative', { amount: discountAmount.toFixed(2), currency: t('currency_qar') })}</Text>
+                                        </View>
+                                    )}
+                                    <View style={[styles.breakdownDivider, { backgroundColor: theme.border }]} />
+                                    <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                        <Text style={[styles.breakdownLabelBold, { color: theme.text }, isArabic && styles.textRTL]}>{t('amount_to_pay_label')}</Text>
+                                        <AppText style={[styles.breakdownValueBold, { color: theme.text }]}>{t('amount_with_currency', { amount: finalAmount.toFixed(2), currency: t('currency_qar') })}</AppText>
                                     </View>
-
-                                    {/* Breakdown */}
-                                    {totalAmount > 0 && (
-                                        <View style={[styles.breakdownContainer, { backgroundColor: theme.card }]}>
-                                            <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                                <Text style={[styles.breakdownLabel, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>{t('total_bill')}</Text>
-                                                <Text style={[styles.breakdownValue, { color: theme.mutedText, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
-                                                    {t('amount_with_currency', { amount: totalAmount.toFixed(2), currency: t('currency_qar') })}
-                                                </Text>
-                                            </View>
-                                            {inStoreOffer.discountType !== 'buy1get1' && (
-                                            <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                                <Text style={[styles.breakdownLabelGreen, { color: theme.brandText, textAlign: isArabic ? 'right' : 'left' }]}>
-                                                    {t('home_title')} ({inStoreOffer.discountType === 'buy1get1' ? t('buy1get1_label') : `${inStoreOffer.discountValue}${inStoreOffer.discountType === 'percentage' ? '%' : ''}`})
-                                                </Text>
-                                                <Text style={[styles.breakdownValueGreen, { color: theme.brandText, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
-                                                    {t('amount_with_currency_negative', { amount: discountAmount.toFixed(2), currency: t('currency_qar') })}
-                                                </Text>
-                                            </View>
-                                            )}
-                                            <View style={[styles.breakdownDivider, { backgroundColor: theme.border }]} />
-                                            <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                                <Text style={[styles.breakdownLabelBold, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>{t('amount_to_pay_label')}</Text>
-                                                <AppText style={[styles.breakdownValueBold, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
-                                                    {t('amount_with_currency', { amount: finalAmount.toFixed(2), currency: t('currency_qar') })}
-                                                </AppText>
-                                            </View>
-                                            {vendor.xcard === true && (
-                                                <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                                    <Text style={[styles.cashbackLabel, { textAlign: isArabic ? 'right' : 'left' }]}>
-                                                        {`${t('xcard_cashback_label')} (${1}%)`}
-                                                    </Text>
-                                                    <Text style={[styles.cashbackValue, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
-                                                        {t('amount_with_currency_positive', { amount: (finalAmount * 0.01).toFixed(2), currency: t('currency_qar') })}
-                                                    </Text>
-                                                </View>
-                                            )}
+                                    {vendor.xcard === true && (
+                                        <View style={[styles.breakdownRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                            <Text style={[styles.cashbackLabel, isArabic && styles.textRTL]}>{`${t('xcard_cashback_label')} (1%)`}</Text>
+                                            <Text style={styles.cashbackValue}>{t('amount_with_currency_positive', { amount: (finalAmount * 0.01).toFixed(2), currency: t('currency_qar') })}</Text>
                                         </View>
                                     )}
                                 </View>
                             )}
+                        </View>
+                    </View>
+                )}
 
-                            {/* Action Button */}
-                            <TouchableOpacity
-                                style={[
-                                    styles.redeemButton,
-                                    { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid },
-                                    { flexDirection: isArabic ? 'row-reverse' : 'row' },
-                                    step === 'pin' && !canRedeem && styles.redeemButtonDisabled,
-                                ]}
-                                activeOpacity={0.9}
-                                onPress={handleAction}
-                                disabled={(step === 'pin' && !canRedeem) || isRedeeming}
-                            >
-                                {isRedeeming ? (
-                                    <ActivityIndicator size="small" color={theme.onActionSolid} />
-                                ) : (
-                                    <>
-                                        <Ionicons name="flash" size={20} color={theme.onActionSolid} />
-                                        <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
-                                            {step === 'creator' ? t('continue_caps') : t('redeem_caps')}
-                                        </AppText>
-                                    </>
-                                )}
-                            </TouchableOpacity>
-                        </ScrollView>
-                </View>
-            </KeyboardAvoidingView>
-
+                <TouchableOpacity
+                    style={[styles.redeemButton, { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid }, (step === 'pin' && !canRedeem) && styles.redeemButtonDisabled]}
+                    activeOpacity={0.9}
+                    onPress={handleAction}
+                    disabled={(step === 'pin' && !canRedeem) || isRedeeming}
+                >
+                    {isRedeeming ? <ActivityIndicator size="small" color={theme.onActionSolid} /> : (
+                        <>
+                            <Ionicons name="flash" size={20} color={theme.onActionSolid} />
+                            <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>{step === 'creator' ? t('continue_caps') : t('redeem_caps')}</AppText>
+                        </>
+                    )}
+                </TouchableOpacity>
+            </GiftCardFlowScaffold>
             <TransactionLoadingOverlay visible={isRedeeming} />
-        </SafeAreaView>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -880,6 +815,108 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: 20,
         paddingBottom: 40,
+    },
+    vendorScrollContent: {
+        paddingBottom: 32,
+    },
+    vendorSummary: {
+        borderRadius: 28,
+        padding: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        marginBottom: 16,
+    },
+    vendorLogo: {
+        width: 68,
+        height: 68,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 7,
+        elevation: 3,
+    },
+    vendorLogoImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 20,
+    },
+    vendorLogoPlaceholder: {
+        fontSize: 28,
+        ...Typography.getTextVariantStyle('display'),
+    },
+    vendorSummaryCopy: {
+        flex: 1,
+        alignItems: 'flex-start',
+        gap: 4,
+    },
+    vendorSummaryCopyRTL: {
+        alignItems: 'flex-end',
+    },
+    vendorSummaryKicker: {
+        fontSize: 12,
+        ...Typography.getTextVariantStyle('bodyStrong'),
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+    },
+    vendorSummaryName: {
+        fontSize: 20,
+        lineHeight: 25,
+    },
+    discountBadge: {
+        borderRadius: 14,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    discountBadgeRTL: {
+        flexDirection: 'row-reverse',
+    },
+    discountBadgeText: {
+        fontSize: 13,
+        ...Typography.getTextVariantStyle('bodyStrong'),
+    },
+    formSections: {
+        gap: 14,
+    },
+    formSection: {
+        borderRadius: 28,
+        padding: 20,
+    },
+    inputHint: {
+        fontSize: 14,
+        lineHeight: 20,
+        ...Typography.getTextVariantStyle('body'),
+        marginTop: -5,
+        marginBottom: 14,
+    },
+    textInputContainer: {
+        borderRadius: 22,
+        height: 60,
+        paddingHorizontal: 18,
+        justifyContent: 'center',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
+    },
+    pinVisualContainerRTL: {
+        flexDirection: 'row-reverse',
+    },
+    amountInputContainerRTL: {
+        flexDirection: 'row-reverse',
+    },
+    currencyPrefixRTL: {
+        marginRight: 0,
+        marginLeft: 10,
+    },
+    textRTL: {
+        textAlign: 'right',
+        writingDirection: 'rtl',
     },
     offerCardWrapper: {
         position: 'relative',

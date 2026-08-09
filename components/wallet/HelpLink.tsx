@@ -8,9 +8,10 @@ import { useAppLocale } from '../../context/LocaleContext';
 
 type Props = {
     onPress?: () => void;
+    onTermsPress?: () => void;
 };
 
-export default function HelpLink({ onPress }: Props) {
+export default function HelpLink({ onPress, onTermsPress }: Props) {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
     const { isRTL } = useAppLocale();
@@ -32,6 +33,18 @@ export default function HelpLink({ onPress }: Props) {
                 </Text>
             </ScalePressable>
             <Text style={[styles.conversionText, { color: theme.brandText }]}>{t('xp_conversion_text')}</Text>
+            <ScalePressable
+                onPress={() => {
+                    triggerSubtleHaptic();
+                    onTermsPress?.();
+                }}
+                pressedScale={0.96}
+                accessibilityRole="button"
+                accessibilityLabel={t('rewards_terms_link')}
+                style={styles.termsLink}
+            >
+                <Text style={[styles.termsLinkText, { color: theme.mutedText }]}>{t('rewards_terms_link')}</Text>
+            </ScalePressable>
         </View>
     );
 }
@@ -64,5 +77,14 @@ const styles = StyleSheet.create({
     conversionText: {
         fontSize: 14,
         ...Typography.getTextVariantStyle('body'),
+    },
+    termsLink: {
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+    },
+    termsLinkText: {
+        fontSize: 13,
+        textDecorationLine: 'underline',
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
 });

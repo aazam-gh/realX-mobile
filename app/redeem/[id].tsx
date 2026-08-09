@@ -625,30 +625,31 @@ export default function RedeemScreen() {
                 onClose={() => router.back()}
                 contentContainerStyle={styles.vendorScrollContent}
             >
-                <View style={[styles.vendorSummary, { backgroundColor: theme.cardMuted }]}>
-                    <View style={[styles.vendorLogo, { backgroundColor: theme.logoTile, shadowColor: theme.shadow }]}>
-                        {vendor.profilePicture ? (
-                            <Image source={{ uri: vendor.profilePicture }} style={styles.vendorLogoImage} contentFit="cover" />
-                        ) : (
-                            <Text style={[styles.vendorLogoPlaceholder, { color: theme.logoTileText }]}>{(vendorName || t('unknown')).charAt(0)}</Text>
-                        )}
-                    </View>
-                    <View style={[styles.vendorSummaryCopy, isArabic && styles.vendorSummaryCopyRTL]}>
-                        <Text style={[styles.vendorSummaryKicker, { color: theme.subtleText }, isArabic && styles.textRTL]}>{t('in_store_badge')}</Text>
-                        <AppText style={[styles.vendorSummaryName, { color: theme.text }, isArabic && styles.textRTL]} numberOfLines={2}>{vendorName || t('unknown_vendor')}</AppText>
-                        <View style={[styles.discountBadge, { backgroundColor: theme.brandSoft }, isArabic && styles.discountBadgeRTL]}>
-                            <Ionicons name="pricetag" size={15} color={theme.brandText} />
-                            <Text style={[styles.discountBadgeText, { color: theme.brandText }]}>{t('flat_off_prefix')}{discountLabel}{t('flat_off_suffix')}</Text>
+                {(vendor.xcard !== true || step === 'creator') && (
+                    <View style={[styles.vendorSummary, { backgroundColor: theme.cardMuted }]}>
+                        <View style={[styles.vendorLogo, { backgroundColor: theme.logoTile, shadowColor: theme.shadow }]}>
+                            {vendor.profilePicture ? (
+                                <Image source={{ uri: vendor.profilePicture }} style={styles.vendorLogoImage} contentFit="cover" />
+                            ) : (
+                                <Text style={[styles.vendorLogoPlaceholder, { color: theme.logoTileText }]}>{(vendorName || t('unknown')).charAt(0)}</Text>
+                            )}
+                        </View>
+                        <View style={[styles.vendorSummaryCopy, isArabic && styles.vendorSummaryCopyRTL]}>
+                            <Text style={[styles.vendorSummaryKicker, { color: theme.subtleText }, isArabic && styles.textRTL]}>{t('in_store_badge')}</Text>
+                            <AppText style={[styles.vendorSummaryName, { color: theme.text }, isArabic && styles.textRTL]} numberOfLines={2}>{vendorName || t('unknown_vendor')}</AppText>
+                            <View style={[styles.discountBadge, { backgroundColor: theme.brandSoft }, isArabic && styles.discountBadgeRTL]}>
+                                <Ionicons name="pricetag" size={15} color={theme.brandText} />
+                                <Text style={[styles.discountBadgeText, { color: theme.brandText }]}>{t('flat_off_prefix')}{discountLabel}{t('flat_off_suffix')}</Text>
+                            </View>
                         </View>
                     </View>
-                </View>
+                )}
 
                 {step === 'creator' ? (
                     <View style={[styles.formSection, { backgroundColor: theme.cardMuted }]}>
                         <Text style={[styles.inputLabel, { color: theme.text }, isArabic && styles.textRTL]}>
                             {t('have_creator_code')} <Text style={[styles.optionalText, { color: theme.subtleText }]}>{t('optional')}</Text>
                         </Text>
-                        <Text style={[styles.inputHint, { color: theme.mutedText }, isArabic && styles.textRTL]}>{t('vendor_flow_creator_hint')}</Text>
                         <TouchableOpacity
                             activeOpacity={1}
                             style={[styles.textInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }]}
@@ -676,7 +677,6 @@ export default function RedeemScreen() {
                     <View style={styles.formSections}>
                         <View style={[styles.formSection, { backgroundColor: theme.cardMuted }]}>
                             <Text style={[styles.inputLabel, { color: theme.text }, isArabic && styles.textRTL]}>{t('enter_vendor_pin')}</Text>
-                            <Text style={[styles.inputHint, { color: theme.mutedText }, isArabic && styles.textRTL]}>{t('vendor_flow_pin_hint')}</Text>
                             <TouchableOpacity
                                 activeOpacity={1}
                                 style={[styles.pinVisualContainer, isArabic && styles.pinVisualContainerRTL]}
@@ -708,7 +708,6 @@ export default function RedeemScreen() {
 
                         <View style={[styles.formSection, { backgroundColor: theme.cardMuted }]}>
                             <Text style={[styles.inputLabel, { color: theme.text }, isArabic && styles.textRTL]}>{t('total_bill')}</Text>
-                            <Text style={[styles.inputHint, { color: theme.mutedText }, isArabic && styles.textRTL]}>{t('vendor_flow_bill_hint')}</Text>
                             <View style={[styles.amountInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }, isArabic && styles.amountInputContainerRTL]}>
                                 <Text style={[styles.currencyPrefix, { color: theme.mutedText }, isArabic && styles.currencyPrefixRTL]}>{t('currency_qar')}</Text>
                                 <TextInput
@@ -886,13 +885,6 @@ const styles = StyleSheet.create({
     formSection: {
         borderRadius: 28,
         padding: 20,
-    },
-    inputHint: {
-        fontSize: 14,
-        lineHeight: 20,
-        ...Typography.getTextVariantStyle('body'),
-        marginTop: -5,
-        marginBottom: 14,
     },
     textInputContainer: {
         borderRadius: 22,

@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   HelpLink,
   HowItWorksDrawer,
+  RewardsTermsDrawer,
   RecentRedemptions,
   SpendButton,
   SpendCardDrawer,
@@ -32,6 +33,7 @@ export default function WalletScreen() {
   const currency = 'XP';
 
   const [isHelpDrawerVisible, setIsHelpDrawerVisible] = useState(false);
+  const [isRewardsTermsDrawerVisible, setIsRewardsTermsDrawerVisible] = useState(false);
   const [isSpendDrawerVisible, setIsSpendDrawerVisible] = useState(false);
   const refreshWallet = async () => {
     await queryClient.refetchQueries({ type: 'active' });
@@ -78,7 +80,10 @@ export default function WalletScreen() {
           label={isGuest ? t('guest_wallet_cta') : undefined}
           leadingIcon={isGuest ? 'log-in-outline' : undefined}
         />
-        <HelpLink onPress={handleHelpPress} />
+        <HelpLink
+          onPress={handleHelpPress}
+          onTermsPress={() => setIsRewardsTermsDrawerVisible(true)}
+        />
         {isGuest ? (
           <View style={[styles.guestCard, { backgroundColor: theme.cardMuted }]}>
             <Text style={[styles.guestTitle, { color: theme.text }]}>
@@ -122,6 +127,11 @@ export default function WalletScreen() {
       <HowItWorksDrawer
         visible={isHelpDrawerVisible}
         onClose={handleHelpDrawerClose}
+      />
+
+      <RewardsTermsDrawer
+        visible={isRewardsTermsDrawerVisible}
+        onClose={() => setIsRewardsTermsDrawerVisible(false)}
       />
 
       <SpendCardDrawer

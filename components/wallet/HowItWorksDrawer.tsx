@@ -6,7 +6,6 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Typography } from '../../constants/Typography';
 import AppText from '../AppText';
@@ -42,12 +41,12 @@ function StepItem({ step, isArabic }: StepItemProps) {
                 isArabic ? styles.stepItemRTL : styles.stepItemLTR,
             ]}
         >
-            <View style={styles.stepNumberColumn}>
+            <View style={[styles.stepNumberColumn, { backgroundColor: theme.brand }]}>
                 <AppText
                     style={[
                         styles.stepNumber,
                         isArabic && styles.stepNumberRTL,
-                        { color: theme.brand },
+                        { color: theme.onActionSolid },
                     ]}
                 >
                     {isArabic ? toArabicDigits(step.number) : step.number}
@@ -71,7 +70,6 @@ function StepItem({ step, isArabic }: StepItemProps) {
 }
 
 export default function HowItWorksDrawer({ visible, onClose }: Props) {
-    const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const { t } = useTranslation();
     const { theme } = useAppTheme();
@@ -92,44 +90,6 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
 
     const sheetBody = (
         <View style={styles.content}>
-            <View style={styles.logoContainer}>
-                {isArabic ? (
-                    <Text style={styles.logoArabicText}>
-                        <Text style={[styles.logoCardArabic, { color: theme.text }]}>{t('xcard_title_card')}</Text>
-                        {' '}
-                        <Text style={[styles.logoXArabic, { color: theme.brand }]}>{t('xcard_title_x')}</Text>
-                    </Text>
-                ) : (
-                    <>
-                        <AppText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</AppText>
-                        <AppText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</AppText>
-                    </>
-                )}
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
-
-            <View
-                style={[
-                    styles.titleContainer,
-                    isArabic && styles.titleContainerRTL,
-                ]}
-            >
-                <AppText
-                    style={[
-                        styles.titleText,
-                        Typography.getTextDirectionStyle({ isRTL: isArabic }),
-                        { color: theme.text },
-                    ]}
-                >
-                    {t('how_it_works_title_prefix')}
-                    <Text style={[styles.titleHighlight, { color: theme.brand }]}>
-                        {t('how_it_works_title_highlight')}
-                    </Text>
-                    {t('how_it_works_title_suffix')}
-                </AppText>
-            </View>
-
             <View style={styles.stepsContainer}>
                 {steps.map((step) => (
                     <StepItem key={step.number} step={step} isArabic={isArabic} />
@@ -188,7 +148,7 @@ export default function HowItWorksDrawer({ visible, onClose }: Props) {
                                 {
                                     backgroundColor: theme.surfaceElevated,
                                     width,
-                                    paddingBottom: Math.max(insets.bottom, 16),
+                                    paddingBottom: 8,
                                 },
                             ]}
                         >
@@ -214,65 +174,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 20,
     },
-    logoContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-
-    },
-    logoArabicText: {
-        textAlign: 'center',
-        writingDirection: 'rtl',
-    },
-    logoX: {
-        fontSize: 28,
-    },
-    logoCard: {
-        fontSize: 28,
-    },
-    logoXArabic: {
-        ...Typography.getTextVariantStyle('displayArabicBlack'),
-        fontSize: 32,
-        lineHeight: 40,
-        writingDirection: 'rtl',
-    },
-    logoCardArabic: {
-        ...Typography.getTextVariantStyle('displayArabicBlack'),
-        fontSize: 32,
-        lineHeight: 40,
-        writingDirection: 'rtl',
-    },
-    divider: {
-        height: 1,
-        marginHorizontal: 20,
-        alignSelf: 'stretch',
-    },
-    titleContainer: {
-        width: '100%',
-        paddingTop: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingBottom: 16,
-    },
-    titleContainerRTL: {
-        direction: 'rtl',
-    },
-    titleText: {
-        width: '100%',
-        fontSize: 22,
-        lineHeight: 28,
-        textAlign: 'center',
-    },
-    titleTextRTL: {
-        fontSize: 28,
-        lineHeight: 36,
-    },
-    titleHighlight: {
-        fontSize: 22,
-    },
-    titleHighlightRTL: {
-        fontSize: 28,
-    },
     stepsContainer: {
         width: '100%',
         alignSelf: 'center',
@@ -283,11 +184,11 @@ const styles = StyleSheet.create({
         alignSelf: 'stretch',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        borderRadius: 16,
+        borderRadius: 20,
         gap: 12,
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        minHeight: 54,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        minHeight: 68,
     },
     stepItemLTR: {
         flexDirection: 'row',
@@ -297,23 +198,26 @@ const styles = StyleSheet.create({
         direction: 'rtl',
     },
     stepNumber: {
-        fontSize: 28,
-        lineHeight: 32,
+        fontSize: 18,
+        lineHeight: 22,
         textAlign: 'center',
+        ...Typography.getTextVariantStyle('bodyStrong'),
     },
     stepNumberRTL: {
-        fontSize: 34,
-        lineHeight: 40,
+        fontSize: 20,
+        lineHeight: 24,
     },
     stepNumberColumn: {
-        width: 42,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
         alignItems: 'center',
         justifyContent: 'center',
     },
     stepText: {
         flex: 1,
-        fontSize: 18,
-        lineHeight: 26,
+        fontSize: 16,
+        lineHeight: 23,
         ...Typography.getTextVariantStyle('body'),
     },
     stepTextRTL: {

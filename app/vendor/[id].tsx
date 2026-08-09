@@ -102,7 +102,6 @@ export default function VendorScreen() {
     const isArabic = locale === 'ar';
     const [vendor, setVendor] = useState<any>(null);
     const [offers, setOffers] = useState<any[]>([]);
-    const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
     const [actualVendorId, setActualVendorId] = useState<string | null>(null);
     const [savedOfferIds, setSavedOfferIds] = useState<Set<string>>(new Set());
     const [savingOfferIds, setSavingOfferIds] = useState<Set<string>>(new Set());
@@ -479,7 +478,6 @@ const offerTitle = isArabic
 const offerIndex = offer.offerIndex ?? offers.indexOf(offer);
 const savedId = `${actualVendorId || id}_offer_${offerIndex}`;
 const isSaved = savedOfferIds.has(savedId);
-const isDetailsExpanded = expandedOfferId === offer.id;
 const offerDescription = isArabic
     ? (offer.descriptionAr || offer.descriptionEn || t('no_specific_terms'))
     : (offer.descriptionEn || offer.descriptionAr || t('no_specific_terms'));
@@ -511,7 +509,7 @@ const offerDescription = isArabic
                                     <View style={[styles.offerInfoContainer, { backgroundColor: theme.cardMuted }]}>
                                         <View style={styles.offerContent}>
                                             <AppText style={[{ color: theme.text }, styles.offerTitle]}>
-                                                {(offerTitle || "").split(/(\d+(?:\.\d+)?\s?%?)/).map((part: string, index: number) => 
+                                                {(offerTitle || "").split(/(\d+(?:\.\d+)?\s?%?)/).map((part: string, index: number) =>
                                                     /^\d+(?:\.\d+)?\s?%?$/.test(part) ? (
                                                         <AppText key={index} style={styles.greenText}>{part}</AppText>
                                                     ) : (
@@ -519,29 +517,16 @@ const offerDescription = isArabic
                                                     )
                                                 )}
                                             </AppText>
-                                            {!isDetailsExpanded && (
-                                                <Text
-                                                    style={[styles.offerSummary, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}
-                                                    numberOfLines={2}
-                                                >
-                                                    {offerDescription}
-                                                </Text>
-                                            )}
+                                            <Text
+                                                style={[styles.offerSummary, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}
+                                                numberOfLines={2}
+                                            >
+                                                {offerDescription}
+                                            </Text>
                                         </View>
                                     </View>
                                     {/* Bottom Button Pills */}
                                     <View style={[styles.offerActionsRow, { backgroundColor: theme.cardMuted }]}>
-                                        <TouchableOpacity
-                                            style={[styles.pillButton, { backgroundColor: theme.card }]}
-                                            onPress={() => setExpandedOfferId((current) => current === offer.id ? null : offer.id)}
-                                            accessibilityState={{ expanded: isDetailsExpanded }}
-                                        >
-                                            <Ionicons name={isDetailsExpanded ? 'chevron-up' : 'chevron-down'} size={20} color={theme.iconMuted} />
-                                            <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.pillButtonTextSmall]}>
-                                                {isDetailsExpanded ? t('hide_details') : t('offer_details')}
-                                            </Text>
-                                        </TouchableOpacity>
-
                                         <TouchableOpacity
                                             style={[styles.pillButton, styles.redeemPill, { backgroundColor: theme.actionSolid }]}
                                             onPress={() => {
@@ -554,36 +539,6 @@ const offerDescription = isArabic
                                         </TouchableOpacity>
 
                                     </View>
-                                    {isDetailsExpanded && (
-                                        <View
-                                            testID={`vendor-offer-details-${offerIndex}`}
-                                            style={[styles.offerDetailsPanel, { backgroundColor: theme.cardMuted, borderTopColor: theme.border }]}
-                                        >
-                                            <View style={[styles.offerDetailsHeadingRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                                <Ionicons name="information-circle-outline" size={20} color={theme.brand} />
-                                                <AppText style={[styles.offerDetailsHeadingText, styles.offerDetailsTitle, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
-                                                    {t('offer_details_caps')}
-                                                </AppText>
-                                            </View>
-                                            <Text style={[styles.offerDetailsDescription, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
-                                                {offerDescription}
-                                            </Text>
-
-                                            <View style={[styles.offerTermsSection, { borderTopColor: theme.border }]}>
-                                                <AppText style={[styles.offerDetailsTitle, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
-                                                    {t('terms_and_conditions_caps')}
-                                                </AppText>
-                                                <View style={styles.inlineTermsList}>
-                                                    {[t('in_store_only'), t('cannot_be_combined'), t('xp_promotional_reward'), t('xp_no_cash_withdrawal'), t('xp_in_app_only')].map((term) => (
-                                                        <View key={term} style={[styles.termRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                                            <Ionicons name="checkmark-circle" size={18} color={theme.brand} />
-                                                            <Text style={[styles.termText, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>{term}</Text>
-                                                        </View>
-                                                    ))}
-                                                </View>
-                                            </View>
-                                        </View>
-                                    )}
                                 </View>
                             );
                         })
@@ -940,42 +895,6 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         paddingEnd: 8,
     },
-    offerDetailsPanel: {
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        paddingHorizontal: 24,
-        paddingTop: 18,
-        paddingBottom: 20,
-        gap: 10,
-    },
-    offerDetailsHeadingRow: {
-        alignItems: 'center',
-        gap: 8,
-    },
-    offerDetailsTitle: {
-        fontSize: 14,
-        ...Typography.getTextVariantStyle('bodyStrong'),
-        textTransform: 'uppercase',
-        letterSpacing: 0.4,
-    },
-    offerDetailsHeadingText: {
-        flex: 1,
-    },
-    offerDetailsDescription: {
-        fontSize: 15,
-        ...Typography.getTextVariantStyle('body'),
-        lineHeight: 22,
-    },
-    offerTermsSection: {
-        borderTopWidth: StyleSheet.hairlineWidth,
-        marginTop: 8,
-        paddingTop: 16,
-        gap: 12,
-    },
-    inlineTermsList: {
-        gap: 10,
-    },
     offerActionsRow: {
         flexDirection: 'row',
         gap: 12,
@@ -1055,11 +974,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         ...Typography.getTextVariantStyle('body'),
         lineHeight: 24,
-    },
-    termRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 10,
     },
     branchListScroll: {
         flexGrow: 0,
@@ -1149,9 +1063,5 @@ const styles = StyleSheet.create({
     branchDistance: {
         fontSize: 14,
         ...Typography.getTextVariantStyle('bodyStrong'),
-    },
-    termText: {
-        fontSize: 14,
-        ...Typography.getTextVariantStyle('body'),
     },
 });

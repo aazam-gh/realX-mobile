@@ -169,8 +169,8 @@ const styles = StyleSheet.create({
         height: HOME_COMPACT_BANNER_HEIGHT,
         overflow: 'hidden',
 
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
     },
     cardLight: {
         backgroundColor: 'rgba(239, 247, 255, 0.98)',

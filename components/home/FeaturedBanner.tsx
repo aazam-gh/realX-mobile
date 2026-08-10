@@ -85,9 +85,17 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
     const tileImages = currentItem.tileImageUrls.slice(0, 3);
     const title = isRTL && currentItem.titleAr ? currentItem.titleAr : currentItem.title;
     const configuredCtaText = currentItem.ctaText?.trim();
-    const ctaText = configuredCtaText?.toLowerCase() === 'order'
-        ? 'GET 10% OFF'
-        : configuredCtaText;
+    const isOmaraBanner = [
+        currentItem.id,
+        currentItem.title,
+        currentItem.titleAr,
+        currentItem.altText,
+    ].some((value) => value?.toLowerCase().includes('omara'));
+    const ctaText = isOmaraBanner
+        ? 'Use REALX10'
+        : configuredCtaText?.toLowerCase() === 'order'
+            ? 'GET 10% OFF'
+            : configuredCtaText;
 
     return (
         <View style={[styles.section, style]}>
@@ -173,8 +181,8 @@ const styles = StyleSheet.create({
         width: '100%',
         height: HOME_COMPACT_BANNER_HEIGHT,
         overflow: 'hidden',
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
         backgroundColor: '#111111',
     },
     heroImage: {

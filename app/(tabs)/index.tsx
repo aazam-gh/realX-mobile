@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -81,9 +81,9 @@ export default function HomeScreen() {
         <CategoryGrid />
         <WaktiBanner />
         <TrendingOffers onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
-        <NewDeals onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
-        <FeaturedBanner />
         <BrandGrid />
+        <FeaturedBanner />
+        <NewDeals onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
         <OpportunityHighlights />
         </ScrollView>
         <View style={[styles.header, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}>
@@ -112,10 +112,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   contentContainer: {
-    // iOS tab bar is a translucent overlay so content needs clearance; the Android
-    // JS tab bar reserves its own layout space, so a large pad just leaves dead space.
     paddingTop: 64,
-    paddingBottom: Platform.OS === 'ios' ? 88 : 24,
   },
   header: {
     position: 'absolute',

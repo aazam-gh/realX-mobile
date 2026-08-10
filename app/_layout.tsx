@@ -608,7 +608,7 @@ function LayoutContent({
             <Image
               accessibilityLabel="realX"
               source={require('../assets/images/splash.png')}
-              style={startupStyles.splashIcon}
+              style={[StyleSheet.absoluteFill, startupStyles.splashIcon]}
             />
           </View>
         ) : null}
@@ -622,7 +622,7 @@ const startupStyles = StyleSheet.create({
   navigation: { flex: 1 },
   navigationPending: { opacity: 0 },
   splash: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  splashIcon: { width: 280, height: 280, resizeMode: 'contain' },
+  splashIcon: { resizeMode: 'cover' },
   screen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 14 },
   title: { fontSize: 24, fontWeight: '700', textAlign: 'center' },
   body: { fontSize: 15, lineHeight: 22, textAlign: 'center' },

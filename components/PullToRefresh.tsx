@@ -1,23 +1,11 @@
-import { Image } from 'expo-image';
 import { useCallback, useState } from 'react';
-import {
-  RefreshControl,
-  StyleSheet,
-  View,
-  type RefreshControlProps,
-} from 'react-native';
-import { useTranslation } from 'react-i18next';
-import { useAppTheme } from '../context/AppThemeContext';
-
-const loaderSource = require('../assets/images/loaders/realx-transaction-loader.gif');
+import { RefreshControl, type RefreshControlProps } from 'react-native';
 
 type UseRealXRefreshOptions = Omit<RefreshControlProps, 'refreshing' | 'onRefresh'> & {
   onRefresh: () => void | Promise<unknown>;
 };
 
 export function useRealXRefresh({ onRefresh, ...refreshControlProps }: UseRealXRefreshOptions) {
-  const { theme } = useAppTheme();
-  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = useCallback(async () => {
@@ -42,36 +30,5 @@ export function useRealXRefresh({ onRefresh, ...refreshControlProps }: UseRealXR
     />
   );
 
-  const refreshOverlay = refreshing ? (
-    <View
-      pointerEvents="none"
-      accessible
-      accessibilityRole="progressbar"
-      accessibilityLabel={t('loading')}
-      style={[styles.overlay, { backgroundColor: `${theme.background}D9` }]}
-    >
-      <Image
-        source={loaderSource}
-        style={styles.loader}
-        contentFit="contain"
-        autoplay
-        cachePolicy="memory-disk"
-      />
-    </View>
-  ) : null;
-
-  return { refreshing, refreshControl, refreshOverlay };
+  return { refreshing, refreshControl, refreshOverlay: null };
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  loader: {
-    width: 128,
-    height: 128,
-  },
-});

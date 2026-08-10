@@ -2,7 +2,7 @@
   "expo": {
     "name": "realX",
     "slug": "reelx",
-    "version": "1.2.5",
+    "version": "1.2.6",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -88,7 +88,9 @@
         {
           "backgroundColor": "#FFFFFF",
           "image": "./assets/images/splash.png",
-          "imageWidth": 280
+          "imageWidth": 280,
+          "resizeMode": "cover",
+          "enableFullScreenImage_legacy": true
         }
       ],
       [

@@ -1,54 +1,47 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { deleteUser, getAuth, signOut, updateProfile } from '@react-native-firebase/auth';
-import { doc, getFirestore, updateDoc } from '@react-native-firebase/firestore';
+import { deleteUser, getAuth, signOut } from '@react-native-firebase/auth';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { logger } from '../utils/logger';
-import { unregisterExpoPushTokenForCurrentUser } from '../utils/pushNotifications';
-import { useAppTheme } from '../context/AppThemeContext';
+
+import { OnboardingFlowSectionMotion } from '../components/onboarding/OnboardingMotion';
+import { InlineNotice, OnboardingScaffold } from '../components/onboarding/OnboardingUI';
+import UserAvatar from '../components/UserAvatar';
 import { useAuthAccess } from '../context/AuthAccessContext';
 import { useAppLocale } from '../context/LocaleContext';
-import { Typography } from '../constants/Typography';
-import AppText from '../components/AppText';
-import AppHeader from '../components/navigation/AppHeader';
-import UserAvatar from '../components/UserAvatar';
+import { useAppTheme } from '../context/AppThemeContext';
 import { fetchStudentProfile } from '../utils/firebaseQueries';
-import { queryClient, queryKeys } from '../utils/queryClient';
+import { logger } from '../utils/logger';
+import { formatProfileDate, parseProfileDate } from '../utils/profileDetails';
+import { unregisterExpoPushTokenForCurrentUser } from '../utils/pushNotifications';
+import { queryKeys } from '../utils/queryClient';
+
+type ProfileInfoRowProps = {
+    label: string;
+    value: string;
+    isRTL: boolean;
+};
+
+function ProfileInfoRow({ label, value, isRTL }: ProfileInfoRowProps) {
+    const { theme } = useAppTheme();
+
+    return (
+        <View style={[styles.infoRow, { backgroundColor: theme.cardMuted, borderColor: theme.border }, isRTL && styles.infoRowRTL]}>
+            <Text style={[styles.infoLabel, { color: theme.mutedText }, isRTL && styles.textRTL]}>{label}</Text>
+            <Text selectable style={[styles.infoValue, { color: theme.text }, isRTL && styles.textRTL]}>{value}</Text>
+        </View>
+    );
+}
 
 export default function ProfileDetailsScreen() {
     const router = useRouter();
+    const { updated } = useLocalSearchParams<{ updated?: string }>();
     const { theme } = useAppTheme();
     const { t } = useTranslation();
     const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
     const { isRTL } = useAppLocale();
-
-    // Form states
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
-    const [dob, setDob] = useState<Date | null>(null);
-    const [photoURL, setPhotoURL] = useState<string | null>(null);
-    const [role, setRole] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const user = getAuth().currentUser;
     const userId = user?.uid ?? null;
 
@@ -58,414 +51,120 @@ export default function ProfileDetailsScreen() {
         router.replace('/(tabs)/profile' as any);
     }, [authAccessLoading, isAuthenticated, requireAuth, router]);
 
-    const {
-        data: studentProfile,
-        error: studentProfileError,
-        isLoading: isStudentProfileLoading,
-    } = useQuery({
+    const { data: studentProfile, error: studentProfileError, isLoading } = useQuery({
         queryKey: userId ? queryKeys.studentProfile(userId) : ['studentProfile', 'anonymous'],
         queryFn: () => userId ? fetchStudentProfile(userId) : Promise.resolve(null),
         enabled: !!userId,
     });
 
     useEffect(() => {
-        if (authAccessLoading) return;
-
-        if (!user) {
-            if (!isAuthenticated) return;
-            router.replace('/(onboarding)');
-            return;
-        }
-
-        setIsLoading(isStudentProfileLoading);
-    }, [authAccessLoading, isAuthenticated, isStudentProfileLoading, router, user]);
+        if (!authAccessLoading && isAuthenticated && !user) router.replace('/(onboarding)' as any);
+    }, [authAccessLoading, isAuthenticated, router, user]);
 
     useEffect(() => {
-        if (studentProfileError) {
-            logger.error('Error fetching user data:', studentProfileError);
-            Alert.alert(t('error'), t('profile_load_failed'));
-        }
+        if (!studentProfileError) return;
+        logger.error('Error fetching user data:', studentProfileError);
+        Alert.alert(t('error'), t('profile_load_failed'));
     }, [studentProfileError, t]);
 
-    useEffect(() => {
-        if (!user || !studentProfile) return;
-
-        setFirstName(studentProfile.firstName || '');
-        setLastName(studentProfile.lastName || '');
-        setEmail(studentProfile.email || user.email || '');
-        setPhotoURL(studentProfile.photoURL || user.photoURL || null);
-        setRole(studentProfile.role || null);
-        if (studentProfile.dob) {
-            try {
-                if (studentProfile.dob.includes('-')) {
-                    const [year, month, day] = studentProfile.dob.split('-').map(Number);
-                    setDob(new Date(year, month - 1, day));
-                } else if (studentProfile.dob.includes('/')) {
-                    const [day, month, year] = studentProfile.dob.split('/').map(Number);
-                    setDob(new Date(year, month - 1, day));
-                }
-            } catch (error) {
-                logger.error('Date parsing error:', error);
-            }
-        }
-    }, [studentProfile, user]);
-
-    const handleBack = () => {
-        router.back();
-    };
-
-    const formatDate = (date: Date | null) => {
-        if (!date) return 'DD/MM/YYYY';
-        return date.toLocaleDateString('en-GB');
-    };
-
-    const handleToggleEdit = () => {
-        if (isEditing) {
-            handleSave();
-        } else {
-            setIsEditing(true);
-        }
-    };
-
-    const handleSave = async () => {
-        const authInstance = getAuth();
-        const user = authInstance.currentUser;
-        if (!user) return;
-
-        setIsSaving(true);
-        try {
-            const db = getFirestore();
-            const studentDocRef = doc(db, 'students', user.uid);
-
-            const updatedData = {
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
-                dob: dob ? dob.toISOString().split('T')[0] : '',
-                updatedAt: new Date(),
-            };
-
-            await updateDoc(studentDocRef, updatedData);
-            queryClient.setQueryData(queryKeys.studentProfile(user.uid), (previous: any) => ({
-                ...(previous || {}),
-                ...updatedData,
-            }));
-
-            await updateProfile(user, {
-                displayName: `${firstName.trim()} ${lastName.trim()}`
-            });
-
-            setIsEditing(false);
-            Alert.alert(t('success'), t('profile_update_success'));
-        } catch (error) {
-            logger.error('Error updating profile:', error);
-            Alert.alert(t('error'), t('profile_update_failure'));
-        } finally {
-            setIsSaving(false);
-        }
-    };
+    const firstName = studentProfile?.firstName || '';
+    const lastName = studentProfile?.lastName || '';
+    const email = studentProfile?.email || user?.email || '';
+    const photoURL = studentProfile?.photoURL || user?.photoURL || null;
+    const role = studentProfile?.role || null;
+    const displayName = [firstName, lastName].filter(Boolean).join(' ') || t('user');
+    const dateOfBirth = formatProfileDate(parseProfileDate(studentProfile?.dob));
 
     const handleDeleteAccount = () => {
-        Alert.alert(
-            t('delete_account'),
-            t('delete_account_confirmation'),
-            [
-                { text: t('cancel'), style: 'cancel' },
-                {
-                    text: t('delete_account_permanently'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        const authInstance = getAuth();
-                        const user = authInstance.currentUser;
-                        if (!user) return;
-
-                        setIsLoading(true);
-                        try {
-                            await unregisterExpoPushTokenForCurrentUser();
-                            // The "Delete User Data" extension is triggered by the Auth user deletion
-                            await deleteUser(user);
-                            
-                            // Explicitly sign out to clear any local session data
-                            // This may throw if the user is already deleted, which is expected
-                            try {
-                                await signOut(authInstance);
-                            } catch {
-                                // User already deleted, sign out is a no-op
-                            }
-                            
-                            Alert.alert(t('delete_account_success_title'), t('delete_account_success_message'));
-                            router.replace('/(onboarding)');
-                        } catch (error: any) {
-                            logger.error('Error deleting account:', error);
-                            if (error.code === 'auth/requires-recent-login') {
-                                Alert.alert(t('security_reauth_required'), t('security_reauth_message'), [
-                                    { text: t('ok') },
-                                ]);
-                            } else {
-                                Alert.alert(t('error'), t('delete_account_failure'));
-                            }
-                        } finally {
-                            setIsLoading(false);
+        Alert.alert(t('delete_account'), t('delete_account_confirmation'), [
+            { text: t('cancel'), style: 'cancel' },
+            {
+                text: t('delete_account_permanently'),
+                style: 'destructive',
+                onPress: async () => {
+                    const authInstance = getAuth();
+                    const currentUser = authInstance.currentUser;
+                    if (!currentUser) return;
+                    setIsDeleting(true);
+                    try {
+                        await unregisterExpoPushTokenForCurrentUser();
+                        await deleteUser(currentUser);
+                        try { await signOut(authInstance); } catch { /* Auth user is already deleted. */ }
+                        Alert.alert(t('delete_account_success_title'), t('delete_account_success_message'));
+                        router.replace('/(onboarding)');
+                    } catch (error: any) {
+                        logger.error('Error deleting account:', error);
+                        if (error.code === 'auth/requires-recent-login') {
+                            Alert.alert(t('security_reauth_required'), t('security_reauth_message'), [{ text: t('ok') }]);
+                        } else {
+                            Alert.alert(t('error'), t('delete_account_failure'));
                         }
+                    } finally {
+                        setIsDeleting(false);
                     }
-                }
-            ]
-        );
-    };
-
-    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        setShowDatePicker(Platform.OS === 'ios');
-        if (selectedDate) {
-            setDob(selectedDate);
-        }
+                },
+            },
+        ]);
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-        <AppHeader
-            title={t('profile_details_title')}
-            onBackPress={handleBack}
-            trailing={(
-                <TouchableOpacity
-                    onPress={handleToggleEdit}
-                    activeOpacity={0.72}
-                    style={[styles.editButton, { backgroundColor: theme.cardMuted, borderColor: theme.border }]}
-                >
-                    <AppText variant="bodyStrong" style={[styles.editButtonText, { color: isEditing ? theme.brand : theme.text }]}>
-                        {isEditing ? t('save') : t('edit')}
-                    </AppText>
-                </TouchableOpacity>
-            )}
-        />
+        <OnboardingScaffold
+            headerTitle={t('profile_details_title')}
+            onBack={() => router.back()}
+            headerAction={{ label: t('edit'), onPress: () => router.push('/edit-profile-details' as any), disabled: isLoading || isDeleting }}
+        >
+            <OnboardingFlowSectionMotion delay={65} style={[styles.identityCard, isRTL && styles.identityCardRTL]}>
+                <View style={[styles.avatarRing, { backgroundColor: theme.brandSoft, borderColor: theme.border }]}>
+                    <UserAvatar firstName={firstName} lastName={lastName} email={email} photoURL={photoURL} role={role} seed={userId || undefined} size={112} style={styles.avatarMain} />
+                </View>
+                <View style={[styles.identityCopy, isRTL && styles.identityCopyRTL]}>
+                    <Text selectable style={[styles.identityName, { color: theme.text }, isRTL && styles.textRTL]}>{displayName}</Text>
+                    <Text selectable style={[styles.identityEmail, { color: theme.mutedText }, isRTL && styles.textRTL]}>{email || t('email_address_placeholder')}</Text>
+                </View>
+            </OnboardingFlowSectionMotion>
 
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
-            >
-                <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.scrollContent}
-                >
-                    {/* Profile Image Section */}
-                    <View style={styles.avatarContainer}>
-                        <UserAvatar
-                            firstName={firstName}
-                            lastName={lastName}
-                            email={email}
-                            photoURL={photoURL}
-                            role={role}
-                            seed={getAuth().currentUser?.uid}
-                            size={120}
-                            style={styles.avatarMain}
-                        />
+            {updated === '1' ? <InlineNotice tone="success">{t('profile_update_success')}</InlineNotice> : null}
+
+            {isLoading ? <ActivityIndicator size="large" color={theme.brand} style={styles.loader} /> : (
+                <OnboardingFlowSectionMotion delay={110} style={styles.content}>
+                    <Text style={[styles.sectionTitle, { color: theme.text }, isRTL && styles.textRTL]}>{t('personal_information')}</Text>
+                    <View style={styles.infoList}>
+                        <ProfileInfoRow label={t('first_name')} value={firstName || t('first_name_placeholder')} isRTL={isRTL} />
+                        <ProfileInfoRow label={t('last_name')} value={lastName || t('last_name_placeholder')} isRTL={isRTL} />
+                        <ProfileInfoRow label={t('date_of_birth')} value={dateOfBirth} isRTL={isRTL} />
                     </View>
-
-                    {/* Form Fields */}
-                    <View style={styles.form}>
-                        {isLoading || isSaving ? (
-                            <ActivityIndicator size="large" color={theme.brand} style={{ marginTop: 20 }} />
-                        ) : (
-                            <>
-                                {/* First Name Field */}
-                                <View style={styles.inputGroup}>
-                                    <View style={styles.labelRow}>
-                                        <AppText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
-                                            {t('first_name')}
-                                        </AppText>
-                                    </View>
-                                    <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}>
-                                        <TextInput
-                                            style={[
-                                                styles.input,
-                                                { color: isEditing ? theme.text : theme.subtleText, textAlign: isRTL ? 'right' : 'left' },
-                                            ]}
-                                            value={firstName}
-                                            onChangeText={setFirstName}
-                                            editable={isEditing}
-                                            placeholder={t('first_name_placeholder')}
-                                            placeholderTextColor={theme.inputPlaceholder}
-                                        />
-                                    </View>
-                                </View>
-
-                                {/* Last Name Field */}
-                                <View style={styles.inputGroup}>
-                                    <View style={styles.labelRow}>
-                                        <AppText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
-                                            {t('last_name')}
-                                        </AppText>
-                                    </View>
-                                    <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}>
-                                        <TextInput
-                                            style={[
-                                                styles.input,
-                                                { color: isEditing ? theme.text : theme.subtleText, textAlign: isRTL ? 'right' : 'left' },
-                                            ]}
-                                            value={lastName}
-                                            onChangeText={setLastName}
-                                            editable={isEditing}
-                                            placeholder={t('last_name_placeholder')}
-                                            placeholderTextColor={theme.inputPlaceholder}
-                                        />
-                                    </View>
-                                </View>
-
-                                {/* Email Field */}
-                                <View style={styles.inputGroup}>
-                                    <View style={styles.labelRow}>
-                                        <AppText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
-                                            {t('email_address')}
-                                        </AppText>
-                                    </View>
-                                    <View style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, styles.disabledInput]}>
-                                        <TextInput
-                                            style={[
-                                                styles.input,
-                                                { color: theme.subtleText, textAlign: isRTL ? 'right' : 'left' },
-                                            ]}
-                                            value={email}
-                                            editable={false}
-                                            placeholder={t('email_address_placeholder')}
-                                            placeholderTextColor={theme.inputPlaceholder}
-                                        />
-                                    </View>
-                                </View>
-
-                                {/* Date of Birth Field */}
-                                <View style={styles.inputGroup}>
-                                    <View style={styles.labelRow}>
-                                        <AppText style={[styles.label, { color: theme.subtleText }, isRTL && styles.textRTL]}>
-                                            {t('date_of_birth')}
-                                        </AppText>
-                                    </View>
-                                    <TouchableOpacity
-                                        style={[styles.inputWrapper, { backgroundColor: theme.cardMuted }, !isEditing && styles.disabledInput]}
-                                        onPress={() => isEditing && setShowDatePicker(true)}
-                                        disabled={!isEditing}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.input,
-                                                { color: !dob || !isEditing ? theme.subtleText : theme.text, textAlign: isRTL ? 'right' : 'left' },
-                                            ]}
-                                        >
-                                            {formatDate(dob)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-
-                                {showDatePicker && (
-                                    <DateTimePicker
-                                        value={dob || new Date(2000, 0, 1)}
-                                        mode="date"
-                                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                                        onChange={onDateChange}
-                                        maximumDate={new Date()}
-                                        textColor={theme.text}
-                                    />
-                                )}
-                            </>
-                        )}
-                    </View>
-
-                    {/* Action Buttons */}
-                    <View style={styles.actions}>
-                        <TouchableOpacity 
-                            style={[styles.deleteAccountPill, { backgroundColor: '#FFF1F0', borderColor: '#FFD5D2' }]}
-                            onPress={handleDeleteAccount}
-                            activeOpacity={0.7}
-                        >
-                            <View style={styles.deleteContent}>
-                                <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                                <AppText style={styles.deleteAccountText}>{t('delete_account')}</AppText>
-                            </View>
+                    <Text style={[styles.sectionTitle, { color: theme.text }, isRTL && styles.textRTL]}>{t('account_information')}</Text>
+                    <ProfileInfoRow label={t('email_address')} value={email || t('email_address_placeholder')} isRTL={isRTL} />
+                    <View style={[styles.dangerZone, { borderTopColor: theme.border }]}>
+                        <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: isDeleting }} disabled={isDeleting} onPress={handleDeleteAccount} activeOpacity={0.75} style={[styles.deleteButton, { borderColor: theme.danger, opacity: isDeleting ? 0.45 : 1 }]}>
+                            <Text style={[styles.deleteButtonText, { color: theme.danger }]}>{t('delete_account')}</Text>
                         </TouchableOpacity>
                     </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+                </OnboardingFlowSectionMotion>
+            )}
+        </OnboardingScaffold>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    editButton: {
-        minHeight: 40,
-        borderRadius: 20,
-        borderWidth: StyleSheet.hairlineWidth,
-        paddingVertical: 9,
-        paddingHorizontal: 16,
-        justifyContent: 'center',
-    },
-    editButtonText: {
-        fontSize: 14,
-    },
-    scrollContent: {
-        paddingHorizontal: 24,
-        paddingTop: 20,
-        paddingBottom: 40,
-    },
-    avatarContainer: {
-        alignItems: 'center',
-        marginBottom: 32,
-    },
-    avatarMain: {
-        borderWidth: 4,
-    },
-    form: {
-        gap: 24,
-    },
-    inputGroup: {
-        gap: 8,
-    },
-    labelRow: {
-        width: '100%',
-        alignItems: 'flex-start',
-    },
-    label: {
-        fontSize: 12,
-        paddingStart: 4,
-    },
-    textRTL: {
-        textAlign: 'right',
-        writingDirection: 'rtl',
-    },
-    inputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 24,
-        paddingHorizontal: 20,
-        height: 60,
-    },
-    input: {
-        flex: 1,
-        fontSize: 16,
-        ...Typography.getTextVariantStyle('bodyStrong'),
-    },
-    disabledInput: {
-        opacity: 0.8,
-    },
-    disabledText: {
-    },
-    actions: {
-        marginTop: 24,
-    },
-    deleteAccountPill: {
-        backgroundColor: '#FFF1F0',
-        borderRadius: 30,
-        paddingVertical: 20,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#FFD5D2',
-    },
-    deleteContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    deleteAccountText: {
-        fontSize: 14,
-        color: '#FF3B30',
-    },
+    identityCard: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: -18 },
+    identityCardRTL: { flexDirection: 'row-reverse' },
+    avatarRing: { width: 104, height: 104, borderRadius: 52, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+    avatarMain: { borderWidth: 3, borderColor: '#FFFFFF' },
+    identityCopy: { flex: 1, alignItems: 'flex-start', gap: 4 },
+    identityCopyRTL: { alignItems: 'flex-end' },
+    identityName: { fontSize: 18, lineHeight: 25, fontFamily: 'Poppins' },
+    identityEmail: { fontSize: 13, lineHeight: 19, fontFamily: 'Poppins' },
+    loader: { marginVertical: 40 },
+    content: { gap: 12 },
+    sectionTitle: { fontSize: 15, lineHeight: 22, fontFamily: 'Poppins' },
+    infoList: { gap: 8 },
+    infoRow: { minHeight: 66, borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 11, gap: 3 },
+    infoRowRTL: { alignItems: 'flex-end' },
+    infoLabel: { fontSize: 12, lineHeight: 18, fontFamily: 'Poppins' },
+    infoValue: { fontSize: 16, lineHeight: 23, fontFamily: 'Poppins' },
+    dangerZone: { marginTop: 16, paddingTop: 24, borderTopWidth: StyleSheet.hairlineWidth },
+    deleteButton: { minHeight: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+    deleteButtonText: { fontSize: 13, lineHeight: 19, fontFamily: 'Poppins' },
+    textRTL: { textAlign: 'right', writingDirection: 'rtl' },
 });

@@ -32,14 +32,16 @@ export const ONBOARDING_SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 3
 type ScaffoldProps = {
   children: ReactNode;
   title?: string;
+  headerTitle?: string;
   subtitle?: string;
   onBack?: () => void;
   onClose?: () => void;
+  headerAction?: { label: string; onPress: () => void; disabled?: boolean };
   progress?: { current: number; total: number };
   footer?: ReactNode;
 };
 
-export function OnboardingScaffold({ children, title, subtitle, onBack, onClose, progress, footer }: ScaffoldProps) {
+export function OnboardingScaffold({ children, title, headerTitle, subtitle, onBack, onClose, headerAction, progress, footer }: ScaffoldProps) {
   const { theme } = useAppTheme();
   const { locale, isRTL } = useAppLocale();
   const { t } = useTranslation();
@@ -53,7 +55,18 @@ export function OnboardingScaffold({ children, title, subtitle, onBack, onClose,
               <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={22} color={theme.text} />
             </TouchableOpacity>
           ) : <View style={styles.iconButton} accessible={false} />}
-          {onClose ? (
+          {headerTitle ? <Text accessibilityRole="header" numberOfLines={1} style={[styles.headerTitle, Typography.getLocalizedTextVariantStyle('display', locale), { color: theme.text }, isRTL && styles.textRTL]}>{headerTitle}</Text> : null}
+          {headerAction ? (
+            <TouchableOpacity
+              style={[styles.headerAction, { borderColor: theme.brand, opacity: headerAction.disabled ? 0.45 : 1 }]}
+              onPress={headerAction.onPress}
+              disabled={headerAction.disabled}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: Boolean(headerAction.disabled) }}
+            >
+              <Text style={[styles.headerActionText, { color: theme.brandText }, isRTL && styles.textRTL]}>{headerAction.label}</Text>
+            </TouchableOpacity>
+          ) : onClose ? (
             <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.cardMuted }]} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('close')}>
               <Ionicons name="close" size={22} color={theme.text} />
             </TouchableOpacity>
@@ -163,8 +176,11 @@ export function InlineNotice({ tone = 'info', children, actionLabel, onAction }:
 
 const styles = StyleSheet.create({
   screen: { flex: 1 }, safeArea: { flex: 1 }, scroll: { flex: 1 },
-  header: { minHeight: 60, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: { minHeight: 60, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  headerTitle: { flex: 1, fontSize: 22, lineHeight: 30 },
   rowReverse: { flexDirection: 'row-reverse' }, iconButton: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  headerAction: { minWidth: 64, minHeight: 40, borderWidth: 1.5, borderRadius: 20, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
+  headerActionText: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 15 },
   progressWrap: { paddingHorizontal: 24, paddingBottom: 8 }, progressTrack: { height: 5, borderRadius: 3, overflow: 'hidden' }, progressFill: { height: '100%', borderRadius: 3 },
   content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
   title: { fontSize: 30, lineHeight: 38 },

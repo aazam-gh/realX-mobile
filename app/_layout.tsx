@@ -590,6 +590,7 @@ function LayoutContent({
               <Stack.Screen name="redemption-history" options={{ headerShown: false }} />
               <Stack.Screen name="saved-offers" options={{ headerShown: false }} />
               <Stack.Screen name="profile-details" options={{ headerShown: false }} />
+              <Stack.Screen name="edit-profile-details" options={{ headerShown: false, gestureEnabled: false }} />
               <Stack.Screen name="terms" options={{ headerShown: false }} />
               <Stack.Screen name="privacy" options={{ headerShown: false }} />
               <Stack.Screen name="x-academy" options={{ headerShown: false }} />

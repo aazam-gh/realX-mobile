@@ -14,7 +14,6 @@ import { useTranslation } from 'react-i18next';
 import { useAppLocale } from '../../context/LocaleContext';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
-import AppText from '../AppText';
 import { OnboardingFlowSectionMotion } from '../onboarding/OnboardingMotion';
 
 type Props = {
@@ -77,10 +76,7 @@ export default function GiftCardFlowScaffold({
                         isRTL && styles.logoContainerRTL,
                     ]}
                     pointerEvents="none"
-                >
-                    <AppText style={[styles.logoX, { color: theme.brand }]}>{t('xcard_title_x')}</AppText>
-                    <AppText style={[styles.logoCard, { color: theme.text }]}>{t('xcard_title_card')}</AppText>
-                </View>
+                />
                 <TouchableOpacity
                     style={[styles.iconButton, { backgroundColor: theme.cardMuted }]}
                     onPress={onClose}
@@ -161,12 +157,6 @@ const styles = StyleSheet.create({
     },
     logoContainerRTL: {
         flexDirection: 'row-reverse',
-    },
-    logoX: {
-        fontSize: 24,
-    },
-    logoCard: {
-        fontSize: 24,
     },
     progressSection: {
         paddingHorizontal: 24,

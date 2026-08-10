@@ -162,7 +162,7 @@ export default function SpendCardDrawer({
             }
         } catch (error) {
             if (requestId !== requestIdRef.current) return;
-            logger.error('Error fetching vendors for XCard:', error);
+            logger.error('Error fetching vendors:', error);
             setErrorMessage(t('failed_to_load_brands'));
         } finally {
             if (requestId !== requestIdRef.current) return;

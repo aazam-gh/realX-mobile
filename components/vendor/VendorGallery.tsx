@@ -12,6 +12,7 @@ import {
 
 import { Typography } from "../../constants/Typography";
 import { useAppTheme } from "../../context/AppThemeContext";
+import { RemoteImage } from "../RemoteImage";
 
 type VendorGalleryProps = {
   images?: unknown;
@@ -74,7 +75,7 @@ export function VendorGallery({ images, isArabic }: VendorGalleryProps) {
               pressed && styles.thumbnailPressed,
             ]}
           >
-            <Image
+            <RemoteImage
               source={{ uri: imageUrl }}
               style={styles.thumbnail}
               contentFit="cover"
@@ -118,7 +119,7 @@ export function VendorGallery({ images, isArabic }: VendorGalleryProps) {
               >
                 {galleryImages.map((imageUrl, index) => (
                   <View key={imageUrl} style={styles.page}>
-                    <Image
+                    <RemoteImage
                       source={{ uri: imageUrl }}
                       style={styles.fullImage}
                       contentFit="contain"

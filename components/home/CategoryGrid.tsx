@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { FlashList } from '@shopify/flash-list';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -12,6 +11,8 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 import { homeQueryOptions, type HomeCategoryItem } from '../../utils/homeQueries';
 import { logger } from '../../utils/logger';
 import { HOME_HORIZONTAL_GUTTER } from './layout';
+import { RemoteImage } from '../RemoteImage';
+import { StateSurface } from '../StateSurface';
 
 type CategoryItem = HomeCategoryItem;
 
@@ -38,6 +39,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
         data: fetchedCategories = [],
         error,
         isLoading,
+        refetch,
     } = useQuery({
         ...homeQueryOptions.categories(isArabic ? 'ar' : 'en'),
         enabled: !propCategories,
@@ -111,7 +113,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
             >
                 <View style={styles.imageContainer}>
                     {item.image ? (
-                        <Image
+                        <RemoteImage
                             source={typeof item.image === 'string' ? { uri: item.image } : item.image}
                             style={[styles.categoryImage, { width: categoryImageSize, height: categoryImageSize }]}
                             contentFit="contain"
@@ -127,10 +129,19 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
 
     if (!propCategories && isLoading) {
         return (
-            <View style={[styles.container, styles.loaderContainer]}>
-                <ActivityIndicator size="small" color={theme.brand} />
+            <View style={[styles.container, styles.skeletonGrid]}>
+                {Array.from({ length: 8 }, (_, index) => (
+                    <View key={`category-skeleton-${index}`} style={styles.categoryItem}>
+                        <View style={[styles.categorySkeleton, { width: categoryImageSize, height: categoryImageSize, backgroundColor: theme.cardMuted }]} />
+                        <View style={[styles.categoryNameSkeleton, { backgroundColor: theme.cardMuted }]} />
+                    </View>
+                ))}
             </View>
         );
+    }
+
+    if (!propCategories && error) {
+        return <StateSurface kind="error" compact onRetry={() => void refetch()} />;
     }
 
     if (displayCategories.length === 0) {
@@ -179,7 +190,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                                         }}
                                     >
                                         {category.image ? (
-                                            <Image
+                                            <RemoteImage
                                                 source={typeof category.image === 'string' ? { uri: category.image } : category.image}
                                                 style={styles.drawerListImage}
                                                 contentFit="contain"
@@ -226,6 +237,23 @@ const styles = StyleSheet.create({
         height: 150,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    skeletonGrid: {
+        minHeight: 240,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        rowGap: 12,
+    },
+    categorySkeleton: {
+        borderRadius: 18,
+        opacity: 0.8,
+    },
+    categoryNameSkeleton: {
+        width: 48,
+        height: 12,
+        borderRadius: 6,
+        marginTop: 8,
     },
     overlay: {
         flex: 1,

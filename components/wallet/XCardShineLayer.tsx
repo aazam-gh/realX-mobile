@@ -1,4 +1,4 @@
-import { StyleSheet, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, type ViewStyle } from 'react-native';
 import { useCallback, useEffect } from 'react';
 import Animated, {
   Easing,
@@ -109,7 +109,9 @@ export function useXCardShine({
   }, [progressA, progressB, progressC, progressD, progressE, progressF, progressG, progressH, trackIndex]);
 
   useEffect(() => {
-    if (!tiltEnabled) {
+    // Keep the tactile shine, but avoid eight continuously overlapping UI-thread
+    // animations on Android. Gestures can still call triggerShine directly.
+    if (!tiltEnabled || Platform.OS === 'android') {
       return;
     }
 

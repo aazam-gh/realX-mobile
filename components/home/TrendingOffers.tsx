@@ -1,21 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import RestaurantCard from '../category/RestaurantCard';
 import { StateSurface } from '../StateSurface';
 import { useTranslation } from 'react-i18next';
-import { Typography } from '../../constants/Typography';
 import { logger } from '../../utils/logger';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { homeQueryOptions } from '../../utils/homeQueries';
-import AppText from '../AppText';
+import HomeSectionHeading from './HomeSectionHeading';
 import {
     HOME_CAROUSEL_GAP,
     HOME_HORIZONTAL_GUTTER,
-    HOME_SECTION_HEADER_GAP,
     HOME_SECTION_TOP_SPACING,
 } from './layout';
 
@@ -129,22 +127,7 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
 
     return (
         <View style={styles.container}>
-            <View style={styles.headerContainer}>
-                <View style={styles.headerTitle}>
-                    <AppText
-                        style={[
-                            styles.sectionText,
-                            Typography.getTextDirectionStyle({ isRTL }),
-                            { color: theme.text },
-                        ]}
-                    >
-                        {labelPrefix}
-                        <Text style={[styles.offersText, { color: theme.brand }]}>
-                            {labelHighlight}
-                        </Text>
-                    </AppText>
-                </View>
-            </View>
+            <HomeSectionHeading prefix={labelPrefix} highlight={labelHighlight} />
             <ScrollView
                 ref={scrollViewRef}
                 horizontal
@@ -195,24 +178,6 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
 const styles = StyleSheet.create({
     container: {
         paddingTop: HOME_SECTION_TOP_SPACING,
-    },
-    headerContainer: {
-        paddingHorizontal: HOME_HORIZONTAL_GUTTER,
-        marginBottom: HOME_SECTION_HEADER_GAP,
-    },
-    headerTitle: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    sectionText: {
-        fontSize: 20,
-        letterSpacing: 1,
-    },
-    offersText: {
-        fontSize: 20,
-        fontWeight: '900',
-        fontStyle: 'normal',
-        letterSpacing: 1,
     },
     loaderContainer: {
         height: 120,

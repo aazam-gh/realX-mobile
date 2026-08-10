@@ -34,8 +34,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: HOME_HORIZONTAL_GUTTER,
-        paddingTop: 0,
-        paddingBottom: 4,
-        gap: 10,
+        gap: 12,
     },
 });

@@ -22,6 +22,7 @@ import { Typography } from '../../constants/Typography';
 import { CategoryVendorCursor, fetchCategory, fetchCategoryVendorsPage } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
+import { StateSurface } from '../../components/StateSurface';
 
 const BACKGROUND_ICONS = [
     { name: 'laptop-outline' as const, top: '2%', left: '75%', size: 28, color: '#8E8E93', rotation: '15deg' },
@@ -211,6 +212,7 @@ export default function CategoryScreen() {
 
     const [vendors, setVendors] = useState<any[]>([]);
     const [loadingVendors, setLoadingVendors] = useState(false);
+    const [vendorsError, setVendorsError] = useState<unknown>(null);
     const lastDocRef = useRef<any>(null);
     const [isListEnd, setIsListEnd] = useState(false);
     const flashListRef = useRef<any>(null);
@@ -262,6 +264,7 @@ export default function CategoryScreen() {
         if (loadingVendors || (isListEnd && !isNew) || !isCategoryActive) return;
 
         setLoadingVendors(true);
+        setVendorsError(null);
         try {
             if (!englishCategoryName) {
                 setIsListEnd(true);
@@ -309,6 +312,7 @@ export default function CategoryScreen() {
             }
         } catch (error) {
             logger.error("Error fetching vendors:", error);
+            setVendorsError(error);
         } finally {
             setLoadingVendors(false);
         }
@@ -405,10 +409,16 @@ export default function CategoryScreen() {
     const headerIcon = categoryData?.imageUrl || config.icon;
 
     const renderFooter = () => (
-        <View style={{ height: 40, alignItems: 'center', justifyContent: 'center' }}>
-            {loadingVendors && <ActivityIndicator size="small" color={theme.brand} />}
+        <View style={{ minHeight: vendorsError && vendors.length > 0 ? 96 : 40, alignItems: 'center', justifyContent: 'center' }}>
+            {loadingVendors && vendors.length > 0 ? <ActivityIndicator size="small" color={theme.brand} /> : null}
+            {!loadingVendors && vendorsError && vendors.length > 0 ? (
+                <StateSurface kind="error" compact onRetry={() => void fetchVendors(false)} />
+            ) : null}
         </View>
     );
+    const listData = loadingVendors && vendors.length === 0
+        ? Array.from({ length: 6 }, (_, index) => ({ id: `category-skeleton-${index}`, loading: true }))
+        : vendors;
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
@@ -435,7 +445,7 @@ export default function CategoryScreen() {
             {!loading && isCategoryActive ? (
                 <FlashList
                     ref={flashListRef}
-                    data={vendors}
+                    data={listData}
                     keyExtractor={(item) => item.id}
                     numColumns={2}
                     contentContainerStyle={styles.contentContainer}
@@ -468,6 +478,9 @@ export default function CategoryScreen() {
                         />
                     }
                     ListFooterComponent={renderFooter}
+                    ListEmptyComponent={vendorsError ? (
+                        <StateSurface kind="error" onRetry={() => void fetchVendors(true)} />
+                    ) : !loadingVendors ? <StateSurface kind="filtered-empty" compact /> : null}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
                     renderItem={({ item, index }) => (
@@ -479,6 +492,7 @@ export default function CategoryScreen() {
                         ]}>
                             <RestaurantCard
                                 id={item.id}
+                                loading={item.loading === true}
                                 name={isArabic ? (item.nameAr || item.nameEn || item.name || 'Vendor') : (item.nameEn || item.name || 'Vendor')}
                                 cashbackText={isArabic ? (item.shortDescriptionAR || item.shortDescriptionAr || item.descriptionAr || item.brandDescription || '') : (item.shortDescription || item.brandDescription || item.descriptionEn || '')}
                                 isTrending={item.isTrending}

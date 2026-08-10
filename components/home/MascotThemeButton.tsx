@@ -15,8 +15,9 @@ import { Colors } from '../../constants/Colors';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 
-const AVATAR_SIZE = 60;
-const RADAR_SIZE = 60;
+const TOUCH_TARGET_SIZE = 56;
+const AVATAR_SIZE = 50;
+const RADAR_SIZE = 50;
 
 export default function MascotThemeButton() {
   const { isDark, theme, toggleTheme } = useAppTheme();
@@ -113,8 +114,8 @@ function useRadarRing(progress: SharedValue<number>, delay: number) {
 
 const styles = StyleSheet.create({
   touchTarget: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
+    width: TOUCH_TARGET_SIZE,
+    height: TOUCH_TARGET_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },

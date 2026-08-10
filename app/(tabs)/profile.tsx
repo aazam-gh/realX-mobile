@@ -1,11 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ImageBackground, LayoutChangeEvent, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { logger } from '../../utils/logger';
 import { clearLocalAuthSession } from '../../utils/auth';
@@ -21,6 +21,7 @@ import { useTabBarScrollVisibility } from '../../components/navigation/TabBarScr
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const isFocused = useIsFocused();
   const { t } = useTranslation();
   const { isDark, theme } = useAppTheme();
   const { isRTL, locale, isChanging, changeLocale } = useAppLocale();
@@ -64,7 +65,8 @@ export default function ProfileScreen() {
 
   if (isGuest) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        {isFocused ? <StatusBar style={isDark ? 'light' : 'dark'} animated hidden /> : null}
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
@@ -173,12 +175,13 @@ export default function ProfileScreen() {
             />
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {isFocused ? <StatusBar style={isDark ? 'light' : 'dark'} animated hidden /> : null}
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
@@ -187,11 +190,15 @@ export default function ProfileScreen() {
       >
         <View style={[styles.savingsCard, { backgroundColor: theme.surfaceElevated }]}>
           <View style={[styles.profileSavingsRow, isRTL && styles.profileSavingsRowRTL]}>
-            <View style={[styles.savingsDetails, { borderColor: theme.border }, isRTL && styles.savingsDetailsRTL]}>
-              {isRTL ? (
-                <AppText style={[styles.savingsInlineRTL, { color: theme.text }] }>
+              <View style={[styles.savingsDetails, { borderColor: theme.border }, isRTL && styles.savingsDetailsRTL]}>
+                {isRTL ? (
+                <AppText
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  style={[styles.savingsInlineRTL, { color: theme.text }]}
+                >
                   {t('savings_so_far')}{' '}
-                  <AppText style={[styles.savingsAmountGreen, styles.savingsAmountGreenRTL, { color: theme.brandText }] }>
+                  <AppText style={[styles.savingsAmountGreen, styles.savingsAmountGreenRTL, { color: theme.brandText }]}>
                     {t('amount_with_currency', { amount: toArabicDigits((userData?.savings ?? 0).toFixed(2)), currency: t('currency_qar') })}
                   </AppText>
                 </AppText>
@@ -310,7 +317,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -440,7 +447,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 0,
+    paddingTop: 14,
     paddingBottom: 100,
   },
   topPill: {
@@ -469,11 +476,15 @@ const styles = StyleSheet.create({
   },
   savingsDetails: {
     flex: 1,
+    minWidth: 0,
+    minHeight: 0,
     borderWidth: 2,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
     height: 60,
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   savingsDetailsRTL: {
     direction: 'rtl',
@@ -551,7 +562,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   savingsInlineRTL: {
-    width: '100%',
+    flexShrink: 1,
+    maxWidth: '100%',
     textAlign: 'center',
     writingDirection: 'rtl',
     fontSize: 20,
@@ -568,12 +580,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   savingsAmountGreen: {
+    flexShrink: 1,
     fontSize: 24,
-    width: '100%',
   },
   savingsAmountGreenRTL: {
     fontSize: 26,
-    width: 'auto',
   },
   universityBanner: {
     marginBottom: 24,

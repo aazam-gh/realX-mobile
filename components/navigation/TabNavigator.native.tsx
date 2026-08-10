@@ -1,12 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BlurView } from 'expo-blur';
 import { createBottomTabNavigator } from 'expo-router/js-tabs';
 import { withLayoutContext } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
+import { triggerSubtleHaptic } from '../../utils/haptics';
 import { TabBarVisibilityProvider, useTabBarVisibilityContext } from './TabBarScrollVisibility';
 
 const JSTabs = withLayoutContext(
@@ -28,6 +29,7 @@ function TabNavigatorContent() {
   const { isDark, theme } = useAppTheme();
   const { isRTL } = useAppLocale();
   const { isTabBarVisible } = useTabBarVisibilityContext();
+  const insets = useSafeAreaInsets();
   const isIos = Platform.OS === 'ios';
   const screens = [
     { name: 'index', title: t('home'), iosIcon: 'house', icon: 'home', outlineIcon: 'home-outline' },
@@ -58,36 +60,32 @@ function TabNavigatorContent() {
 
   return (
     <JSTabs
+      screenListeners={{
+        tabPress: () => {
+          requestAnimationFrame(triggerSubtleHaptic);
+        },
+      }}
       screenOptions={{
         tabBarActiveTintColor: theme.brand,
         tabBarInactiveTintColor: theme.iconMuted,
         tabBarStyle: {
           display: isTabBarVisible ? 'flex' : 'none',
-          backgroundColor: 'transparent',
+          // Match the page background so the unused space above the bar does
+          // not appear as a separate white strip on Android.
+          backgroundColor: theme.background,
+          height: 64 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: Math.max(insets.bottom, 8),
+          paddingHorizontal: 8,
+          elevation: 12,
           borderTopColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(15, 37, 23, 0.10)',
           borderTopWidth: StyleSheet.hairlineWidth,
-          boxShadow: isDark
-            ? '0 -8px 20px rgba(0, 0, 0, 0.18)'
-            : '0 -8px 20px rgba(15, 37, 23, 0.08)',
         },
-        tabBarBackground: () => (
-          <>
-            <BlurView
-              blurMethod="dimezisBlurViewSdk31Plus"
-              blurReductionFactor={3}
-              intensity={72}
-              tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-              style={StyleSheet.absoluteFill}
-            />
-            <View
-              pointerEvents="none"
-              style={[
-                StyleSheet.absoluteFill,
-                { backgroundColor: isDark ? 'rgba(14, 19, 16, 0.20)' : 'rgba(255, 255, 255, 0.26)' },
-              ]}
-            />
-          </>
-        ),
+        tabBarHideOnKeyboard: false,
+        tabBarLabelStyle: styles.tabBarLabel,
+        tabBarItemStyle: styles.tabBarItem,
+        tabBarActiveBackgroundColor: isDark ? 'rgba(24, 184, 82, 0.18)' : 'rgba(24, 184, 82, 0.12)',
+        tabBarInactiveBackgroundColor: 'transparent',
       }}
     >
       {(isRTL ? [...screens].reverse() : screens).map((screen) => (
@@ -97,6 +95,7 @@ function TabNavigatorContent() {
           options={{
             title: screen.title,
             headerShown: false,
+            tabBarButton: AndroidTabBarButton,
             tabBarIcon: (props: any) => (
               <Ionicons
                 name={(props.focused ? screen.icon : screen.outlineIcon) as any}
@@ -107,8 +106,66 @@ function TabNavigatorContent() {
           }}
         />
       ))}
-      <JSTabs.Screen name="map" options={{ headerShown: false, tabBarButton: () => null }} />
-      <JSTabs.Screen name="wallet" options={{ headerShown: false, tabBarButton: () => null }} />
+      <JSTabs.Screen
+        name="map"
+        options={{ href: null, headerShown: false, tabBarButton: () => null, tabBarItemStyle: styles.hiddenTabItem }}
+      />
+      <JSTabs.Screen
+        name="wallet"
+        options={{ href: null, headerShown: false, tabBarButton: () => null, tabBarItemStyle: styles.hiddenTabItem }}
+      />
     </JSTabs>
   );
 }
+
+function AndroidTabBarButton(props: any) {
+  const {
+    children,
+    onPress,
+    onLongPress,
+    testID,
+    style,
+    href: _href,
+    ['aria-label']: ariaLabel,
+    ['aria-selected']: ariaSelected,
+    ...pressableProps
+  } = props;
+
+  return (
+    <Pressable
+      {...pressableProps}
+      accessibilityRole="tab"
+      accessibilityLabel={ariaLabel}
+      accessibilityState={{ selected: Boolean(ariaSelected) }}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      testID={testID}
+      style={[style as StyleProp<ViewStyle>, styles.tabBarButton]}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  tabBarItem: {
+    flex: 1,
+    marginHorizontal: 4,
+    marginVertical: 2,
+    borderRadius: 22,
+  },
+  tabBarButton: {
+    minHeight: 52,
+    borderRadius: 22,
+    overflow: 'hidden',
+  },
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 14,
+    marginTop: 1,
+  },
+  hiddenTabItem: {
+    display: 'none',
+  },
+});

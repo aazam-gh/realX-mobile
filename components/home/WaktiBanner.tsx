@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     StyleProp,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -11,6 +12,7 @@ import {
     ViewStyle,
 } from 'react-native';
 import Animated, {
+    cancelAnimation,
     Easing,
     ReduceMotion,
     useAnimatedStyle,
@@ -51,8 +53,9 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
     const gridSweep = useSharedValue(prefersReducedMotion ? 1 : 0);
 
     useEffect(() => {
-        if (prefersReducedMotion) {
-            gridSweep.value = 1;
+        if (prefersReducedMotion || Platform.OS === 'android') {
+            cancelAnimation(gridSweep);
+            gridSweep.value = 0.5;
             return;
         }
 
@@ -61,6 +64,10 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
             -1,
             true,
         );
+
+        return () => {
+            cancelAnimation(gridSweep);
+        };
     }, [gridSweep, prefersReducedMotion]);
 
     const gridSweepStyle = useAnimatedStyle(() => ({

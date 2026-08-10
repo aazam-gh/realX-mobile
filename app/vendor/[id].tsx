@@ -29,6 +29,7 @@ import { fetchSavedOfferIds, fetchVendorRoute } from '../../utils/firebaseQuerie
 import { queryClient, queryKeys } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import { RemoteImage } from '../../components/RemoteImage';
 
 type VendorBranch = {
     id: string;
@@ -380,7 +381,7 @@ export default function VendorScreen() {
             >
                 {/* Header Image Section */}
                 <View style={styles.headerContainer}>
-                    <Image
+                    <RemoteImage
                         source={{ uri: vendor.coverImage }}
                         style={styles.coverImage}
                         contentFit="cover"
@@ -403,7 +404,7 @@ export default function VendorScreen() {
 
                     {/* Vendor Logo Overlapping */}
                     <View style={styles.logoContainer}>
-                        <Image
+                        <RemoteImage
                             source={{ uri: vendor.profilePicture }}
                             style={[styles.logoImage, { backgroundColor: theme.logoTile, borderColor: theme.logoTileBorder }]}
                             contentFit="contain"
@@ -416,7 +417,7 @@ export default function VendorScreen() {
                 <View style={[styles.detailsContainer, { backgroundColor: theme.background }]}>
                     <View style={styles.vendorHeaderRow}>
                         {vendor.integralLogo ? (
-                            <Image
+                            <RemoteImage
                                 source={{ uri: vendor.integralLogo }}
                                 style={styles.integralLogo}
                                 contentFit="contain"
@@ -796,8 +797,6 @@ const styles = StyleSheet.create({
         height: '100%',
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
-        borderWidth: 2,
-        borderColor: Colors.brandGreen,
     },
     headerOverlay: {
         position: 'absolute',

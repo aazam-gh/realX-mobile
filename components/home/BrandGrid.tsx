@@ -7,11 +7,8 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
     View,
 } from 'react-native';
-import { Typography } from '../../constants/Typography';
-import AppText from '../AppText';
 import { StateSurface } from '../StateSurface';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +21,7 @@ import {
     HOME_SECTION_HEADER_GAP,
     HOME_SECTION_TOP_SPACING,
 } from './layout';
+import HomeSectionHeading from './HomeSectionHeading';
 
 type BrandItem = HomeBrandItem;
 
@@ -151,22 +149,7 @@ export default function BrandGrid() {
 
     return (
         <View style={styles.container}>
-            <View style={styles.headerContainer}>
-                <View style={styles.headerTitle}>
-                    <AppText
-                        style={[
-                            styles.shopByText,
-                            Typography.getTextDirectionStyle({ isRTL }),
-                            { color: theme.text },
-                        ]}
-                    >
-                        {brandLabelPrefix}
-                        <Text style={[styles.brandText, { color: theme.brand }]}>
-                            {brandLabelHighlight}
-                        </Text>
-                    </AppText>
-                </View>
-            </View>
+            <HomeSectionHeading prefix={brandLabelPrefix} highlight={brandLabelHighlight} />
             <BrandRow items={row1} onPressBrand={handlePress} />
             {!isSingleRow && (
                 <View style={styles.rowSpacing}>
@@ -180,23 +163,6 @@ export default function BrandGrid() {
 const styles = StyleSheet.create({
     container: {
         paddingTop: HOME_SECTION_TOP_SPACING,
-    },
-    headerContainer: {
-        paddingHorizontal: HOME_HORIZONTAL_GUTTER,
-        marginBottom: HOME_SECTION_HEADER_GAP,
-    },
-    headerTitle: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    shopByText: {
-        fontSize: 20,
-        letterSpacing: 1,
-    },
-    brandText: {
-        fontSize: 20,
-        letterSpacing: 1,
-        ...Typography.getTextVariantStyle('display'),
     },
     loaderContainer: {
         height: 120,

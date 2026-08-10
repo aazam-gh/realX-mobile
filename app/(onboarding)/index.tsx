@@ -88,7 +88,11 @@ export default function OnboardingScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            setSelectedRole(null);
+            // Expo Router can invoke a focus effect while the screen is still
+            // being mounted. Defer the reset until the mount has completed so
+            // React does not receive a state update from an unmounted screen.
+            const resetTimer = setTimeout(() => setSelectedRole(null), 0);
+            return () => clearTimeout(resetTimer);
         }, [])
     );
 

@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   HelpLink,
   HowItWorksDrawer,
@@ -22,8 +21,8 @@ import { useRealXRefresh } from '../../components/PullToRefresh';
 import { useTabBarScrollVisibility } from '../../components/navigation/TabBarScrollVisibility';
 
 export default function WalletScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
+  const isFocused = useIsFocused();
   const { t } = useTranslation();
   const { studentData } = useStudent();
   const { isDark, theme } = useAppTheme();
@@ -59,12 +58,14 @@ export default function WalletScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top }]}>
-      <StatusBar
-        style={isDark ? 'light' : 'dark'}
-        animated
-        hidden
-      />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {isFocused ? (
+        <StatusBar
+          style={isDark ? 'light' : 'dark'}
+          animated
+          hidden
+        />
+      ) : null}
       <View collapsable={false} style={styles.contentWrapper}>
         <ScrollView
           style={[styles.scrollView, { backgroundColor: theme.background }]}

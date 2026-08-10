@@ -9,7 +9,7 @@ import {
   setDoc,
 } from '@react-native-firebase/firestore';
 import * as Location from 'expo-location';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -188,6 +188,7 @@ function mapFetchKey(region: Region) {
 
 export default function MapScreen() {
   useRestoreTabBarOnFocus();
+  const isFocused = useIsFocused();
   const { t } = useTranslation();
   const { isDark, theme } = useAppTheme();
   const { requireAuth } = useAuthAccess();
@@ -355,6 +356,15 @@ export default function MapScreen() {
   }, [submittedSearchQuery, userLocation]);
 
   useEffect(() => {
+    // Updating placeholder text every few milliseconds forces the entire map,
+    // its controls, and every marker through React reconciliation. Keep the
+    // decorative typing effect on focused iOS screens only; Android uses the
+    // static localized placeholder and inactive tabs do no background work.
+    if (Platform.OS === 'android' || !isFocused) {
+      setAnimatedSearchPlaceholder(null);
+      return;
+    }
+
     let frame: ReturnType<typeof setTimeout>;
     let index = 0;
     let direction: 'typing' | 'deleting' = 'typing';
@@ -391,7 +401,7 @@ export default function MapScreen() {
     frame = setTimeout(tick, 350);
 
     return () => clearTimeout(frame);
-  }, [searchPlaceholder]);
+  }, [isFocused, searchPlaceholder]);
 
   // In-memory vendor cache — accumulates across fetches so panning back is instant
   const vendorCacheRef = useRef<Map<string, VendorMapItem>>(new Map());
@@ -834,12 +844,14 @@ export default function MapScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
-      <StatusBar
-        style={isDark ? 'light' : 'dark'}
-        animated
-        hidden
-      />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['bottom']}>
+      {isFocused ? (
+        <StatusBar
+          style={isDark ? 'light' : 'dark'}
+          animated
+          hidden
+        />
+      ) : null}
 
       <View style={styles.mapContainer}>
         <MapView
@@ -851,7 +863,10 @@ export default function MapScreen() {
             latitudeDelta: 0.03,
             longitudeDelta: 0.03,
           }}
-          showsUserLocation={true}
+          // react-native-maps 1.27 emits an unsupported Fabric event on Android
+          // when the native user-location layer is enabled. Location is already
+          // managed through Expo Location below, so keep the native layer off.
+          showsUserLocation={false}
           showsMyLocationButton={false}
           onRegionChangeComplete={onRegionChangeComplete}
         >
@@ -867,6 +882,7 @@ export default function MapScreen() {
                 <Marker
                   key={`cluster-${clusterId}`}
                   coordinate={{ latitude: lat, longitude: lng }}
+                  tracksViewChanges={false}
                   onPress={() => handleClusterPress(cluster as ClusterFeature)}
                 >
                   <View style={[styles.clusterBubble, { backgroundColor: clusterColor }, pointCount > 20 && styles.clusterBubbleLarge]}>
@@ -884,6 +900,7 @@ export default function MapScreen() {
               <Marker
                 key={vendorId}
                 coordinate={{ latitude: lat, longitude: lng }}
+                tracksViewChanges={false}
                 onPress={() => {
                   if (vendor) {
                     selectMapVendor(vendor);

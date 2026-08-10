@@ -5,6 +5,7 @@ import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
+import { RemoteImage } from '../RemoteImage';
 
 const cashbackBadgeIcon = require('../../assets/images/cashback.webp');
 
@@ -21,6 +22,7 @@ type Props = {
   onPress?: () => void;
   style?: any;
   xcardEnabled?: boolean;
+  loading?: boolean;
 };
 
 export default function RestaurantCard({
@@ -35,12 +37,14 @@ export default function RestaurantCard({
   onPress,
   style,
   xcardEnabled = false,
+  loading = false,
 }: Props) {
   const { theme } = useAppTheme();
   const { locale } = useAppLocale();
   const isArabic = locale === 'ar';
 
   const handlePress = () => {
+    if (loading) return;
     triggerSubtleHaptic();
     onPress?.();
   };
@@ -49,36 +53,43 @@ export default function RestaurantCard({
       style={[styles.container, style]}
       onPress={handlePress}
       activeOpacity={0.9}
+      disabled={loading}
     >
       {/* Image placeholder or actual image */}
       <View style={styles.imageContainer}>
-        {imageUri ? (
+        {loading ? (
+          <View style={styles.imagePlaceholder} />
+        ) : imageUri ? (
           <>
             <View style={styles.topPill}>
-              <Image
+              <RemoteImage
                 source={{ uri: imageUri }}
-                style={styles.topImage}
+                style={StyleSheet.absoluteFill}
+                imageStyle={styles.topImage}
                 contentFit="cover"
               />
             </View>
             <View style={styles.bottomPill}>
-              <Image
+              <RemoteImage
                 source={{ uri: imageUri }}
-                style={styles.bottomImage}
+                style={StyleSheet.absoluteFill}
+                imageStyle={styles.bottomImage}
                 contentFit="cover"
               />
             </View>
           </>
         ) : (
-          <View style={[styles.imagePlaceholder, { backgroundColor: theme.cardMuted }]}>
+          <View style={styles.imagePlaceholder}>
             <Text style={styles.placeholderEmoji}>🏪</Text>
           </View>
         )}
         {/* Logo */}
         <View style={styles.logoContainer}>
           <View style={[styles.logoWrapper, { backgroundColor: theme.logoTile, borderColor: theme.logoTileBorder }]}>
-            {logoUri ? (
-              <Image
+            {loading ? (
+              <View style={styles.logoImage} />
+            ) : logoUri ? (
+              <RemoteImage
                 source={{ uri: logoUri }}
                 style={styles.logoImage}
                 contentFit="cover"
@@ -112,7 +123,9 @@ export default function RestaurantCard({
           ]} numberOfLines={1}>{isArabic ? (nameAr || name) : name}</Text>
         </View>
 
-        {cashbackText || discountText ? (
+        {loading ? (
+          <View style={styles.loadingText} />
+        ) : cashbackText || discountText ? (
           <View style={styles.textRow}>
             <Text style={[
               styles.descriptionText,
@@ -277,5 +290,11 @@ const styles = StyleSheet.create({
   xcardIcon: {
     width: '100%',
     height: '100%',
+  },
+  loadingText: {
+    width: '72%',
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: 'transparent',
   },
 });

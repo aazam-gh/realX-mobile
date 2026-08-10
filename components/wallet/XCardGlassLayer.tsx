@@ -86,6 +86,12 @@ export default function XCardGlassLayer({ config, strength, touchStyle }: Props)
   const loopProgress = useSharedValue(0);
 
   useEffect(() => {
+    if (!config.enabled || Platform.OS === 'android') {
+      cancelAnimation(loopProgress);
+      loopProgress.value = config.enabled ? 0.5 : 0;
+      return;
+    }
+
     loopProgress.value = withRepeat(
       withTiming(1, {
         duration: 4600,
@@ -98,7 +104,7 @@ export default function XCardGlassLayer({ config, strength, touchStyle }: Props)
     return () => {
       cancelAnimation(loopProgress);
     };
-  }, [loopProgress]);
+  }, [config.enabled, loopProgress]);
 
   const sweepStyle = useAnimatedStyle(() => {
     const translateX = interpolate(loopProgress.value, [0, 1], [-180, 360], Extrapolation.CLAMP);

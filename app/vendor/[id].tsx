@@ -2,14 +2,16 @@ import { pickLocalizedText } from '../../utils/textFallback';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { deleteDoc, doc, getFirestore, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
+import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { useQuery } from '@tanstack/react-query';
 import { GlassView } from 'expo-glass-effect';
 import { Image } from 'expo-image';
+import * as Clipboard from 'expo-clipboard';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -26,6 +28,7 @@ import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
 import { fetchSavedOfferIds, fetchVendorRoute } from '../../utils/firebaseQueries';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
+import { triggerSubtleHaptic } from '../../utils/haptics';
 
 type VendorBranch = {
     id: string;
@@ -97,7 +100,7 @@ export default function VendorScreen() {
     const { height: windowHeight } = useWindowDimensions();
     const { t } = useTranslation();
     const { isDark, theme } = useAppTheme();
-    const { requireAuth } = useAuthAccess();
+    const { isAuthenticated, requireAuth } = useAuthAccess();
     const { locale } = useAppLocale();
     const isArabic = locale === 'ar';
     const [vendor, setVendor] = useState<any>(null);
@@ -107,6 +110,8 @@ export default function VendorScreen() {
     const [savingOfferIds, setSavingOfferIds] = useState<Set<string>>(new Set());
     const [branchPickerVisible, setBranchPickerVisible] = useState(false);
     const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+    const [onlineWebsiteLoading, setOnlineWebsiteLoading] = useState(false);
+    const [onlineCodeCopied, setOnlineCodeCopied] = useState(false);
     const currentUserId = getAuth().currentUser?.uid ?? null;
     const vendorLookupId = typeof id === 'string' ? id : '';
 
@@ -122,6 +127,61 @@ export default function VendorScreen() {
     });
 
     const { isOnline } = useConnectivity();
+
+    const {
+        data: onlineOffer,
+        error: onlineOfferError,
+        isFetching: onlineOfferLoading,
+        refetch: refetchOnlineOffer,
+    } = useQuery({
+        queryKey: queryKeys.onlineVendorOffer(vendorLookupId),
+        queryFn: async () => {
+            const functions = getFunctions(undefined, 'me-central1');
+            const getOnlineVendorOffer = httpsCallable(functions, 'getOnlineVendorOffer');
+            const result = await getOnlineVendorOffer({ vendorId: vendorLookupId });
+            return result.data as { discountCode: string };
+        },
+        enabled: isAuthenticated && vendorLookupId.length > 0 && vendor?.vendorType === 'online',
+    });
+
+    const handleCopyOnlineCode = async () => {
+        if (!onlineOffer?.discountCode) {
+            requireAuth('guest_redeem_message');
+            return;
+        }
+
+        triggerSubtleHaptic();
+        await Clipboard.setStringAsync(onlineOffer.discountCode);
+        setOnlineCodeCopied(true);
+        setTimeout(() => setOnlineCodeCopied(false), 1600);
+    };
+
+    const handleOnlineWebsite = async () => {
+        if (!requireAuth('guest_redeem_message')) return;
+
+        const currentVendorId = actualVendorId || vendorLookupId;
+        if (!currentVendorId) return;
+
+        setOnlineWebsiteLoading(true);
+        try {
+            const functions = getFunctions(undefined, 'me-central1');
+            const recordOutboundClick = httpsCallable(functions, 'recordOnlineVendorOutboundClick');
+            const requestId = `online-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+            const result = await recordOutboundClick({ vendorId: currentVendorId, requestId });
+            const data = result.data as { purchaseUrl?: string };
+
+            if (!data.purchaseUrl) throw new Error(t('online_store_access_failed_message'));
+            await Linking.openURL(data.purchaseUrl);
+        } catch (error: any) {
+            logger.error('Online store visit error:', error);
+            Alert.alert(
+                t('online_store_access_failed_title'),
+                error.message || t('online_store_access_failed_message')
+            );
+        } finally {
+            setOnlineWebsiteLoading(false);
+        }
+    };
     const refreshVendor = useCallback(async () => {
         await refetchVendor();
         if (currentUserId && actualVendorId) {
@@ -193,7 +253,7 @@ export default function VendorScreen() {
             }
         };
 
-        if (vendor) {
+        if (vendor && vendor.vendorType !== 'online') {
             void loadUserLocation();
         }
     }, [vendor]);
@@ -367,6 +427,29 @@ export default function VendorScreen() {
                     </View>
 
                     <View style={styles.metaStack}>
+                        {vendor.vendorType === 'online' ? (
+                            <View style={[styles.onlineMetaLine, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                {vendor.phoneNumber ? (
+                                    <TouchableOpacity
+                                        style={[styles.phoneButton, { backgroundColor: theme.cardMuted }]}
+                                        onPress={() => callPhoneNumber(vendor.phoneNumber)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Ionicons name="call-outline" size={15} color={theme.brand} />
+                                        <Text style={[styles.phoneButtonText, { color: theme.text }]} numberOfLines={1}>
+                                            {vendor.phoneNumber}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ) : null}
+                                <View style={[styles.tagsRow, { justifyContent: isArabic ? 'flex-start' : 'flex-end' }]}>
+                                    <View style={[styles.tagChip, { backgroundColor: '#2563EB' }]}>
+                                        <Ionicons name="globe-outline" size={14} color="#FFF" />
+                                        <Text style={[styles.tagText, { ...Typography.getTextVariantStyle('bodyStrong') }]} numberOfLines={1}>{t('online_vendor_label')}</Text>
+                                    </View>
+                                </View>
+                            </View>
+                        ) : (
+                            <>
                         <View style={[styles.metaLine, styles.metaLineSpread]}>
                             <TouchableOpacity style={[styles.locationButton, { backgroundColor: theme.cardMuted }]} onPress={() => {
                                 if (branches.length > 1) {
@@ -431,6 +514,8 @@ export default function VendorScreen() {
                                 )}
                             </View>
                         </View>
+                            </>
+                        )}
                     </View>
 
                     <VendorGallery images={vendor.galleryImages} isArabic={isArabic} />
@@ -439,27 +524,51 @@ export default function VendorScreen() {
                     <View style={styles.offersList}>
                         {vendor.vendorType === 'online' ? (
                             <View style={styles.offerCard}>
-                                <View style={[styles.offerInfoContainer, { backgroundColor: theme.cardMuted }]}>
-                                    <View style={styles.offerContent}>
-                                        <AppText style={[{ color: theme.text }, styles.offerTitle]}>
+                                <View style={[styles.offerInfoContainer, styles.onlineOfferInfoContainer, { backgroundColor: theme.cardMuted }]}>
+                                    <View style={[styles.offerContent, styles.onlineOfferContent]}>
+                                        <AppText style={[{ color: theme.text }, styles.offerTitle, styles.onlineOfferTitle, { textAlign: isArabic ? 'right' : 'left' }]}>
                                             {pickLocalizedText(isArabic, vendor.brandOfferNameAr, vendor.brandOfferName, t('online_vendor_title'))}
                                         </AppText>
-                                        <Text style={[styles.descriptionText, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
-                                            {t('online_vendor_description')}
-                                        </Text>
+                                        <TouchableOpacity
+                                            style={[styles.onlineCodeBox, { backgroundColor: theme.brandSoft, borderColor: theme.brand, flexDirection: isArabic ? 'row-reverse' : 'row' }]}
+                                            onPress={() => void handleCopyOnlineCode()}
+                                            disabled={onlineOfferLoading}
+                                            activeOpacity={0.85}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={onlineOffer?.discountCode ? t('online_copy_hint') : t('online_sign_in_to_view_code')}
+                                        >
+                                            {onlineOfferLoading ? (
+                                                <ActivityIndicator size="small" color={theme.brand} />
+                                            ) : (
+                                                <Text style={[styles.onlineCodeText, { color: theme.brandText }]}>
+                                                    {onlineOffer?.discountCode || '----'}
+                                                </Text>
+                                            )}
+                                            <Ionicons name={onlineCodeCopied ? 'checkmark-circle' : 'copy-outline'} size={24} color={theme.brand} />
+                                        </TouchableOpacity>
+                                        {onlineOfferError || onlineCodeCopied ? (
+                                            <Text style={[styles.onlineCodeHint, { color: onlineOfferError ? theme.danger : theme.mutedText, textAlign: 'center' }]}>
+                                                {onlineOfferError
+                                                    ? (onlineOfferError as any).message || t('online_store_access_failed_message')
+                                                    : t('online_code_copied')}
+                                            </Text>
+                                        ) : null}
+                                        {onlineOfferError && isAuthenticated ? (
+                                            <TouchableOpacity onPress={() => void refetchOnlineOffer()} disabled={onlineOfferLoading}>
+                                                <Text style={[styles.onlineRetryText, { color: theme.brandText }]}>{t('retry')}</Text>
+                                            </TouchableOpacity>
+                                        ) : null}
                                     </View>
                                 </View>
 
                                 <View style={[styles.offerActionsRow, { backgroundColor: theme.cardMuted }]}>
                                     <TouchableOpacity
                                         style={[styles.pillButton, styles.redeemPill, { backgroundColor: theme.actionSolid }]}
-                                        onPress={() => {
-                                            if (!requireAuth('guest_redeem_message')) return;
-                                            router.push(`/redeem/${actualVendorId || id}?vendorId=${actualVendorId || id}`);
-                                        }}
+                                        onPress={() => void handleOnlineWebsite()}
+                                        disabled={onlineWebsiteLoading}
                                     >
-                                        <Ionicons name="globe-outline" size={18} color={theme.onActionSolid} />
-                                        <Text style={[{ color: theme.onActionSolid, ...Typography.getTextVariantStyle('body') }, styles.pillButtonTextSmall]}>{t('redeem_caps')}</Text>
+                                        {onlineWebsiteLoading ? <ActivityIndicator size="small" color={theme.onActionSolid} /> : <Ionicons name="open-outline" size={18} color={theme.onActionSolid} />}
+                                        <Text style={[{ color: theme.onActionSolid, ...Typography.getTextVariantStyle('body') }, styles.pillButtonTextSmall]}>{t('online_visit_website_caps')}</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -763,6 +872,12 @@ const styles = StyleSheet.create({
     metaLineSpread: {
         justifyContent: 'space-between',
     },
+    onlineMetaLine: {
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 10,
+        minHeight: 42,
+    },
     tagsRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -826,6 +941,35 @@ const styles = StyleSheet.create({
         fontSize: 14,
         ...Typography.getTextVariantStyle('bodyStrong'),
     },
+    onlineCodeBox: {
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        minHeight: 58,
+        marginTop: 10,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderRadius: 18,
+        gap: 12,
+    },
+    onlineCodeText: {
+        flex: 1,
+        fontSize: 22,
+        letterSpacing: 1.5,
+        ...Typography.getTextVariantStyle('bodyStrong'),
+        textAlign: 'center',
+    },
+    onlineCodeHint: {
+        marginTop: 7,
+        fontSize: 13,
+        ...Typography.getTextVariantStyle('body'),
+        lineHeight: 18,
+    },
+    onlineRetryText: {
+        marginTop: 6,
+        fontSize: 14,
+        ...Typography.getTextVariantStyle('bodyStrong'),
+    },
     ratingContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -873,8 +1017,18 @@ const styles = StyleSheet.create({
         minHeight: 82,
         position: 'relative',
     },
+    onlineOfferInfoContainer: {
+        paddingEnd: 24,
+    },
     offerContent: {
         gap: 4,
+    },
+    onlineOfferContent: {
+        alignItems: 'center',
+        width: '100%',
+    },
+    onlineOfferTitle: {
+        textAlign: 'center',
     },
     offerTitle: {
         fontSize: 20,

@@ -137,20 +137,19 @@ const HeaderContent = memo(({
     return (
         <>
             <CategoryHeader
-                title={headerTitle}
                 icon={headerIcon}
                 onBackPress={handleBackPress}
+                accessory={isCategoryActive && !showComingSoon ? (
+                    <SearchBar
+                        compact
+                        placeholder={t('search_placeholder_category', { category: headerTitle.toLowerCase() })}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        onSubmit={handleSearch}
+                        onClear={onClearSearch}
+                    />
+                ) : undefined}
             />
-
-            {isCategoryActive && !showComingSoon && (
-                <SearchBar
-                    placeholder={t('search_placeholder_category', { category: headerTitle.toLowerCase() })}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    onSubmit={handleSearch}
-                    onClear={onClearSearch}
-                />
-            )}
 
             {loading ? (
                 <View style={[styles.comingSoonContainer, { minHeight: comingSoonMinHeight }]}>

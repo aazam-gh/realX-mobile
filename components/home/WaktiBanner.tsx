@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -21,7 +22,6 @@ import Animated, {
 
 import { Typography } from '../../constants/Typography';
 import { useAppLocale } from '../../context/LocaleContext';
-import { openWaktiStore } from '../../utils/wakti';
 import {
     HOME_COMPACT_BANNER_HEIGHT,
     HOME_HORIZONTAL_GUTTER,
@@ -29,6 +29,7 @@ import {
 } from './layout';
 
 const waktiBannerImage = require('../../assets/images/waktilogo.webp');
+const WAKTI_VENDOR_ID = 'krvpsxd7nFPpwN3xWXFsaiYU8CC3';
 const waktiBannerUsesDarkTheme = true;
 const reduceMotion = ReduceMotion.System;
 const gridUnit = 54;
@@ -43,6 +44,7 @@ type WaktiBannerProps = {
 };
 
 export default function WaktiBanner({ style }: WaktiBannerProps) {
+    const router = useRouter();
     const { isRTL } = useAppLocale();
     const { t } = useTranslation();
     const prefersReducedMotion = useReducedMotion();
@@ -70,7 +72,7 @@ export default function WaktiBanner({ style }: WaktiBannerProps) {
     }));
 
     const handleBannerPress = () => {
-        void openWaktiStore();
+        router.push({ pathname: '/vendor/[id]', params: { id: WAKTI_VENDOR_ID } });
     };
 
     return (

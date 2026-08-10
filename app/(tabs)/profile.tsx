@@ -261,29 +261,18 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <View style={styles.menuContainer}>
-          <View style={[styles.savedHistoryBar, { backgroundColor: theme.cardMuted }, isRTL && styles.savedHistoryBarRTL]}>
-            <TouchableOpacity
-              style={styles.savedHistoryAction}
-              onPress={() => router.push('/saved-offers' as any)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={t('saved')}
-            >
-              <Ionicons name="bookmark-outline" size={22} color={theme.icon} />
-              <AppText style={[styles.savedHistoryLabel, { color: theme.text }]}>{t('saved')}</AppText>
-            </TouchableOpacity>
-            <View style={[styles.savedHistoryDivider, { backgroundColor: theme.border }]} />
-            <TouchableOpacity
-              style={styles.savedHistoryAction}
-              onPress={() => router.push('/redemption-history' as any)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={t('history')}
-            >
-              <Ionicons name="time-outline" size={22} color={theme.icon} />
-              <AppText style={[styles.savedHistoryLabel, { color: theme.text }]}>{t('history')}</AppText>
-            </TouchableOpacity>
-          </View>
+          <MenuItem
+            icon="bookmark-outline"
+            label={t('saved')}
+            onPress={() => router.push('/saved-offers' as any)}
+            isRTL={isRTL}
+          />
+          <MenuItem
+            icon="time-outline"
+            label={t('history')}
+            onPress={() => router.push('/redemption-history' as any)}
+            isRTL={isRTL}
+          />
           <LanguageToggle
             locale={locale}
             englishLabel={t('english')}
@@ -472,7 +461,7 @@ const styles = StyleSheet.create({
   },
   profileSavingsRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 16,
   },
   profileSavingsRowRTL: {
@@ -484,7 +473,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    minHeight: 64,
+    height: 60,
   },
   savingsDetailsRTL: {
     direction: 'rtl',
@@ -643,33 +632,6 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     gap: 12,
-  },
-  savedHistoryBar: {
-    minHeight: 64,
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  savedHistoryBarRTL: {
-    flexDirection: 'row-reverse',
-  },
-  savedHistoryAction: {
-    flex: 1,
-    minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingHorizontal: 12,
-  },
-  savedHistoryDivider: {
-    width: 1,
-    height: 32,
-  },
-  savedHistoryLabel: {
-    fontSize: 16,
-    ...Typography.getTextVariantStyle('bodyStrong'),
   },
   menuItem: {
     flexDirection: 'row',

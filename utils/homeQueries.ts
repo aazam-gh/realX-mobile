@@ -46,6 +46,7 @@ export type HomeBannerItem = {
 
 export type HomeFeaturedBannerItem = {
   id: string;
+  vendorId?: string;
   title: string;
   titleAr?: string;
   ctaText?: string;

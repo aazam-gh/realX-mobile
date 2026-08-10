@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import {
     ActivityIndicator,
-    Linking,
     StyleProp,
     StyleSheet,
     TouchableOpacity,
@@ -36,6 +36,7 @@ type FeaturedBannerProps = {
 };
 
 export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
+    const router = useRouter();
     const { isRTL } = useAppLocale();
     const {
         data: cmsItem = null,
@@ -53,20 +54,15 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
     const currentItem = item ?? cmsItem;
     const isCmsLoading = !item && isLoading;
 
-    const handlePress = async () => {
-        if (!currentItem?.orderUrl) {
+    const handlePress = () => {
+        if (!currentItem) {
             return;
         }
 
         triggerSubtleHaptic();
 
-        try {
-            const canOpen = await Linking.canOpenURL(currentItem.orderUrl);
-            if (canOpen) {
-                await Linking.openURL(currentItem.orderUrl);
-            }
-        } catch (error) {
-            logger.error('Error opening featured banner URL:', error);
+        if (currentItem.vendorId?.trim()) {
+            router.push({ pathname: '/vendor/[id]', params: { id: currentItem.vendorId.trim() } });
         }
     };
 

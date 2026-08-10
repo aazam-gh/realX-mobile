@@ -1,20 +1,17 @@
 import { Image } from 'expo-image';
-import { memo, useMemo } from 'react';
-import { ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+import { memo, ReactNode, useMemo } from 'react';
+import { ImageSourcePropType, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
-import { Typography } from '../../constants/Typography';
 import { HeaderIconButton } from '../navigation/AppHeader';
 
 type Props = {
-    title: string;
     icon?: string | ImageSourcePropType;
     onBackPress?: () => void;
+    accessory?: ReactNode;
 };
 
-function CategoryHeader({ title, icon, onBackPress }: Props) {
-    const { theme } = useAppTheme();
+function CategoryHeader({ icon, onBackPress, accessory }: Props) {
     const { isRTL } = useAppLocale();
     const { t } = useTranslation();
     const imageSource = useMemo(() => {
@@ -33,7 +30,7 @@ function CategoryHeader({ title, icon, onBackPress }: Props) {
             />
 
 
-            <View style={styles.titleContainer}>
+            <View style={styles.contentContainer}>
                 {icon && (
                     <Image
                         source={imageSource}
@@ -42,7 +39,7 @@ function CategoryHeader({ title, icon, onBackPress }: Props) {
                         contentFit="cover"
                     />
                 )}
-                <Text style={[styles.title, { color: theme.text }, isRTL && styles.titleRTL]}>{title}</Text>
+                {accessory}
             </View>
         </View>
     );
@@ -59,19 +56,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 8,
     },
-    titleContainer: {
+    contentContainer: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-    },
-    title: {
-        fontSize: 21,
-        lineHeight: 28,
-        ...Typography.getTextVariantStyle('bodyStrong'),
-    },
-    titleRTL: {
-        textAlign: 'right',
-        writingDirection: 'rtl',
     },
     imageIcon: {
         width: 40,

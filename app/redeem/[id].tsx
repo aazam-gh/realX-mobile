@@ -6,7 +6,6 @@ import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { logger } from '../../utils/logger';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -15,7 +14,6 @@ import {
     KeyboardAvoidingView,
     Linking,
     Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -23,11 +21,9 @@ import {
     View
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
 import RewardSuccessScreen from '../../components/rewards/RewardSuccessScreen';
 import TransactionLoadingOverlay from '../../components/TransactionLoadingOverlay';
-import { HeaderIconButton } from '../../components/navigation/AppHeader';
 import GiftCardFlowScaffold from '../../components/wallet/GiftCardFlowScaffold';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
@@ -127,7 +123,7 @@ export default function RedeemScreen() {
     }>();
     const router = useRouter();
     const { t } = useTranslation();
-    const { isDark, theme } = useAppTheme();
+    const { theme } = useAppTheme();
     const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
     const { locale } = useAppLocale();
     const isArabic = locale === 'ar';
@@ -419,102 +415,101 @@ export default function RedeemScreen() {
         const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
 
         return (
-            <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-                <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
-                <View style={styles.innerContainer}>
-                    <View style={styles.header}>
-                        <HeaderIconButton
-                            icon={isArabic ? 'arrow-forward' : 'arrow-back'}
-                            accessibilityLabel={t('back')}
-                            onPress={() => router.back()}
-                        />
+            <GiftCardFlowScaffold
+                title={t('online_vendor_title')}
+                step={2}
+                totalSteps={2}
+                onBack={() => router.back()}
+                onClose={() => router.back()}
+                contentContainerStyle={styles.onlineScrollContent}
+                footer={(
+                    <TouchableOpacity
+                        style={[
+                            styles.redeemButton,
+                            { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid },
+                            { flexDirection: isArabic ? 'row-reverse' : 'row' },
+                            !onlineOffer?.discountCode && styles.redeemButtonDisabled,
+                        ]}
+                        activeOpacity={0.9}
+                        onPress={handleOnlineStoreVisit}
+                        disabled={!onlineOffer?.discountCode || onlineLoading}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('online_visit_store_caps')}
+                    >
+                        {onlineLoading ? (
+                            <ActivityIndicator size="small" color={theme.onActionSolid} />
+                        ) : (
+                            <>
+                                <Ionicons name="open-outline" size={20} color={theme.onActionSolid} />
+                                <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
+                                    {t('online_visit_store_caps')}
+                                </AppText>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                )}
+            >
+                <View style={styles.offerCardWrapper}>
+                    <View style={[styles.onlineCard, { backgroundColor: theme.cardMuted }]}>
+                        <Ionicons name="globe-outline" size={30} color={theme.brand} />
+                        <Text style={[styles.onlineKicker, { color: theme.brandText, textAlign: isArabic ? 'right' : 'left' }]}>
+                            {t('online_vendor_label')}
+                        </Text>
+                        <AppText style={[styles.onlineTitle, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                            {vendorName || t('unknown_vendor')}
+                        </AppText>
                     </View>
 
-                    <ScrollView
-                        style={{ flex: 1 }}
-                        contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        <View style={styles.offerCardWrapper}>
-                            <View style={[styles.onlineCard, { backgroundColor: theme.cardMuted }]}>
-                                <Ionicons name="globe-outline" size={30} color={theme.brand} />
-                                <Text style={[styles.onlineKicker, { color: theme.brandText, textAlign: isArabic ? 'right' : 'left' }]}>
-                                    {t('online_vendor_label')}
-                                </Text>
-                                <AppText style={[styles.onlineTitle, { color: theme.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
-                                    {vendorName || t('unknown_vendor')}
-                                </AppText>
-                            </View>
-
-                            <View style={[styles.logoContainer, { backgroundColor: theme.logoTile, borderColor: theme.logoTile, shadowColor: theme.shadow }]}>
-                                <Image
-                                    source={{ uri: vendor.profilePicture }}
-                                    style={styles.logoImage}
-                                    contentFit="cover"
-                                />
-                            </View>
-                        </View>
-
-                        <View style={[styles.onlineRedemptionCard, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
-                            <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
-                                {t('online_discount_code_label')}
-                            </Text>
-                            <TouchableOpacity
-                                style={[
-                                    styles.onlineCodeBox,
-                                    { backgroundColor: theme.brandSoft, borderColor: theme.brand, flexDirection: isArabic ? 'row-reverse' : 'row' },
-                                ]}
-                                activeOpacity={0.85}
-                                onPress={handleCopyOnlineCode}
-                                disabled={!onlineOffer?.discountCode}
-                            >
-                                <Text style={[styles.onlineCodeText, { color: theme.brandText }]}>
-                                    {onlineOffer?.discountCode || '----'}
-                                </Text>
-                                <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={24} color={theme.brand} />
-                            </TouchableOpacity>
-
-                            <Text style={[styles.onlineHint, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
-                                {onlineError || (copied ? t('online_code_copied') : t('online_copy_hint'))}
-                            </Text>
-                            {onlineError ? (
-                                <TouchableOpacity
-                                    onPress={() => void refetchOnlineOffer()}
-                                    disabled={onlineOfferLoading}
-                                    style={styles.onlineRetryButton}
-                                >
-                                    <Text style={[styles.onlineRetryText, { color: theme.brandText }]}>{t('retry')}</Text>
-                                </TouchableOpacity>
-                            ) : null}
-                        </View>
-
-                        <TouchableOpacity
-                            style={[
-                                styles.redeemButton,
-                                { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid },
-                                { flexDirection: isArabic ? 'row-reverse' : 'row' },
-                                !onlineOffer?.discountCode && styles.redeemButtonDisabled,
-                            ]}
-                            activeOpacity={0.9}
-                            onPress={handleOnlineStoreVisit}
-                            disabled={!onlineOffer?.discountCode || onlineLoading}
-                        >
-                            {onlineLoading ? (
-                                <ActivityIndicator size="small" color={theme.onActionSolid} />
-                            ) : (
-                                <>
-                                    <Ionicons name="open-outline" size={20} color={theme.onActionSolid} />
-                                    <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
-                                        {t('online_visit_store_caps')}
-                                    </AppText>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    </ScrollView>
+                    <View style={[styles.logoContainer, { backgroundColor: theme.logoTile, borderColor: theme.logoTile, shadowColor: theme.shadow }]}>
+                        {vendor.profilePicture ? (
+                            <Image source={{ uri: vendor.profilePicture }} style={styles.logoImage} contentFit="cover" />
+                        ) : (
+                            <Ionicons name="globe-outline" size={42} color={theme.logoTileText} />
+                        )}
+                    </View>
                 </View>
 
-                <TransactionLoadingOverlay visible={onlineLoading} />
-            </SafeAreaView>
+                <View style={[styles.onlineRedemptionCard, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
+                    <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
+                        {t('online_discount_code_label')}
+                    </Text>
+                    <TouchableOpacity
+                        style={[
+                            styles.onlineCodeBox,
+                            { backgroundColor: theme.brandSoft, borderColor: theme.brand, flexDirection: isArabic ? 'row-reverse' : 'row' },
+                        ]}
+                        activeOpacity={0.85}
+                        onPress={handleCopyOnlineCode}
+                        disabled={!onlineOffer?.discountCode}
+                        accessibilityRole="button"
+                        accessibilityLabel={onlineOffer?.discountCode ? t('online_copy_hint') : t('loading')}
+                    >
+                        {onlineOfferLoading ? (
+                            <ActivityIndicator size="small" color={theme.brand} />
+                        ) : (
+                            <Text style={[styles.onlineCodeText, { color: theme.brandText }]}>
+                                {onlineOffer?.discountCode || '----'}
+                            </Text>
+                        )}
+                        <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={24} color={theme.brand} />
+                    </TouchableOpacity>
+
+                    <Text style={[styles.onlineHint, { color: onlineError ? theme.danger : theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
+                        {onlineError || (copied ? t('online_code_copied') : t('online_copy_hint'))}
+                    </Text>
+                    {onlineError ? (
+                        <TouchableOpacity
+                            onPress={() => void refetchOnlineOffer()}
+                            disabled={onlineOfferLoading}
+                            style={[styles.onlineRetryButton, isArabic && { alignSelf: 'flex-end' }]}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('retry')}
+                        >
+                            <Text style={[styles.onlineRetryText, { color: theme.brandText }]}>{t('retry')}</Text>
+                        </TouchableOpacity>
+                    ) : null}
+                </View>
+            </GiftCardFlowScaffold>
         );
     }
 
@@ -816,6 +811,9 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
     vendorScrollContent: {
+        paddingBottom: 32,
+    },
+    onlineScrollContent: {
         paddingBottom: 32,
     },
     vendorSummary: {

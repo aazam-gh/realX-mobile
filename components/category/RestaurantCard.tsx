@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
@@ -69,7 +69,7 @@ export default function RestaurantCard({
                 contentFit="cover"
               />
             </View>
-            <View style={styles.bottomPill}>
+            <View style={[styles.bottomPill, Platform.OS === 'android' && styles.androidPillOverlap]}>
               <RemoteImage
                 source={{ uri: imageUri }}
                 style={StyleSheet.absoluteFill}
@@ -277,6 +277,9 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 20,
     overflow: 'hidden',
+  },
+  androidPillOverlap: {
+    marginTop: -2,
   },
   topImage: {
     width: '100%',

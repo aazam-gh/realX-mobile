@@ -3,7 +3,6 @@ import { createBottomTabNavigator } from 'expo-router/js-tabs';
 import { withLayoutContext } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { Platform, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -29,7 +28,6 @@ function TabNavigatorContent() {
   const { isDark, theme } = useAppTheme();
   const { isRTL } = useAppLocale();
   const { isTabBarVisible } = useTabBarVisibilityContext();
-  const insets = useSafeAreaInsets();
   const isIos = Platform.OS === 'ios';
   const screens = [
     { name: 'index', title: t('home'), iosIcon: 'house', icon: 'home', outlineIcon: 'home-outline' },
@@ -60,6 +58,7 @@ function TabNavigatorContent() {
 
   return (
     <JSTabs
+      safeAreaInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
       screenListeners={{
         tabPress: () => {
           requestAnimationFrame(triggerSubtleHaptic);
@@ -70,12 +69,14 @@ function TabNavigatorContent() {
         tabBarInactiveTintColor: theme.iconMuted,
         tabBarStyle: {
           display: isTabBarVisible ? 'flex' : 'none',
-          // Match the page background so the unused space above the bar does
-          // not appear as a separate white strip on Android.
           backgroundColor: theme.background,
-          height: 64 + insets.bottom,
-          paddingTop: 6,
-          paddingBottom: Math.max(insets.bottom, 8),
+          height: 64,
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          paddingTop: 4,
+          paddingBottom: 12,
           paddingHorizontal: 8,
           elevation: 12,
           borderTopColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(15, 37, 23, 0.10)',
@@ -155,7 +156,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   tabBarButton: {
-    minHeight: 52,
+    minHeight: 48,
     borderRadius: 22,
     overflow: 'hidden',
   },

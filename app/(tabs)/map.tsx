@@ -13,7 +13,7 @@ import { useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, StatusBar as NativeStatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, Polyline, Region } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Supercluster, { ClusterFeature, PointFeature } from 'supercluster';
@@ -196,6 +196,7 @@ export default function MapScreen() {
   const { locale } = useAppLocale();
   const isArabic = locale === 'ar';
   const insets = useSafeAreaInsets();
+  const androidTopInset = Platform.OS === 'android' ? NativeStatusBar.currentHeight ?? 24 : 0;
 
   const mapRef = useRef<MapView>(null);
   const superclusterRef = useRef<Supercluster>(new Supercluster({ radius: 52, maxZoom: 14 }));
@@ -844,7 +845,7 @@ export default function MapScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background, paddingTop: androidTopInset }]} edges={['bottom']}>
       {isFocused ? (
         <StatusBar
           style={isDark ? 'light' : 'dark'}

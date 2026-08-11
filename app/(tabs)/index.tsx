@@ -1,8 +1,8 @@
 import { useIsFocused, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Platform, ScrollView, StatusBar as NativeStatusBar, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -35,6 +35,10 @@ export default function HomeScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const { isDark, theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
+  const hiddenStatusBarInset = Platform.OS === 'android'
+    ? NativeStatusBar.currentHeight ?? 24
+    : insets.top;
 
   const refreshHome = useCallback(async () => {
     await queryClient.refetchQueries({
@@ -68,6 +72,10 @@ export default function HomeScreen() {
           hidden
         />
       ) : null}
+      <View
+        pointerEvents="none"
+        style={{ height: hiddenStatusBarInset, backgroundColor: theme.background }}
+      />
       <View collapsable={false} style={styles.contentWrapper}>
         <ScrollView
           style={[styles.container, { backgroundColor: theme.background }]}

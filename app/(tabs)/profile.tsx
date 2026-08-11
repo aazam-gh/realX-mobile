@@ -4,7 +4,7 @@ import { useIsFocused, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ImageBackground, LayoutChangeEvent, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ImageBackground, LayoutChangeEvent, Linking, Platform, ScrollView, StatusBar as NativeStatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { logger } from '../../utils/logger';
@@ -28,6 +28,10 @@ export default function ProfileScreen() {
   const { studentData: userData } = useStudent();
   const { isGuest, endGuestSession } = useAuthAccess();
   const tabBarScrollVisibility = useTabBarScrollVisibility();
+  const savings = userData?.savings ?? 0;
+  const savingsAmount = Number.isInteger(savings) ? savings.toFixed(0) : savings.toFixed(2);
+  const formattedSavingsAmount = isRTL ? toArabicDigits(savingsAmount) : savingsAmount;
+  const androidTopInset = Platform.OS === 'android' ? NativeStatusBar.currentHeight ?? 24 : 0;
   const changeLanguage = async (nextLocale: 'en' | 'ar') => {
     try {
       await changeLocale(nextLocale);
@@ -70,7 +74,7 @@ export default function ProfileScreen() {
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: 14 + androidTopInset }]}
           {...tabBarScrollVisibility}
         >
           <View style={[styles.topPill, { backgroundColor: theme.cardMuted }]}>
@@ -185,35 +189,42 @@ export default function ProfileScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 14 + androidTopInset }]}
         {...tabBarScrollVisibility}
       >
         <View style={[styles.savingsCard, { backgroundColor: theme.surfaceElevated }]}>
           <View style={[styles.profileSavingsRow, isRTL && styles.profileSavingsRowRTL]}>
               <View style={[styles.savingsDetails, { borderColor: theme.border }, isRTL && styles.savingsDetailsRTL]}>
-                {isRTL ? (
                 <AppText
-                  numberOfLines={2}
+                  numberOfLines={1}
                   ellipsizeMode="tail"
-                  style={[styles.savingsInlineRTL, { color: theme.text }]}
+                  style={[
+                    styles.savingsInline,
+                    isRTL && styles.savingsInlineRTL,
+                    Typography.getTextVariantStyle('display'),
+                    { color: theme.text },
+                  ]}
                 >
-                  {t('savings_so_far')}{' '}
-                  <AppText style={[styles.savingsAmountGreen, styles.savingsAmountGreenRTL, { color: theme.brandText }]}>
-                    {t('amount_with_currency', { amount: toArabicDigits((userData?.savings ?? 0).toFixed(2)), currency: t('currency_qar') })}
+                  <AppText
+                    style={[
+                      styles.savingsValueText,
+                      Typography.getTextVariantStyle('display'),
+                      { color: theme.brandText },
+                    ]}
+                  >
+                    {formattedSavingsAmount}
+                  </AppText>
+                  {'\u00A0\u00A0'}
+                  <AppText
+                    style={[
+                      styles.savingsValueText,
+                      Typography.getTextVariantStyle('display'),
+                      { color: theme.text },
+                    ]}
+                  >
+                    {t('savings_saved_label')}
                   </AppText>
                 </AppText>
-              ) : (
-                <>
-                  <AppText style={[styles.savingsLabel, { color: theme.text }]}>
-                    {t('savings_so_far')}
-                  </AppText>
-                  <View style={styles.savingsAmountContainer}>
-                    <AppText style={[styles.savingsAmountGreen, { color: theme.brandText }] }>
-                      {t('amount_with_currency', { amount: (userData?.savings ?? 0).toFixed(2), currency: t('currency_qar') })}
-                    </AppText>
-                  </View>
-                </>
-              )}
             </View>
             <TouchableOpacity
               style={styles.profileAvatarButton}
@@ -270,13 +281,13 @@ export default function ProfileScreen() {
         <View style={styles.menuContainer}>
           <MenuItem
             icon="bookmark-outline"
-            label={t('saved')}
+            label={t('saved_offers')}
             onPress={() => router.push('/saved-offers' as any)}
             isRTL={isRTL}
           />
           <MenuItem
             icon="time-outline"
-            label={t('history')}
+            label={t('redemption_history')}
             onPress={() => router.push('/redemption-history' as any)}
             isRTL={isRTL}
           />
@@ -555,36 +566,19 @@ const styles = StyleSheet.create({
     padding: 0,
     marginBottom: 16,
   },
-  savingsLabel: {
-    fontSize: 14,
-    ...Typography.getTextVariantStyle('body'),
-    marginBottom: 2,
-    width: '100%',
-  },
-  savingsInlineRTL: {
+  savingsInline: {
     flexShrink: 1,
     maxWidth: '100%',
+    lineHeight: 30,
+  },
+  savingsInlineRTL: {
     textAlign: 'center',
     writingDirection: 'rtl',
-    fontSize: 20,
-    lineHeight: 30,
-    ...Typography.getTextVariantStyle('body'),
   },
-  savingsAmountContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-    width: '100%',
-  },
-  savingsAmountContainerRTL: {
-    justifyContent: 'flex-start',
-  },
-  savingsAmountGreen: {
+  savingsValueText: {
     flexShrink: 1,
     fontSize: 24,
-  },
-  savingsAmountGreenRTL: {
-    fontSize: 26,
+    lineHeight: 32,
   },
   universityBanner: {
     marginBottom: 24,

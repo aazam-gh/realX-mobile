@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StatusBar as NativeStatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -30,6 +30,7 @@ export default function WalletScreen() {
   const balance = typeof studentData?.cashback === 'number' ? studentData.cashback : 0;
   const creatorCode = studentData?.creatorCode;
   const currency = 'XP';
+  const androidTopInset = Platform.OS === 'android' ? NativeStatusBar.currentHeight ?? 24 : 0;
 
   const [isHelpDrawerVisible, setIsHelpDrawerVisible] = useState(false);
   const [isRewardsTermsDrawerVisible, setIsRewardsTermsDrawerVisible] = useState(false);
@@ -66,7 +67,7 @@ export default function WalletScreen() {
           hidden
         />
       ) : null}
-      <View collapsable={false} style={styles.contentWrapper}>
+      <View collapsable={false} style={[styles.contentWrapper, { paddingTop: androidTopInset }]}>
         <ScrollView
           style={[styles.scrollView, { backgroundColor: theme.background }]}
           contentContainerStyle={styles.scrollContent}

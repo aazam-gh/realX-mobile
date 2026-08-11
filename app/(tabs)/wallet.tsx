@@ -64,7 +64,6 @@ export default function WalletScreen() {
         <StatusBar
           style={isDark ? 'light' : 'dark'}
           animated
-          hidden
         />
       ) : null}
       <View collapsable={false} style={[styles.contentWrapper, { paddingTop: androidTopInset }]}>

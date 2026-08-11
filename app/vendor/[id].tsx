@@ -11,7 +11,7 @@ import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -42,6 +42,15 @@ type VendorBranch = {
     longitude?: number;
     isPrimary?: boolean;
     distanceKm?: number;
+};
+
+type OnlineVendorOffer = {
+    fulfillmentMode: 'coupon' | 'outbound_link' | 'partner_managed';
+    discountCode?: string;
+    ctaLabel?: string;
+    ctaLabelAr?: string;
+    instructions?: string;
+    instructionsAr?: string;
 };
 
 function getVendorBranches(vendor: any): VendorBranch[] {
@@ -140,7 +149,7 @@ export default function VendorScreen() {
             const functions = getFunctions(undefined, 'me-central1');
             const getOnlineVendorOffer = httpsCallable(functions, 'getOnlineVendorOffer');
             const result = await getOnlineVendorOffer({ vendorId: vendorLookupId });
-            return result.data as { discountCode: string };
+            return result.data as OnlineVendorOffer;
         },
         enabled: isAuthenticated && vendorLookupId.length > 0 && vendor?.vendorType === 'online',
     });
@@ -168,7 +177,11 @@ export default function VendorScreen() {
             const functions = getFunctions(undefined, 'me-central1');
             const recordOutboundClick = httpsCallable(functions, 'recordOnlineVendorOutboundClick');
             const requestId = `online-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
-            const result = await recordOutboundClick({ vendorId: currentVendorId, requestId });
+            const result = await recordOutboundClick({
+                vendorId: currentVendorId,
+                requestId,
+                platform: Platform.OS === 'ios' ? 'ios' : 'android',
+            });
             const data = result.data as { purchaseUrl?: string };
 
             if (!data.purchaseUrl) throw new Error(t('online_store_access_failed_message'));
@@ -183,6 +196,13 @@ export default function VendorScreen() {
             setOnlineWebsiteLoading(false);
         }
     };
+    const isCouponOnlineOffer = (onlineOffer?.fulfillmentMode ?? 'coupon') === 'coupon';
+    const onlineCtaLabel = (isArabic ? onlineOffer?.ctaLabelAr : onlineOffer?.ctaLabel)
+        || onlineOffer?.ctaLabel
+        || t('online_visit_website_caps');
+    const onlineInstructions = (isArabic ? onlineOffer?.instructionsAr : onlineOffer?.instructions)
+        || onlineOffer?.instructions
+        || (isCouponOnlineOffer ? undefined : t('online_partner_managed_default_instruction'));
     const refreshVendor = useCallback(async () => {
         await refetchVendor();
         if (currentUserId && actualVendorId) {
@@ -528,9 +548,9 @@ export default function VendorScreen() {
                                 <View style={[styles.offerInfoContainer, styles.onlineOfferInfoContainer, { backgroundColor: theme.cardMuted }]}>
                                     <View style={[styles.offerContent, styles.onlineOfferContent]}>
                                         <AppText style={[{ color: theme.text }, styles.offerTitle, styles.onlineOfferTitle, { textAlign: isArabic ? 'right' : 'left' }]}>
-                                            {pickLocalizedText(isArabic, vendor.brandOfferNameAr, vendor.brandOfferName, t('online_vendor_title'))}
+                                            {pickLocalizedText(isArabic, vendor.brandOfferNameAr, vendor.brandOfferName, t(isCouponOnlineOffer ? 'online_vendor_title' : 'online_vendor_access_title'))}
                                         </AppText>
-                                        <TouchableOpacity
+                                        {isCouponOnlineOffer ? <TouchableOpacity
                                             style={[styles.onlineCodeBox, { backgroundColor: theme.brandSoft, borderColor: theme.brand, flexDirection: isArabic ? 'row-reverse' : 'row' }]}
                                             onPress={() => void handleCopyOnlineCode()}
                                             disabled={onlineOfferLoading}
@@ -546,15 +566,20 @@ export default function VendorScreen() {
                                                 </Text>
                                             )}
                                             <Ionicons name={onlineCodeCopied ? 'checkmark-circle' : 'copy-outline'} size={24} color={theme.brand} />
-                                        </TouchableOpacity>
-                                        {onlineOfferError || onlineCodeCopied ? (
+                                        </TouchableOpacity> : null}
+                                        {onlineInstructions ? (
+                                            <Text style={[styles.onlineCodeHint, { color: theme.mutedText, textAlign: 'center' }]}>
+                                                {onlineInstructions}
+                                            </Text>
+                                        ) : null}
+                                        {isCouponOnlineOffer && (onlineOfferError || onlineCodeCopied) ? (
                                             <Text style={[styles.onlineCodeHint, { color: onlineOfferError ? theme.danger : theme.mutedText, textAlign: 'center' }]}>
                                                 {onlineOfferError
                                                     ? (onlineOfferError as any).message || t('online_store_access_failed_message')
                                                     : t('online_code_copied')}
                                             </Text>
                                         ) : null}
-                                        {onlineOfferError && isAuthenticated ? (
+                                        {isCouponOnlineOffer && onlineOfferError && isAuthenticated ? (
                                             <TouchableOpacity onPress={() => void refetchOnlineOffer()} disabled={onlineOfferLoading}>
                                                 <Text style={[styles.onlineRetryText, { color: theme.brandText }]}>{t('retry')}</Text>
                                             </TouchableOpacity>
@@ -569,7 +594,7 @@ export default function VendorScreen() {
                                         disabled={onlineWebsiteLoading}
                                     >
                                         {onlineWebsiteLoading ? <ActivityIndicator size="small" color={theme.onActionSolid} /> : <Ionicons name="open-outline" size={18} color={theme.onActionSolid} />}
-                                        <Text style={[{ color: theme.onActionSolid, ...Typography.getTextVariantStyle('body') }, styles.pillButtonTextSmall]}>{t('online_visit_website_caps')}</Text>
+                                        <Text style={[{ color: theme.onActionSolid, ...Typography.getTextVariantStyle('body') }, styles.pillButtonTextSmall]}>{onlineCtaLabel}</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>

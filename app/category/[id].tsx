@@ -421,8 +421,8 @@ export default function CategoryScreen() {
         : vendors;
 
     return (
-        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['bottom']}>
-            <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
+            <StatusBar style={isDark ? 'light' : 'dark'} animated />
             {showComingSoon && !loading && (
                 <View style={styles.backgroundIconsOverlay} pointerEvents="none">
                     {BACKGROUND_ICONS.map((icon, i) => (

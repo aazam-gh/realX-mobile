@@ -70,7 +70,7 @@ export default function ProfileScreen() {
   if (isGuest) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        {isFocused ? <StatusBar style={isDark ? 'light' : 'dark'} animated hidden /> : null}
+        {isFocused ? <StatusBar style={isDark ? 'light' : 'dark'} animated /> : null}
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
@@ -185,7 +185,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {isFocused ? <StatusBar style={isDark ? 'light' : 'dark'} animated hidden /> : null}
+      {isFocused ? <StatusBar style={isDark ? 'light' : 'dark'} animated /> : null}
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}

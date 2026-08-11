@@ -115,6 +115,15 @@ interface OfferData {
     [key: string]: any;
 }
 
+interface OnlineVendorOffer {
+    fulfillmentMode: 'coupon' | 'outbound_link' | 'partner_managed';
+    discountCode?: string;
+    ctaLabel?: string;
+    ctaLabelAr?: string;
+    instructions?: string;
+    instructionsAr?: string;
+}
+
 export default function RedeemScreen() {
     const { id, vendorId, offerIndex: offerIndexParam } = useLocalSearchParams<{
         id: string;
@@ -197,7 +206,7 @@ export default function RedeemScreen() {
             const functions = getFunctions(undefined, 'me-central1');
             const getOnlineVendorOffer = httpsCallable(functions, 'getOnlineVendorOffer');
             const offerResult = await getOnlineVendorOffer({ vendorId: currentVendorId });
-            return offerResult.data as { discountCode: string };
+            return offerResult.data as OnlineVendorOffer;
         },
         enabled: isAuthenticated && currentVendorId.length > 0 && vendor?.vendorType === 'online',
     });
@@ -329,6 +338,7 @@ export default function RedeemScreen() {
             const result = await recordOutboundClick({
                 vendorId: currentVendorId,
                 requestId,
+                platform: Platform.OS === 'ios' ? 'ios' : 'android',
             });
 
             const data = result.data as { purchaseUrl?: string; tracked: boolean };
@@ -413,10 +423,17 @@ export default function RedeemScreen() {
 
     if (isOnlineVendor) {
         const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
+        const isCouponOnlineOffer = (onlineOffer?.fulfillmentMode ?? 'coupon') === 'coupon';
+        const onlineCtaLabel = (isArabic ? onlineOffer?.ctaLabelAr : onlineOffer?.ctaLabel)
+            || onlineOffer?.ctaLabel
+            || t('online_visit_store_caps');
+        const onlineInstructions = (isArabic ? onlineOffer?.instructionsAr : onlineOffer?.instructions)
+            || onlineOffer?.instructions
+            || (isCouponOnlineOffer ? undefined : t('online_partner_managed_default_instruction'));
 
         return (
             <GiftCardFlowScaffold
-                title={t('online_vendor_title')}
+                title={t(isCouponOnlineOffer ? 'online_vendor_title' : 'online_vendor_access_title')}
                 step={2}
                 totalSteps={2}
                 onBack={() => router.back()}
@@ -428,11 +445,11 @@ export default function RedeemScreen() {
                             styles.redeemButton,
                             { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid },
                             { flexDirection: isArabic ? 'row-reverse' : 'row' },
-                            !onlineOffer?.discountCode && styles.redeemButtonDisabled,
+                            !onlineOffer && styles.redeemButtonDisabled,
                         ]}
                         activeOpacity={0.9}
                         onPress={handleOnlineStoreVisit}
-                        disabled={!onlineOffer?.discountCode || onlineLoading}
+                        disabled={!onlineOffer || onlineLoading}
                         accessibilityRole="button"
                         accessibilityLabel={t('online_visit_store_caps')}
                     >
@@ -442,7 +459,7 @@ export default function RedeemScreen() {
                             <>
                                 <Ionicons name="open-outline" size={20} color={theme.onActionSolid} />
                                 <AppText style={[styles.redeemButtonText, { color: theme.onActionSolid }]}>
-                                    {t('online_visit_store_caps')}
+                                    {onlineCtaLabel}
                                 </AppText>
                             </>
                         )}
@@ -469,7 +486,7 @@ export default function RedeemScreen() {
                     </View>
                 </View>
 
-                <View style={[styles.onlineRedemptionCard, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
+                {isCouponOnlineOffer ? <View style={[styles.onlineRedemptionCard, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
                     <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
                         {t('online_discount_code_label')}
                     </Text>
@@ -508,7 +525,13 @@ export default function RedeemScreen() {
                             <Text style={[styles.onlineRetryText, { color: theme.brandText }]}>{t('retry')}</Text>
                         </TouchableOpacity>
                     ) : null}
-                </View>
+                </View> : onlineInstructions ? (
+                    <View style={[styles.onlineRedemptionCard, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
+                        <Text style={[styles.onlineHint, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left', marginTop: 0 }]}>
+                            {onlineInstructions}
+                        </Text>
+                    </View>
+                ) : null}
             </GiftCardFlowScaffold>
         );
     }

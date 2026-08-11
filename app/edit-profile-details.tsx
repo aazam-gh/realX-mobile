@@ -3,6 +3,7 @@ import { getAuth, updateProfile } from '@react-native-firebase/auth';
 import { doc, getFirestore, updateDoc } from '@react-native-firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +24,7 @@ const DEFAULT_DATE = new Date(2000, 0, 1);
 
 export default function EditProfileDetailsScreen() {
     const router = useRouter();
-    const { theme } = useAppTheme();
+    const { theme, isDark } = useAppTheme();
     const { t } = useTranslation();
     const { isAuthenticated, loading: authAccessLoading, requireAuth } = useAuthAccess();
     const { isRTL } = useAppLocale();
@@ -146,12 +147,14 @@ export default function EditProfileDetailsScreen() {
     const email = studentProfile?.email || user?.email || '';
 
     return (
-        <OnboardingScaffold
-            headerTitle={t('edit_profile_title')}
-            onBack={confirmDiscard}
-            headerAction={{ label: t('cancel'), onPress: confirmDiscard, disabled: isSaving }}
-            footer={<OnboardingPrimaryButton label={t('save')} loadingLabel={t('save')} loading={isSaving} disabled={isLoading || !initialDraft} onPress={() => void handleSave()} />}
-        >
+        <>
+            <StatusBar style={isDark ? 'light' : 'dark'} animated />
+            <OnboardingScaffold
+                headerTitle={t('edit_profile_title')}
+                onBack={confirmDiscard}
+                headerAction={{ label: t('cancel'), onPress: confirmDiscard, disabled: isSaving }}
+                footer={<OnboardingPrimaryButton label={t('save')} loadingLabel={t('save')} loading={isSaving} disabled={isLoading || !initialDraft} onPress={() => void handleSave()} />}
+            >
             {isLoading ? <ActivityIndicator size="large" color={theme.brand} style={styles.loader} /> : (
                 <OnboardingFlowSectionMotion delay={80} style={styles.form}>
                     <OnboardingField
@@ -205,7 +208,8 @@ export default function EditProfileDetailsScreen() {
                     </View>
                 </Modal>
             ) : showDatePicker ? <DateTimePicker value={dateDraft} mode="date" display="default" onValueChange={onDateValueChange} onDismiss={() => setShowDatePicker(false)} maximumDate={new Date()} /> : null}
-        </OnboardingScaffold>
+            </OnboardingScaffold>
+        </>
     );
 }
 

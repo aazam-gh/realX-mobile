@@ -69,7 +69,6 @@ export default function HomeScreen() {
         <StatusBar
           style={isDark ? 'light' : 'dark'}
           animated
-          hidden
         />
       ) : null}
       <View

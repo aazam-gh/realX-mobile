@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
@@ -40,7 +41,7 @@ export default function XAcademyScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
-  const { theme } = useAppTheme();
+  const { theme, isDark } = useAppTheme();
   const { locale, isRTL } = useAppLocale();
 
   const {
@@ -68,8 +69,9 @@ export default function XAcademyScreen() {
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.background }]}
-      edges={['top']}
+      edges={['top', 'bottom']}
     >
+      <StatusBar style={isDark ? 'light' : 'dark'} animated />
       <AppHeader
         title={(
           <>

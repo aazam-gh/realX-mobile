@@ -196,7 +196,9 @@ export default function MapScreen() {
   const { locale } = useAppLocale();
   const isArabic = locale === 'ar';
   const insets = useSafeAreaInsets();
-  const androidTopInset = Platform.OS === 'android' ? NativeStatusBar.currentHeight ?? 24 : 0;
+  const topInset = Platform.OS === 'android'
+    ? NativeStatusBar.currentHeight ?? 24
+    : insets.top;
 
   const mapRef = useRef<MapView>(null);
   const superclusterRef = useRef<Supercluster>(new Supercluster({ radius: 52, maxZoom: 14 }));
@@ -845,12 +847,11 @@ export default function MapScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background, paddingTop: androidTopInset }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background, paddingTop: topInset }]} edges={['bottom']}>
       {isFocused ? (
         <StatusBar
           style={isDark ? 'light' : 'dark'}
           animated
-          hidden
         />
       ) : null}
 

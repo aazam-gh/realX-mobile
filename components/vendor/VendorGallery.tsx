@@ -1,6 +1,7 @@
 import { PagerView } from "@expo/ui/community/pager-view";
 import { Image } from "expo-image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Modal,
   Pressable,
@@ -23,6 +24,7 @@ const GALLERY_LIMIT = 12;
 
 export function VendorGallery({ images, isArabic }: VendorGalleryProps) {
   const { theme } = useAppTheme();
+  const { t } = useTranslation();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const prefetchedGalleryRef = useRef("");
   const galleryImages = useMemo(
@@ -51,9 +53,18 @@ export function VendorGallery({ images, isArabic }: VendorGalleryProps) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headingRow}>
-        <Text style={[styles.heading, { color: theme.text }]}>
-          {isArabic ? "الصور" : "GALLERY"}
+      <View style={[styles.headingRow, isArabic && styles.rowReverse]}>
+        <Text
+          style={[
+            styles.heading,
+            {
+              color: theme.text,
+              textAlign: isArabic ? "right" : "left",
+              writingDirection: isArabic ? "rtl" : "ltr",
+            },
+          ]}
+        >
+          {t("gallery")}
         </Text>
         <Text style={[styles.count, { color: theme.subtleText }]}>
           {galleryImages.length}
@@ -63,7 +74,10 @@ export function VendorGallery({ images, isArabic }: VendorGalleryProps) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.thumbnailList}
+        contentContainerStyle={[
+          styles.thumbnailList,
+          isArabic && styles.rowReverse,
+        ]}
       >
         {galleryImages.map((imageUrl, index) => (
           <Pressable
@@ -101,7 +115,7 @@ export function VendorGallery({ images, isArabic }: VendorGalleryProps) {
               style={StyleSheet.absoluteFill}
               onPress={() => setSelectedIndex(null)}
               accessibilityRole="button"
-              accessibilityLabel="Close gallery"
+            accessibilityLabel={t("close_gallery")}
             />
 
             <View style={styles.viewer}>
@@ -153,6 +167,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  rowReverse: {
+    flexDirection: "row-reverse",
   },
   heading: {
     ...Typography.getTextVariantStyle('bodyStrong'),

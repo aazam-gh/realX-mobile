@@ -10,6 +10,7 @@ import {
   RecentRedemptions,
   SpendButton,
   SpendCardDrawer,
+  WalletBackgroundIcons,
   XCard,
 } from '../../components/wallet';
 import { useStudent } from '../../context/StudentContext';
@@ -75,6 +76,7 @@ export default function WalletScreen() {
           refreshControl={refreshControl}
           {...tabBarScrollVisibility}
         >
+        <WalletBackgroundIcons />
         <XCard earnings={isGuest ? 0 : balance} currency={currency} creatorCode={isGuest ? undefined : creatorCode} />
         <SpendButton
           onPress={handleSpendPress}
@@ -157,6 +159,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    position: 'relative',
     paddingBottom: 100,
   },
   guestCard: {

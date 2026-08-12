@@ -96,11 +96,9 @@ function callPhoneNumber(phoneNumber?: string) {
     void Linking.openURL(`tel:${dialable}`);
 }
 
-function formatBranchDistance(distanceKm: number) {
-    if (distanceKm >= 100) {
-        return `${Math.round(distanceKm)} km away`;
-    }
-    return `${distanceKm.toFixed(1)} km away`;
+function formatBranchDistance(distanceKm: number, isArabic: boolean, t: (key: string, options?: Record<string, unknown>) => string) {
+    const distance = distanceKm >= 100 ? Math.round(distanceKm).toString() : distanceKm.toFixed(1);
+    return t('km_away', { distance, lng: isArabic ? 'ar' : 'en' });
 }
 
 export default function VendorScreen() {
@@ -479,7 +477,7 @@ export default function VendorScreen() {
                             </View>
                         ) : (
                             <>
-                        <View style={[styles.metaLine, styles.metaLineSpread]}>
+                        <View style={[styles.metaLine, styles.metaLineSpread, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                             <TouchableOpacity style={[styles.locationButton, { backgroundColor: theme.cardMuted }]} onPress={() => {
                                 if (branches.length > 1) {
                                     setBranchPickerVisible(true);
@@ -500,9 +498,9 @@ export default function VendorScreen() {
                                 </Text>
                             </TouchableOpacity>
                             {nearestBranch?.distanceKm != null && (
-                                <View style={[styles.nearestBranchChip, { backgroundColor: theme.brandSoft }]}>
+                                <View style={[styles.nearestBranchChip, { backgroundColor: theme.brandSoft, flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                     <Ionicons name="navigate-outline" size={13} color={theme.brand} />
-                                    <Text style={[styles.nearestBranchText, { color: theme.brandText }]} numberOfLines={1}>{nearestBranch.distanceKm.toFixed(1)} km</Text>
+                                    <Text style={[styles.nearestBranchText, { color: theme.brandText, writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>{t('km_away', { distance: nearestBranch.distanceKm.toFixed(1) })}</Text>
                                 </View>
                             )}
                         </View>
@@ -713,9 +711,9 @@ const offerDescription = isArabic
                         </View>
 
                         <View style={styles.modalContent}>
-                            <View style={styles.modalHeader}>
-                                <AppText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left' }, styles.modalTitleText]}>
-                                    {isArabic ? 'الفروع' : 'BRANCHES'}
+                            <View style={[styles.modalHeader, isArabic && styles.rowReverse]}>
+                                <AppText style={[{ color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }, styles.modalTitleText]}>
+                                    {t('branches')}
                                 </AppText>
                                 <TouchableOpacity
                                     onPress={() => setBranchPickerVisible(false)}
@@ -747,23 +745,23 @@ const offerDescription = isArabic
                                             onPress={() => openBranchOnMap(branch)}
                                             activeOpacity={0.8}
                                         >
-                                            <View style={styles.branchMainRow}>
+                                            <View style={[styles.branchMainRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                                 <View style={[styles.branchIcon, { backgroundColor: theme.card }]}>
                                                     <Ionicons name={index === 0 ? 'navigate' : 'location-outline'} size={18} color={theme.brand} />
                                                 </View>
                                                 <View style={styles.branchTextBlock}>
-                                                    <View style={styles.branchTitleRow}>
-                                                        <Text style={[styles.branchName, { color: theme.text }]} numberOfLines={1}>{branchName}</Text>
+                                                    <View style={[styles.branchTitleRow, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                                        <Text style={[styles.branchName, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>{branchName}</Text>
                                                         {index === 0 && branch.distanceKm != null && (
                                                             <View style={[styles.branchNearestPill, { backgroundColor: theme.brand }]}>
-                                                                <Text style={[styles.branchNearestText, { color: theme.onActionSolid }]}>Nearest</Text>
+                                                                <Text style={[styles.branchNearestText, { color: theme.onActionSolid }]}>{t('nearest')}</Text>
                                                             </View>
                                                         )}
                                                     </View>
-                                                    {address ? <Text style={[styles.branchAddress, { color: theme.mutedText }]} numberOfLines={2}>{address}</Text> : null}
+                                                    {address ? <Text style={[styles.branchAddress, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={2}>{address}</Text> : null}
                                                 </View>
                                             </View>
-                                            <View style={[styles.branchMetaRow, styles.branchMetaRowSpread]}>
+                                            <View style={[styles.branchMetaRow, styles.branchMetaRowSpread, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                                 {branch.phoneNumber ? (
                                                     <TouchableOpacity
                                                         style={[styles.branchPhoneChip, { backgroundColor: theme.card }]}
@@ -780,9 +778,9 @@ const offerDescription = isArabic
                                                     </TouchableOpacity>
                                                 ) : null}
                                                 {branch.distanceKm != null && (
-                                                    <View style={[styles.branchDistanceChip, { backgroundColor: theme.brandSoft }]}>
+                                                    <View style={[styles.branchDistanceChip, { backgroundColor: theme.brandSoft, flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                                         <Ionicons name="navigate-outline" size={13} color={theme.brand} />
-                                                        <Text style={[styles.branchDistance, { color: theme.brandText }]}>{formatBranchDistance(branch.distanceKm)}</Text>
+                                                        <Text style={[styles.branchDistance, { color: theme.brandText, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{formatBranchDistance(branch.distanceKm, isArabic, t)}</Text>
                                                     </View>
                                                 )}
                                             </View>
@@ -1150,6 +1148,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
+    },
+    rowReverse: {
+        flexDirection: 'row-reverse',
     },
     modalTitleText: {
         fontSize: 20,

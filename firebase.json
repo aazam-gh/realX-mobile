@@ -6,6 +6,16 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "storage": [
+    {
+      "bucket": "reelx-backend",
+      "rules": "storage.rules"
+    },
+    {
+      "bucket": "reelx-backend.firebasestorage.app",
+      "rules": "storage.rules"
+    }
+  ],
   "hosting": {
     "public": "public",
     "ignore": [

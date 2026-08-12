@@ -16,8 +16,8 @@ const allowedAnonymousReads = [
   'cms/guest-validation',
   'categories/guest-validation',
   'vendors/guest-validation',
-  'maps/guest-validation',
-  'mapLocations/guest-validation',
+  'events/guest-validation',
+  'rewards/guest-validation',
 ];
 
 const deniedAnonymousReads = [
@@ -37,8 +37,8 @@ const deniedAnonymousReads = [
   'otps/student@example.com',
   'verification_requests/requestA',
   'wakti_student_verification_requests/requestA',
-  'events/eventA',
-  'rewards/rewardA',
+  'maps/mapA',
+  'mapLocations/locationA',
   'offers/offerA',
 ];
 

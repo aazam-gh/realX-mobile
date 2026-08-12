@@ -163,7 +163,7 @@ export default function XAcademyScreen() {
                       <View style={styles.uniCardOverlay} />
                     </View>
 
-                    <View style={styles.uniCardContent}>
+                    <View style={[styles.uniCardContent, isRTL && styles.rowReverse]}>
                       <View style={[styles.logoContainer, { backgroundColor: theme.logoTile }]}>
                         <Image
                           source={{ uri: uni.logoUrl }}
@@ -175,20 +175,20 @@ export default function XAcademyScreen() {
                       <View
                         style={[
                           styles.uniDetails,
-                          { alignItems: 'flex-start' },
+                          { alignItems: isRTL ? 'flex-end' : 'flex-start' },
                         ]}
                       >
                         <Text
                           style={[
                             styles.uniName,
-                            { textAlign: isRTL ? 'right' : 'left' },
+                            { textAlign: isRTL ? 'right' : 'left', writingDirection: isRTL ? 'rtl' : 'ltr' },
                           ]}
                           numberOfLines={2}
                         >
                           {uniName}
                         </Text>
 
-                        <View style={[styles.applyButton, { backgroundColor: theme.logoTile }]}>
+                        <View style={[styles.applyButton, { backgroundColor: theme.logoTile }, isRTL && styles.rowReverse]}>
                           <Text style={[styles.applyButtonText, { color: theme.logoTileText }]}>
                             {t('apply_now').toUpperCase()}
                           </Text>
@@ -300,6 +300,7 @@ const styles = StyleSheet.create({
 
   uniDetails: {
     flex: 1,
+    minWidth: 0,
   },
 
   uniName: {

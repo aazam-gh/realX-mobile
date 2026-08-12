@@ -9,3 +9,4 @@ export { default as SpendCardDrawer } from './SpendCardDrawer';
 export { default as GiftCardFlowScaffold } from './GiftCardFlowScaffold';
 export { default as XCard } from './XCard';
 export { default as XCardHeader } from './XCardHeader';
+export { default as WalletBackgroundIcons } from './WalletBackgroundIcons';

@@ -255,12 +255,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                                         {category.image ? (
                                             <View style={[
                                                 styles.drawerListImageFrame,
-                                                {
-                                                    backgroundColor: theme.surface,
-                                                    borderColor: theme.border,
-                                                    marginLeft: isArabic ? 14 : 0,
-                                                    marginRight: isArabic ? 0 : 14,
-                                                },
+                                                { backgroundColor: theme.surface, borderColor: theme.border },
                                             ]}>
                                                 <RemoteImage
                                                     source={typeof category.image === 'string' ? { uri: category.image } : category.image}
@@ -271,18 +266,20 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                                         ) : (
                                             <View style={[
                                                 styles.drawerListImageFrame,
-                                                {
-                                                    backgroundColor: theme.surface,
-                                                    borderColor: theme.border,
-                                                    marginLeft: isArabic ? 14 : 0,
-                                                    marginRight: isArabic ? 0 : 14,
-                                                },
+                                                { backgroundColor: theme.surface, borderColor: theme.border },
                                             ]}>
                                                 <Text style={[styles.drawerListIcon, { color: theme.text }]}>{category.icon}</Text>
                                             </View>
                                         )}
                                         <Text
-                                            style={[styles.drawerListText, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}
+                                            style={[
+                                                styles.drawerListText,
+                                                {
+                                                    color: theme.text,
+                                                    textAlign: isArabic ? 'right' : 'left',
+                                                    writingDirection: isArabic ? 'rtl' : 'ltr',
+                                                },
+                                            ]}
                                             numberOfLines={2}
                                         >
                                             {category.name}
@@ -391,6 +388,7 @@ const styles = StyleSheet.create({
     },
     drawerListItem: {
         alignItems: 'center',
+        gap: 14,
         minHeight: 76,
         paddingVertical: 10,
         borderBottomWidth: StyleSheet.hairlineWidth,
@@ -413,6 +411,8 @@ const styles = StyleSheet.create({
     },
     drawerListText: {
         flex: 1,
+        flexShrink: 1,
+        minWidth: 0,
         fontSize: 16,
         lineHeight: 21,
         ...Typography.getTextVariantStyle('body'),

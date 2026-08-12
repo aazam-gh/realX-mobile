@@ -849,7 +849,10 @@ export default function MapScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background, paddingTop: topInset }]} edges={['bottom']}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background, paddingTop: topInset }]}
+      edges={Platform.OS === 'ios' ? [] : ['bottom']}
+    >
       {isFocused ? (
         <StatusBar
           style={isDark ? 'light' : 'dark'}

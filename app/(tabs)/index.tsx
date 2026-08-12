@@ -10,6 +10,7 @@ import {
   CategoryGrid,
   FeaturedBanner,
   GreetingHeader,
+  HomeBackgroundIcons,
   NewDeals,
   OpportunityHighlights,
   PromoBanner,
@@ -64,7 +65,10 @@ export default function HomeScreen() {
   }, [searchQuery, router]);
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]} edges={['bottom']}>
+    <SafeAreaView
+      style={[styles.screen, { backgroundColor: theme.background }]}
+      edges={Platform.OS === 'ios' ? [] : ['bottom']}
+    >
       {isFocused ? (
         <StatusBar
           style={isDark ? 'light' : 'dark'}
@@ -86,6 +90,7 @@ export default function HomeScreen() {
           refreshControl={refreshControl}
           {...tabBarScrollVisibility}
         >
+        <HomeBackgroundIcons />
         <VerificationStatusBanner />
         <PromoBanner onBannerPress={(banner) => handleVendorPress(banner.vendorId)} />
         <CategoryGrid />
@@ -128,6 +133,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingTop: 68,
+    position: 'relative',
   },
   header: {
     position: 'absolute',

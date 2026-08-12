@@ -22,6 +22,36 @@ function isValidOwnerProfileUpdate() {
   && request.resource.data.updatedAt is timestamp;
 }
 
+function isValidVendorDashboardTheme() {
+  return request.resource.data.keys().hasOnly([
+    'primaryColor',
+    'accentColor',
+    'backgroundColor',
+    'cardColor',
+    'chartColor',
+    'updatedAt'
+  ])
+  && request.resource.data.keys().hasAll([
+    'primaryColor',
+    'accentColor',
+    'backgroundColor',
+    'cardColor',
+    'chartColor',
+    'updatedAt'
+  ])
+  && request.resource.data.primaryColor is string
+  && request.resource.data.primaryColor.matches('^#[0-9A-Fa-f]{6}$')
+  && request.resource.data.accentColor is string
+  && request.resource.data.accentColor.matches('^#[0-9A-Fa-f]{6}$')
+  && request.resource.data.backgroundColor is string
+  && request.resource.data.backgroundColor.matches('^#[0-9A-Fa-f]{6}$')
+  && request.resource.data.cardColor is string
+  && request.resource.data.cardColor.matches('^#[0-9A-Fa-f]{6}$')
+  && request.resource.data.chartColor is string
+  && request.resource.data.chartColor.matches('^#[0-9A-Fa-f]{6}$')
+  && request.resource.data.updatedAt is timestamp;
+}
+
 function isValidSavedOffer() {
   return request.resource.data.keys().hasOnly([
       'type',
@@ -159,12 +189,6 @@ match /cms/{docId} {
   allow write: if isAdmin();
 }
 
-// ─── app config collection ───────────────────────────────────────────
-match /appConfig/{docId} {
-  allow read: if docId == 'mobileVersionGate';
-  allow write: if isAdmin();
-}
-
 // ─── categories collection ────────────────────────────────────────────
 match /categories/{catId} {
   allow read: if true;
@@ -179,7 +203,7 @@ match /offers/{offerId} {
 
 // ─── events collection ────────────────────────────────────────────────
 match /events/{eventId} {
-  allow read: if request.auth != null;
+  allow read: if true;
   allow write: if isAdmin();
 }
 
@@ -227,6 +251,29 @@ match /vendors/{vendorId} {
   allow write: if isAdmin();
 }
 
+// ─── vendor dashboard customization ──────────────────────────────────
+match /vendorDashboardThemes/{vendorId} {
+  allow read: if request.auth != null
+    && (request.auth.uid == vendorId || isAdmin());
+
+  allow create, update: if request.auth != null
+    && ((request.auth.uid == vendorId && isValidVendorDashboardTheme()) || isAdmin());
+
+  allow delete: if request.auth != null
+    && (request.auth.uid == vendorId || isAdmin());
+}
+
+// ─── holding groups ──────────────────────────────────────────────────
+match /holdingGroups/{groupId} {
+  allow read, write: if isAdmin();
+}
+
+match /holdingGroupUsers/{userId} {
+  allow read: if request.auth != null
+    && (request.auth.uid == userId || isAdmin());
+  allow write: if isAdmin();
+}
+
 // ─── online vendor redemption config ─────────────────────────────────
 match /vendorOnlineRedemptionConfigs/{vendorId} {
   allow read, write: if isAdmin();
@@ -266,19 +313,19 @@ match /redemption_rate_limits/{rateLimitId} {
 
 // ─── maps collection ──────────────────────────────────────────────────
 match /maps/{mapDocId} {
-  allow read: if true;
+  allow read: if request.auth != null;
   allow write: if isAdmin();
 }
 
 // ─── map locations collection ────────────────────────────────────────
 match /mapLocations/{locationId} {
-  allow read: if true;
+  allow read: if request.auth != null;
   allow write: if isAdmin();
 }
 
 // ─── rewards collection ───────────────────────────────────────────────
 match /rewards/{rewardId} {
-  allow read: if request.auth != null;
+  allow read: if true;
   allow write: if isAdmin();
 }
 

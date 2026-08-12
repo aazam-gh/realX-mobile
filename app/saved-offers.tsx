@@ -106,7 +106,7 @@ export default function SavedOffersScreen() {
           style={[styles.cover, { backgroundColor: theme.cardMuted }]}
           contentFit="cover"
         />
-        <View style={styles.content}>
+        <View style={[styles.content, isArabic && styles.rowReverse]}>
           <View style={[styles.logoWrap, { backgroundColor: theme.logoTile, borderColor: theme.logoTileBorder }]}>
             {item.vendorLogo ? (
               <Image source={{ uri: item.vendorLogo }} style={styles.logo} contentFit="cover" />
@@ -115,34 +115,34 @@ export default function SavedOffersScreen() {
             )}
           </View>
           <View style={styles.textBlock}>
-            <Text style={[styles.vendorName, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={1}>
+            <Text style={[styles.vendorName, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>
               {vendorName || t('unknown_vendor')}
             </Text>
-            <AppText style={[styles.offerTitle, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={2}>
+            <AppText style={[styles.offerTitle, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={2}>
               {title || t('saved_offer')}
             </AppText>
             {description ? (
-              <Text style={[styles.description, { color: theme.subtleText, textAlign: isArabic ? 'right' : 'left' }]} numberOfLines={2}>
+              <Text style={[styles.description, { color: theme.subtleText, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={2}>
                 {description}
               </Text>
             ) : null}
           </View>
         </View>
-        <View style={styles.actions}>
+        <View style={[styles.actions, isArabic && styles.rowReverse]}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.redeemButton, { backgroundColor: theme.actionSolid }]}
+            style={[styles.actionButton, styles.redeemButton, isArabic && styles.rowReverse, { backgroundColor: theme.actionSolid }]}
             onPress={() => redeemOffer(item)}
           >
             <Ionicons name="flash" size={18} color={theme.onActionSolid} />
-            <Text style={[styles.redeemText, { color: theme.onActionSolid }]} numberOfLines={1}>{t('redeem_caps')}</Text>
+            <Text style={[styles.redeemText, { color: theme.onActionSolid, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>{t('redeem_caps')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.removeButton, { borderColor: theme.border }]}
+            style={[styles.removeButton, isArabic && styles.rowReverse, { borderColor: theme.border }]}
             onPress={() => void removeSavedOffer(item)}
             disabled={removingIds.has(item.id)}
           >
             <Ionicons name="bookmark" size={18} color={theme.brand} />
-            <Text style={[styles.removeText, { color: theme.text }]} numberOfLines={1}>{t('remove')}</Text>
+            <Text style={[styles.removeText, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={1}>{t('remove')}</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -207,6 +207,9 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
   },
+  rowReverse: {
+    flexDirection: 'row-reverse',
+  },
   logoWrap: {
     width: 48,
     height: 48,
@@ -222,6 +225,7 @@ const styles = StyleSheet.create({
   },
   textBlock: {
     flex: 1,
+    minWidth: 0,
   },
   vendorName: {
     fontSize: 13,

@@ -2,7 +2,15 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { createBottomTabNavigator } from 'expo-router/js-tabs';
 import { withLayoutContext } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useEffect } from 'react';
 import { Platform, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
@@ -42,8 +50,6 @@ function TabNavigatorContent() {
     return (
       <NativeTabs
         tintColor={theme.brand}
-        backgroundColor={theme.surface}
-        disableTransparentOnScrollEdge
         minimizeBehavior="onScrollDown"
       >
         {(isRTL ? [...screens].reverse() : screens).map((screen) => (
@@ -89,7 +95,7 @@ function TabNavigatorContent() {
         tabBarHideOnKeyboard: false,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarItemStyle: styles.tabBarItem,
-        tabBarActiveBackgroundColor: isDark ? 'rgba(24, 184, 82, 0.18)' : 'rgba(24, 184, 82, 0.12)',
+        tabBarActiveBackgroundColor: 'transparent',
         tabBarInactiveBackgroundColor: 'transparent',
       }}
     >
@@ -124,6 +130,8 @@ function TabNavigatorContent() {
 }
 
 function AndroidTabBarButton(props: any) {
+  const { isDark, theme } = useAppTheme();
+  const reduceMotion = useReducedMotion();
   const {
     children,
     onPress,
@@ -135,19 +143,75 @@ function AndroidTabBarButton(props: any) {
     ['aria-selected']: ariaSelected,
     ...pressableProps
   } = props;
+  const isSelected = Boolean(ariaSelected);
+  const selectionProgress = useSharedValue(isSelected ? 1 : 0);
+  const pressProgress = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      selectionProgress.value = isSelected ? 1 : 0;
+      return;
+    }
+
+    selectionProgress.value = withSpring(isSelected ? 1 : 0, {
+      damping: 18,
+      stiffness: 240,
+      mass: 0.7,
+      overshootClamping: false,
+    });
+  }, [isSelected, reduceMotion, selectionProgress]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    opacity: selectionProgress.value,
+    transform: [
+      { scaleX: 0.72 + selectionProgress.value * 0.28 },
+      { scaleY: 0.84 + selectionProgress.value * 0.16 },
+    ],
+  }));
+
+  const contentStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: selectionProgress.value * -1.5 },
+      { scale: 1 + selectionProgress.value * 0.035 - pressProgress.value * 0.045 },
+    ],
+  }));
+
+  const handlePressIn = () => {
+    if (!reduceMotion) {
+      pressProgress.value = withTiming(1, { duration: 90 });
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!reduceMotion) {
+      pressProgress.value = withSpring(0, { damping: 17, stiffness: 300, mass: 0.6 });
+    }
+  };
 
   return (
     <Pressable
       {...pressableProps}
       accessibilityRole="tab"
       accessibilityLabel={ariaLabel}
-      accessibilityState={{ selected: Boolean(ariaSelected) }}
+      accessibilityState={{ selected: isSelected }}
       onPress={onPress}
       onLongPress={onLongPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       testID={testID}
       style={[style as StyleProp<ViewStyle>, styles.tabBarButton]}
     >
-      {children}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.tabSelectionIndicator,
+          { backgroundColor: isDark ? 'rgba(24, 184, 82, 0.18)' : theme.brandSoft },
+          indicatorStyle,
+        ]}
+      />
+      <Animated.View pointerEvents="none" style={[styles.tabBarButtonContent, contentStyle]}>
+        {children}
+      </Animated.View>
     </Pressable>
   );
 }
@@ -163,6 +227,19 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: 22,
     overflow: 'hidden',
+  },
+  tabSelectionIndicator: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 22,
+  },
+  tabBarButtonContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabBarLabel: {
     fontSize: 11,

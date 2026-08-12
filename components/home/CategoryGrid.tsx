@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { FlashList } from '@shopify/flash-list';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import Reanimated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -22,7 +24,6 @@ type Props = {
 };
 
 const MAX_VISIBLE_CATEGORIES = 7;
-const SEE_MORE_IMAGE = require('../../assets/images/see-more.svg');
 
 export default function CategoryGrid({ categories: propCategories, onCategoryPress }: Props) {
     const router = useRouter();
@@ -32,6 +33,17 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     const { theme } = useAppTheme();
     const [isDrawerVisible, setIsDrawerVisible] = useState(false);
     const drawerTranslateY = useRef(new Animated.Value(height)).current;
+    const moreAnimationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const moreScale = useSharedValue(1);
+    const moreRotation = useSharedValue(0);
+    const reduceMotion = useReducedMotion();
+
+    const moreIconStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: moreScale.value },
+            { rotate: `${moreRotation.value}deg` },
+        ],
+    }));
 
     const isArabic = locale === 'ar';
 
@@ -56,7 +68,6 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     const comingSoonItem: CategoryItem = {
         id: 'coming-soon',
         name: t('more'),
-        image: SEE_MORE_IMAGE,
     };
     const displayCategories = hasMoreCategories ? [...visibleCategories, comingSoonItem] : baseCategories;
     const categoryColumnWidth = (width - (HOME_HORIZONTAL_GUTTER * 2)) / 4;
@@ -75,6 +86,10 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
         }
     }, [drawerTranslateY, height, isDrawerVisible]);
 
+    useEffect(() => () => {
+        if (moreAnimationTimer.current) clearTimeout(moreAnimationTimer.current);
+    }, []);
+
     const closeDrawer = () => {
         Animated.timing(drawerTranslateY, {
             toValue: height,
@@ -90,7 +105,25 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
         triggerSubtleHaptic();
         if (item.id === 'coming-soon') {
             if (hasMoreCategories) {
-                setIsDrawerVisible(true);
+                if (moreAnimationTimer.current) clearTimeout(moreAnimationTimer.current);
+
+                if (reduceMotion) {
+                    setIsDrawerVisible(true);
+                } else {
+                    moreScale.value = withSequence(
+                        withTiming(0.86, { duration: 80 }),
+                        withSpring(1, { damping: 12, stiffness: 260, mass: 0.7 }),
+                    );
+                    moreRotation.value = withSequence(
+                        withTiming(-8, { duration: 80 }),
+                        withTiming(8, { duration: 80 }),
+                        withSpring(0, { damping: 12, stiffness: 260, mass: 0.7 }),
+                    );
+                    moreAnimationTimer.current = setTimeout(() => {
+                        setIsDrawerVisible(true);
+                        moreAnimationTimer.current = null;
+                    }, 150);
+                }
             }
             return;
         }
@@ -125,7 +158,11 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                         },
                     ]}
                 >
-                    {item.image ? (
+                    {item.id === 'coming-soon' ? (
+                        <Reanimated.View style={moreIconStyle}>
+                            <Ionicons name="ellipsis-horizontal" size={34} color={theme.brand} />
+                        </Reanimated.View>
+                    ) : item.image ? (
                         <RemoteImage
                             source={typeof item.image === 'string' ? { uri: item.image } : item.image}
                             style={styles.categoryImage}

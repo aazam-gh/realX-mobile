@@ -70,6 +70,10 @@ function TabNavigatorContent() {
         tabBarActiveTintColor: theme.brand,
         tabBarInactiveTintColor: theme.iconMuted,
         tabBarStyle: {
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
           display: isTabBarVisible ? 'flex' : 'none',
           backgroundColor: theme.surface,
           height: 64 + insets.bottom,

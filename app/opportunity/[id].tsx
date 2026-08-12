@@ -36,6 +36,29 @@ import { getOpportunityAction, toDate } from '../../utils/opportunities';
 import { queryKeys } from '../../utils/queryClient';
 import { trackEvent } from '../../utils/analytics';
 
+function MetaRow({
+  icon,
+  text,
+  isRTL,
+  iconColor,
+  textColor,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+  isRTL: boolean;
+  iconColor: string;
+  textColor: string;
+}) {
+  return (
+    <View style={[styles.metaRow, isRTL && styles.rowReverse]}>
+      <Ionicons name={icon} size={19} color={iconColor} />
+      <Text selectable style={[styles.metaText, { color: textColor }]}>
+        {text}
+      </Text>
+    </View>
+  );
+}
+
 export default function OpportunityDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -57,10 +80,16 @@ export default function OpportunityDetailsScreen() {
   });
 
   useEffect(() => {
+    let active = true;
     const user = getAuth().currentUser;
     if (!user || !id) return;
     const savedRef = doc(getFirestore(), 'students', user.uid, 'savedItems', `opportunity_${id}`);
-    void getDoc(savedRef).then((snapshot) => setSaved(snapshot.exists()));
+    void getDoc(savedRef).then((snapshot) => {
+      if (active) setSaved(snapshot.exists());
+    });
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -203,22 +232,36 @@ export default function OpportunityDetailsScreen() {
             {startsAt ? (
               <MetaRow
                 icon="calendar-outline"
+                iconColor={theme.brandText}
+                isRTL={isRTL}
                 text={startsAt.toLocaleDateString(locale === 'ar' ? 'ar-QA' : 'en-QA', {
                   dateStyle: 'medium',
                 })}
+                textColor={theme.mutedText}
               />
             ) : null}
             {deadline ? (
               <MetaRow
                 icon="hourglass-outline"
+                iconColor={theme.brandText}
+                isRTL={isRTL}
                 text={t('apply_by_date', {
                   date: deadline.toLocaleDateString(locale === 'ar' ? 'ar-QA' : 'en-QA', {
                     dateStyle: 'medium',
                   }),
                 })}
+                textColor={theme.mutedText}
               />
             ) : null}
-            {location ? <MetaRow icon="location-outline" text={location} /> : null}
+            {location ? (
+              <MetaRow
+                icon="location-outline"
+                iconColor={theme.brandText}
+                isRTL={isRTL}
+                text={location}
+                textColor={theme.mutedText}
+              />
+            ) : null}
           </View>
           {description ? (
             <Text
@@ -258,16 +301,6 @@ export default function OpportunityDetailsScreen() {
     </SafeAreaView>
   );
 
-  function MetaRow({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
-    return (
-      <View style={[styles.metaRow, isRTL && styles.rowReverse]}>
-        <Ionicons name={icon} size={19} color={theme.brandText} />
-        <Text selectable style={[styles.metaText, { color: theme.mutedText }]}>
-          {text}
-        </Text>
-      </View>
-    );
-  }
 }
 
 const styles = StyleSheet.create({

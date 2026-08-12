@@ -135,7 +135,7 @@ export default function BrandGrid() {
 
     if (isLoading) {
         return (
-            <View style={[ styles.loaderContainer]}>
+            <View style={styles.loaderContainer}>
                 <ActivityIndicator size="small" color={theme.brand} />
             </View>
         );

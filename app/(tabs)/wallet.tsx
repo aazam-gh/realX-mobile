@@ -17,7 +17,6 @@ import { useStudent } from '../../context/StudentContext';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { Typography } from '../../constants/Typography';
-import { queryClient } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
 import { useTabBarScrollVisibility } from '../../components/navigation/TabBarScrollVisibility';
 
@@ -25,7 +24,7 @@ export default function WalletScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const { t } = useTranslation();
-  const { studentData } = useStudent();
+  const { studentData, refreshProfile } = useStudent();
   const { isDark, theme } = useAppTheme();
   const { isGuest, endGuestSession, requireAuth } = useAuthAccess();
   const balance = typeof studentData?.cashback === 'number' ? studentData.cashback : 0;
@@ -36,10 +35,7 @@ export default function WalletScreen() {
   const [isHelpDrawerVisible, setIsHelpDrawerVisible] = useState(false);
   const [isRewardsTermsDrawerVisible, setIsRewardsTermsDrawerVisible] = useState(false);
   const [isSpendDrawerVisible, setIsSpendDrawerVisible] = useState(false);
-  const refreshWallet = async () => {
-    await queryClient.refetchQueries({ type: 'active' });
-  };
-  const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refreshWallet });
+  const { refreshControl, refreshOverlay } = useRealXRefresh({ onRefresh: refreshProfile });
   const tabBarScrollVisibility = useTabBarScrollVisibility();
 
   const handleSpendPress = () => {

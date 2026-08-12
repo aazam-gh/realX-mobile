@@ -300,7 +300,7 @@ export default function ProfileScreen() {
             onPress={handleLogout}
             activeOpacity={0.7}
           >
-            <View style={[styles.logoutContent]}> 
+            <View style={styles.logoutContent}>
               <Ionicons name="log-out-outline" size={20} color={theme.danger} />
               <AppText style={[styles.logoutText, { color: theme.danger, textAlign: isRTL ? 'right' : 'left' }]}>{t('log_out').toUpperCase()}</AppText>
             </View>
@@ -415,7 +415,7 @@ function MenuItem({
       onPress={onPress}
       disabled={disabled}
     >
-      <View style={[styles.menuItemLeft]}>
+      <View style={styles.menuItemLeft}>
         <Ionicons name={icon} size={24} color={color || theme.icon} />
         <Text
           style={[

@@ -52,6 +52,22 @@ function isLiveVendor(data: Record<string, any>): boolean {
     return data.status !== 'Draft' && data.status !== 'Inactive' && data.isActive !== false;
 }
 
+async function forEachWithConcurrency<T>(
+    items: T[],
+    concurrency: number,
+    task: (item: T) => Promise<void>,
+): Promise<void> {
+    let nextIndex = 0;
+    const workerCount = Math.min(Math.max(1, concurrency), items.length);
+    await Promise.all(Array.from({ length: workerCount }, async () => {
+        while (nextIndex < items.length) {
+            const item = items[nextIndex];
+            nextIndex += 1;
+            await task(item);
+        }
+    }));
+}
+
 export type SavedOfferItem = {
     id: string;
     type?: string;
@@ -355,7 +371,7 @@ export async function fetchMapLocationsByPrefixes(
     const fieldName = `geohash${precision}`;
     const byId = new Map<string, MapLocationQueryItem>();
 
-    await Promise.all(normalizedPrefixes.map(async (prefix) => {
+    await forEachWithConcurrency(normalizedPrefixes, 6, async (prefix) => {
         let cursor: FirebaseFirestoreTypes.QueryDocumentSnapshot | null = null;
 
         do {
@@ -378,7 +394,7 @@ export async function fetchMapLocationsByPrefixes(
                 ? snapshot.docs[snapshot.docs.length - 1]
                 : null;
         } while (cursor);
-    }));
+    });
 
     return Array.from(byId.values())
         .filter((item) => item.isActive !== false && item.status !== 'Draft' && item.status !== 'Inactive')
@@ -416,27 +432,36 @@ export async function fetchVendorSearchPage(
     cursorId: string | null,
 ): Promise<MappedPage<VendorQueryItem, string>> {
     const db = getFirestore();
-    const constraints: any[] = [
-        where('searchTokens', 'array-contains', searchQuery),
-        orderBy(documentId()),
-    ];
-    if (cursorId) constraints.push(startAfter(cursorId));
-    constraints.push(limit(pageSize));
+    const items: VendorQueryItem[] = [];
+    let nextCursor = cursorId;
+    let reachedEnd = false;
 
-    const snapshot = await getDocs(query(collection(db, 'vendors'), ...constraints));
-    const items = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
-        const data = docSnap.data();
-        const vendor = { id: docSnap.id, ...data };
-        if (isLiveVendor(data)) {
+    while (items.length < pageSize && !reachedEnd) {
+        const remaining = pageSize - items.length;
+        const constraints: any[] = [
+            where('searchTokens', 'array-contains', searchQuery),
+            orderBy(documentId()),
+        ];
+        if (nextCursor) constraints.push(startAfter(nextCursor));
+        constraints.push(limit(remaining));
+
+        const snapshot = await getDocs(query(collection(db, 'vendors'), ...constraints));
+        const rawLastDoc = snapshot.docs[snapshot.docs.length - 1];
+        nextCursor = rawLastDoc?.id ?? nextCursor;
+        reachedEnd = snapshot.docs.length < remaining;
+
+        snapshot.docs.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+            const data = docSnap.data();
+            if (!isLiveVendor(data)) return;
             queryClient.setQueryData(queryKeys.vendor(docSnap.id), { id: docSnap.id, data });
-        }
-        return vendor;
-    }).filter(isLiveVendor);
+            items.push({ id: docSnap.id, ...data });
+        });
+    }
 
     return {
         items,
-        nextCursor: items.length === pageSize ? items[items.length - 1]?.id || null : null,
-        reachedEnd: items.length < pageSize,
+        nextCursor: reachedEnd ? null : nextCursor,
+        reachedEnd,
     };
 }
 
@@ -465,45 +490,53 @@ export async function fetchCategoryVendorsPage({
     cursor,
 }: CategoryVendorPageOptions): Promise<MappedPage<VendorQueryItem, CategoryVendorCursor>> {
     const db = getFirestore();
-    const constraints: any[] = [];
+    const items: VendorQueryItem[] = [];
+    let nextCursor = cursor;
+    let reachedEnd = false;
 
-    if (selectedSubCategory !== 'all' && !searchQuery) {
-        constraints.push(where('subcategory', 'array-contains', selectedSubCategory));
-    } else {
-        constraints.push(where('mainCategory', '==', categoryName));
-    }
-    if (searchQuery) constraints.push(where('searchTokens', 'array-contains', searchQuery));
-    if (selectedFilter === 'trending') constraints.push(where('isTrending', '==', true));
-    if (selectedFilter === 'cashbacks') constraints.push(where('xcard', '==', true));
+    while (items.length < pageSize && !reachedEnd) {
+        const remaining = pageSize - items.length;
+        const constraints: any[] = [];
 
-    constraints.push(
-        orderBy('createdAt', 'desc'),
-        orderBy(documentId(), 'desc')
-    );
-    if (cursor) constraints.push(startAfter(cursor.createdAt, cursor.id));
-    constraints.push(limit(pageSize));
-
-    const snapshot = await getDocs(query(collection(db, 'vendors'), ...constraints));
-    const items = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
-        const data = docSnap.data();
-        const vendor = {
-            id: docSnap.id,
-            ...data,
-            xcard: data.xcard || false,
-        };
-        if (isLiveVendor(data)) {
-            queryClient.setQueryData(queryKeys.vendor(docSnap.id), { id: docSnap.id, data });
+        if (selectedSubCategory !== 'all' && !searchQuery) {
+            constraints.push(where('subcategory', 'array-contains', selectedSubCategory));
+        } else {
+            constraints.push(where('mainCategory', '==', categoryName));
         }
-        return vendor;
-    }).filter(isLiveVendor);
-    const lastItem = items[items.length - 1];
+        if (searchQuery) constraints.push(where('searchTokens', 'array-contains', searchQuery));
+        if (selectedFilter === 'trending') constraints.push(where('isTrending', '==', true));
+        if (selectedFilter === 'cashbacks') constraints.push(where('xcard', '==', true));
+
+        constraints.push(
+            orderBy('createdAt', 'desc'),
+            orderBy(documentId(), 'desc')
+        );
+        if (nextCursor) constraints.push(startAfter(nextCursor.createdAt, nextCursor.id));
+        constraints.push(limit(remaining));
+
+        const snapshot = await getDocs(query(collection(db, 'vendors'), ...constraints));
+        const rawLastDoc = snapshot.docs[snapshot.docs.length - 1];
+        if (rawLastDoc) {
+            nextCursor = { createdAt: rawLastDoc.data().createdAt, id: rawLastDoc.id };
+        }
+        reachedEnd = snapshot.docs.length < remaining;
+
+        snapshot.docs.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+            const data = docSnap.data();
+            if (!isLiveVendor(data)) return;
+            queryClient.setQueryData(queryKeys.vendor(docSnap.id), { id: docSnap.id, data });
+            items.push({
+                id: docSnap.id,
+                ...data,
+                xcard: data.xcard || false,
+            });
+        });
+    }
 
     return {
         items,
-        nextCursor: items.length === pageSize && lastItem
-            ? { createdAt: lastItem.createdAt, id: lastItem.id }
-            : null,
-        reachedEnd: items.length < pageSize,
+        nextCursor: reachedEnd ? null : nextCursor,
+        reachedEnd,
     };
 }
 

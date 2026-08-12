@@ -214,8 +214,6 @@ export default function MapScreen() {
   });
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
-  const [_searchingNearby, setSearchingNearby] = useState(false);
-  void _searchingNearby;
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [animatedSearchPlaceholder, setAnimatedSearchPlaceholder] = useState<string | null>(null);
@@ -446,7 +444,13 @@ export default function MapScreen() {
     return new Map(vendors.map((vendor) => [vendor.id, vendor]));
   }, [vendors]);
 
-  // Get clusters for current viewport
+  const spatialIndex = useMemo(() => {
+    superclusterRef.current.load(vendorPoints);
+    return superclusterRef.current;
+  }, [vendorPoints]);
+
+  // Query the existing spatial index for the current viewport. Rebuilding the
+  // index is only necessary when the vendor points themselves change.
   const clusters = useMemo(() => {
     const { longitudeDelta } = currentRegion;
     const safeLongitudeDelta =
@@ -459,12 +463,9 @@ export default function MapScreen() {
       currentRegion.latitude + currentRegion.latitudeDelta / 2,
     ];
 
-    // Load points before querying so supercluster has an initialized index.
-    superclusterRef.current.load(vendorPoints);
-
     if (!vendorPoints.length) return [];
-    return superclusterRef.current.getClusters(bounds, zoom);
-  }, [currentRegion, vendorPoints]);
+    return spatialIndex.getClusters(bounds, zoom);
+  }, [currentRegion, spatialIndex, vendorPoints.length]);
 
   useEffect(() => {
     const requestLocation = async () => {
@@ -496,7 +497,6 @@ export default function MapScreen() {
   }, []);
 
   const fetchVendorsForVisibleRegion = useCallback(async (region: Region) => {
-    setSearchingNearby(true);
     setError(null);
 
     try {
@@ -504,9 +504,11 @@ export default function MapScreen() {
       const fetchedTiles: string[] = [];
       const missingPrefixes: string[] = [];
 
-      await Promise.all(tileSet.prefixes.map(async (prefix) => {
-        const cacheKey = mapTileCacheKey(tileSet.precision, prefix);
-        const cachedRaw = await AsyncStorage.getItem(cacheKey);
+      const cacheEntries = await AsyncStorage.multiGet(
+        tileSet.prefixes.map((prefix) => mapTileCacheKey(tileSet.precision, prefix)),
+      );
+      cacheEntries.forEach(([cacheKey, cachedRaw], index) => {
+        const prefix = tileSet.prefixes[index];
         if (!cachedRaw) {
           missingPrefixes.push(prefix);
           return;
@@ -524,7 +526,7 @@ export default function MapScreen() {
         } catch {
           missingPrefixes.push(prefix);
         }
-      }));
+      });
 
       const normalizedMissingPrefixes = Array.from(new Set(missingPrefixes)).sort();
 
@@ -549,14 +551,15 @@ export default function MapScreen() {
           byPrefix.set(prefix, bucket);
         });
 
-        await Promise.all(normalizedMissingPrefixes.map(async (prefix) => {
+        const cacheWrites = normalizedMissingPrefixes.map((prefix) => {
           const cacheKey = mapTileCacheKey(tileSet.precision, prefix);
-          await AsyncStorage.setItem(cacheKey, JSON.stringify({
+          fetchedTiles.push(cacheKey);
+          return [cacheKey, JSON.stringify({
             fetchedAt: Date.now(),
             vendors: byPrefix.get(prefix) || [],
-          } satisfies TileCachePayload));
-          fetchedTiles.push(cacheKey);
-        }));
+          } satisfies TileCachePayload)] as [string, string];
+        });
+        await AsyncStorage.multiSet(cacheWrites);
 
         await rememberMapTileCacheKeys(fetchedTiles);
         hasFetchedMapIndexRef.current = hasFetchedMapIndexRef.current || indexedVendors.length > 0;
@@ -584,7 +587,6 @@ export default function MapScreen() {
       setError(t('map_load_error'));
     } finally {
       setLoading(false);
-      setSearchingNearby(false);
     }
   }, [t, userLocation]);
 

@@ -80,7 +80,9 @@ function TabNavigatorContent() {
           left: 0,
           right: 0,
           bottom: 0,
-          display: isTabBarVisible ? 'flex' : 'none',
+          // Keep Android navigation persistent while tab content scrolls. The
+          // native iOS tab bar retains its platform-managed scroll behavior.
+          display: Platform.OS === 'android' || isTabBarVisible ? 'flex' : 'none',
           backgroundColor: theme.surface,
           height: 64 + insets.bottom,
           paddingTop: 4,

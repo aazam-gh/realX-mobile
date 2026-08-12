@@ -24,6 +24,8 @@ export default function RecentRedemptions() {
     const isArabic = locale === 'ar';
 
     useEffect(() => {
+        let active = true;
+        let snapshotGeneration = 0;
         const auth = getAuth();
         const user = auth.currentUser;
         if (!user) {
@@ -41,6 +43,7 @@ export default function RecentRedemptions() {
         );
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
+            const generation = ++snapshotGeneration;
             // Deduplicate vendor IDs and reuse session-cached display docs.
             const vendorIds: string[] = [];
             snapshot.docs.forEach((d: any) => {
@@ -105,14 +108,19 @@ export default function RecentRedemptions() {
                 };
             });
 
+            if (!active || generation !== snapshotGeneration) return;
             setRedemptions(formattedData);
             setLoading(false);
         }, (err) => {
+            if (!active) return;
             logger.warn('RecentRedemptions fetch error:', err);
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            active = false;
+            unsubscribe();
+        };
     }, [t, isArabic]);
 
     const renderItem = ({ item }: { item: RedemptionData }) => (

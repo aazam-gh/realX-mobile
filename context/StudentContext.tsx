@@ -2,6 +2,7 @@ import { getAuth, onAuthStateChanged, type FirebaseAuthTypes } from '@react-nati
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { logger } from '../utils/logger';
+import { queryClient, queryKeys } from '../utils/queryClient';
 
 type StudentData = {
   firstName?: string;
@@ -32,11 +33,17 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  const activeUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const auth = getAuth();
     const handleAuthState = (observedUser: FirebaseAuthTypes.User | null) => {
       const user = observedUser ?? auth.currentUser;
+      const previousUserId = activeUserIdRef.current;
+      if (previousUserId && previousUserId !== user?.uid) {
+        queryClient.removeQueries({ queryKey: queryKeys.studentProfile(previousUserId), exact: true });
+      }
+      activeUserIdRef.current = user?.uid ?? null;
       // Clean up previous snapshot listener
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
@@ -60,10 +67,13 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
         studentDocRef,
         (docSnap) => {
           if (docSnap.exists()) {
-            setStudentData(docSnap.data() as StudentData);
+            const nextStudentData = docSnap.data() as StudentData;
+            setStudentData(nextStudentData);
+            queryClient.setQueryData(queryKeys.studentProfile(user.uid), nextStudentData);
             setDocExists(true);
           } else {
             setStudentData(null);
+            queryClient.setQueryData(queryKeys.studentProfile(user.uid), null);
             setDocExists(false);
           }
           setLoading(false);

@@ -21,7 +21,7 @@ import { useAppTheme } from '../context/AppThemeContext';
 import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import { triggerSubtleHaptic } from '../utils/haptics';
-import { queryClient, queryKeys } from '../utils/queryClient';
+import { queryClient, queryKeys, TRANSIENT_QUERY_GC_TIME_MS } from '../utils/queryClient';
 import { fetchTrendingVendorRecommendations, fetchVendorSearchPage, VendorQueryItem } from '../utils/firebaseQueries';
 import { useRealXRefresh } from '../components/PullToRefresh';
 import { HeaderIconButton } from '../components/navigation/AppHeader';
@@ -46,6 +46,8 @@ export default function SearchScreen() {
     const [loadingMore, setLoadingMore] = useState(false);
     const [loadingRecommendations, setLoadingRecommendations] = useState(false);
     const cursorRef = useRef<string | null>(null);
+    const fetchingRef = useRef(false);
+    const requestIdRef = useRef(0);
     const searchInputRef = useRef<TextInput>(null);
     const [isListEnd, setIsListEnd] = useState(false);
     // Fetch vendors with pagination — only when user has typed a query
@@ -53,6 +55,8 @@ export default function SearchScreen() {
         const trimmedQuery = (currentQuery ?? committedQuery).trim().toLowerCase();
 
         if (!trimmedQuery) {
+            requestIdRef.current += 1;
+            fetchingRef.current = false;
             setResults([]);
             setRecommendations([]);
             cursorRef.current = null;
@@ -62,7 +66,10 @@ export default function SearchScreen() {
             return;
         }
 
-        if (loading || (loadingMore && !isNew) || (isListEnd && !isNew)) return;
+        if (!isNew && (fetchingRef.current || isListEnd)) return;
+
+        const requestId = ++requestIdRef.current;
+        fetchingRef.current = true;
 
         if (isNew) {
             setLoading(true);
@@ -79,7 +86,9 @@ export default function SearchScreen() {
             const page = await queryClient.fetchQuery({
                 queryKey: queryKeys.searchVendorsPage(trimmedQuery, cursor),
                 queryFn: () => fetchVendorSearchPage(trimmedQuery, PAGE_SIZE, cursor),
+                gcTime: TRANSIENT_QUERY_GC_TIME_MS,
             });
+            if (requestId !== requestIdRef.current) return;
 
             if (isNew) {
                 setResults(page.items);
@@ -89,12 +98,15 @@ export default function SearchScreen() {
             cursorRef.current = page.nextCursor;
             setIsListEnd(page.reachedEnd);
         } catch (error) {
+            if (requestId !== requestIdRef.current) return;
             logger.error('Error fetching vendors for search:', error);
         } finally {
+            if (requestId !== requestIdRef.current) return;
+            fetchingRef.current = false;
             setLoading(false);
             setLoadingMore(false);
         }
-    }, [loading, loadingMore, isListEnd, committedQuery]);
+    }, [isListEnd, committedQuery]);
 
     const fetchVendorsRef = useRef(fetchVendors);
     useEffect(() => {
@@ -111,6 +123,10 @@ export default function SearchScreen() {
     useEffect(() => {
         fetchVendorsRef.current(true, committedQuery);
     }, [committedQuery]);
+
+    useEffect(() => () => {
+        requestIdRef.current += 1;
+    }, []);
 
     const hasNoResults = Boolean(committedQuery) && !loading && isListEnd && results.length === 0;
 

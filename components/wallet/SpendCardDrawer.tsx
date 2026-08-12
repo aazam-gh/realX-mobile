@@ -27,7 +27,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { fetchXcardBrandsPage } from '../../utils/firebaseQueries';
-import { queryClient, queryKeys } from '../../utils/queryClient';
+import { queryClient, queryKeys, TRANSIENT_QUERY_GC_TIME_MS } from '../../utils/queryClient';
 
 const PAGE_SIZE = 10;
 
@@ -145,6 +145,7 @@ export default function SpendCardDrawer({
                     isNew ? null : lastDocRef.current,
                     t('unknown'),
                 ),
+                gcTime: TRANSIENT_QUERY_GC_TIME_MS,
             });
             if (requestId !== requestIdRef.current) return;
 

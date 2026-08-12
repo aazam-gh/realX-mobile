@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { RefreshControl, type RefreshControlProps } from 'react-native';
 
 type UseRealXRefreshOptions = Omit<RefreshControlProps, 'refreshing' | 'onRefresh'> & {
@@ -7,17 +7,20 @@ type UseRealXRefreshOptions = Omit<RefreshControlProps, 'refreshing' | 'onRefres
 
 export function useRealXRefresh({ onRefresh, ...refreshControlProps }: UseRealXRefreshOptions) {
   const [refreshing, setRefreshing] = useState(false);
+  const refreshingRef = useRef(false);
 
   const handleRefresh = useCallback(async () => {
-    if (refreshing) return;
+    if (refreshingRef.current) return;
 
+    refreshingRef.current = true;
     setRefreshing(true);
     try {
       await onRefresh();
     } finally {
+      refreshingRef.current = false;
       setRefreshing(false);
     }
-  }, [onRefresh, refreshing]);
+  }, [onRefresh]);
 
   const refreshControl = (
     <RefreshControl

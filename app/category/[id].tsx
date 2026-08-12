@@ -20,7 +20,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import { CategoryVendorCursor, fetchCategory, fetchCategoryVendorsPage } from '../../utils/firebaseQueries';
-import { queryClient, queryKeys } from '../../utils/queryClient';
+import { queryClient, queryKeys, TRANSIENT_QUERY_GC_TIME_MS } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
 import { StateSurface } from '../../components/StateSurface';
 import { getGridColumns } from '../../utils/responsive';
@@ -215,6 +215,9 @@ export default function CategoryScreen() {
     const [loadingVendors, setLoadingVendors] = useState(false);
     const [vendorsError, setVendorsError] = useState<unknown>(null);
     const lastDocRef = useRef<any>(null);
+    const fetchingRef = useRef(false);
+    const requestIdRef = useRef(0);
+    const isListEndRef = useRef(false);
     const [isListEnd, setIsListEnd] = useState(false);
     const flashListRef = useRef<any>(null);
     const scrollOffsetRef = useRef(0);
@@ -262,12 +265,16 @@ export default function CategoryScreen() {
     }, []);
 
     const fetchVendors = useCallback(async (isNew = false) => {
-        if (loadingVendors || (isListEnd && !isNew) || !isCategoryActive) return;
+        if (!isCategoryActive || (!isNew && (fetchingRef.current || isListEndRef.current))) return;
 
+        const requestId = ++requestIdRef.current;
+        fetchingRef.current = true;
         setLoadingVendors(true);
         setVendorsError(null);
         try {
             if (!englishCategoryName) {
+                if (requestId !== requestIdRef.current) return;
+                isListEndRef.current = true;
                 setIsListEnd(true);
                 setVendors([]);
                 return;
@@ -291,7 +298,9 @@ export default function CategoryScreen() {
                     pageSize: PAGE_SIZE,
                     cursor,
                 }),
+                gcTime: TRANSIENT_QUERY_GC_TIME_MS,
             });
+            if (requestId !== requestIdRef.current) return;
 
             if (page.items.length > 0) {
                 if (isNew) {
@@ -303,8 +312,10 @@ export default function CategoryScreen() {
                 restoreFlashListScroll();
 
                 lastDocRef.current = page.nextCursor;
+                isListEndRef.current = page.reachedEnd;
                 setIsListEnd(page.reachedEnd);
             } else {
+                isListEndRef.current = true;
                 setIsListEnd(true);
                 if (isNew) {
                     setVendors([]);
@@ -312,12 +323,15 @@ export default function CategoryScreen() {
                 }
             }
         } catch (error) {
+            if (requestId !== requestIdRef.current) return;
             logger.error("Error fetching vendors:", error);
             setVendorsError(error);
         } finally {
+            if (requestId !== requestIdRef.current) return;
+            fetchingRef.current = false;
             setLoadingVendors(false);
         }
-    }, [loadingVendors, isListEnd, isCategoryActive, selectedSubCategory, selectedFilter, englishCategoryName, searchQuery, restoreFlashListScroll]);
+    }, [isCategoryActive, selectedSubCategory, selectedFilter, englishCategoryName, searchQuery, restoreFlashListScroll]);
 
     const fetchVendorsRef = useRef(fetchVendors);
     useEffect(() => {
@@ -327,6 +341,7 @@ export default function CategoryScreen() {
     const refreshCategory = useCallback(async () => {
         await refetchCategory();
         lastDocRef.current = null;
+        isListEndRef.current = false;
         setIsListEnd(false);
         await fetchVendorsRef.current(true);
     }, [refetchCategory]);
@@ -334,12 +349,22 @@ export default function CategoryScreen() {
 
     // Initial fetch or filter change
     useEffect(() => {
-    if (!loading && isCategoryActive) {
-        lastDocRef.current = null;
-        setIsListEnd(false);
-        fetchVendorsRef.current(true);
-    }
-}, [selectedSubCategory, selectedFilter, loading, isCategoryActive, englishCategoryName, searchQuery]);
+        if (!loading && isCategoryActive) {
+            lastDocRef.current = null;
+            isListEndRef.current = false;
+            setIsListEnd(false);
+            fetchVendorsRef.current(true);
+            return;
+        }
+
+        requestIdRef.current += 1;
+        fetchingRef.current = false;
+        setLoadingVendors(false);
+    }, [selectedSubCategory, selectedFilter, loading, isCategoryActive, englishCategoryName, searchQuery]);
+
+    useEffect(() => () => {
+        requestIdRef.current += 1;
+    }, []);
 
     const handleLoadMore = () => {
         if (!loadingVendors && !isListEnd) {
@@ -364,6 +389,7 @@ export default function CategoryScreen() {
             setSelectedSubCategory('all');
         }
         lastDocRef.current = null;
+        isListEndRef.current = false;
         setIsListEnd(false);
         setSearchQuery(nextQuery);
         Keyboard.dismiss();
@@ -372,6 +398,7 @@ export default function CategoryScreen() {
     const handleClearSearch = useCallback(() => {
         setSearchInput('');
         lastDocRef.current = null;
+        isListEndRef.current = false;
         setIsListEnd(false);
         setSearchQuery('');
     }, []);

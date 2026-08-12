@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
@@ -43,13 +44,14 @@ type ScaffoldProps = {
 };
 
 export function OnboardingScaffold({ children, title, headerTitle, subtitle, onBack, onClose, headerAction, progress, footer }: ScaffoldProps) {
-  const { theme } = useAppTheme();
+  const { theme, isDark } = useAppTheme();
   const { locale, isRTL } = useAppLocale();
   const { t } = useTranslation();
 
   return (
     <KeyboardAvoidingView style={[styles.screen, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <StatusBar style={isDark ? 'light' : 'dark'} hidden={false} animated />
         <OnboardingFlowSectionMotion offset={-6} style={[styles.header, isRTL && styles.rowReverse]}>
           {onBack ? (
             <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.cardMuted }]} onPress={onBack} accessibilityRole="button" accessibilityLabel={t('back')}>

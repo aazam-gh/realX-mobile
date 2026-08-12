@@ -443,7 +443,7 @@ export default function RedeemScreen() {
                     <TouchableOpacity
                         style={[
                             styles.redeemButton,
-                            { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid },
+                            { backgroundColor: theme.actionSolid },
                             { flexDirection: isArabic ? 'row-reverse' : 'row' },
                             !onlineOffer && styles.redeemButtonDisabled,
                         ]}
@@ -477,7 +477,7 @@ export default function RedeemScreen() {
                         </AppText>
                     </View>
 
-                    <View style={[styles.logoContainer, { backgroundColor: theme.logoTile, borderColor: theme.logoTile, shadowColor: theme.shadow }]}>
+                    <View style={[styles.logoContainer, { backgroundColor: theme.logoTile, borderColor: theme.logoTile }]}>
                         {vendor.profilePicture ? (
                             <Image source={{ uri: vendor.profilePicture }} style={styles.logoImage} contentFit="cover" />
                         ) : (
@@ -486,7 +486,7 @@ export default function RedeemScreen() {
                     </View>
                 </View>
 
-                {isCouponOnlineOffer ? <View style={[styles.onlineRedemptionCard, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
+                {isCouponOnlineOffer ? <View style={[styles.onlineRedemptionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                     <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
                         {t('online_discount_code_label')}
                     </Text>
@@ -526,7 +526,7 @@ export default function RedeemScreen() {
                         </TouchableOpacity>
                     ) : null}
                 </View> : onlineInstructions ? (
-                    <View style={[styles.onlineRedemptionCard, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: theme.shadow }]}>
+                    <View style={[styles.onlineRedemptionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                         <Text style={[styles.onlineHint, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left', marginTop: 0 }]}>
                             {onlineInstructions}
                         </Text>
@@ -645,7 +645,7 @@ export default function RedeemScreen() {
             >
                 {(vendor.xcard !== true || step === 'creator') && (
                     <View style={[styles.vendorSummary, { backgroundColor: theme.cardMuted }]}>
-                        <View style={[styles.vendorLogo, { backgroundColor: theme.logoTile, shadowColor: theme.shadow }]}>
+                        <View style={[styles.vendorLogo, { backgroundColor: theme.logoTile }]}>
                             {vendor.profilePicture ? (
                                 <Image source={{ uri: vendor.profilePicture }} style={styles.vendorLogoImage} contentFit="cover" />
                             ) : (
@@ -670,7 +670,7 @@ export default function RedeemScreen() {
                         </Text>
                         <TouchableOpacity
                             activeOpacity={1}
-                            style={[styles.textInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }]}
+                            style={[styles.textInputContainer, { backgroundColor: theme.card }]}
                             onPress={() => {
                                 triggerSubtleHaptic();
                                 creatorInputRef.current?.focus();
@@ -704,7 +704,7 @@ export default function RedeemScreen() {
                                 }}
                             >
                                 {[0, 1, 2, 3].map((index) => (
-                                    <View key={index} style={[styles.pinBox, { backgroundColor: theme.card, shadowColor: theme.shadow }, pin.length === index && { borderColor: theme.brand }]}>
+                                    <View key={index} style={[styles.pinBox, { backgroundColor: theme.card }, pin.length === index && { borderColor: theme.brand }]}>
                                         <Text style={[styles.pinText, { color: theme.subtleText }, pin.length > index && { color: theme.text, marginTop: 0 }]}>{pin.length > index ? '●' : '*'}</Text>
                                     </View>
                                 ))}
@@ -726,7 +726,7 @@ export default function RedeemScreen() {
 
                         <View style={[styles.formSection, { backgroundColor: theme.cardMuted }]}>
                             <Text style={[styles.inputLabel, { color: theme.text }, isArabic && styles.textRTL]}>{t('total_bill')}</Text>
-                            <View style={[styles.amountInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }, isArabic && styles.amountInputContainerRTL]}>
+                            <View style={[styles.amountInputContainer, { backgroundColor: theme.card }, isArabic && styles.amountInputContainerRTL]}>
                                 <Text style={[styles.currencyPrefix, { color: theme.mutedText }, isArabic && styles.currencyPrefixRTL]}>{t('currency_qar')}</Text>
                                 <TextInput
                                     ref={amountInputRef}
@@ -773,7 +773,7 @@ export default function RedeemScreen() {
                 )}
 
                 <TouchableOpacity
-                    style={[styles.redeemButton, { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid }, (step === 'pin' && !canRedeem) && styles.redeemButtonDisabled]}
+                    style={[styles.redeemButton, { backgroundColor: theme.actionSolid }, (step === 'pin' && !canRedeem) && styles.redeemButtonDisabled]}
                     activeOpacity={0.9}
                     onPress={handleAction}
                     disabled={(step === 'pin' && !canRedeem) || isRedeeming}
@@ -853,10 +853,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.12,
-        shadowRadius: 7,
-        elevation: 3,
+        boxShadow: '0 3px 7px rgba(0,0,0,0.12)',
     },
     vendorLogoImage: {
         width: '100%',
@@ -912,10 +909,7 @@ const styles = StyleSheet.create({
         height: 60,
         paddingHorizontal: 18,
         justifyContent: 'center',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
+        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
     },
     pinVisualContainerRTL: {
         flexDirection: 'row-reverse',
@@ -969,11 +963,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         marginTop: 24,
         marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.06,
-        shadowRadius: 18,
-        elevation: 2,
+        boxShadow: '0 8px 18px rgba(0,0,0,0.06)',
     },
     onlineCodeBox: {
         alignItems: 'center',
@@ -1012,11 +1002,7 @@ const styles = StyleSheet.create({
         borderWidth: 4,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 6,
+        boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
     },
     logoImage: {
         width: '100%',
@@ -1052,11 +1038,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
+        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
         borderWidth: 2,
         borderColor: 'transparent',
     },
@@ -1081,11 +1063,7 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         height: 55,
         paddingHorizontal: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
+        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
     },
     currencyPrefix: {
         fontSize: 16,
@@ -1153,10 +1131,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 12,
         margin: 12,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 8,
+        boxShadow: '0 8px 12px rgba(0,0,0,0.30)',
     },
     redeemButtonDisabled: {
         opacity: 0.5,
@@ -1174,11 +1149,7 @@ const styles = StyleSheet.create({
         height: 55,
         paddingHorizontal: 20,
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
+        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
     },
     creatorInput: {
         fontSize: 18,

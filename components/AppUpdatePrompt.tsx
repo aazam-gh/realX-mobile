@@ -162,11 +162,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 22,
         paddingVertical: 24,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOpacity: 0.22,
-        shadowRadius: 18,
-        shadowOffset: { width: 0, height: 12 },
-        elevation: 8,
+        boxShadow: '0 12px 18px rgba(0,0,0,0.22)',
     },
     iconWrap: {
         width: 58,

@@ -82,7 +82,7 @@ export default function RedeemGiftCard({
                         {t('in_store_badge')}
                     </Text>
 
-                    <View style={[styles.logoWrapper, { backgroundColor: theme.logoTile, shadowColor: theme.shadow }]}>
+                    <View style={[styles.logoWrapper, { backgroundColor: theme.logoTile }]}>
                         <View style={[styles.brandLogoContainer, { backgroundColor: brand.backgroundColor || theme.logoTile }]}>
                             {brand.logo ? (
                                 <Image source={{ uri: brand.logo }} style={styles.brandLogo} />
@@ -133,7 +133,7 @@ export default function RedeemGiftCard({
                                     {
                                         backgroundColor: selectedAmount === amount ? theme.card : theme.cardMuted,
                                         borderColor: selectedAmount === amount ? theme.border : 'transparent',
-                                        shadowColor: theme.shadow,
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.10)',
                                     },
                                     selectedAmount === amount && styles.amountOptionSelected,
                                 ]}
@@ -263,11 +263,7 @@ const styles = StyleSheet.create({
         marginTop: -52,
         padding: 10,
         borderRadius: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 5,
+        boxShadow: '0 4px 10px rgba(0,0,0,0.10)',
     },
     brandLogoContainer: {
         width: 84,
@@ -335,10 +331,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     amountOptionSelected: {
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
     },
     amountOptionText: {
         fontSize: 14,

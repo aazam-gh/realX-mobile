@@ -236,12 +236,14 @@ export default function MapScreen() {
   const searchPlaceholder = t('search_placeholder');
   const visibleSearchPlaceholder = isSearchActive ? '' : formatMapSearchPlaceholder(animatedSearchPlaceholder ?? searchPlaceholder, isArabic);
   const hasBottomMapPanel = Boolean(selectedMapVendor) || selectedClusterPreview.length > 0;
-  const bottomPanelOffset = insets.bottom + MAP_BOTTOM_PANEL_OFFSET;
+  const bottomPanelOffset = Platform.OS === 'ios'
+    ? insets.bottom + MAP_BOTTOM_PANEL_OFFSET
+    : MAP_BOTTOM_PANEL_OFFSET;
   const locationButtonBottom = hasBottomMapPanel && bottomMapPanelHeight > 0
     ? bottomPanelOffset + bottomMapPanelHeight + MAP_FLOATING_BUTTON_GAP
     : Platform.OS === 'ios'
       ? insets.bottom + 92
-      : 24;
+      : 16;
   const cancelNavButtonBottom = locationButtonBottom + 56;
 
   useEffect(() => {
@@ -870,6 +872,7 @@ export default function MapScreen() {
           // managed through Expo Location below, so keep the native layer off.
           showsUserLocation={false}
           showsMyLocationButton={false}
+          googleRenderer={Platform.OS === 'android' ? 'LATEST' : undefined}
           onRegionChangeComplete={onRegionChangeComplete}
         >
           {clusters.map((cluster) => {
@@ -1008,7 +1011,7 @@ export default function MapScreen() {
         </View>
 
         <Pressable
-          style={[styles.locationButton, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow, bottom: locationButtonBottom }]}
+          style={[styles.locationButton, { backgroundColor: theme.surfaceElevated, bottom: locationButtonBottom }]}
           onPress={() => void centerOnUser()}
         >
           <Ionicons name="locate" size={18} color={theme.brand} />
@@ -1016,7 +1019,7 @@ export default function MapScreen() {
 
         {navigationTarget && (
           <TouchableOpacity
-            style={[styles.cancelNavButton, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow, bottom: cancelNavButtonBottom }]}
+            style={[styles.cancelNavButton, { backgroundColor: theme.surfaceElevated, bottom: cancelNavButtonBottom }]}
             onPress={() => setNavigationTarget(null)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -1032,7 +1035,7 @@ export default function MapScreen() {
             }}
           >
             <Pressable
-              style={[styles.calloutCard, { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow }]}
+              style={[styles.calloutCard, { backgroundColor: theme.surfaceElevated }]}
               onPress={(e) => e.stopPropagation()}
               onLayout={(event) => setBottomMapPanelHeight(Math.ceil(event.nativeEvent.layout.height))}
             >
@@ -1145,7 +1148,7 @@ export default function MapScreen() {
           <View
             style={[
               styles.clusterPreviewCard,
-              { backgroundColor: theme.surfaceElevated, shadowColor: theme.shadow, bottom: bottomPanelOffset },
+              { backgroundColor: theme.surfaceElevated, bottom: bottomPanelOffset },
             ]}
             onLayout={(event) => setBottomMapPanelHeight(Math.ceil(event.nativeEvent.layout.height))}
           >
@@ -1400,11 +1403,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.20)',
   },
   clusterBubble: {
     width: 44,
@@ -1485,11 +1484,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    boxShadow: '0 2px 4px rgba(0,0,0,0.20)',
   },
   calloutOverlay: {
     position: 'absolute',
@@ -1502,11 +1497,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    boxShadow: '0 -2px 8px rgba(0,0,0,0.10)',
   },
   calloutHeader: {
     flexDirection: 'row',
@@ -1613,11 +1604,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 14,
     gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    boxShadow: '0 -2px 8px rgba(0,0,0,0.10)',
   },
   clusterPreviewHeader: {
     flexDirection: 'row',

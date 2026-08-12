@@ -13,6 +13,7 @@ import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Updates from 'expo-updates';
+import { StatusBar } from 'expo-status-bar';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -574,6 +575,7 @@ function LayoutContent({
         onLayout={() => setRootLaidOut(true)}
         style={{ flex: 1, backgroundColor: theme.background }}
       >
+        <StatusBar hidden={false} style={isDark ? 'light' : 'dark'} animated />
         {appReady && !profileError && startupDestination ? (
           <View
             pointerEvents={startupCanReveal ? 'auto' : 'none'}

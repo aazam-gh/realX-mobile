@@ -192,7 +192,7 @@ export default function GiftCardCheckout({
                                 style={[
                                     styles.pinBox,
                                     { width: pinBoxSize, height: pinBoxSize },
-                                    { backgroundColor: theme.card, shadowColor: theme.shadow },
+                                    { backgroundColor: theme.card, boxShadow: '0 2px 5px rgba(0,0,0,0.05)' },
                                 ]}
                             >
                                 <Text style={[styles.pinText, { color: theme.subtleText }, pin.length > index && { color: theme.text, marginTop: 0 }]}>
@@ -221,7 +221,7 @@ export default function GiftCardCheckout({
                     <Text style={[styles.inputHint, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}>
                         {t('gift_card_flow_bill_hint')}
                     </Text>
-                    <View style={[styles.amountInputContainer, { backgroundColor: theme.card, shadowColor: theme.shadow }, isRTL && styles.amountInputContainerRTL]}>
+                    <View style={[styles.amountInputContainer, { backgroundColor: theme.card }, isRTL && styles.amountInputContainerRTL]}>
                         <Text style={[styles.currencyPrefix, { color: theme.mutedText }, isRTL && styles.currencyPrefixRTL]}>
                             {currency}
                         </Text>
@@ -263,7 +263,7 @@ export default function GiftCardCheckout({
                 </View>
 
                 <TouchableOpacity
-                    style={[styles.redeemButton, { backgroundColor: theme.actionSolid, shadowColor: theme.actionSolid }, !canRedeem && styles.redeemButtonDisabled]}
+                    style={[styles.redeemButton, { backgroundColor: theme.actionSolid }, !canRedeem && styles.redeemButtonDisabled]}
                     activeOpacity={0.9}
                     onPress={handleRedeem}
                     disabled={!canRedeem || isRedeeming}
@@ -351,11 +351,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
+        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
     },
     pinText: {
         fontSize: 30,
@@ -369,11 +365,7 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         height: 64,
         paddingHorizontal: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
+        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
     },
     amountInputContainerRTL: {
         flexDirection: 'row-reverse',
@@ -446,10 +438,7 @@ const styles = StyleSheet.create({
         gap: 12,
         marginTop: 18,
         marginBottom: 8,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 8,
+        boxShadow: '0 8px 12px rgba(0,0,0,0.30)',
     },
     redeemButtonDisabled: {
         opacity: 0.5,

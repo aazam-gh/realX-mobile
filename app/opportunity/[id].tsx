@@ -149,7 +149,6 @@ export default function OpportunityDetailsScreen() {
       <StatusBar
         style={isDark ? 'light' : 'dark'}
         animated
-        hidden
       />
       <AppHeader
         title={t(`opportunity_kind_${opportunity.kind}`)}

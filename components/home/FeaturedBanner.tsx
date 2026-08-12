@@ -88,7 +88,9 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
         currentItem.altText,
     ].some((value) => value?.toLowerCase().includes('omara'));
     const ctaText = isOmaraBanner
-        ? 'Use REALX10'
+        ? isRTL
+            ? 'تسوق الآن'
+            : 'Shop Now'
         : configuredCtaText?.toLowerCase() === 'order'
             ? 'GET 10% OFF'
             : configuredCtaText;

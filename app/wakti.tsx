@@ -27,7 +27,7 @@ export default function WaktiModal() {
 
     return (
         <SafeAreaView style={styles.screen}>
-            <StatusBar style="light" hidden />
+            <StatusBar style="light" />
             <WaktiSheetContent onClose={dismissModal} onStoreOpened={closeAfterStoreOpen} />
         </SafeAreaView>
     );

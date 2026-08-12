@@ -33,24 +33,24 @@ export function StateSurface({ kind, title, message, onRetry, compact = false }:
 
   if (kind === 'loading') {
     return (
-      <View style={[styles.container, compact && styles.compact]} accessibilityRole="progressbar" accessibilityLabel={t(detail.titleKey)}>
+      <View style={[styles.container, compact && styles.compact]} accessibilityRole="progressbar" accessibilityLiveRegion="polite" accessibilityLabel={t(detail.titleKey)}>
         <ActivityIndicator size={compact ? 'small' : 'large'} color={theme.brand} />
-        {!compact && <Text style={[styles.message, { color: theme.mutedText }, isRTL && styles.rtl]}>{message || t(detail.messageKey)}</Text>}
+        {!compact && <Text allowFontScaling style={[styles.message, { color: theme.mutedText }, isRTL && styles.rtl]}>{message || t(detail.messageKey)}</Text>}
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, compact && styles.compact]}>
+    <View style={[styles.container, compact && styles.compact]} accessibilityLiveRegion="polite">
       <View style={[styles.icon, { backgroundColor: kind === 'error' ? theme.cardMuted : theme.brandSoft }]}>
         <Ionicons name={detail.icon} size={compact ? 23 : 30} color={kind === 'error' ? theme.danger : theme.brand} />
       </View>
-      <Text selectable style={[styles.title, { color: theme.text }, isRTL && styles.rtl]}>{title || t(detail.titleKey)}</Text>
-      <Text selectable style={[styles.message, { color: theme.mutedText }, isRTL && styles.rtl]}>{message || t(detail.messageKey)}</Text>
+      <Text accessibilityRole="header" allowFontScaling selectable style={[styles.title, { color: theme.text }, isRTL && styles.rtl]}>{title || t(detail.titleKey)}</Text>
+      <Text allowFontScaling selectable style={[styles.message, { color: theme.mutedText }, isRTL && styles.rtl]}>{message || t(detail.messageKey)}</Text>
       {onRetry && (
         <Pressable onPress={onRetry} style={({ pressed }) => [styles.retry, { backgroundColor: theme.actionSolid, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button" accessibilityLabel={t('retry')}>
           <Ionicons name="refresh-outline" size={17} color={theme.onActionSolid} />
-          <Text style={[styles.retryText, { color: theme.onActionSolid }]}>{t('retry')}</Text>
+          <Text allowFontScaling style={[styles.retryText, { color: theme.onActionSolid }]}>{t('retry')}</Text>
         </Pressable>
       )}
     </View>

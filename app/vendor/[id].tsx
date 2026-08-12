@@ -197,12 +197,20 @@ export default function VendorScreen() {
         }
     };
     const isCouponOnlineOffer = (onlineOffer?.fulfillmentMode ?? 'coupon') === 'coupon';
+    const vendorName = pickLocalizedText(isArabic, vendor?.nameAr, vendor?.name, 'Vendor');
+    const isOmaraVendor = [vendor?.id, vendor?.name, vendor?.nameAr]
+        .some((value) => typeof value === 'string' && value.toLowerCase().includes('omara'));
     const onlineCtaLabel = (isArabic ? onlineOffer?.ctaLabelAr : onlineOffer?.ctaLabel)
         || onlineOffer?.ctaLabel
         || t('online_visit_website_caps');
-    const onlineInstructions = (isArabic ? onlineOffer?.instructionsAr : onlineOffer?.instructions)
-        || onlineOffer?.instructions
-        || (isCouponOnlineOffer ? undefined : t('online_partner_managed_default_instruction'));
+    const localizedVendorDescription = isArabic
+        ? (vendor?.shortDescriptionAr || vendor?.shortDescriptionAR || vendor?.descriptionAr || vendor?.brandDescriptionAr || vendor?.brandDescription)
+        : (vendor?.shortDescription || vendor?.brandDescription || vendor?.descriptionEn || vendor?.description);
+    const onlineInstructions = isOmaraVendor
+        ? (localizedVendorDescription || t('online_partner_managed_default_instruction'))
+        : ((isArabic ? onlineOffer?.instructionsAr : onlineOffer?.instructions)
+            || onlineOffer?.instructions
+            || (isCouponOnlineOffer ? undefined : t('online_partner_managed_default_instruction')));
     const refreshVendor = useCallback(async () => {
         await refetchVendor();
         if (currentUserId && actualVendorId) {
@@ -392,7 +400,7 @@ export default function VendorScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
+            <StatusBar style={isDark ? 'light' : 'dark'} animated />
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -483,7 +491,6 @@ export default function VendorScreen() {
                                     return;
                                 }
 
-                                const vendorName = pickLocalizedText(isArabic, vendor.nameAr, vendor.name, 'Vendor');
                                 const q = encodeURIComponent(vendorName + " Qatar");
                                 void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
                             }} activeOpacity={0.7}>

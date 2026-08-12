@@ -12,6 +12,7 @@ import { clearLocalAuthSession } from '../../utils/auth';
 import { toArabicDigits } from '../../utils/numbers';
 import { Typography } from '../../constants/Typography';
 import AppText from '../../components/AppText';
+import ResponsiveText from '../../components/ResponsiveText';
 import { useStudent } from '../../context/StudentContext';
 import UserAvatar from '../../components/UserAvatar';
 import { useAppTheme } from '../../context/AppThemeContext';
@@ -195,36 +196,14 @@ export default function ProfileScreen() {
         <View style={[styles.savingsCard, { backgroundColor: theme.surfaceElevated }]}>
           <View style={[styles.profileSavingsRow, isRTL && styles.profileSavingsRowRTL]}>
               <View style={[styles.savingsDetails, { borderColor: theme.border }, isRTL && styles.savingsDetailsRTL]}>
-                <AppText
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  style={[
-                    styles.savingsInline,
-                    isRTL && styles.savingsInlineRTL,
-                    Typography.getTextVariantStyle('display'),
-                    { color: theme.text },
-                  ]}
-                >
-                  <AppText
-                    style={[
-                      styles.savingsValueText,
-                      Typography.getTextVariantStyle('display'),
-                      { color: theme.brandText },
-                    ]}
-                  >
+                <View style={[styles.savingsInline, isRTL && styles.savingsInlineRTL]}>
+                  <ResponsiveText style={[styles.savingsValueText, { color: theme.brandText }]} minimumFontScale={0.7}>
                     {formattedSavingsAmount}
-                  </AppText>
-                  {'\u00A0\u00A0'}
-                  <AppText
-                    style={[
-                      styles.savingsValueText,
-                      Typography.getTextVariantStyle('display'),
-                      { color: theme.text },
-                    ]}
-                  >
+                  </ResponsiveText>
+                  <ResponsiveText style={[styles.savingsValueText, { color: theme.text }]} minimumFontScale={0.7}>
                     {t('savings_saved_label')}
-                  </AppText>
-                </AppText>
+                  </ResponsiveText>
+                </View>
             </View>
             <TouchableOpacity
               style={styles.profileAvatarButton}
@@ -262,9 +241,9 @@ export default function ProfileScreen() {
               </View>
               
               <View style={styles.universityBannerTitleRow}>
-                <AppText style={[styles.universityBannerTitle, isRTL && styles.universityBannerTitleRTL]}>
+                <ResponsiveText style={[styles.universityBannerTitle, isRTL && styles.universityBannerTitleRTL]}>
                   {t('apply_to_universities')}
-                </AppText>
+                </ResponsiveText>
               </View>
               
               <TouchableOpacity
@@ -567,13 +546,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   savingsInline: {
-    flexShrink: 1,
-    maxWidth: '100%',
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     lineHeight: 30,
   },
   savingsInlineRTL: {
-    textAlign: 'center',
-    writingDirection: 'rtl',
+    flexDirection: 'row-reverse',
   },
   savingsValueText: {
     flexShrink: 1,

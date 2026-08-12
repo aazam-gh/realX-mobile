@@ -35,7 +35,7 @@ export default function BrowseSection({
     const { theme } = useAppTheme();
     const { locale } = useAppLocale();
     const isArabic = locale === 'ar';
-    const cardWidth = Math.min(180, Math.max(150, Math.floor(width * 0.43)));
+    const cardWidth = Math.min(220, Math.max(150, Math.floor(width * (width >= 840 ? 0.25 : width >= 600 ? 0.30 : 0.43))));
 
     const displayTitle = title || (mainCategory 
         ? t('browse_main_category', { category: mainCategory }) 
@@ -44,7 +44,7 @@ export default function BrowseSection({
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
-                <Text style={[
+                <Text allowFontScaling accessibilityRole="header" style={[
                     styles.headerTitle,
                     { 
                       color: theme.text,

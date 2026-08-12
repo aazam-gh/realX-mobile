@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
@@ -48,12 +48,16 @@ export default function RestaurantCard({
     triggerSubtleHaptic();
     onPress?.();
   };
+  const accessibleName = isArabic ? (nameAr || name) : name;
   return (
-    <TouchableOpacity
+    <Pressable
       style={[styles.container, style]}
       onPress={handlePress}
-      activeOpacity={0.9}
       disabled={loading}
+      accessibilityRole="button"
+      accessibilityLabel={accessibleName}
+      accessibilityHint={onPress ? (isArabic ? 'يفتح تفاصيل المتجر' : 'Opens vendor details') : undefined}
+      accessibilityState={{ disabled: loading }}
     >
       {/* Image placeholder or actual image */}
       <View style={styles.imageContainer}>
@@ -116,7 +120,7 @@ export default function RestaurantCard({
       {/* Content */}
       <View style={styles.content}>
         <View style={styles.textRow}>
-          <Text style={[
+          <Text allowFontScaling style={[
             styles.name,
             { color: theme.text, ...Typography.getTextVariantStyle('body') },
             { writingDirection: isArabic ? 'rtl' : 'ltr' },
@@ -127,7 +131,7 @@ export default function RestaurantCard({
           <View style={styles.loadingText} />
         ) : cashbackText || discountText ? (
           <View style={styles.textRow}>
-            <Text style={[
+          <Text allowFontScaling style={[
               styles.descriptionText,
               { color: theme.mutedText, ...Typography.getTextVariantStyle('body') },
               { writingDirection: isArabic ? 'rtl' : 'ltr' },
@@ -135,14 +139,14 @@ export default function RestaurantCard({
           </View>
         ) : null}
       </View>
-    </TouchableOpacity>
+  </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: 200, // Fixed height for consistency
+    minHeight: 200,
     backgroundColor: 'transparent',
     borderRadius: 0,
   },
@@ -178,11 +182,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
     overflow: 'hidden',
   },
   logoImage: {

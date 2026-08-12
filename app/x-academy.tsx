@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import AppText from '../components/AppText';
+import ResponsiveText from '../components/ResponsiveText';
 import AppHeader from '../components/navigation/AppHeader';
 import { StateSurface } from '../components/StateSurface';
 import { useAppTheme } from '../context/AppThemeContext';
@@ -73,10 +73,11 @@ export default function XAcademyScreen() {
     >
       <StatusBar style={isDark ? 'light' : 'dark'} animated />
       <AppHeader
+        titleVariant="display"
         title={(
           <>
-            <Text style={{ color: theme.brand }}>{isRTL ? 'إكس' : t('x_academy_title_x')} </Text>
-            <Text style={{ color: theme.text }}>{t('x_academy_title_academy')}</Text>
+            <ResponsiveText style={{ color: theme.brand }}>{isRTL ? 'إكس' : t('x_academy_title_x')} </ResponsiveText>
+            <ResponsiveText style={{ color: theme.text }}>{t('x_academy_title_academy')}</ResponsiveText>
           </>
         )}
         onBackPress={() => router.back()}
@@ -126,7 +127,8 @@ export default function XAcademyScreen() {
 
             {/* Section Title */}
             <View style={styles.sectionHeader}>
-              <AppText
+              <ResponsiveText
+                minimumFontScale={0.78}
                 style={[
                   styles.sectionTitle,
                   { color: theme.text },
@@ -134,7 +136,7 @@ export default function XAcademyScreen() {
                 ]}
               >
                 {t('universities')}
-              </AppText>
+              </ResponsiveText>
             </View>
 
             {/* Universities List */}

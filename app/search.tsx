@@ -12,8 +12,10 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView} from 'react-native-safe-area-context';
+import { getGridColumns } from '../utils/responsive';
 import { RestaurantCard } from '../components/category';
 import { useAppTheme } from '../context/AppThemeContext';
 import { useAppLocale } from '../context/LocaleContext';
@@ -33,6 +35,8 @@ export default function SearchScreen() {
     const { isDark, theme } = useAppTheme();
     const { locale } = useAppLocale();
     const isArabic = locale === 'ar';
+    const { width } = useWindowDimensions();
+    const gridColumns = getGridColumns(width);
 
     const [searchQuery, setSearchQuery] = useState(q || '');
     const [committedQuery, setCommittedQuery] = useState((q || '').trim().toLowerCase());
@@ -170,8 +174,8 @@ export default function SearchScreen() {
                 style={[
                     styles.cardWrapper,
                     {
-                        paddingStart: index % 2 === 0 ? 20 : 8,
-                        paddingEnd: index % 2 === 0 ? 8 : 20,
+                        paddingStart: index % gridColumns === 0 ? 20 : 8,
+                        paddingEnd: index % gridColumns === gridColumns - 1 ? 20 : 8,
                     },
                 ]}
             >
@@ -188,7 +192,7 @@ export default function SearchScreen() {
                 />
             </View>
         ),
-        [handleVendorPress, isArabic]
+        [gridColumns, handleVendorPress, isArabic]
     );
 
     const renderFooter = () => {
@@ -202,7 +206,7 @@ export default function SearchScreen() {
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
-            <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
+            <StatusBar style={isDark ? 'light' : 'dark'} animated />
 
             {/* Header */}
             <View style={styles.header}>
@@ -234,6 +238,8 @@ export default function SearchScreen() {
                     />
                     {searchQuery.length > 0 && (
                         <TouchableOpacity
+                            accessibilityRole="button"
+                            accessibilityLabel={t('clear')}
                             onPress={() => {
                                 triggerSubtleHaptic();
                                 setSearchQuery('');
@@ -256,7 +262,7 @@ export default function SearchScreen() {
                 <FlatList
                     data={recommendations}
                     keyExtractor={(item) => item.id}
-                    numColumns={2}
+                    numColumns={gridColumns}
                     renderItem={renderItem}
                     contentContainerStyle={styles.noResultsContent}
                     showsVerticalScrollIndicator={false}
@@ -318,7 +324,7 @@ export default function SearchScreen() {
                 <FlatList
                     data={results}
                     keyExtractor={(item) => item.id}
-                    numColumns={2}
+                    numColumns={gridColumns}
                     renderItem={renderItem}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}

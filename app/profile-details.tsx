@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { OnboardingFlowSectionMotion } from '../components/onboarding/OnboardingMotion';
 import { InlineNotice, OnboardingScaffold } from '../components/onboarding/OnboardingUI';
 import UserAvatar from '../components/UserAvatar';
+import ResponsiveText from '../components/ResponsiveText';
 import { useAuthAccess } from '../context/AuthAccessContext';
 import { useAppLocale } from '../context/LocaleContext';
 import { useAppTheme } from '../context/AppThemeContext';
@@ -118,7 +119,7 @@ export default function ProfileDetailsScreen() {
                     <UserAvatar firstName={firstName} lastName={lastName} email={email} photoURL={photoURL} role={role} seed={userId || undefined} size={112} style={styles.avatarMain} />
                 </View>
                 <View style={[styles.identityCopy, isRTL && styles.identityCopyRTL]}>
-                    <Text selectable style={[styles.identityName, { color: theme.text }, isRTL && styles.textRTL]}>{displayName}</Text>
+                    <ResponsiveText selectable style={[styles.identityName, { color: theme.text }, isRTL && styles.textRTL]}>{displayName}</ResponsiveText>
                     <Text selectable style={[styles.identityEmail, { color: theme.mutedText }, isRTL && styles.textRTL]}>{email || t('email_address_placeholder')}</Text>
                 </View>
             </OnboardingFlowSectionMotion>
@@ -127,13 +128,13 @@ export default function ProfileDetailsScreen() {
 
             {isLoading ? <ActivityIndicator size="large" color={theme.brand} style={styles.loader} /> : (
                 <OnboardingFlowSectionMotion delay={110} style={styles.content}>
-                    <Text style={[styles.sectionTitle, { color: theme.text }, isRTL && styles.textRTL]}>{t('personal_information')}</Text>
+                    <ResponsiveText variant="bodyStrong" style={[styles.sectionTitle, { color: theme.text }, isRTL && styles.textRTL]}>{t('personal_information')}</ResponsiveText>
                     <View style={styles.infoList}>
                         <ProfileInfoRow label={t('first_name')} value={firstName || t('first_name_placeholder')} isRTL={isRTL} />
                         <ProfileInfoRow label={t('last_name')} value={lastName || t('last_name_placeholder')} isRTL={isRTL} />
                         <ProfileInfoRow label={t('date_of_birth')} value={dateOfBirth} isRTL={isRTL} />
                     </View>
-                    <Text style={[styles.sectionTitle, { color: theme.text }, isRTL && styles.textRTL]}>{t('account_information')}</Text>
+                    <ResponsiveText variant="bodyStrong" style={[styles.sectionTitle, { color: theme.text }, isRTL && styles.textRTL]}>{t('account_information')}</ResponsiveText>
                     <ProfileInfoRow label={t('email_address')} value={email || t('email_address_placeholder')} isRTL={isRTL} />
                     <View style={[styles.dangerZone, { borderTopColor: theme.border }]}>
                         <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: isDeleting }} disabled={isDeleting} onPress={handleDeleteAccount} activeOpacity={0.75} style={[styles.deleteButton, { borderColor: theme.danger, opacity: isDeleting ? 0.45 : 1 }]}>
@@ -153,11 +154,11 @@ const styles = StyleSheet.create({
     avatarMain: { borderWidth: 3, borderColor: '#FFFFFF' },
     identityCopy: { flex: 1, alignItems: 'flex-start', gap: 4 },
     identityCopyRTL: { alignItems: 'flex-end' },
-    identityName: { fontSize: 18, lineHeight: 25, fontFamily: 'Poppins' },
+    identityName: { fontSize: 18, lineHeight: 25 },
     identityEmail: { fontSize: 13, lineHeight: 19, fontFamily: 'Poppins' },
     loader: { marginVertical: 40 },
     content: { gap: 12 },
-    sectionTitle: { fontSize: 15, lineHeight: 22, fontFamily: 'Poppins' },
+    sectionTitle: { fontSize: 15, lineHeight: 22 },
     infoList: { gap: 8 },
     infoRow: { minHeight: 66, borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 11, gap: 3 },
     infoRowRTL: { alignItems: 'flex-end' },

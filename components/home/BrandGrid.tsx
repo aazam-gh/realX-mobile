@@ -37,6 +37,7 @@ function BrandRow({
     onPressBrand: (brand: BrandItem) => void;
 }) {
     const { theme } = useAppTheme();
+    const { isRTL } = useAppLocale();
     const renderBrand = (brand: BrandItem) => (
         <Pressable
             key={brand.id}
@@ -45,6 +46,7 @@ function BrandRow({
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={brand.name}
+            accessibilityHint={isRTL ? 'يفتح تفاصيل المتجر' : 'Opens vendor details'}
         >
             <Image
                 source={{ uri: brand.logoUrl }}

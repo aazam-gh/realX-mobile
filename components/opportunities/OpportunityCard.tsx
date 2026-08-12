@@ -35,6 +35,7 @@ export function OpportunityCard({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={title}
+      accessibilityHint={locale === 'ar' ? 'يفتح تفاصيل الفرصة' : 'Opens opportunity details'}
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
@@ -128,7 +129,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   compactCard: {
-    width: 244,
+    width: '100%',
+    maxWidth: 320,
   },
   image: {
     width: '100%',

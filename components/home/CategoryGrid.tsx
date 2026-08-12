@@ -60,7 +60,8 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     };
     const displayCategories = hasMoreCategories ? [...visibleCategories, comingSoonItem] : baseCategories;
     const categoryColumnWidth = (width - (HOME_HORIZONTAL_GUTTER * 2)) / 4;
-    const categoryImageSize = Math.min(80, Math.max(64, categoryColumnWidth - 8));
+    const categoryImageSize = Math.min(76, Math.max(68, categoryColumnWidth - 14));
+    const categoryRowHeight = categoryImageSize + 36;
 
     useEffect(() => {
         if (isDrawerVisible) {
@@ -109,20 +110,39 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
             <TouchableOpacity
                 style={styles.categoryItem}
                 onPress={() => handleCategoryPress(item)}
-                activeOpacity={0.7}
+                activeOpacity={0.78}
+                accessibilityRole="button"
+                accessibilityLabel={item.name}
             >
-                <View style={styles.imageContainer}>
+                <View
+                    style={[
+                        styles.imageContainer,
+                        {
+                            width: categoryImageSize,
+                            height: categoryImageSize,
+                            backgroundColor: theme.surface,
+                            borderColor: theme.border,
+                        },
+                    ]}
+                >
                     {item.image ? (
                         <RemoteImage
                             source={typeof item.image === 'string' ? { uri: item.image } : item.image}
-                            style={[styles.categoryImage, { width: categoryImageSize, height: categoryImageSize }]}
-                            contentFit="contain"
+                            style={styles.categoryImage}
+                            contentFit="cover"
                         />
                     ) : (
-                        <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, { fontSize: 40 }]}>{item.icon}</Text>
+                        <Text style={[styles.categoryFallbackIcon, { color: theme.text }]}>{item.icon}</Text>
                     )}
                 </View>
-                <Text style={[{ color: theme.text, ...Typography.getTextVariantStyle('body') }, styles.categoryName]} numberOfLines={1}>{item.name}</Text>
+                <Text
+                    style={[{ color: theme.text }, styles.categoryName]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.72}
+                >
+                    {item.name}
+                </Text>
             </TouchableOpacity>
         );
     };
@@ -150,7 +170,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
 
     return (
         <>
-            <View style={[styles.container, { minHeight: Math.ceil((displayCategories.length || 1) / 4) * 120 }]}>
+            <View style={[styles.container, { minHeight: Math.ceil((displayCategories.length || 1) / 4) * categoryRowHeight }]}>
                 <FlashList
                     data={displayCategories}
                     renderItem={renderCategory}
@@ -182,7 +202,13 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                                 {remainingCategories.map((category) => (
                                     <TouchableOpacity
                                         key={category.id}
-                                        style={[styles.drawerListItem, { borderBottomColor: theme.border }]}
+                                        style={[
+                                            styles.drawerListItem,
+                                            {
+                                                borderBottomColor: theme.border,
+                                                flexDirection: isArabic ? 'row-reverse' : 'row',
+                                            },
+                                        ]}
                                         activeOpacity={0.7}
                                         onPress={() => {
                                             closeDrawer();
@@ -190,15 +216,40 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                                         }}
                                     >
                                         {category.image ? (
-                                            <RemoteImage
-                                                source={typeof category.image === 'string' ? { uri: category.image } : category.image}
-                                                style={styles.drawerListImage}
-                                                contentFit="contain"
-                                            />
+                                            <View style={[
+                                                styles.drawerListImageFrame,
+                                                {
+                                                    backgroundColor: theme.surface,
+                                                    borderColor: theme.border,
+                                                    marginLeft: isArabic ? 14 : 0,
+                                                    marginRight: isArabic ? 0 : 14,
+                                                },
+                                            ]}>
+                                                <RemoteImage
+                                                    source={typeof category.image === 'string' ? { uri: category.image } : category.image}
+                                                    style={styles.drawerListImage}
+                                                    contentFit="cover"
+                                                />
+                                            </View>
                                         ) : (
-                                            <Text style={[styles.drawerListIcon, { color: theme.text }]}>{category.icon}</Text>
+                                            <View style={[
+                                                styles.drawerListImageFrame,
+                                                {
+                                                    backgroundColor: theme.surface,
+                                                    borderColor: theme.border,
+                                                    marginLeft: isArabic ? 14 : 0,
+                                                    marginRight: isArabic ? 0 : 14,
+                                                },
+                                            ]}>
+                                                <Text style={[styles.drawerListIcon, { color: theme.text }]}>{category.icon}</Text>
+                                            </View>
                                         )}
-                                        <Text style={[styles.drawerListText, { color: theme.text }]}>{category.name}</Text>
+                                        <Text
+                                            style={[styles.drawerListText, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}
+                                            numberOfLines={2}
+                                        >
+                                            {category.name}
+                                        </Text>
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
@@ -219,19 +270,33 @@ const styles = StyleSheet.create({
     },
     categoryItem: {
         alignItems: 'center',
-        marginBottom: 8,
+        paddingHorizontal: 4,
+        paddingBottom: 10,
     },
     imageContainer: {
-        marginBottom: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 22,
+        marginBottom: 7,
     },
     categoryImage: {
-        width: 80,
-        height: 80,
+        width: '100%',
+        height: '100%',
+    },
+    categoryFallbackIcon: {
+        fontSize: 34,
+        ...Typography.getTextVariantStyle('body'),
     },
     categoryName: {
-        fontSize: 12,
+        width: '100%',
+        minHeight: 18,
+        fontSize: 13,
+        lineHeight: 16,
         ...Typography.getTextVariantStyle('body'),
         textAlign: 'center',
+        textAlignVertical: 'top',
     },
     loaderContainer: {
         height: 150,
@@ -246,7 +311,7 @@ const styles = StyleSheet.create({
         rowGap: 12,
     },
     categorySkeleton: {
-        borderRadius: 18,
+        borderRadius: 22,
         opacity: 0.8,
     },
     categoryNameSkeleton: {
@@ -288,22 +353,31 @@ const styles = StyleSheet.create({
         paddingBottom: 24,
     },
     drawerListItem: {
-        flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 14,
+        minHeight: 76,
+        paddingVertical: 10,
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
+    drawerListImageFrame: {
+        width: 52,
+        height: 52,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 16,
+    },
     drawerListImage: {
-        width: 48,
-        height: 48,
-        marginRight: 12,
+        width: '100%',
+        height: '100%',
     },
     drawerListIcon: {
-        fontSize: 32,
-        marginRight: 12,
+        fontSize: 28,
     },
     drawerListText: {
+        flex: 1,
         fontSize: 16,
+        lineHeight: 21,
         ...Typography.getTextVariantStyle('body'),
         color: '#000000',
     },

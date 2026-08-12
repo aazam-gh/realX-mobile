@@ -123,6 +123,7 @@
   "logout_title": "Log out",
   "logout_message": "Are you sure you want to log out?",
   "cancel": "Cancel",
+  "clear": "Clear",
   "error": "Error",
   "logout_failed": "Failed to log out. Please try again.",
   "select_language": "Select Language",

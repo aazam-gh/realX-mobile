@@ -151,7 +151,7 @@ export default function SavedOffersScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
-      <StatusBar style={isDark ? 'light' : 'dark'} animated hidden />
+      <StatusBar style={isDark ? 'light' : 'dark'} animated />
       <AppHeader title={t('saved_offers')} onBackPress={() => router.back()} />
 
       {authAccessLoading || (!isAuthenticated && !userId) ? (

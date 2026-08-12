@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 import { OnboardingFlowSectionMotion } from '../components/onboarding/OnboardingMotion';
 import { OnboardingField, OnboardingPrimaryButton, OnboardingScaffold } from '../components/onboarding/OnboardingUI';
+import ResponsiveText from '../components/ResponsiveText';
 import { useAuthAccess } from '../context/AuthAccessContext';
 import { useAppLocale } from '../context/LocaleContext';
 import { useAppTheme } from '../context/AppThemeContext';
@@ -199,7 +200,7 @@ export default function EditProfileDetailsScreen() {
                         <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDatePicker(false)} accessibilityRole="button" accessibilityLabel={t('cancel')} />
                         <View style={[styles.dateSheet, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
                             <View style={[styles.dateSheetHeader, isRTL && styles.dateSheetHeaderRTL]}>
-                                <Text style={[styles.dateSheetTitle, { color: theme.text }, isRTL && styles.textRTL]}>{t('date_picker_title')}</Text>
+                                <ResponsiveText variant="bodyStrong" style={[styles.dateSheetTitle, { color: theme.text }, isRTL && styles.textRTL]}>{t('date_picker_title')}</ResponsiveText>
                                 <TouchableOpacity onPress={() => setShowDatePicker(false)} accessibilityRole="button" style={styles.sheetAction}><Text style={[styles.sheetActionText, { color: theme.mutedText }]}>{t('cancel')}</Text></TouchableOpacity>
                             </View>
                             <DateTimePicker value={dateDraft} mode="date" display="spinner" onValueChange={onDateValueChange} maximumDate={new Date()} textColor={theme.text} />
@@ -229,7 +230,7 @@ const styles = StyleSheet.create({
     dateSheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28, gap: 8 },
     dateSheetHeader: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     dateSheetHeaderRTL: { flexDirection: 'row-reverse' },
-    dateSheetTitle: { fontSize: 17, lineHeight: 24, fontFamily: 'Poppins' },
+    dateSheetTitle: { fontSize: 17, lineHeight: 24 },
     sheetAction: { minHeight: 44, paddingHorizontal: 4, justifyContent: 'center' },
     sheetActionText: { fontSize: 15, lineHeight: 22, fontFamily: 'Poppins' },
     doneButton: { minHeight: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },

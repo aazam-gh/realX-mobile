@@ -4,11 +4,11 @@ import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Typography } from '../../constants/Typography';
+import { Typography, type TextVariant } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
-import AppText from '../AppText';
+import ResponsiveText from '../ResponsiveText';
 
 type HeaderVariant = 'root' | 'navigation';
 
@@ -19,6 +19,7 @@ type AppHeaderProps = {
   trailing?: ReactNode;
   style?: StyleProp<ViewStyle>;
   titleStyle?: StyleProp<TextStyle>;
+  titleVariant?: TextVariant;
   backAccessibilityLabel?: string;
 };
 
@@ -73,6 +74,7 @@ export default function AppHeader({
   trailing,
   style,
   titleStyle,
+  titleVariant = 'bodyStrong',
   backAccessibilityLabel,
 }: AppHeaderProps) {
   const { t } = useTranslation();
@@ -97,10 +99,10 @@ export default function AppHeader({
       ) : null}
 
       <View style={styles.titleContainer}>
-        <AppText
+        <ResponsiveText
           accessibilityRole="header"
-          numberOfLines={2}
-          variant={isRoot ? 'display' : 'bodyStrong'}
+          variant={isRoot ? 'display' : titleVariant}
+          minimumFontScale={0.78}
           style={[
             isRoot ? styles.rootTitle : styles.navigationTitle,
             {
@@ -112,7 +114,7 @@ export default function AppHeader({
           ]}
         >
           {title}
-        </AppText>
+        </ResponsiveText>
       </View>
 
       {trailing ? <View style={styles.trailing}>{trailing}</View> : null}
@@ -159,9 +161,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',

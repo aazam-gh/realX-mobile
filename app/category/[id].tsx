@@ -23,6 +23,7 @@ import { CategoryVendorCursor, fetchCategory, fetchCategoryVendorsPage } from '.
 import { queryClient, queryKeys } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
 import { StateSurface } from '../../components/StateSurface';
+import { getGridColumns } from '../../utils/responsive';
 
 const BACKGROUND_ICONS = [
     { name: 'laptop-outline' as const, top: '2%', left: '75%', size: 28, color: '#8E8E93', rotation: '15deg' },
@@ -204,6 +205,8 @@ export default function CategoryScreen() {
     const { isDark, theme } = useAppTheme();
     const { locale } = useAppLocale();
     const isArabic = locale === 'ar';
+    const { width } = useWindowDimensions();
+    const gridColumns = getGridColumns(width);
 
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [selectedSubCategory, setSelectedSubCategory] = useState('all');
@@ -447,7 +450,7 @@ export default function CategoryScreen() {
                     ref={flashListRef}
                     data={listData}
                     keyExtractor={(item) => item.id}
-                    numColumns={2}
+                    numColumns={gridColumns}
                     contentContainerStyle={styles.contentContainer}
                     showsVerticalScrollIndicator={false}
                     refreshControl={refreshControl}
@@ -486,8 +489,8 @@ export default function CategoryScreen() {
                     renderItem={({ item, index }) => (
                         <View style={[
                             {
-                                paddingLeft: index % 2 === 0 ? 20 : 8,
-                                paddingRight: index % 2 === 0 ? 8 : 20
+                                paddingLeft: index % gridColumns === 0 ? 20 : 8,
+                                paddingRight: index % gridColumns === gridColumns - 1 ? 20 : 8
                             }
                         ]}>
                             <RestaurantCard

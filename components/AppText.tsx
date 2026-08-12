@@ -16,6 +16,7 @@ const AppText = forwardRef<Text, AppTextProps>(function AppText(
     return (
         <Text
             ref={ref}
+            allowFontScaling
             style={[getTextVariantStyle(variant), getLocalizedTextVariantStyle(variant, locale), style]}
             {...props}
         >

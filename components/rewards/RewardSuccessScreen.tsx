@@ -219,7 +219,7 @@ export default function RewardSuccessScreen({
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.brand }]}>
-      <StatusBar style="light" hidden />
+      <StatusBar style="light" />
 
       <TouchableOpacity
         style={[

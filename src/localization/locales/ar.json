@@ -123,6 +123,7 @@
   "logout_title": "تسجيل الخروج",
   "logout_message": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
   "cancel": "إلغاء",
+  "clear": "مسح",
   "error": "خطأ",
   "logout_failed": "فشل تسجيل الخروج. حاول مرة أخرى.",
   "select_language": "اختر اللغة",

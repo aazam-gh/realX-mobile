@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Dimensions, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
     Easing,
     runOnJS,
@@ -19,7 +19,6 @@ type AndroidBottomSheetModalProps = {
     testID?: string;
 };
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 const OPEN_DURATION = 280;
 const CLOSE_DURATION = 220;
 
@@ -32,12 +31,13 @@ export default function AndroidBottomSheetModal({
 }: AndroidBottomSheetModalProps) {
     const insets = useSafeAreaInsets();
     const { theme } = useAppTheme();
+    const { height: windowHeight, width: windowWidth } = useWindowDimensions();
     const sheetBackground = backgroundColor ?? theme.surfaceElevated;
 
     const [mounted, setMounted] = useState(visible);
     // Start fully off-screen so the first painted frame is hidden (kills the open flicker).
-    const translateY = useSharedValue(SCREEN_HEIGHT);
-    const sheetHeight = useRef(SCREEN_HEIGHT);
+    const translateY = useSharedValue(windowHeight);
+    const sheetHeight = useRef(windowHeight);
     const hasOpened = useRef(false);
 
     useEffect(() => {
@@ -99,6 +99,9 @@ export default function AndroidBottomSheetModal({
                         {
                             backgroundColor: sheetBackground,
                             paddingBottom: Math.max(insets.bottom, 16),
+                            maxWidth: windowWidth >= 840 ? 720 : undefined,
+                            alignSelf: windowWidth >= 840 ? 'center' : undefined,
+                            width: windowWidth >= 840 ? '100%' : undefined,
                         },
                     ]}
                     onLayout={(event) => handleLayout(event.nativeEvent.layout.height)}

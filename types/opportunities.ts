@@ -1,4 +1,4 @@
-export type OpportunityKind =
+type OpportunityKind =
   | 'event'
   | 'career'
   | 'learning'
@@ -26,13 +26,4 @@ export type Opportunity = {
   status: 'draft' | 'published' | 'archived';
   publishedAt?: unknown;
   expiresAt?: unknown;
-};
-
-export type RewardAccount = {
-  userId: string;
-  statusPoints: number;
-  redemptionCount: number;
-  streakCount?: number;
-  badges?: string[];
-  updatedAt?: unknown;
 };

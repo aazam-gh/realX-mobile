@@ -795,12 +795,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    keyboardAware: {
-        flex: 1,
-    },
-    innerContainer: {
-        flex: 1,
-    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -819,19 +813,6 @@ const styles = StyleSheet.create({
     },
     backLink: {
         ...Typography.getTextVariantStyle('bodyStrong'),
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        minHeight: 56,
-        paddingVertical: 8,
-    },
-    scrollContent: {
-        flexGrow: 1,
-        paddingHorizontal: 24,
-        paddingTop: 20,
-        paddingBottom: 40,
     },
     vendorScrollContent: {
         paddingBottom: 32,
@@ -930,14 +911,6 @@ const styles = StyleSheet.create({
         width: '100%',
         marginTop: 50,
     },
-    offerCard: {
-        borderRadius: 35,
-        paddingTop: 70,
-        paddingBottom: 40,
-        paddingHorizontal: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
     onlineCard: {
         borderRadius: 35,
         paddingTop: 70,
@@ -1009,24 +982,10 @@ const styles = StyleSheet.create({
         height: '100%',
         borderRadius: 21,
     },
-    offerTitle: {
-        fontSize: 32,
-        textAlign: 'center',
-    },
-    greenText: {
-    },
-    redemptionCard: {
-        borderRadius: 35,
-        padding: 24,
-    },
     inputLabel: {
         fontSize: 16,
         ...Typography.getTextVariantStyle('bodyStrong'),
         marginBottom: 12,
-    },
-    pinContainer: {
-        marginBottom: 24,
-        position: 'relative',
     },
     pinVisualContainer: {
         flexDirection: 'row',
@@ -1041,8 +1000,6 @@ const styles = StyleSheet.create({
         boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
         borderWidth: 2,
         borderColor: 'transparent',
-    },
-    pinBoxActive: {
     },
     pinText: {
         fontSize: 30,
@@ -1139,17 +1096,6 @@ const styles = StyleSheet.create({
     redeemButtonText: {
         fontSize: 22,
         letterSpacing: 1,
-    },
-    creatorCard: {
-        borderRadius: 35,
-        padding: 24,
-    },
-    creatorInputContainer: {
-        borderRadius: 25,
-        height: 55,
-        paddingHorizontal: 20,
-        justifyContent: 'center',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
     },
     creatorInput: {
         fontSize: 18,

@@ -27,9 +27,9 @@ import SpendButton from '../wallet/SpendButton';
 
 type ImageSource = ComponentProps<typeof Image>['source'];
 
-export type RewardSuccessRowTone = 'savings' | 'points' | 'default';
+type RewardSuccessRowTone = 'savings' | 'points' | 'default';
 
-export type RewardSuccessRow = {
+type RewardSuccessRow = {
   icon: keyof typeof Ionicons.glyphMap;
   iconBorderColor: string;
   label: string;

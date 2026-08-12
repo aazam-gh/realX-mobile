@@ -1,13 +1,13 @@
 import type { TextStyle } from 'react-native';
 
-export const FontFamilyTokens = {
+const FontFamilyTokens = {
     display: 'Hanson',
     body: 'Poppins',
     bodyStrong: 'Poppins',
     displayArabicBlack: 'TajawalBlack',
 } as const;
 
-export const ArabicFontFamilyTokens = {
+const ArabicFontFamilyTokens = {
     display: 'JaliArabicBold',
     body: 'JaliArabicRegular',
     bodyStrong: 'JaliArabicBold',
@@ -55,7 +55,7 @@ export function getLocalizedTextVariantStyle(variant: TextVariant, locale: 'en' 
     };
 }
 
-export function getTextDirectionStyle({
+function getTextDirectionStyle({
     isRTL: explicitRTL,
     textAlign,
 }: TextDirectionOptions = {}): TextStyle {
@@ -84,5 +84,3 @@ export const Typography = {
     getLocalizedTextVariantStyle,
     getTextDirectionStyle,
 } as const;
-
-export default Typography;

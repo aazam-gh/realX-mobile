@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAuth } from '@react-native-firebase/auth';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -288,33 +288,6 @@ export default function GiftCardCheckout({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    logoContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    logoX: {
-        fontSize: 24,
-    },
-    logoCard: {
-        fontSize: 24,
-    },
-    headerSpacer: {
-        width: 40,
     },
     scrollContent: {
         paddingBottom: 32,

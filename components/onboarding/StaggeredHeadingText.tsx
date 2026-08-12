@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, type StyleProp, type TextStyle, View, type ViewStyle } from 'react-native';
 import Animated, {
   interpolate,

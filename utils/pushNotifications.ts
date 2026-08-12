@@ -37,7 +37,7 @@ const getStoredPushTokenSync = async (): Promise<StoredPushTokenSync | null> => 
   return null;
 };
 
-export const getExpoProjectId = () => {
+const getExpoProjectId = () => {
   return (
     Constants.expoConfig?.extra?.eas?.projectId ||
     Constants.easConfig?.projectId ||
@@ -45,7 +45,7 @@ export const getExpoProjectId = () => {
   );
 };
 
-export const registerForExpoPushNotificationsAsync = async (allowPermissionPrompt = true) => {
+const registerForExpoPushNotificationsAsync = async (allowPermissionPrompt = true) => {
   if (!Device.isDevice) {
     logger.warn('Push notifications require a physical device');
     return null;

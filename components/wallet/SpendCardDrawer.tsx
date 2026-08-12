@@ -367,39 +367,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    backArrow: {
-        fontSize: 20,
-    },
-    logoContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    logoContainerRTL: {
-        flexDirection: 'row-reverse',
-    },
-    logoX: {
-        fontSize: 24,
-    },
-    logoCard: {
-        fontSize: 24,
-    },
-    headerSpacer: {
-        width: 40,
-    },
     balanceCard: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -479,10 +446,6 @@ const styles = StyleSheet.create({
     brandItemRTL: {
         flexDirection: 'row-reverse',
     },
-    brandItemSelected: {
-        borderWidth: 2,
-        borderBottomWidth: 2,
-    },
     brandLogo: {
         width: 48,
         height: 48,
@@ -511,10 +474,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: 24,
         paddingTop: 32,
-    },
-    emptyStateEmoji: {
-        fontSize: 28,
-        marginBottom: 12,
     },
     emptyStateTitle: {
         fontSize: 16,

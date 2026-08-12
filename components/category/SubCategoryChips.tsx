@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } 
 import { useAppTheme } from '../../context/AppThemeContext';
 import { Typography } from '../../constants/Typography';
 
-export type SubCategory = {
+type SubCategory = {
     id: string;
     name: string;
     icon: string | number | { uri: string };

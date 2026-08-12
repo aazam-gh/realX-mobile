@@ -26,7 +26,7 @@ import { StateSurface } from '../../components/StateSurface';
 import { VendorGallery } from '../../components/vendor/VendorGallery';
 import { haversineDistanceKm, isValidLatLng, LatLng } from '../../utils/mapGeo';
 import { fetchSavedOfferIds, fetchVendorRoute } from '../../utils/firebaseQueries';
-import { queryClient, queryKeys } from '../../utils/queryClient';
+import { queryClient, queryKeys, type CachedVendor } from '../../utils/queryClient';
 import { useRealXRefresh } from '../../components/PullToRefresh';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { RemoteImage } from '../../components/RemoteImage';
@@ -122,6 +122,7 @@ export default function VendorScreen() {
     const [onlineCodeCopied, setOnlineCodeCopied] = useState(false);
     const currentUserId = getAuth().currentUser?.uid ?? null;
     const vendorLookupId = typeof id === 'string' ? id : '';
+    const cachedVendor = queryClient.getQueryData<CachedVendor>(queryKeys.vendor(vendorLookupId));
 
     const {
         data: vendorRouteData,
@@ -130,11 +131,26 @@ export default function VendorScreen() {
         refetch: refetchVendor,
     } = useQuery({
         queryKey: queryKeys.vendorRoute(vendorLookupId, isArabic ? 'ar' : 'en'),
-        queryFn: () => fetchVendorRoute(vendorLookupId, isArabic),
+        queryFn: async () => {
+            const cached = queryClient.getQueryData<CachedVendor>(queryKeys.vendor(vendorLookupId));
+            if (cached) {
+                return {
+                    vendorId: cached.id,
+                    vendorData: cached.data,
+                };
+            }
+
+            return fetchVendorRoute(vendorLookupId, isArabic);
+        },
+        initialData: cachedVendor ? {
+            vendorId: cachedVendor.id,
+            vendorData: cachedVendor.data,
+        } : undefined,
         enabled: vendorLookupId.length > 0,
     });
 
     const { isOnline } = useConnectivity();
+    const onlineOfferVendorId = vendorRouteData?.vendorId || vendorLookupId;
 
     const {
         data: onlineOffer,
@@ -142,14 +158,16 @@ export default function VendorScreen() {
         isFetching: onlineOfferLoading,
         refetch: refetchOnlineOffer,
     } = useQuery({
-        queryKey: queryKeys.onlineVendorOffer(vendorLookupId),
+        queryKey: queryKeys.onlineVendorOffer(onlineOfferVendorId),
         queryFn: async () => {
             const functions = getFunctions(undefined, 'me-central1');
             const getOnlineVendorOffer = httpsCallable(functions, 'getOnlineVendorOffer');
-            const result = await getOnlineVendorOffer({ vendorId: vendorLookupId });
+            const result = await getOnlineVendorOffer({ vendorId: onlineOfferVendorId });
             return result.data as OnlineVendorOffer;
         },
-        enabled: isAuthenticated && vendorLookupId.length > 0 && vendor?.vendorType === 'online',
+        enabled: isAuthenticated
+            && onlineOfferVendorId.length > 0
+            && vendorRouteData?.vendorData?.vendorType === 'online',
     });
 
     const handleCopyOnlineCode = async () => {
@@ -810,10 +828,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    errorText: {
-        fontSize: 16,
-        ...Typography.getTextVariantStyle('body'),
-    },
     scrollContent: {
         paddingBottom: 40,
     },
@@ -883,10 +897,6 @@ const styles = StyleSheet.create({
     integralLogo: {
         width: 180,
         height: 60,
-    },
-    rightChips: {
-        flexDirection: 'row',
-        gap: 8,
     },
     metaStack: {
         marginTop: 12,
@@ -999,31 +1009,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         ...Typography.getTextVariantStyle('bodyStrong'),
     },
-    ratingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    ratingText: {
-        fontSize: 14,
-        ...Typography.getTextVariantStyle('bodyStrong'),
-    },
-    categoryChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#000000',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-        gap: 4,
-    },
-    categoryEmoji: {
-        fontSize: 12,
-    },
-    categoryText: {
-        fontSize: 12,
-        ...Typography.getTextVariantStyle('body'),
-    },
     offersList: {
         marginTop: 24,
         gap: 20,
@@ -1066,11 +1051,6 @@ const styles = StyleSheet.create({
     },
     greenText: {
         color: Colors.brandGreen,
-    },
-    offerSubtitle: {
-        fontSize: 15,
-        ...Typography.getTextVariantStyle('body'),
-        color: '#8E8E93',
     },
     offerSummary: {
         fontSize: 14,
@@ -1155,11 +1135,6 @@ const styles = StyleSheet.create({
     modalTitleText: {
         fontSize: 20,
         letterSpacing: 0.5,
-    },
-    descriptionText: {
-        fontSize: 16,
-        ...Typography.getTextVariantStyle('body'),
-        lineHeight: 24,
     },
     branchListScroll: {
         flexGrow: 0,

@@ -2,12 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
-  FadeIn,
-  FadeInDown,
-  FadeInLeft,
   FadeInUp,
-  FadeOut,
-  LinearTransition,
   ReduceMotion,
   runOnJS,
   useAnimatedStyle,
@@ -30,19 +25,6 @@ type GlowMotionProps = MotionViewProps & {
 };
 
 const reduceMotion = ReduceMotion.System;
-
-export function OnboardingScreenMotion({ children, delay = 0, style }: MotionViewProps) {
-  return (
-    <Animated.View
-      layout={LinearTransition.duration(220).reduceMotion(reduceMotion)}
-      style={style}
-    >
-      <Animated.View entering={FadeIn.duration(220).delay(delay).reduceMotion(reduceMotion)}>
-        {children}
-      </Animated.View>
-    </Animated.View>
-  );
-}
 
 type FlowSectionMotionProps = MotionViewProps & {
   offset?: number;
@@ -139,117 +121,6 @@ export function OnboardingDiscoverTransitionMotion({
   );
 }
 
-export function OnboardingIntroLogoMotion({ children, delay = 80, style }: MotionViewProps) {
-  return (
-    <Animated.View
-      entering={FadeInUp.duration(320).delay(delay).springify().damping(16).stiffness(150).reduceMotion(reduceMotion)}
-      style={style}
-    >
-      {children}
-    </Animated.View>
-  );
-}
-
-export function OnboardingIntroHeadlineMotion({ children, delay = 0, style }: MotionViewProps) {
-  return (
-    <Animated.View
-      entering={FadeInLeft.duration(360).delay(delay).springify().damping(18).stiffness(170).reduceMotion(reduceMotion)}
-      style={style}
-    >
-      {children}
-    </Animated.View>
-  );
-}
-
-export function OnboardingIntroMascotMotion({ children, delay = 320, style }: MotionViewProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const floatY = useSharedValue(0);
-  const rotate = useSharedValue(0);
-
-  useEffect(() => {
-    if (prefersReducedMotion) {
-      floatY.value = 0;
-      rotate.value = 0;
-      return;
-    }
-
-    const entranceTimer = setTimeout(() => {
-      floatY.value = withRepeat(
-        withTiming(-10, { duration: 1800, easing: Easing.inOut(Easing.quad), reduceMotion }),
-        -1,
-        true,
-      );
-      rotate.value = withRepeat(
-        withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.quad), reduceMotion }),
-        -1,
-        true,
-      );
-    }, delay + 420);
-
-    return () => {
-      clearTimeout(entranceTimer);
-    };
-  }, [delay, floatY, prefersReducedMotion, rotate]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: floatY.value },
-      { rotate: `${rotate.value}deg` },
-    ],
-  }));
-
-  return (
-    <Animated.View
-      entering={FadeInLeft.duration(420).delay(delay).easing(Easing.out(Easing.cubic)).reduceMotion(reduceMotion)}
-      style={style}
-    >
-      <Animated.View style={animatedStyle}>{children}</Animated.View>
-    </Animated.View>
-  );
-}
-
-export function OnboardingIntroFooterMotion({ children, delay = 520, style }: MotionViewProps) {
-  return (
-    <Animated.View
-      entering={FadeInUp.duration(320).delay(delay).springify().damping(18).stiffness(150).reduceMotion(reduceMotion)}
-      style={style}
-    >
-      {children}
-    </Animated.View>
-  );
-}
-
-export function OnboardingPulseMotion({ children, style }: MotionViewProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    if (prefersReducedMotion) {
-      scale.value = 1;
-      return;
-    }
-
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.07, { duration: 700, easing: Easing.inOut(Easing.quad), reduceMotion }),
-        withTiming(1, { duration: 700, easing: Easing.inOut(Easing.quad), reduceMotion }),
-      ),
-      -1,
-      false,
-    );
-  }, [prefersReducedMotion, scale]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  return (
-    <Animated.View style={[style, animatedStyle]}>
-      {children}
-    </Animated.View>
-  );
-}
-
 export function OnboardingGlowMotion({ children, glowStyle, style }: GlowMotionProps) {
   const prefersReducedMotion = useReducedMotion();
   const glowOpacity = useSharedValue(prefersReducedMotion ? 0.45 : 0.32);
@@ -278,37 +149,6 @@ export function OnboardingGlowMotion({ children, glowStyle, style }: GlowMotionP
     <Animated.View style={style}>
       <Animated.View pointerEvents="none" style={[glowStyle, animatedGlowStyle]} />
       {children}
-    </Animated.View>
-  );
-}
-
-export function OnboardingCardMotion({ children, delay = 60, style }: MotionViewProps) {
-  return (
-    <Animated.View
-      layout={LinearTransition.duration(240).reduceMotion(reduceMotion)}
-      style={style}
-    >
-      <Animated.View
-        entering={FadeInUp.duration(280).delay(delay).easing(Easing.out(Easing.cubic)).reduceMotion(reduceMotion)}
-      >
-        {children}
-      </Animated.View>
-    </Animated.View>
-  );
-}
-
-export function OnboardingStaggerItem({ children, delay = 0, style }: MotionViewProps) {
-  return (
-    <Animated.View
-      layout={LinearTransition.duration(220).reduceMotion(reduceMotion)}
-      style={style}
-    >
-      <Animated.View
-        entering={FadeInDown.duration(240).delay(delay).easing(Easing.out(Easing.cubic)).reduceMotion(reduceMotion)}
-        exiting={FadeOut.duration(140).reduceMotion(reduceMotion)}
-      >
-        {children}
-      </Animated.View>
     </Animated.View>
   );
 }
@@ -458,54 +298,5 @@ export function OnboardingButtonMotion({
 
   return (
     <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>
-  );
-}
-
-type ShakeMotionProps = MotionViewProps & {
-  trigger: number;
-};
-
-export function OnboardingShakeMotion({ children, style, trigger }: ShakeMotionProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const translateX = useSharedValue(0);
-
-  useEffect(() => {
-    if (trigger <= 0 || prefersReducedMotion) {
-      return;
-    }
-
-    translateX.value = withSequence(
-      withTiming(-8, { duration: 45, reduceMotion }),
-      withTiming(8, { duration: 45, reduceMotion }),
-      withTiming(-6, { duration: 45, reduceMotion }),
-      withTiming(6, { duration: 45, reduceMotion }),
-      withTiming(0, { duration: 60, reduceMotion }),
-    );
-  }, [prefersReducedMotion, translateX, trigger]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-
-  return (
-    <Animated.View style={[style, animatedStyle]}>
-      {children}
-    </Animated.View>
-  );
-}
-
-export function OnboardingStateMotion({ children, delay = 0, style }: MotionViewProps) {
-  return (
-    <Animated.View
-      layout={LinearTransition.duration(220).reduceMotion(reduceMotion)}
-      style={style}
-    >
-      <Animated.View
-        entering={FadeInUp.duration(240).delay(delay).easing(Easing.out(Easing.cubic)).reduceMotion(reduceMotion)}
-        exiting={FadeOut.duration(140).reduceMotion(reduceMotion)}
-      >
-        {children}
-      </Animated.View>
-    </Animated.View>
   );
 }

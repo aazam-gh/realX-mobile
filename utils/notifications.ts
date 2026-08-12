@@ -76,26 +76,3 @@ export const showLocalNotification = async (
     return false;
   }
 };
-
-/**
- * Display a foreground remote notification payload as a local Expo notification.
- * Kept only for app-internal foreground display; no FCM registration is used.
- */
-export const presentForegroundNotification = async (
-  title?: string,
-  body?: string,
-  data?: Record<string, any>,
-) => {
-  if (!title && !body) return;
-
-  await scheduleNotificationAsync({
-    content: {
-      title: title ?? 'realX',
-      body: body ?? '',
-      data: data ?? {},
-      sound: 'sound.wav',
-      ...(Platform.OS === 'android' ? { channelId: 'reelx_general' } : {}),
-    },
-    trigger: null,
-  });
-};

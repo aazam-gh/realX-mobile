@@ -106,7 +106,6 @@ interface HeaderContentProps {
     onClearSearch: () => void;
     t: any;
     showComingSoon: boolean;
-    loadingVendors: boolean;
 }
 
 const HeaderContent = memo(({
@@ -129,7 +128,6 @@ const HeaderContent = memo(({
     onClearSearch,
     t,
     showComingSoon,
-    loadingVendors,
 }: HeaderContentProps) => {
     const { theme } = useAppTheme();
     const { height, width } = useWindowDimensions();
@@ -477,7 +475,6 @@ export default function CategoryScreen() {
                             onClearSearch={handleClearSearch}
                             t={t}
                             showComingSoon={showComingSoon}
-                            loadingVendors={loadingVendors}
                         />
                     }
                     ListFooterComponent={renderFooter}
@@ -498,8 +495,6 @@ export default function CategoryScreen() {
                                 loading={item.loading === true}
                                 name={isArabic ? (item.nameAr || item.nameEn || item.name || 'Vendor') : (item.nameEn || item.name || 'Vendor')}
                                 cashbackText={isArabic ? (item.shortDescriptionAR || item.shortDescriptionAr || item.descriptionAr || item.brandDescription || '') : (item.shortDescription || item.brandDescription || item.descriptionEn || '')}
-                                isTrending={item.isTrending}
-                                isTopRated={item.isTopRated}
                                 imageUri={item.coverImage}
                                 logoUri={item.profilePicture}
                                 xcardEnabled={item.xcard}
@@ -535,7 +530,6 @@ export default function CategoryScreen() {
                         onClearSearch={handleClearSearch}
                         t={t}
                         showComingSoon={showComingSoon}
-                        loadingVendors={loadingVendors}
                     />
                 </ScrollView>
             )}
@@ -552,10 +546,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     contentContainer: {
-        paddingBottom: 20,
-    },
-    // New FlashList spacing style
-    flatListContent: {
         paddingBottom: 20,
     },
     backgroundIconsOverlay: {
@@ -587,10 +577,5 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 24,
         zIndex: 10,
-    },
-    loadingContainer: {
-        padding: 20,
-        alignItems: 'center',
-        width: '100%',
     },
 });

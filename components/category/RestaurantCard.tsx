@@ -1,6 +1,5 @@
 import { Image } from 'expo-image';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -15,8 +14,6 @@ type Props = {
   nameAr?: string;
   cashbackText?: string;
   discountText?: string;
-  isTrending?: boolean;
-  isTopRated?: boolean;
   imageUri?: string;
   logoUri?: string;
   onPress?: () => void;
@@ -30,8 +27,6 @@ export default function RestaurantCard({
   nameAr,
   cashbackText = '',
   discountText = '',
-  isTrending = false,
-  isTopRated = false,
   imageUri,
   logoUri,
   onPress,
@@ -154,10 +149,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 120,
   },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
   imagePlaceholder: {
     width: '100%',
     height: '100%',
@@ -191,49 +182,6 @@ const styles = StyleSheet.create({
   },
   logoEmoji: {
     fontSize: 20,
-  },
-  badgesContainer: { // Container for badges to handle spacing/positioning if needed
-    position: 'absolute',
-    top: 10,
-    start: 0,
-    end: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between', // Distribute badges
-    paddingHorizontal: 10,
-    pointerEvents: 'none', // Allow clicks to pass through if needed
-  },
-  trendingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.brandGreen,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-    alignSelf: 'flex-start',
-    marginStart: 'auto', // Push to right if alone, or use justifyContent
-  },
-  topRatedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFD700', // Gold for top rated
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-    alignSelf: 'flex-start',
-  },
-  trendingIcon: {
-    fontSize: 10,
-  },
-  badgeText: { // generic text style for badges
-    fontSize: 10,
-    ...Typography.getTextVariantStyle('bodyStrong'),
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-  },
-  topRatedText: {
-    color: '#000000', // Dark text on Gold
   },
 
   content: {

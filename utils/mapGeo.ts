@@ -64,17 +64,6 @@ function toRadians(degrees: number) {
   return (degrees * Math.PI) / 180;
 }
 
-export function radiusMetersForZoom(zoom: number) {
-  if (zoom >= 15) return 2000;
-  if (zoom >= 13) return 5000;
-  if (zoom >= 11) return 10000;
-  return 20000;
-}
-
-export function regionCacheKey(regionGeohash: string) {
-  return `map_region_cache_v1:${regionGeohash}`;
-}
-
 export type MapRegionLike = LatLng & {
   latitudeDelta: number;
   longitudeDelta: number;
@@ -95,7 +84,7 @@ function geohashStepForPrecision(precision: number) {
   return 0.16;
 }
 
-export function mapTilePrecisionForRegion(region: MapRegionLike): 4 | 5 | 6 {
+function mapTilePrecisionForRegion(region: MapRegionLike): 4 | 5 | 6 {
   const largestDelta = Math.max(region.latitudeDelta, region.longitudeDelta);
   if (largestDelta <= 0.035) return 6;
   if (largestDelta <= 0.28) return 5;
@@ -137,26 +126,7 @@ export function mapTileSetForRegion(region: MapRegionLike, maxPrefixes = 28): Ma
   };
 }
 
-const REGION_CACHE_INDEX = 'map_region_cache_v1:index';
 const TILE_CACHE_INDEX = 'map_tile_cache_v2:index';
-
-export async function rememberRegionCacheKey(regionGeohash: string, maxRegions = 18) {
-  try {
-    const key = regionCacheKey(regionGeohash);
-    const raw = await AsyncStorage.getItem(REGION_CACHE_INDEX);
-    const previous = raw ? (JSON.parse(raw) as string[]) : [];
-    const next = [key, ...previous.filter((item) => item !== key)];
-
-    const overflow = next.slice(maxRegions);
-    if (overflow.length > 0) {
-      await AsyncStorage.multiRemove(overflow);
-    }
-
-    await AsyncStorage.setItem(REGION_CACHE_INDEX, JSON.stringify(next.slice(0, maxRegions)));
-  } catch (error) {
-    logger.warn('Unable to persist region cache index:', error);
-  }
-}
 
 export async function rememberMapTileCacheKeys(keys: string[], maxTiles = 80) {
   if (!keys.length) return;

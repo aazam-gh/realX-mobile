@@ -183,8 +183,6 @@ export default function SearchScreen() {
                     id={item.id}
                     name={isArabic ? (item.nameAr || item.nameEn || item.name || 'Vendor') : (item.nameEn || item.name || 'Vendor')}
                     cashbackText={isArabic ? (item.shortDescriptionAR || item.shortDescriptionAr || item.descriptionAr || item.brandDescription || '') : (item.shortDescription || item.brandDescription || item.descriptionEn || '')}
-                    isTrending={item.isTrending}
-                    isTopRated={item.isTopRated}
                     imageUri={item.coverImage}
                     logoUri={item.profilePicture}
                     xcardEnabled={item.xcard}

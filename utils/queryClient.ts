@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 
-export const DEFAULT_QUERY_STALE_TIME_MS = 5 * 60 * 1000;
-export const DEFAULT_QUERY_GC_TIME_MS = 30 * 60 * 1000;
+const DEFAULT_QUERY_STALE_TIME_MS = 5 * 60 * 1000;
+const DEFAULT_QUERY_GC_TIME_MS = 30 * 60 * 1000;
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -15,6 +15,11 @@ export const queryClient = new QueryClient({
     },
 });
 
+export type CachedVendor = {
+    id: string;
+    data: Record<string, any>;
+};
+
 export const queryKeys = {
     category: (categoryId: string) => ['category', categoryId] as const,
     categories: (language: string) => ['categories', language] as const,
@@ -27,8 +32,6 @@ export const queryKeys = {
     opportunities: () => ['opportunities'] as const,
     opportunity: (opportunityId: string) => ['opportunity', opportunityId] as const,
     redemptionHistory: (userId: string) => ['redemptionHistory', userId] as const,
-    rewardAccount: (userId: string) => ['rewardAccount', userId] as const,
-    savedOpportunityKinds: (userId: string) => ['savedOpportunities', userId, 'kinds'] as const,
     savedMapPlaces: (userId: string) => ['savedMapPlaces', userId] as const,
     savedOfferIds: (userId: string, vendorId: string) => ['savedOfferIds', userId, vendorId] as const,
     savedOffers: (userId: string) => ['savedOffers', userId] as const,

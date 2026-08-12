@@ -68,7 +68,6 @@ export default function BrowseSection({
                         nameAr={restaurant.nameAr}
                         cashbackText={restaurant.cashbackText}
                         discountText={restaurant.discountText}
-                        isTrending={restaurant.isTrending}
                         imageUri={restaurant.imageUri}
                         logoUri={restaurant.logoUri}
                         xcardEnabled={restaurant.xcardEnabled}

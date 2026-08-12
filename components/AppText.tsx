@@ -1,10 +1,10 @@
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { Text, type TextProps } from 'react-native';
 import { getTextVariantStyle, type TextVariant } from '../constants/Typography';
 import { getLocalizedTextVariantStyle } from '../constants/Typography';
 import { useAppLocale } from '../context/LocaleContext';
 
-export type AppTextProps = TextProps & {
+type AppTextProps = TextProps & {
     variant?: TextVariant;
 };
 

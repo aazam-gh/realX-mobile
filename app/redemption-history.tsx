@@ -4,7 +4,7 @@ import { getAuth } from '@react-native-firebase/auth';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../context/AppThemeContext';
@@ -193,11 +193,6 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   listContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -297,13 +292,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     ...Typography.getTextVariantStyle('body'),
     marginLeft: 8,
-  },
-  emptyContainer: {
-    paddingTop: 60,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    ...Typography.getTextVariantStyle('body'),
   },
 });

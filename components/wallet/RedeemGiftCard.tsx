@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     StyleSheet,
     Text,
@@ -193,49 +193,6 @@ export default function RedeemGiftCard({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    logoContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    logoArabicText: {
-        textAlign: 'center',
-        writingDirection: 'rtl',
-    },
-    logoX: {
-        fontSize: 24,
-    },
-    logoCard: {
-        fontSize: 24,
-    },
-    logoXArabic: {
-        ...Typography.getTextVariantStyle('displayArabicBlack'),
-        fontSize: 28,
-        lineHeight: 36,
-        writingDirection: 'rtl',
-    },
-    logoCardArabic: {
-        ...Typography.getTextVariantStyle('displayArabicBlack'),
-        fontSize: 28,
-        lineHeight: 36,
-        writingDirection: 'rtl',
-    },
-    headerSpacer: {
-        width: 40,
     },
     scrollContent: {
         paddingBottom: 32,

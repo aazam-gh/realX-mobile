@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { Text, type TextProps } from 'react-native';
 
 import { getLocalizedTextVariantStyle, getTextVariantStyle, type TextVariant } from '../constants/Typography';

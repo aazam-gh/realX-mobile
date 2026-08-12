@@ -1354,9 +1354,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     zIndex: 10,
   },
-  headerMeta: {
-    marginTop: 4,
-  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -9,8 +9,6 @@ import XCardGlassLayer, {
   getGlassStrength,
   resolveGlassConfig,
   type XCardGlass,
-  type XCardGlassConfig,
-  type XCardGlassPreset,
 } from './XCardGlassLayer';
 import XCardLogoLayer from './XCardLogoLayer';
 import XCardShineLayer, { useXCardShine } from './XCardShineLayer';
@@ -21,9 +19,7 @@ import {
   CARD_RADIUS,
   formatAmount,
 } from './xCardLayout';
-import { resolveTiltConfig, type XCardTilt, type XCardTiltConfig, useXCardTilt } from './useXCardTilt';
-
-export type { XCardGlass, XCardGlassConfig, XCardGlassPreset, XCardTilt, XCardTiltConfig };
+import { resolveTiltConfig, type XCardTilt, useXCardTilt } from './useXCardTilt';
 
 const xCardBackground = require('../../assets/images/xcard-background.webp');
 

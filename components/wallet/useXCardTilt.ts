@@ -8,7 +8,7 @@ import {
 } from 'react-native-reanimated';
 import type { XCardInteractionState } from './xCardLayout';
 
-export type XCardTiltConfig = {
+type XCardTiltConfig = {
   enabled?: boolean;
   maxRotateX?: number;
   maxRotateY?: number;

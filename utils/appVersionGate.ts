@@ -9,7 +9,7 @@ const MOBILE_VERSION_GATE_PATH = ['appConfig', 'mobileVersionGate'] as const;
 const REALX_ANDROID_PACKAGE = 'com.reelx.app';
 const REALX_IOS_APP_ID = '6759960382';
 
-export type PlatformUpdateConfig = {
+type PlatformUpdateConfig = {
     minimumVersion?: string;
     latestVersion?: string;
     minimumBuild?: number;
@@ -19,7 +19,7 @@ export type PlatformUpdateConfig = {
     fallbackUrl?: string;
 };
 
-export type MobileVersionGateConfig = {
+type MobileVersionGateConfig = {
     enabled?: boolean;
     ios?: PlatformUpdateConfig;
     android?: PlatformUpdateConfig;
@@ -62,7 +62,7 @@ function normalizeVersion(version: string | null | undefined) {
         });
 }
 
-export function compareVersions(current: string | null | undefined, target: string | null | undefined) {
+function compareVersions(current: string | null | undefined, target: string | null | undefined) {
     const currentParts = normalizeVersion(current);
     const targetParts = normalizeVersion(target);
 

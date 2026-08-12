@@ -117,5 +117,3 @@ export const Colors = {
     shadow: brandGreen,
   },
 };
-
-export default Colors;

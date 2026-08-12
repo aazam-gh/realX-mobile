@@ -332,11 +332,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         textAlignVertical: 'top',
     },
-    loaderContainer: {
-        height: 150,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     skeletonGrid: {
         minHeight: 240,
         flexDirection: 'row',
@@ -373,12 +368,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 6,
         borderRadius: 3,
-    },
-    drawerTitle: {
-        fontSize: 18,
-        ...Typography.getTextVariantStyle('bodyStrong'),
-        textAlign: 'center',
-        marginBottom: 12,
     },
     drawerList: {
         marginTop: 4,

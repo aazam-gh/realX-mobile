@@ -1,4 +1,4 @@
-export type AppErrorKind =
+type AppErrorKind =
   | 'auth'
   | 'permission'
   | 'validation'

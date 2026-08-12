@@ -6,7 +6,7 @@ import { Typography } from '../constants/Typography';
 import { useAppTheme } from '../context/AppThemeContext';
 import { useAppLocale } from '../context/LocaleContext';
 
-export type StateSurfaceKind = 'loading' | 'empty' | 'filtered-empty' | 'error' | 'offline' | 'not-found';
+type StateSurfaceKind = 'loading' | 'empty' | 'filtered-empty' | 'error' | 'offline' | 'not-found';
 
 type Props = {
   kind: StateSurfaceKind;

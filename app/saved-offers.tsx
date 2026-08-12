@@ -278,23 +278,4 @@ const styles = StyleSheet.create({
     ...Typography.getTextVariantStyle('bodyStrong'),
     fontSize: 13,
   },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    marginTop: 16,
-    fontSize: 20,
-    ...Typography.getTextVariantStyle('bodyStrong'),
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    marginTop: 8,
-    fontSize: 14,
-    lineHeight: 20,
-    ...Typography.getTextVariantStyle('body'),
-    textAlign: 'center',
-  },
 });

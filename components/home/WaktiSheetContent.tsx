@@ -612,8 +612,4 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(149, 201, 255, 0.30)',
         boxShadow: '0 0 12px rgba(149, 201, 255, 0.30)',
     },
-    textRTL: {
-        textAlign: 'right',
-        writingDirection: 'rtl',
-    },
 });

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
 import {
@@ -223,7 +223,6 @@ const styles = StyleSheet.create({
 
   scrollContent: { paddingBottom: 40 },
 
-  loader: { marginTop: 60 },
 
   bannerScrollContent: {
     paddingHorizontal: 20,

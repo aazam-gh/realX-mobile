@@ -29,8 +29,6 @@ import { useTranslation } from 'react-i18next';
 import { OnboardingFlowSectionMotion } from './OnboardingMotion';
 import ResponsiveText from '../ResponsiveText';
 
-export const ONBOARDING_SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 40 } as const;
-
 type ScaffoldProps = {
   children: ReactNode;
   title?: string;
@@ -95,7 +93,7 @@ export function OnboardingScaffold({ children, title, headerTitle, subtitle, onB
   );
 }
 
-export function OnboardingProgress({ current, total }: { current: number; total: number }) {
+function OnboardingProgress({ current, total }: { current: number; total: number }) {
   const { theme } = useAppTheme();
   const { isRTL } = useAppLocale();
   const { t } = useTranslation();

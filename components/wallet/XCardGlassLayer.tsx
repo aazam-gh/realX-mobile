@@ -16,9 +16,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { CARD_RADIUS } from './xCardLayout';
 
-export type XCardGlassPreset = 'subtle' | 'liquid' | 'frosted';
+type XCardGlassPreset = 'subtle' | 'liquid' | 'frosted';
 
-export type XCardGlassConfig = {
+type XCardGlassConfig = {
   preset?: XCardGlassPreset;
   intensity?: number;
   tintColor?: string;

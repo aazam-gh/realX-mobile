@@ -28,7 +28,7 @@ import {
     HOME_SECTION_TOP_SPACING,
 } from './layout';
 
-export type FeaturedBannerItem = HomeFeaturedBannerItem;
+type FeaturedBannerItem = HomeFeaturedBannerItem;
 
 type FeaturedBannerProps = {
     item?: FeaturedBannerItem;

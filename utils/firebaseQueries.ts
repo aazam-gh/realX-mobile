@@ -13,7 +13,8 @@ import {
     where,
 } from '@react-native-firebase/firestore';
 import { getCachedVendorDisplayFields } from './vendorDisplayCache';
-import type { Opportunity, RewardAccount } from '../types/opportunities';
+import { queryClient, queryKeys } from './queryClient';
+import type { Opportunity } from '../types/opportunities';
 
 export type FirestorePage<T> = {
     items: T[];
@@ -175,38 +176,6 @@ export async function fetchOpportunity(opportunityId: string): Promise<Opportuni
     return { id: snapshot.id, ...snapshot.data() } as Opportunity;
 }
 
-export async function fetchRewardAccount(userId: string): Promise<RewardAccount> {
-    const db = getFirestore();
-    const snapshot = await getDoc(doc(db, 'rewardAccounts', userId));
-    if (!snapshot.exists()) {
-        return { userId, statusPoints: 0, redemptionCount: 0 };
-    }
-    const data = snapshot.data();
-    return {
-        userId,
-        statusPoints: typeof data?.statusPoints === 'number' ? data.statusPoints : 0,
-        redemptionCount: typeof data?.redemptionCount === 'number' ? data.redemptionCount : 0,
-        streakCount: typeof data?.streakCount === 'number' ? data.streakCount : 0,
-        badges: Array.isArray(data?.badges) ? data.badges : [],
-        updatedAt: data?.updatedAt,
-    };
-}
-
-export async function fetchSavedOpportunityKinds(userId: string): Promise<Set<string>> {
-    const db = getFirestore();
-    const snapshot = await getDocs(query(
-        collection(db, 'students', userId, 'savedItems'),
-        limit(100)
-    ));
-    return new Set(
-        snapshot.docs
-            .map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => docSnap.data())
-            .filter((item: Record<string, unknown>) => item.type === 'opportunity')
-            .map((item: Record<string, unknown>) => String(item.kind || ''))
-            .filter(Boolean)
-    );
-}
-
 export async function fetchCategories(isArabic: boolean) {
     const db = getFirestore();
     const categoriesQuery = query(
@@ -239,7 +208,11 @@ export async function fetchVendor(vendorId: string) {
 
     const data = docSnap.data();
     if (!data) return null;
-    return isLiveVendor(data) ? { id: docSnap.id, data } : null;
+    if (!isLiveVendor(data)) return null;
+
+    const vendor = { id: docSnap.id, data };
+    queryClient.setQueryData(queryKeys.vendor(docSnap.id), vendor);
+    return vendor;
 }
 
 export async function fetchVendorRoute(vendorIdOrName: string, isArabic: boolean) {
@@ -451,10 +424,14 @@ export async function fetchVendorSearchPage(
     constraints.push(limit(pageSize));
 
     const snapshot = await getDocs(query(collection(db, 'vendors'), ...constraints));
-    const items = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-    })).filter(isLiveVendor);
+    const items = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data = docSnap.data();
+        const vendor = { id: docSnap.id, ...data };
+        if (isLiveVendor(data)) {
+            queryClient.setQueryData(queryKeys.vendor(docSnap.id), { id: docSnap.id, data });
+        }
+        return vendor;
+    }).filter(isLiveVendor);
 
     return {
         items,
@@ -507,11 +484,18 @@ export async function fetchCategoryVendorsPage({
     constraints.push(limit(pageSize));
 
     const snapshot = await getDocs(query(collection(db, 'vendors'), ...constraints));
-    const items = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-        xcard: docSnap.data().xcard || false,
-    })).filter(isLiveVendor);
+    const items = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data = docSnap.data();
+        const vendor = {
+            id: docSnap.id,
+            ...data,
+            xcard: data.xcard || false,
+        };
+        if (isLiveVendor(data)) {
+            queryClient.setQueryData(queryKeys.vendor(docSnap.id), { id: docSnap.id, data });
+        }
+        return vendor;
+    }).filter(isLiveVendor);
     const lastItem = items[items.length - 1];
 
     return {

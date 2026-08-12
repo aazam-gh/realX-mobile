@@ -8,7 +8,7 @@ import i18n, {
 } from '../src/localization/i18n';
 
 export type AppLocale = 'en' | 'ar';
-export type AppDirection = 'ltr' | 'rtl';
+type AppDirection = 'ltr' | 'rtl';
 
 type LocaleContextValue = {
   locale: AppLocale;

@@ -2,7 +2,7 @@
   "expo": {
     "name": "realX",
     "slug": "reelx",
-    "version": "1.2.8",
+    "version": "1.2.9",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -28,7 +28,6 @@
     },
     "android": {
       "package": "com.reelx.app",
-      "versionCode": 32,
       "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
@@ -44,6 +43,9 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
+      ],
+      "blockedPermissions": [
+        "com.google.android.gms.permission.AD_ID"
       ]
     },
     "web": {

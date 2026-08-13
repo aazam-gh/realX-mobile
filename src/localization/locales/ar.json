@@ -206,6 +206,7 @@
   "location": "الموقع",
   "branches": "الفروع",
   "nearest": "الأقرب",
+  "vendor_information_title": "معلومات المتجر",
   "gallery": "الصور",
   "close_gallery": "إغلاق الصور",
   "km_away": "يبعد {{distance}} كم",

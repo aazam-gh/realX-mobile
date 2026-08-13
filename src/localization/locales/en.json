@@ -206,6 +206,7 @@
   "location": "Location",
   "branches": "Branches",
   "nearest": "Nearest",
+  "vendor_information_title": "Store information",
   "gallery": "Gallery",
   "close_gallery": "Close gallery",
   "km_away": "{{distance}} km away",

@@ -17,7 +17,7 @@ import { triggerSubtleHaptic } from '../../utils/haptics';
 
 const TOUCH_TARGET_SIZE = 56;
 const AVATAR_SIZE = 50;
-const RADAR_SIZE = 50;
+const RADAR_SIZE = 82;
 
 export default function MascotThemeButton() {
   const { isDark, theme, toggleTheme } = useAppTheme();
@@ -85,19 +85,19 @@ function RadarPulse({ progress }: { progress: SharedValue<number> }) {
   const outerScanStyle = useRadarRing(progress, 0.32);
 
   return (
-    <>
+    <Animated.View style={styles.radarLayer} pointerEvents="none">
       <Animated.View style={[styles.scanGlow, glowStyle]} />
       <Animated.View style={[styles.scanRing, styles.outerScanRing, outerScanStyle]} />
       <Animated.View style={[styles.scanRing, styles.middleScanRing, middleScanStyle]} />
       <Animated.View style={[styles.scanRing, styles.innerScanRing, innerScanStyle]} />
-    </>
+    </Animated.View>
   );
 }
 
 function useRadarGlow(progress: SharedValue<number>) {
   return useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.24, 1], [0.24, 0.18, 0], 'clamp'),
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.88, 1.28], 'clamp') }],
+    opacity: interpolate(progress.value, [0, 0.18, 0.7, 1], [0.5, 0.34, 0.12, 0], 'clamp'),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [0.7, 1.45], 'clamp') }],
   }));
 }
 
@@ -106,14 +106,15 @@ function useRadarRing(progress: SharedValue<number>, delay: number) {
     const phase = Math.max(0, Math.min(1, (progress.value - delay) / (1 - delay)));
 
     return {
-      opacity: interpolate(phase, [0, 0.12, 0.72, 1], [0, 0.72, 0.2, 0], 'clamp'),
-      transform: [{ scale: interpolate(phase, [0, 1], [0.72, 1.3], 'clamp') }],
+      opacity: interpolate(phase, [0, 0.08, 0.68, 1], [0, 0.95, 0.28, 0], 'clamp'),
+      transform: [{ scale: interpolate(phase, [0, 1], [0.72, 1.08], 'clamp') }],
     };
   });
 }
 
 const styles = StyleSheet.create({
   touchTarget: {
+    position: 'relative',
     width: TOUCH_TARGET_SIZE,
     height: TOUCH_TARGET_SIZE,
     alignItems: 'center',
@@ -121,15 +122,23 @@ const styles = StyleSheet.create({
   },
   scanGlow: {
     position: 'absolute',
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
+    width: AVATAR_SIZE + 8,
+    height: AVATAR_SIZE + 8,
+    borderRadius: (AVATAR_SIZE + 8) / 2,
     backgroundColor: Colors.brandGreen,
+  },
+  radarLayer: {
+    position: 'absolute',
+    width: TOUCH_TARGET_SIZE,
+    height: TOUCH_TARGET_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
   },
   scanRing: {
     position: 'absolute',
-    top: (AVATAR_SIZE - RADAR_SIZE) / 2,
-    left: (AVATAR_SIZE - RADAR_SIZE) / 2,
+    top: (TOUCH_TARGET_SIZE - RADAR_SIZE) / 2,
+    left: (TOUCH_TARGET_SIZE - RADAR_SIZE) / 2,
     width: RADAR_SIZE,
     height: RADAR_SIZE,
     borderRadius: RADAR_SIZE / 2,
@@ -156,6 +165,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    zIndex: 1,
   },
   avatarImage: {
     position: 'absolute',

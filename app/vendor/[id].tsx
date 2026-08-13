@@ -53,6 +53,15 @@ type OnlineVendorOffer = {
     instructionsAr?: string;
 };
 
+type VendorInformation = {
+    title?: string;
+    titleAr?: string;
+    message?: string;
+    messageAr?: string;
+};
+
+const WIDE_COVER_ASPECT_RATIO = 16 / 9;
+
 function getVendorBranches(vendor: any): VendorBranch[] {
     const rawLocations = Array.isArray(vendor?.locations) && vendor.locations.length > 0
         ? vendor.locations
@@ -120,6 +129,7 @@ export default function VendorScreen() {
     const [userLocation, setUserLocation] = useState<LatLng | null>(null);
     const [onlineWebsiteLoading, setOnlineWebsiteLoading] = useState(false);
     const [onlineCodeCopied, setOnlineCodeCopied] = useState(false);
+    const [coverContentFit, setCoverContentFit] = useState<'cover' | 'contain'>('cover');
     const currentUserId = getAuth().currentUser?.uid ?? null;
     const vendorLookupId = typeof id === 'string' ? id : '';
     const cachedVendor = queryClient.getQueryData<CachedVendor>(queryKeys.vendor(vendorLookupId));
@@ -227,6 +237,18 @@ export default function VendorScreen() {
         : ((isArabic ? onlineOffer?.instructionsAr : onlineOffer?.instructions)
             || onlineOffer?.instructions
             || (isCouponOnlineOffer ? undefined : t('online_partner_managed_default_instruction')));
+    const vendorInformation = vendor?.vendorInformation as VendorInformation | undefined;
+    const vendorInformationMessage = pickLocalizedText(
+        isArabic,
+        vendorInformation?.messageAr,
+        vendorInformation?.message,
+    );
+    const vendorInformationTitle = pickLocalizedText(
+        isArabic,
+        vendorInformation?.titleAr,
+        vendorInformation?.title,
+        t('vendor_information_title'),
+    );
     const refreshVendor = useCallback(async () => {
         await refetchVendor();
         if (currentUserId && actualVendorId) {
@@ -258,6 +280,10 @@ export default function VendorScreen() {
             ...offer,
         })));
     }, [vendorRouteData]);
+
+    useEffect(() => {
+        setCoverContentFit('cover');
+    }, [vendor?.coverImage]);
 
     const {
         data: savedOfferIdsQueryData,
@@ -424,12 +450,18 @@ export default function VendorScreen() {
                 refreshControl={refreshControl}
             >
                 {/* Header Image Section */}
-                <View style={styles.headerContainer}>
+                <View style={[styles.headerContainer, { backgroundColor: theme.background }]}>
                     <RemoteImage
                         source={{ uri: vendor.coverImage }}
                         style={styles.coverImage}
-                        contentFit="cover"
+                        contentFit={coverContentFit}
                         transition={200}
+                        onLoad={(event) => {
+                            const { width, height } = event.source;
+                            if (width > 0 && height > 0) {
+                                setCoverContentFit(width / height > WIDE_COVER_ASPECT_RATIO ? 'contain' : 'cover');
+                            }
+                        }}
                     />
 
                     {/* Header Buttons */}
@@ -561,6 +593,20 @@ export default function VendorScreen() {
                             </>
                         )}
                     </View>
+
+                    {vendorInformationMessage ? (
+                        <View style={[styles.vendorInformationCard, { backgroundColor: theme.brandSoft, borderColor: theme.brand }]}>
+                            <View style={[styles.vendorInformationHeader, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                <Ionicons name="information-circle-outline" size={22} color={theme.brand} />
+                                <Text selectable style={[styles.vendorInformationTitle, { color: theme.brandText, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                    {vendorInformationTitle}
+                                </Text>
+                            </View>
+                            <Text selectable style={[styles.vendorInformationMessage, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                {vendorInformationMessage}
+                            </Text>
+                        </View>
+                    ) : null}
 
                     <VendorGallery images={vendor.galleryImages} isArabic={isArabic} />
 
@@ -979,6 +1025,27 @@ const styles = StyleSheet.create({
         flexShrink: 1,
         fontSize: 14,
         ...Typography.getTextVariantStyle('bodyStrong'),
+    },
+    vendorInformationCard: {
+        marginTop: 18,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 20,
+        padding: 16,
+        gap: 8,
+    },
+    vendorInformationHeader: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    vendorInformationTitle: {
+        flex: 1,
+        fontSize: 16,
+        ...Typography.getTextVariantStyle('bodyStrong'),
+    },
+    vendorInformationMessage: {
+        fontSize: 14,
+        lineHeight: 20,
+        ...Typography.getTextVariantStyle('body'),
     },
     onlineCodeBox: {
         alignItems: 'center',

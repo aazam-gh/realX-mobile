@@ -1,5 +1,3 @@
-import { trackEvent } from './analytics';
-
 export type OnboardingErrorKey =
   | 'onboarding_error_account_exists'
   | 'onboarding_error_account_not_found'
@@ -57,15 +55,4 @@ export const getOnboardingErrorKey = (error: unknown): OnboardingErrorKey => {
   if (code === 'invalid-argument' && message.includes('email')) return 'onboarding_error_email_invalid';
 
   return 'onboarding_generic_error_message';
-};
-
-type FunnelValue = string | number | boolean | undefined;
-
-export const trackOnboarding = (
-  action: string,
-  parameters: Record<string, FunnelValue> = {},
-) => {
-  const payload = { flow_version: 'onboarding_v2', ...parameters };
-  void trackEvent('onboarding_funnel', { action, ...payload });
-  return trackEvent(action, payload);
 };

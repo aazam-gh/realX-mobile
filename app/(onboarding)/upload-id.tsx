@@ -12,7 +12,7 @@ import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { logger } from '../../utils/logger';
-import { getOnboardingErrorKey, trackOnboarding } from '../../utils/onboarding';
+import { getOnboardingErrorKey } from '../../utils/onboarding';
 import { savePendingVerification } from '../../utils/verificationPending';
 
 const MAX_SIZE_BYTES = 3 * 1024 * 1024;
@@ -65,18 +65,15 @@ export default function UploadIdScreen() {
     try {
       setUploadPhase('uploading');
       const submitFn = httpsCallable(getFunctions(undefined, 'me-central1'), 'submitVerificationRequest');
-      void trackOnboarding('verification_upload_started', { source: 'photo_library' });
       const submission = await submitFn({ email, idImageBase64: uploadedImage.base64, role: role || 'student' });
       setUploadPhase('submitting');
       const { statusToken } = submission.data as { statusToken: string };
       await savePendingVerification(email, role || 'student', statusToken);
-      void trackOnboarding('verification_submitted', { method: 'student_id', role: role || 'student' });
       router.replace({ pathname: '/(onboarding)/pending', params: { email, role: role || 'student', statusToken } });
     } catch (error) {
       logger.error('Unable to submit verification request', error);
       const nextErrorKey = getOnboardingErrorKey(error);
       setErrorKey(nextErrorKey);
-      void trackOnboarding('manual_verification_failed', { error_code: nextErrorKey });
     } finally {
       setIsLoading(false);
       setUploadPhase(null);

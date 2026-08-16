@@ -11,7 +11,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { logger } from '../../utils/logger';
-import { getOnboardingErrorKey, trackOnboarding } from '../../utils/onboarding';
+import { getOnboardingErrorKey } from '../../utils/onboarding';
 import { clearPendingVerification } from '../../utils/verificationPending';
 
 export default function PendingVerificationScreen() {
@@ -50,17 +50,14 @@ export default function PendingVerificationScreen() {
 
       if (data.status === 'approved') {
         setStatus('approved');
-        void trackOnboarding('verification_status_viewed', { status: 'approved' });
       } else if (data.status === 'rejected') {
         setStatus('rejected');
         setRejectionReason(data.rejectionReason || null);
         await clearPendingVerification();
-        void trackOnboarding('verification_status_viewed', { status: 'rejected' });
       } else if (data.status === 'expired') {
         setStatus('rejected');
         setRejectionReason(t('onboarding_pending_expired'));
         await clearPendingVerification();
-        void trackOnboarding('verification_status_viewed', { status: 'expired' });
       } else if (data.status === 'cancelled') {
         await clearPendingVerification();
         router.replace('/(onboarding)' as any);
@@ -69,7 +66,6 @@ export default function PendingVerificationScreen() {
       logger.error('Status check error:', error);
       const nextErrorKey = getOnboardingErrorKey(error);
       setErrorKey(nextErrorKey);
-      void trackOnboarding('manual_status_failed', { error_code: nextErrorKey });
     } finally {
       setChecking(false);
     }

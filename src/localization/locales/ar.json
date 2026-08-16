@@ -209,6 +209,8 @@
   "vendor_information_title": "معلومات المتجر",
   "gallery": "الصور",
   "close_gallery": "إغلاق الصور",
+  "opening_hours": "ساعات العمل",
+  "closed": "مغلق",
   "km_away": "يبعد {{distance}} كم",
   "enter_vendor_pin": "أدخل رمز التاجر:",
   "total_bill": "إجمالي الفاتورة",

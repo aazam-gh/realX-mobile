@@ -10,7 +10,7 @@ import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { clearPendingVerificationForEmail } from '../../utils/verificationPending';
-import { getOnboardingErrorKey, normalizeCallableCode, trackOnboarding } from '../../utils/onboarding';
+import { getOnboardingErrorKey } from '../../utils/onboarding';
 import { logger } from '../../utils/logger';
 
 const OTP_LENGTH = 6;
@@ -70,9 +70,7 @@ export default function VerifyOtpScreen() {
       const functions = getFunctions(undefined, 'me-central1');
       const verifyOtp = httpsCallable(functions, 'verifyOtp');
       const result = await verifyOtp({ email, code, purpose });
-      void trackOnboarding('auth_code_verified', { auth_mode: purpose === 'login' ? 'login' : 'signup', verification_method: purpose === 'verification' ? 'student_id' : 'school_email' });
       if (purpose === 'verification') {
-        void trackOnboarding('verification_started', { method: 'student_id' });
         router.replace({ pathname: '/(onboarding)/upload-id', params: { email, role: role || 'student' } });
         return;
       }
@@ -84,7 +82,6 @@ export default function VerifyOtpScreen() {
       logger.error('Unable to verify onboarding code', error);
       const key = getOnboardingErrorKey(error);
       setErrorKey(key);
-      void trackOnboarding('auth_error_shown', { step: 'code', error_code: key, recoverable: normalizeCallableCode(error) !== 'resource-exhausted' });
       autoSubmitted.current = '';
     } finally { setLoading(false); }
   }, [code, email, isOnline, loading, purpose, role, router]);
@@ -104,7 +101,6 @@ export default function VerifyOtpScreen() {
       const sendOtp = httpsCallable(getFunctions(undefined, 'me-central1'), 'sendOtp');
       await sendOtp({ email, purpose });
       setCooldown(60);
-      void trackOnboarding('auth_code_sent', { auth_mode: purpose === 'login' ? 'login' : 'signup', resend: true });
     } catch (error) { setErrorKey(getOnboardingErrorKey(error)); } finally { setResending(false); }
   };
 

@@ -5,7 +5,7 @@ Prepared: 2026-08-01
 Platforms: iOS and Android
 Primary outcome: a verified account is created
 
-Implementation note (2026-08-01): The v2 welcome, unified account entry, logical OTP field, deferred creator choice, student-ID primer and resumable review, account-created moment, optional interests and alerts, first-run Home checklist, startup recovery, and versioned analytics are now implemented in the mobile working tree. Existing callable contracts remain authoritative. Minimum-age/parental-consent policy and production rollout configuration remain product/legal decisions and are not inferred by the client.
+Implementation note (2026-08-15): The v2 welcome, unified account entry, logical OTP field, deferred creator choice, student-ID primer and resumable review, account-created moment, optional interests and alerts, first-run Home checklist, and startup recovery are implemented in the mobile working tree. Firebase Analytics and its client event instrumentation have been removed. Existing callable contracts remain authoritative. Minimum-age/parental-consent policy and production rollout configuration remain product/legal decisions and are not inferred by the client.
 
 ## Executive summary
 
@@ -39,7 +39,7 @@ Named Mobbin searches for UNiDAYS and Student Beans did not return those product
 - Firebase Authentication uses custom tokens issued by callable Cloud Functions after OTP verification.
 - Firestore supplies the student profile through a real-time `students/{uid}` listener in `StudentContext`.
 - Firebase callable functions run in `me-central1` with App Check enforced.
-- Firebase Analytics is wrapped by `utils/analytics.ts`; onboarding actions are currently emitted as one `onboarding_funnel` event with an `action` parameter.
+- The client currently has no analytics SDK or event instrumentation.
 - AsyncStorage holds the guest-session flag and a non-authenticated manual-verification resume token.
 - NetInfo provides global online/offline state and feeds React Query's online manager.
 - English and Arabic localization is handled by i18next, with locale-specific fonts and RTL state.
@@ -166,36 +166,9 @@ Reusable foundations:
 
 The onboarding screens do not yet share a single layout/form component. Most repeat the same 250-point green header, overlapping white card, 72-point icon, 28-point horizontal padding, 16-point field radius, and 62-point pill button as local styles.
 
-### Existing analytics events
+### Telemetry status
 
-Current onboarding actions sent through `onboarding_funnel`:
-
-- `welcome_viewed`
-- `onboarding_started`
-- `role_selected`
-- `guest_selected`
-- `email_viewed`
-- `email_submitted`
-- `email_failed`
-- `login_viewed`
-- `login_failed`
-- `otp_sent` on the manual-verification branch only
-- `otp_verified`
-- `otp_failed`
-- `manual_verification_submitted`
-- `manual_verification_failed`
-- `manual_verification_approved`
-- `manual_verification_rejected`
-- `manual_verification_expired`
-- `manual_status_failed`
-- `manual_verification_cancelled`
-- `details_viewed`
-- `profile_created`
-- `details_failed`
-- `onboarding_completed`
-- `notification_choice`
-
-Strengths include branch and role parameters and normalized error codes. Gaps include inconsistent `otp_sent` coverage, no explicit step-exit/skip events, no duration fields, no first-core-action event tied to onboarding, no pending-review age metric, and no stable flow/version parameter for experiment analysis.
+The client does not currently collect onboarding analytics. Any future telemetry should be introduced only with an explicit product, privacy, consent, and provider decision.
 
 ### Existing validation and error handling
 
@@ -765,13 +738,13 @@ Error copy format:
 
 Never expose raw Firebase codes, status tokens, storage paths, or whether an arbitrary email exists outside the authenticated/intentional flow.
 
-## 13. Analytics events and success metrics
+## 13. Future analytics and success metrics
 
 ### Event design
 
-Keep analytics free of email, name, ID metadata, OTP, status token, UID, and unbounded error text. Add `flow_version: onboarding_v2`, `platform`, `locale`, `auth_mode`, `verification_method`, and `role_intent` only where relevant and policy-approved.
+If analytics is reintroduced, keep it free of email, name, ID metadata, OTP, status token, UID, and unbounded error text. Add `flow_version: onboarding_v2`, `platform`, `locale`, `auth_mode`, `verification_method`, and `role_intent` only where relevant and policy-approved.
 
-Prefer distinct stable events for funnel construction while retaining the current wrapper:
+Prefer distinct stable events for funnel construction:
 
 | Event | Trigger | Key parameters |
 |---|---|---|
@@ -912,21 +885,19 @@ Do not optimize account conversion by hiding verification, privacy, cancellation
 ### Phase 4 — Post-account activation
 
 - Add account-created success, optional interests, optional contextual alerts, first-run home module, and checklist.
-- Instrument first core action and cohort metrics.
 - Keep personalization failures non-blocking.
 
 ### Phase 5 — QA and rollout
 
 - Test iOS and Android on compact and large devices, light/dark mode, English/Arabic, LTR/RTL, large text, VoiceOver/TalkBack, reduced motion, slow network, offline transitions, app background/restore, and denied permissions.
 - Test every callable error and manual-review status with controlled fixtures/emulators.
-- Validate analytics events in debug view without PII.
-- Roll out progressively and compare conversion, errors, review completion, and support volume against baseline.
+- Roll out progressively and compare errors, review completion, and support volume against baseline. Add conversion analysis only if approved telemetry is introduced.
 
 ## 15. Risks and open decisions
 
 ### Product and policy
 
-1. **Minimum age:** What rules apply to 12-year-old users in Qatar and target markets? Is parental consent required, and can Firebase Analytics run before consent?
+1. **Minimum age:** What rules apply to 12-year-old users in Qatar and target markets? Is parental consent required before any future telemetry can run?
 2. **Creator model:** Is Creator mutually exclusive with Student, or should it be an additive capability? This determines whether role can safely move after account creation.
 3. **Student definition:** Are secondary-school students eligible, or only university students? Current copy says university email while the target age begins at 12.
 4. **School metadata:** Is school name needed for eligibility, personalization, reporting, or support? If not, do not collect it.
@@ -950,7 +921,7 @@ Do not optimize account conversion by hiding verification, privacy, cancellation
 16. **Home personalization:** The first-run module must have enough real offer/opportunity inventory to avoid an empty personalized promise.
 17. **Notification timing:** Success-screen prompting is acceptable, but a first-save/follow prompt may be more contextual. This should be A/B tested only after event quality is verified.
 18. **Dark mode and Arabic:** The current local onboarding styles contain fixed colors, offsets, and English-shaped headings; component consolidation is required before visual polish.
-19. **Existing uncommitted work:** The current working tree already contains onboarding, backend, localization, and analytics changes. Implementation must preserve and reconcile that work rather than replacing it wholesale.
+19. **Existing uncommitted work:** The current working tree already contains onboarding, backend, and localization changes. Implementation must preserve and reconcile that work rather than replacing it wholesale.
 
 ## Acceptance criteria for specification sign-off
 

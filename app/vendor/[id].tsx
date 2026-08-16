@@ -42,6 +42,7 @@ type VendorBranch = {
     longitude?: number;
     isPrimary?: boolean;
     distanceKm?: number;
+    openingHours?: any;
 };
 
 type OnlineVendorOffer = {
@@ -89,9 +90,41 @@ function getVendorBranches(vendor: any): VendorBranch[] {
                 latitude,
                 longitude,
                 isPrimary: location?.isPrimary === true || index === 0,
+                openingHours: location?.openingHours,
             };
         })
         .filter((location: VendorBranch) => isValidLatLng(location.latitude, location.longitude));
+}
+
+function formatOpeningHours(openingHours: unknown, isArabic: boolean, closedLabel: string) {
+    if (typeof openingHours === 'string') return openingHours;
+    if (!openingHours || typeof openingHours !== 'object') return '';
+
+    const dayNames: Record<string, [string, string]> = {
+        monday: ['Monday', 'الاثنين'],
+        tuesday: ['Tuesday', 'الثلاثاء'],
+        wednesday: ['Wednesday', 'الأربعاء'],
+        thursday: ['Thursday', 'الخميس'],
+        friday: ['Friday', 'الجمعة'],
+        saturday: ['Saturday', 'السبت'],
+        sunday: ['Sunday', 'الأحد'],
+    };
+
+    return Object.entries(openingHours as Record<string, unknown>)
+        .map(([day, value]) => {
+            const label = dayNames[day.toLowerCase()]?.[isArabic ? 1 : 0] || day;
+            if (typeof value === 'string') return `${label}: ${value}`;
+            if (Array.isArray(value)) return `${label}: ${value.join(' - ')}`;
+            if (value && typeof value === 'object') {
+                const hours = value as Record<string, unknown>;
+                if (hours.closed === true) return `${label}: ${closedLabel}`;
+                const open = hours.open ?? hours.opens ?? '';
+                const close = hours.close ?? hours.closes ?? '';
+                if (open || close) return `${label}: ${open}${open && close ? ' - ' : ''}${close}`;
+            }
+            return `${label}: ${closedLabel}`;
+        })
+        .join('\n');
 }
 
 function getDialablePhoneNumber(phoneNumber?: string) {
@@ -345,6 +378,7 @@ export default function VendorScreen() {
     }, [userLocation, vendor]);
 
     const nearestBranch = branches[0] || null;
+    const openingHours = nearestBranch?.openingHours ?? vendor?.openingHours;
     const branchListMaxHeight = Math.max(260, Math.min(520, windowHeight * 0.58 - insets.bottom));
     const openBranchOnMap = (branch: VendorBranch) => {
         if (!isValidLatLng(branch.latitude, branch.longitude)) return;
@@ -594,6 +628,8 @@ export default function VendorScreen() {
                         )}
                     </View>
 
+                    <VendorGallery images={vendor.galleryImages} isArabic={isArabic} />
+
                     {vendorInformationMessage ? (
                         <View style={[styles.vendorInformationCard, { backgroundColor: theme.brandSoft, borderColor: theme.brand }]}>
                             <View style={[styles.vendorInformationHeader, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
@@ -608,7 +644,19 @@ export default function VendorScreen() {
                         </View>
                     ) : null}
 
-                    <VendorGallery images={vendor.galleryImages} isArabic={isArabic} />
+                    {openingHours ? (
+                        <View style={[styles.openingHoursCard, { backgroundColor: theme.cardMuted, borderColor: theme.border }]}>
+                            <View style={[styles.openingHoursHeader, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
+                                <Ionicons name="time-outline" size={20} color={theme.brand} />
+                                <Text style={[styles.openingHoursTitle, { color: theme.text, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                    {t('opening_hours')}
+                                </Text>
+                            </View>
+                            <Text style={[styles.openingHoursText, { color: theme.mutedText, textAlign: isArabic ? 'right' : 'left', writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                                {formatOpeningHours(openingHours, isArabic, t('closed'))}
+                            </Text>
+                        </View>
+                    ) : null}
 
                     {/* Offers List */}
                     <View style={styles.offersList}>
@@ -1045,6 +1093,27 @@ const styles = StyleSheet.create({
     vendorInformationMessage: {
         fontSize: 14,
         lineHeight: 20,
+        ...Typography.getTextVariantStyle('body'),
+    },
+    openingHoursCard: {
+        marginTop: 20,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 20,
+        padding: 16,
+        gap: 12,
+    },
+    openingHoursHeader: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    openingHoursTitle: {
+        flex: 1,
+        fontSize: 16,
+        ...Typography.getTextVariantStyle('bodyStrong'),
+    },
+    openingHoursText: {
+        fontSize: 14,
+        lineHeight: 22,
         ...Typography.getTextVariantStyle('body'),
     },
     onlineCodeBox: {

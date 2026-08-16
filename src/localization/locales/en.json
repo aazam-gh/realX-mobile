@@ -209,6 +209,8 @@
   "vendor_information_title": "Store information",
   "gallery": "Gallery",
   "close_gallery": "Close gallery",
+  "opening_hours": "Opening hours",
+  "closed": "Closed",
   "km_away": "{{distance}} km away",
   "enter_vendor_pin": "Enter Vendor PIN:",
   "total_bill": "Total Bill",

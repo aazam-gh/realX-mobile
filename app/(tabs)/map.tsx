@@ -41,8 +41,10 @@ import { queryClient, queryKeys } from '../../utils/queryClient';
 import { useRestoreTabBarOnFocus } from '../../components/navigation/TabBarScrollVisibility';
 
 function clampRegion(region: Region): Region {
-  const minLatDelta = 0.05;
-  const minLngDelta = 0.05;
+  // Keep a practical lower bound without reversing normal pinch-in gestures.
+  // A delta of 0.05 made every closer zoom animate back out immediately.
+  const minLatDelta = 0.005;
+  const minLngDelta = 0.005;
   const maxLatDelta = 0.5;   // prevents zooming too far out
   const maxLngDelta = 0.5;
   const latDelta = Math.min(Math.max(region.latitudeDelta, minLatDelta), maxLatDelta);
@@ -209,8 +211,8 @@ export default function MapScreen() {
   const [currentRegion, setCurrentRegion] = useState<Region>({
     latitude: DOHA_CENTER.latitude,
     longitude: DOHA_CENTER.longitude,
-    latitudeDelta: 0.08,
-    longitudeDelta: 0.08,
+    latitudeDelta: 0.03,
+    longitudeDelta: 0.03,
   });
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);

@@ -14,7 +14,7 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.reelx.app",
       "googleServicesFile": "./GoogleService-Info.plist",
       "associatedDomains": [],
@@ -91,12 +91,12 @@
           "backgroundColor": "#FFFFFF",
           "image": "./assets/images/splash.png",
           "imageWidth": 280,
-          "resizeMode": "cover",
+          "resizeMode": "contain",
           "enableFullScreenImage_legacy": true,
           "android": {
             "image": "./assets/images/android-splash.png",
             "imageWidth": 280,
-            "resizeMode": "cover"
+            "resizeMode": "contain"
           }
         }
       ],

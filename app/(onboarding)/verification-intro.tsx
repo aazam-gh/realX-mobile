@@ -10,7 +10,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { logger } from '../../utils/logger';
-import { getOnboardingErrorKey, isValidEmail, normalizeEmail, trackOnboarding } from '../../utils/onboarding';
+import { getOnboardingErrorKey, isValidEmail, normalizeEmail } from '../../utils/onboarding';
 
 export default function VerificationIntroScreen() {
   const router = useRouter();
@@ -39,13 +39,11 @@ export default function VerificationIntroScreen() {
     try {
       const sendOtp = httpsCallable(getFunctions(undefined, 'me-central1'), 'sendOtp');
       await sendOtp({ email: normalizedEmail, purpose: 'verification' });
-      void trackOnboarding('auth_code_sent', { auth_mode: 'signup', verification_method: 'student_id' });
       router.push({ pathname: '/(onboarding)/verify', params: { email: normalizedEmail, purpose: 'verification', role: role || 'student' } });
     } catch (error) {
       logger.error('Unable to send student ID verification code', error);
       const nextErrorKey = getOnboardingErrorKey(error);
       setErrorKey(nextErrorKey);
-      void trackOnboarding('auth_error_shown', { step: 'verification_email', error_code: nextErrorKey, recoverable: true });
     } finally {
       setLoading(false);
     }

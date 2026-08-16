@@ -1,7 +1,7 @@
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { getAuth, signInWithCustomToken } from '@react-native-firebase/auth';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -11,7 +11,7 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { logger } from '../../utils/logger';
 import { clearPendingVerificationForEmail } from '../../utils/verificationPending';
-import { getOnboardingErrorKey, isValidEmail, normalizeCallableCode, normalizeEmail, trackOnboarding } from '../../utils/onboarding';
+import { getOnboardingErrorKey, isValidEmail, normalizeCallableCode, normalizeEmail } from '../../utils/onboarding';
 
 type AuthMode = 'signup' | 'login';
 type RouteResolution = 'existing_account' | 'no_account' | 'student_id' | null;
@@ -29,8 +29,6 @@ export default function EmailOnboarding() {
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [resolution, setResolution] = useState<RouteResolution>(null);
 
-  useEffect(() => { void trackOnboarding('email_viewed', { auth_mode: mode, flow_version: 'onboarding_v2' }); }, [mode]);
-
   const sendCode = async (purpose: 'signup' | 'login' | 'verification') => {
     const normalizedEmail = normalizeEmail(email);
     setLoading(true);
@@ -43,10 +41,8 @@ export default function EmailOnboarding() {
       if (immediateToken) {
         await signInWithCustomToken(getAuth(), immediateToken);
         await clearPendingVerificationForEmail(normalizedEmail);
-        void trackOnboarding('auth_code_verified', { auth_mode: 'login', verification_method: 'review_bypass' });
         return;
       }
-      void trackOnboarding('auth_code_sent', { auth_mode: mode, verification_method: purpose === 'verification' ? 'student_id' : 'school_email' });
       router.replace({
         pathname: '/(onboarding)/verify',
         params: {
@@ -60,17 +56,13 @@ export default function EmailOnboarding() {
       const code = normalizeCallableCode(error);
       if (mode === 'signup' && (code === 'permission-denied' || getOnboardingErrorKey(error) === 'onboarding_error_school_email_required')) {
         setResolution('student_id');
-        void trackOnboarding('auth_route_resolved', { auth_mode: mode, next_route: 'student_id', verification_method: 'student_id' });
       } else if (mode === 'login' && code === 'not-found') {
         setResolution('no_account');
-        void trackOnboarding('auth_route_resolved', { auth_mode: mode, next_route: 'signup' });
       } else if (mode === 'signup' && code === 'already-exists') {
         setResolution('existing_account');
-        void trackOnboarding('auth_route_resolved', { auth_mode: mode, next_route: 'login' });
       } else {
         const next = getOnboardingErrorKey(error);
         setErrorKey(next);
-        void trackOnboarding('auth_error_shown', { step: 'email', error_code: next, recoverable: true });
       }
     } finally { setLoading(false); }
   };
@@ -80,7 +72,6 @@ export default function EmailOnboarding() {
     if (!isValidEmail(normalizedEmail)) { setErrorKey('onboarding_error_email_invalid'); inputRef.current?.focus(); return; }
     if (!isOnline) { setErrorKey('onboarding_error_network'); return; }
     setResolution(null);
-    void trackOnboarding('auth_email_submitted', { auth_mode: mode });
 
     if (mode === 'login') { await sendCode('login'); return; }
     setLoading(true);
@@ -90,7 +81,6 @@ export default function EmailOnboarding() {
       const result = await checkStudent({ email: normalizedEmail });
       if ((result.data as { exists?: boolean }).exists) {
         setResolution('existing_account');
-        void trackOnboarding('auth_route_resolved', { auth_mode: mode, next_route: 'login' });
         return;
       }
     } catch (error) {
@@ -98,7 +88,6 @@ export default function EmailOnboarding() {
       if (code !== 'permission-denied') {
         const next = getOnboardingErrorKey(error);
         setErrorKey(next);
-        void trackOnboarding('auth_error_shown', { step: 'email', error_code: next, recoverable: true });
         setLoading(false);
         return;
       }
@@ -109,7 +98,6 @@ export default function EmailOnboarding() {
 
   const handleStudentId = () => {
     const normalizedEmail = normalizeEmail(email);
-    void trackOnboarding('auth_email_submitted', { auth_mode: mode, verification_method: 'student_id' });
     router.push({
       pathname: '/(onboarding)/verification-intro',
       params: {

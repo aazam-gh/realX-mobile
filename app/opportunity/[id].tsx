@@ -34,7 +34,6 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { fetchOpportunity } from '../../utils/firebaseQueries';
 import { getOpportunityAction, toDate } from '../../utils/opportunities';
 import { queryKeys } from '../../utils/queryClient';
-import { trackEvent } from '../../utils/analytics';
 
 function MetaRow({
   icon,
@@ -92,23 +91,10 @@ export default function OpportunityDetailsScreen() {
     };
   }, [id]);
 
-  useEffect(() => {
-    if (!opportunity) return;
-    void trackEvent('opportunity_viewed', {
-      opportunity_id: opportunity.id,
-      opportunity_kind: opportunity.kind,
-    });
-  }, [opportunity]);
-
   const action = useMutation({
     mutationFn: async () => {
       if (!opportunity) return;
       const result = await getOpportunityAction(opportunity.id);
-      await trackEvent('opportunity_action_opened', {
-        opportunity_id: opportunity.id,
-        opportunity_kind: opportunity.kind,
-        tracked: result.tracked,
-      });
       await Linking.openURL(result.actionUrl);
     },
     onError: () => Alert.alert(t('error'), t('opportunity_action_failed')),
@@ -128,10 +114,6 @@ export default function OpportunityDetailsScreen() {
     if (saved) {
       await deleteDoc(savedRef);
       setSaved(false);
-      void trackEvent('opportunity_unsaved', {
-        opportunity_id: opportunity.id,
-        opportunity_kind: opportunity.kind,
-      });
     } else {
       await setDoc(savedRef, {
         type: 'opportunity',
@@ -146,10 +128,6 @@ export default function OpportunityDetailsScreen() {
         updatedAt: serverTimestamp(),
       });
       setSaved(true);
-      void trackEvent('opportunity_saved', {
-        opportunity_id: opportunity.id,
-        opportunity_kind: opportunity.kind,
-      });
     }
     void queryClient.invalidateQueries({ queryKey: ['savedOpportunities', user.uid] });
   };

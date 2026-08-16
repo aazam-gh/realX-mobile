@@ -2,14 +2,14 @@ import { getAuth } from '@react-native-firebase/auth';
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { InlineNotice, OnboardingField, OnboardingPrimaryButton, OnboardingScaffold } from '../../components/onboarding/OnboardingUI';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { clearLocalAuthSession, isInvalidAuthSessionError } from '../../utils/auth';
-import { getOnboardingErrorKey, trackOnboarding } from '../../utils/onboarding';
+import { getOnboardingErrorKey } from '../../utils/onboarding';
 import { logger } from '../../utils/logger';
 
 export default function DetailsOnboarding() {
@@ -24,28 +24,21 @@ export default function DetailsOnboarding() {
   const [loading, setLoading] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
-  useEffect(() => { void trackOnboarding('details_viewed', { role_intent: role }); }, [role]);
-
   const submit = async () => {
     if (!firstName.trim() || !lastName.trim() || loading) return;
     if (!isOnline) { setErrorKey('onboarding_error_network'); return; }
     const user = getAuth().currentUser;
     if (!user) { setErrorKey('onboarding_generic_error_message'); return; }
     setLoading(true); setErrorKey(null);
-    void trackOnboarding('profile_submitted', { role_intent: role });
     try {
       const completeSignup = httpsCallable(getFunctions(undefined, 'me-central1'), 'completeSignup');
       await completeSignup({ firstName: firstName.trim(), lastName: lastName.trim(), email: email || user.email, role });
-      void trackOnboarding('account_created', { role, verification_method: initialRole ? 'student_id' : 'school_email' });
-      void trackOnboarding('onboarding_finished', { personalization: false });
       router.replace('/(tabs)' as any);
     } catch (error) {
       logger.error('Unable to create account profile', error);
       try {
         const snapshot = await getDoc(doc(getFirestore(), 'students', user.uid));
         if (snapshot.exists()) {
-          void trackOnboarding('account_created', { role, recovered: true });
-          void trackOnboarding('onboarding_finished', { personalization: false, recovered: true });
           router.replace('/(tabs)' as any);
           return;
         }
@@ -57,7 +50,6 @@ export default function DetailsOnboarding() {
       }
       const next = getOnboardingErrorKey(error);
       setErrorKey(next);
-      void trackOnboarding('auth_error_shown', { step: 'profile', error_code: next, recoverable: true });
     } finally { setLoading(false); }
   };
 

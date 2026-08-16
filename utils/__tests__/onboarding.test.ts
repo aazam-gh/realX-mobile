@@ -1,5 +1,3 @@
-jest.mock('../analytics', () => ({ trackEvent: jest.fn() }));
-
 import {
   decideOnboardingDestination,
   getOnboardingErrorKey,

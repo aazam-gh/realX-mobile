@@ -44,9 +44,7 @@ import {
   getStoredAuthSessionHint,
   setStoredAuthSessionHint,
 } from '../utils/authSessionHint';
-import { trackEvent } from '../utils/analytics';
 import { preloadHomeData } from '../utils/homeQueries';
-import { trackOnboarding } from '../utils/onboarding';
 import {
   getStartupInitialRootRoute,
   isStartupRouteReady,
@@ -242,7 +240,6 @@ function LayoutContent({
   const [homePreloadReady, setHomePreloadReady] = useState(false);
   const [startupRevealComplete, setStartupRevealComplete] = useState(false);
   const [rootLaidOut, setRootLaidOut] = useState(false);
-  const startupStartedAt = useRef<number | null>(null);
   const splashHiddenRef = useRef(false);
   const splashHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileNavigationStartedRef = useRef(false);
@@ -294,7 +291,6 @@ function LayoutContent({
   const startupCanReveal = startupRevealComplete || startupPrerequisitesReady;
 
   useEffect(() => {
-    if (startupStartedAt.current === null) startupStartedAt.current = Date.now();
     void getPendingVerification()
       .then((data) => {
         setPendingVerification(data);
@@ -358,20 +354,6 @@ function LayoutContent({
       cancelled = true;
     };
   }, [locale, startupDestination, startupRevealComplete]);
-
-  useEffect(() => {
-    if (!appReady) return;
-    const destination = isGuest ? 'home_guest' : pendingVerification ? 'verification_pending' : user && hasProfile ? 'home_authenticated' : user ? 'profile' : 'welcome';
-    const startupDuration = Date.now() - (startupStartedAt.current ?? Date.now());
-    void trackOnboarding('onboarding_route_resolved', {
-      destination,
-      duration_bucket: startupDuration < 2000 ? 'under_2s' : startupDuration < 8000 ? '2_to_8s' : 'over_8s',
-      online: isOnline,
-    });
-    void trackEvent('app_opened', {
-      access_mode: isGuest ? 'guest' : user ? 'student' : 'signed_out',
-    });
-  }, [appReady, hasProfile, isGuest, isOnline, pendingVerification, user]);
 
   // Set up local notification channels when user is authenticated with a profile
   useEffect(() => {

@@ -91,12 +91,12 @@
           "backgroundColor": "#FFFFFF",
           "image": "./assets/images/splash.png",
           "imageWidth": 280,
-          "resizeMode": "contain",
+          "resizeMode": "cover",
           "enableFullScreenImage_legacy": true,
           "android": {
             "image": "./assets/images/android-splash.png",
             "imageWidth": 280,
-            "resizeMode": "contain"
+            "resizeMode": "cover"
           }
         }
       ],

@@ -50,6 +50,7 @@ export type HomeFeaturedBannerItem = {
   title?: string;
   titleAr?: string;
   imageUrl?: string;
+  imagePositionY?: number;
   ctaText?: string;
   isActive: boolean;
   order?: number;

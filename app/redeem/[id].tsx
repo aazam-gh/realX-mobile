@@ -423,13 +423,12 @@ export default function RedeemScreen() {
 
     if (isOnlineVendor) {
         const vendorName = isArabic ? (vendor.nameAr || vendor.name) : vendor.name;
-        const isCouponOnlineOffer = (onlineOffer?.fulfillmentMode ?? 'coupon') === 'coupon';
+        const isCouponOnlineOffer = onlineOffer?.fulfillmentMode === 'coupon';
         const onlineCtaLabel = (isArabic ? onlineOffer?.ctaLabelAr : onlineOffer?.ctaLabel)
             || onlineOffer?.ctaLabel
             || t('online_visit_store_caps');
         const onlineInstructions = (isArabic ? onlineOffer?.instructionsAr : onlineOffer?.instructions)
-            || onlineOffer?.instructions
-            || (isCouponOnlineOffer ? undefined : t('online_partner_managed_default_instruction'));
+            || onlineOffer?.instructions;
 
         return (
             <GiftCardFlowScaffold

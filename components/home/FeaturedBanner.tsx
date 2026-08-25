@@ -83,6 +83,7 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
     const title = (isRTL && currentItem.titleAr ? currentItem.titleAr : currentItem.title)?.trim();
     const ctaText = currentItem.ctaText?.trim();
     const imageUrl = currentItem.imageUrl || '';
+    const imagePositionY = Math.min(100, Math.max(0, currentItem.imagePositionY ?? 50));
     const accessibilityTitle = title || ctaText || 'Featured partner';
 
     return (
@@ -99,6 +100,7 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
                     source={{ uri: imageUrl }}
                     style={styles.heroImage}
                     contentFit="cover"
+                    contentPosition={{ top: `${imagePositionY}%`, left: '50%' }}
                     cachePolicy="memory-disk"
                     accessibilityLabel={accessibilityTitle}
                 />

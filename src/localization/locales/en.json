@@ -303,7 +303,6 @@
   "online_visit_store_caps": "VISIT STORE",
   "online_store_access_failed_title": "Couldn’t Open Store",
   "online_store_access_failed_message": "We couldn’t authorize or open this store right now. Please try again.",
-  "online_partner_managed_default_instruction": "Continue to the partner to access your RealX student benefit.",
   "cannot_be_combined": "Cannot be combined with other offers",
   "redeem_caps": "REDEEM",
   "vendor_not_found": "Vendor not found",

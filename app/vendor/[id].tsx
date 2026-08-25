@@ -63,6 +63,12 @@ type VendorInformation = {
 
 const WIDE_COVER_ASPECT_RATIO = 16 / 9;
 
+function clampCoverImagePositionY(value: unknown) {
+    const numericValue = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(numericValue)) return 50;
+    return Math.min(100, Math.max(0, numericValue));
+}
+
 function getVendorBranches(vendor: any): VendorBranch[] {
     const rawLocations = Array.isArray(vendor?.locations) && vendor.locations.length > 0
         ? vendor.locations
@@ -255,21 +261,13 @@ export default function VendorScreen() {
             setOnlineWebsiteLoading(false);
         }
     };
-    const isCouponOnlineOffer = (onlineOffer?.fulfillmentMode ?? 'coupon') === 'coupon';
+    const isCouponOnlineOffer = onlineOffer?.fulfillmentMode === 'coupon';
     const vendorName = pickLocalizedText(isArabic, vendor?.nameAr, vendor?.name, 'Vendor');
-    const isOmaraVendor = [vendor?.id, vendor?.name, vendor?.nameAr]
-        .some((value) => typeof value === 'string' && value.toLowerCase().includes('omara'));
     const onlineCtaLabel = (isArabic ? onlineOffer?.ctaLabelAr : onlineOffer?.ctaLabel)
         || onlineOffer?.ctaLabel
         || t('online_visit_website_caps');
-    const localizedVendorDescription = isArabic
-        ? (vendor?.shortDescriptionAr || vendor?.shortDescriptionAR || vendor?.descriptionAr || vendor?.brandDescriptionAr || vendor?.brandDescription)
-        : (vendor?.shortDescription || vendor?.brandDescription || vendor?.descriptionEn || vendor?.description);
-    const onlineInstructions = isOmaraVendor
-        ? (localizedVendorDescription || t('online_partner_managed_default_instruction'))
-        : ((isArabic ? onlineOffer?.instructionsAr : onlineOffer?.instructions)
-            || onlineOffer?.instructions
-            || (isCouponOnlineOffer ? undefined : t('online_partner_managed_default_instruction')));
+    const onlineInstructions = (isArabic ? onlineOffer?.instructionsAr : onlineOffer?.instructions)
+        || onlineOffer?.instructions;
     const vendorInformation = vendor?.vendorInformation as VendorInformation | undefined;
     const vendorInformationMessage = pickLocalizedText(
         isArabic,
@@ -489,6 +487,10 @@ export default function VendorScreen() {
                         source={{ uri: vendor.coverImage }}
                         style={styles.coverImage}
                         contentFit={coverContentFit}
+                        contentPosition={{
+                            top: `${clampCoverImagePositionY(vendor.coverImagePositionY)}%`,
+                            left: '50%',
+                        }}
                         transition={200}
                         onLoad={(event) => {
                             const { width, height } = event.source;

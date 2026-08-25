@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import {
     homeQueryOptions,
@@ -11,6 +11,7 @@ import FeaturedBanner from './FeaturedBanner';
 
 const FADE_DURATION_MS = 500;
 const DISPLAY_DURATION_MS = 5000;
+const PAGINATION_HEIGHT = 24;
 
 export default function HomeBannerCarousel() {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -70,25 +71,64 @@ export default function HomeBannerCarousel() {
 
     return (
         <View style={styles.container} accessibilityLabel="Home promotional banners">
-            {featuredBanners.map((featuredBanner, index) => (
-                <Animated.View
-                    key={featuredBanner.id}
-                    style={[styles.layer, { opacity: getSlideOpacity(index) }]}
-                    pointerEvents={currentIndex === index ? 'auto' : 'none'}
-                >
-                    <FeaturedBanner item={featuredBanner as HomeFeaturedBannerItem} />
-                </Animated.View>
-            ))}
+            <View style={styles.stage}>
+                {featuredBanners.map((featuredBanner, index) => (
+                    <Animated.View
+                        key={featuredBanner.id}
+                        style={[styles.layer, { opacity: getSlideOpacity(index) }]}
+                        pointerEvents={currentIndex === index ? 'auto' : 'none'}
+                    >
+                        <FeaturedBanner item={featuredBanner as HomeFeaturedBannerItem} />
+                    </Animated.View>
+                ))}
+            </View>
+            {slideCount > 1 ? (
+                <View style={styles.pagination} accessibilityLabel="Featured banner navigation">
+                    {featuredBanners.map((featuredBanner, index) => (
+                        <Pressable
+                            key={`dot-${featuredBanner.id}`}
+                            onPress={() => setCurrentIndex(index)}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Show featured banner ${index + 1}`}
+                            accessibilityState={{ selected: currentIndex === index }}
+                        >
+                            <View style={[styles.dot, currentIndex === index && styles.activeDot]} />
+                        </Pressable>
+                    ))}
+                </View>
+            ) : null}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
+        height: HOME_SECTION_TOP_SPACING + HOME_COMPACT_BANNER_HEIGHT + PAGINATION_HEIGHT,
+        position: 'relative',
+    },
+    stage: {
         height: HOME_SECTION_TOP_SPACING + HOME_COMPACT_BANNER_HEIGHT,
         position: 'relative',
     },
     layer: {
         ...StyleSheet.absoluteFill,
+    },
+    pagination: {
+        height: PAGINATION_HEIGHT,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 7,
+    },
+    dot: {
+        width: 7,
+        height: 7,
+        borderRadius: 999,
+        backgroundColor: '#D6D9D7',
+    },
+    activeDot: {
+        width: 20,
+        backgroundColor: '#18B852',
     },
 });

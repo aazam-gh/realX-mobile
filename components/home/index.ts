@@ -9,5 +9,4 @@ export { default as PartnerBannerCarousel } from './PartnerBannerCarousel';
 export { default as SearchBar } from './SearchBar';
 export { default as TrendingOffers } from './TrendingOffers';
 export { default as NewDeals } from './NewDeals';
-export { default as WaktiBanner } from './WaktiBanner';
 export { OpportunityHighlights } from './OpportunityHighlights';

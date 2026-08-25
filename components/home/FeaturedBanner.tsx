@@ -39,7 +39,7 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
     const router = useRouter();
     const { isRTL } = useAppLocale();
     const {
-        data: cmsItem = null,
+        data: cmsItems = [],
         error,
         isLoading,
     } = useQuery({
@@ -51,7 +51,9 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
         if (error) logger.error('Error fetching featured banner:', error);
     }, [error]);
 
-    const currentItem = item === undefined ? cmsItem : item;
+    const currentItem = item === undefined
+        ? (Array.isArray(cmsItems) ? (cmsItems[0] || null) : cmsItems)
+        : item;
     const isCmsLoading = item === undefined && isLoading;
 
     const handlePress = () => {
@@ -78,22 +80,10 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
         return null;
     }
 
-    const tileImages = currentItem.tileImageUrls.slice(0, 3);
-    const title = isRTL && currentItem.titleAr ? currentItem.titleAr : currentItem.title;
-    const configuredCtaText = currentItem.ctaText?.trim();
-    const isOmaraBanner = [
-        currentItem.id,
-        currentItem.title,
-        currentItem.titleAr,
-        currentItem.altText,
-    ].some((value) => value?.toLowerCase().includes('omara'));
-    const ctaText = isOmaraBanner
-        ? isRTL
-            ? 'تسوق الآن'
-            : 'Shop Now'
-        : configuredCtaText?.toLowerCase() === 'order'
-            ? 'GET 10% OFF'
-            : configuredCtaText;
+    const title = (isRTL && currentItem.titleAr ? currentItem.titleAr : currentItem.title)?.trim();
+    const ctaText = currentItem.ctaText?.trim();
+    const imageUrl = currentItem.imageUrl || '';
+    const accessibilityTitle = title || ctaText || 'Featured partner';
 
     return (
         <View style={[styles.section, style]}>
@@ -102,32 +92,33 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
                 onPress={handlePress}
                 style={styles.card}
                 accessibilityRole="button"
-                accessibilityLabel={currentItem.altText || title}
+                accessibilityLabel={accessibilityTitle}
                 accessibilityHint={ctaText}
             >
                 <Image
-                    source={{ uri: currentItem.heroImageUrl }}
+                    source={{ uri: imageUrl }}
                     style={styles.heroImage}
                     contentFit="cover"
                     cachePolicy="memory-disk"
-                    accessibilityLabel={currentItem.altText || title}
+                    accessibilityLabel={accessibilityTitle}
                 />
-                <View style={styles.overlay} />
-
                 <View style={[styles.content, isRTL && styles.contentRTL]}>
-                    <View style={styles.copy}>
-                        <AppText
-                            numberOfLines={2}
-                            style={[
-                                styles.title,
-                                {
-                                    textAlign: isRTL ? 'right' : 'left',
-                                    writingDirection: isRTL ? 'rtl' : 'ltr',
-                                },
-                            ]}
-                        >
-                            {title}
-                        </AppText>
+                    <View style={[styles.copy, isRTL && styles.copyRTL]}>
+                        {title ? (
+                            <AppText
+                                numberOfLines={2}
+                                style={[
+                                    styles.title,
+                                    isRTL && styles.titleRTL,
+                                    {
+                                        textAlign: isRTL ? 'right' : 'left',
+                                        writingDirection: isRTL ? 'rtl' : 'ltr',
+                                    },
+                                ]}
+                            >
+                                {title}
+                            </AppText>
+                        ) : null}
                         {ctaText ? (
                             <View style={[styles.ctaPill, isRTL && styles.ctaPillRTL]}>
                                 <AppText
@@ -140,29 +131,6 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
                         ) : null}
                     </View>
 
-                    <View style={styles.artWrap} pointerEvents="none">
-                        {tileImages.map((imageUrl, index) => (
-                            <View
-                                key={`${currentItem.id}-tile-${index}`}
-                                style={[
-                                    styles.tile,
-                                    index === 0
-                                        ? styles.tile0
-                                        : index === 1
-                                            ? styles.tile1
-                                            : styles.tile2,
-                                ]}
-                            >
-                                <Image
-                                    source={{ uri: imageUrl }}
-                                    style={styles.tileImage}
-                                    contentFit="cover"
-                                    cachePolicy="memory-disk"
-                                    accessibilityLabel={currentItem.altText || title}
-                                />
-                            </View>
-                        ))}
-                    </View>
                 </View>
             </TouchableOpacity>
         </View>
@@ -186,10 +154,6 @@ const styles = StyleSheet.create({
     heroImage: {
         ...StyleSheet.absoluteFill,
     },
-    overlay: {
-        ...StyleSheet.absoluteFill,
-        backgroundColor: 'rgba(0, 0, 0, 0.52)',
-    },
     content: {
         height: HOME_COMPACT_BANNER_HEIGHT,
         paddingVertical: 10,
@@ -208,12 +172,18 @@ const styles = StyleSheet.create({
         minWidth: 0,
         gap: 10,
     },
+    copyRTL: {
+        alignItems: 'flex-end',
+    },
     title: {
         color: '#FFFFFF',
         fontSize: 20,
         lineHeight: 25,
         ...Typography.getTextVariantStyle('display'),
         includeFontPadding: false,
+    },
+    titleRTL: {
+        alignSelf: 'stretch',
     },
     ctaPill: {
         alignSelf: 'flex-start',

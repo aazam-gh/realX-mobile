@@ -194,6 +194,10 @@ const assertOnlineVendorEligibility = (
   const iosUrl = normalizeHttpsPurchaseUrl(configData.iosUrl);
   const androidUrl = normalizeHttpsPurchaseUrl(configData.androidUrl);
 
+  if (!purchaseUrl && !iosUrl && !androidUrl) {
+    throw new HttpsError('failed-precondition', 'Online vendor destination is not configured');
+  }
+
   return {
     fulfillmentMode,
     discountCode,
@@ -269,10 +273,6 @@ const recordOnlineVendorClick = async (uid: string, vendorId: string, requestId:
 
     const selectedPurchaseUrl = platform === 'ios' ? (offer.iosUrl || offer.purchaseUrl) :
       platform === 'android' ? (offer.androidUrl || offer.purchaseUrl) : offer.purchaseUrl;
-
-    if (!selectedPurchaseUrl) {
-      throw new HttpsError('failed-precondition', 'Online vendor destination is not configured');
-    }
 
     if (requestDoc.exists) {
       const original = requestDoc.data() || {};

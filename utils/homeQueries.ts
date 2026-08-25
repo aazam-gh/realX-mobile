@@ -46,15 +46,12 @@ export type HomeBannerItem = {
 
 export type HomeFeaturedBannerItem = {
   id: string;
-  vendorId?: string;
-  title: string;
+  vendorId: string;
+  title?: string;
   titleAr?: string;
+  imageUrl?: string;
   ctaText?: string;
-  orderUrl: string;
   isActive: boolean;
-  heroImageUrl: string;
-  tileImageUrls: string[];
-  altText?: string;
   order?: number;
 };
 
@@ -212,12 +209,10 @@ export function isValidHomeFeaturedBanner(item: unknown): item is HomeFeaturedBa
   return Boolean(
     candidate.isActive === true
     && typeof candidate.id === 'string'
-    && typeof candidate.title === 'string'
-    && typeof candidate.orderUrl === 'string'
-    && typeof candidate.heroImageUrl === 'string'
-    && Array.isArray(candidate.tileImageUrls)
-    && candidate.tileImageUrls.length >= 3
-    && candidate.tileImageUrls.slice(0, 3).every((url) => typeof url === 'string' && url.length > 0),
+    && typeof candidate.vendorId === 'string'
+    && Boolean(candidate.vendorId.trim())
+    && typeof candidate.imageUrl === 'string'
+    && Boolean(candidate.imageUrl.trim()),
   );
 }
 
@@ -237,13 +232,13 @@ export const homeQueryOptions = {
     queryKey: variant === 'trending' ? queryKeys.trendingOffers() : queryKeys.newDeals(),
     queryFn: () => fetchHomeOffers(variant),
   }),
-  featuredBanner: () => queryOptions<HomeFeaturedBannerItem | null>({
+  featuredBanner: () => queryOptions<HomeFeaturedBannerItem[]>({
     queryKey: queryKeys.cmsDocument('featuredBrandShowcase'),
     queryFn: async () => {
       const data = await fetchCmsDocument<{ items?: HomeFeaturedBannerItem[] }>('featuredBrandShowcase');
       return (data?.items || [])
         .filter(isValidHomeFeaturedBanner)
-        .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER))[0] ?? null;
+        .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
     },
   }),
   brands: () => queryOptions<HomeBrandItem[]>({

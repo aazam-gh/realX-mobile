@@ -73,10 +73,10 @@ describe('Home preloading', () => {
             items: [{
               id: 'featured-1',
               title: 'Featured',
-              orderUrl: 'https://example.com',
+              vendorId: 'vendor-1',
               isActive: true,
-              heroImageUrl: 'https://img/featured.png',
-              tileImageUrls: ['https://img/1.png', 'https://img/2.png', 'https://img/3.png'],
+              imageUrl: 'https://img/featured.png',
+              ctaText: 'Shop now',
             }],
           };
         case 'brand':

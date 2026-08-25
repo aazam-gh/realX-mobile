@@ -163,14 +163,6 @@ const requireOnlineClickRequestId = (data: unknown) => {
   return requestId;
 };
 
-const parseHttpsPurchaseUrl = (value: unknown) => {
-  const purchaseUrl = normalizeHttpsPurchaseUrl(value);
-  if (!purchaseUrl) {
-    throw new HttpsError('failed-precondition', 'Online vendor purchase URL must be a valid HTTPS URL');
-  }
-  return purchaseUrl;
-};
-
 const assertOnlineVendorEligibility = (
   userExists: boolean,
   userData: admin.firestore.DocumentData,
@@ -194,14 +186,24 @@ const assertOnlineVendorEligibility = (
     throw new HttpsError('failed-precondition', 'Online vendor access is not enabled');
   }
 
+  const fulfillmentMode = configData.fulfillmentMode === 'outbound_link' ||
+    configData.fulfillmentMode === 'partner_managed' ?
+    configData.fulfillmentMode : 'coupon';
   const discountCode = typeof configData.discountCode === 'string' ? configData.discountCode.trim() : '';
-  if (!discountCode) {
-    throw new HttpsError('failed-precondition', 'Online vendor discount code is not configured');
-  }
+  const purchaseUrl = normalizeHttpsPurchaseUrl(configData.purchaseUrl);
+  const iosUrl = normalizeHttpsPurchaseUrl(configData.iosUrl);
+  const androidUrl = normalizeHttpsPurchaseUrl(configData.androidUrl);
 
   return {
+    fulfillmentMode,
     discountCode,
-    purchaseUrl: parseHttpsPurchaseUrl(configData.purchaseUrl),
+    purchaseUrl,
+    iosUrl,
+    androidUrl,
+    ctaLabel: typeof configData.ctaLabel === 'string' ? configData.ctaLabel.trim() : '',
+    ctaLabelAr: typeof configData.ctaLabelAr === 'string' ? configData.ctaLabelAr.trim() : '',
+    instructions: typeof configData.instructions === 'string' ? configData.instructions.trim() : '',
+    instructionsAr: typeof configData.instructionsAr === 'string' ? configData.instructionsAr.trim() : '',
   };
 };
 
@@ -230,7 +232,7 @@ const getEligibleOnlineVendor = async (uid: string, vendorId: string) => {
   };
 };
 
-const recordOnlineVendorClick = async (uid: string, vendorId: string, requestId: string) => {
+const recordOnlineVendorClick = async (uid: string, vendorId: string, requestId: string, platform?: string) => {
   const userRef = db.collection('students').doc(uid);
   const vendorRef = db.collection('vendors').doc(vendorId);
   const configRef = db.collection('vendorOnlineRedemptionConfigs').doc(vendorId);
@@ -265,10 +267,17 @@ const recordOnlineVendorClick = async (uid: string, vendorId: string, requestId:
       configData
     );
 
+    const selectedPurchaseUrl = platform === 'ios' ? (offer.iosUrl || offer.purchaseUrl) :
+      platform === 'android' ? (offer.androidUrl || offer.purchaseUrl) : offer.purchaseUrl;
+
+    if (!selectedPurchaseUrl) {
+      throw new HttpsError('failed-precondition', 'Online vendor destination is not configured');
+    }
+
     if (requestDoc.exists) {
       const original = requestDoc.data() || {};
       return {
-        purchaseUrl: typeof original.purchaseUrl === 'string' ? original.purchaseUrl : offer.purchaseUrl,
+        purchaseUrl: typeof original.purchaseUrl === 'string' ? original.purchaseUrl : selectedPurchaseUrl,
         tracked: original.tracked === true,
       };
     }
@@ -280,7 +289,7 @@ const recordOnlineVendorClick = async (uid: string, vendorId: string, requestId:
     tx.create(requestRef, {
       uid,
       vendorId,
-      purchaseUrl: offer.purchaseUrl,
+      purchaseUrl: selectedPurchaseUrl,
       tracked,
       createdAt: now,
       expiresAt: admin.firestore.Timestamp.fromMillis(now.toMillis() + ONLINE_CLICK_REQUEST_TTL_MS),
@@ -311,7 +320,7 @@ const recordOnlineVendorClick = async (uid: string, vendorId: string, requestId:
       }, { merge: true });
     }
 
-    return { purchaseUrl: offer.purchaseUrl, tracked };
+    return { purchaseUrl: selectedPurchaseUrl, tracked };
   });
 };
 
@@ -787,9 +796,16 @@ export const getOnlineVendorOffer = onCall(
     }
 
     const vendorId = requireOnlineVendorId(request.data);
-    const { discountCode } = await getEligibleOnlineVendor(request.auth.uid, vendorId);
+    const offer = await getEligibleOnlineVendor(request.auth.uid, vendorId);
 
-    return { discountCode };
+    return {
+      fulfillmentMode: offer.fulfillmentMode,
+      discountCode: offer.discountCode,
+      ctaLabel: offer.ctaLabel,
+      ctaLabelAr: offer.ctaLabelAr,
+      instructions: offer.instructions,
+      instructionsAr: offer.instructionsAr,
+    };
   }
 );
 
@@ -802,7 +818,9 @@ export const recordOnlineVendorOutboundClick = onCall(
 
     const vendorId = requireOnlineVendorId(request.data);
     const requestId = requireOnlineClickRequestId(request.data);
-    return recordOnlineVendorClick(request.auth.uid, vendorId, requestId);
+    const platform = request.data?.platform === 'ios' || request.data?.platform === 'android' ?
+      request.data.platform : undefined;
+    return recordOnlineVendorClick(request.auth.uid, vendorId, requestId, platform);
   }
 );
 

@@ -34,17 +34,19 @@ const INDICATOR_THUMB_WIDTH = 24;
 export type BannerItem = HomeBannerItem;
 
 type PromoBannerProps = {
+    banners?: BannerItem[];
     onBannerPress?: (banner: BannerItem) => void;
 };
 
-export default function PromoBanner({ onBannerPress }: PromoBannerProps) {
+export default function PromoBanner({ banners: bannersOverride, onBannerPress }: PromoBannerProps) {
     const { theme } = useAppTheme();
     const {
-        data: banners = [],
+        data: fetchedBanners = [],
         error,
         isLoading,
         refetch,
-    } = useQuery(homeQueryOptions.promoBanners());
+    } = useQuery({ ...homeQueryOptions.promoBanners(), enabled: !bannersOverride });
+    const banners = bannersOverride ?? fetchedBanners;
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollViewRef = useRef<Animated.ScrollView | null>(null);
     const isUserInteractingRef = useRef(false);

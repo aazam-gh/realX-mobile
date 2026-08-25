@@ -1,18 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { FlashList } from '@shopify/flash-list';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Reanimated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { Circle, Svg } from 'react-native-svg';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { homeQueryOptions, type HomeCategoryItem } from '../../utils/homeQueries';
 import { logger } from '../../utils/logger';
-import { HOME_HORIZONTAL_GUTTER } from './layout';
 import { RemoteImage } from '../RemoteImage';
 import { StateSurface } from '../StateSurface';
 
@@ -23,7 +22,7 @@ type Props = {
     onCategoryPress?: (category: CategoryItem) => void;
 };
 
-const MAX_VISIBLE_CATEGORIES = 7;
+const MAX_VISIBLE_CATEGORIES = 4;
 
 export default function CategoryGrid({ categories: propCategories, onCategoryPress }: Props) {
     const router = useRouter();
@@ -70,8 +69,8 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
         name: t('more'),
     };
     const displayCategories = hasMoreCategories ? [...visibleCategories, comingSoonItem] : baseCategories;
-    const categoryColumnWidth = (width - (HOME_HORIZONTAL_GUTTER * 2)) / 4;
-    const categoryImageSize = Math.min(76, Math.max(68, categoryColumnWidth - 14));
+    const categoryColumnWidth = (width - 8) / 5;
+    const categoryImageSize = Math.min(76, Math.max(60, categoryColumnWidth - 4));
     const categoryRowHeight = categoryImageSize + 36;
 
     useEffect(() => {
@@ -139,6 +138,8 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     };
 
     const renderCategory = ({ item }: { item: CategoryItem }) => {
+        const isMoreItem = item.id === 'coming-soon';
+
         return (
             <TouchableOpacity
                 style={styles.categoryItem}
@@ -150,17 +151,23 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
                 <View
                     style={[
                         styles.imageContainer,
+                        isMoreItem && styles.moreImageContainer,
                         {
                             width: categoryImageSize,
                             height: categoryImageSize,
-                            backgroundColor: theme.surface,
+                            backgroundColor: isMoreItem ? 'transparent' : theme.surface,
                             borderColor: theme.border,
                         },
                     ]}
                 >
-                    {item.id === 'coming-soon' ? (
-                        <Reanimated.View style={moreIconStyle}>
-                            <Ionicons name="ellipsis-horizontal" size={34} color={theme.brand} />
+                    {isMoreItem ? (
+                        <Reanimated.View style={[styles.moreIcon, moreIconStyle]}>
+                            <Svg width="100%" height="100%" viewBox="0 0 100 100">
+                                <Circle cx="50" cy="50" r="34" fill={theme.surface} stroke={theme.brand} strokeWidth="6" />
+                                <Circle cx="37" cy="50" r="4.5" fill={theme.brand} />
+                                <Circle cx="50" cy="50" r="4.5" fill={theme.brand} />
+                                <Circle cx="63" cy="50" r="4.5" fill={theme.brand} />
+                            </Svg>
                         </Reanimated.View>
                     ) : item.image ? (
                         <RemoteImage
@@ -187,7 +194,7 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
     if (!propCategories && isLoading) {
         return (
             <View style={[styles.container, styles.skeletonGrid]}>
-                {Array.from({ length: 8 }, (_, index) => (
+                {Array.from({ length: 5 }, (_, index) => (
                     <View key={`category-skeleton-${index}`} style={styles.categoryItem}>
                         <View style={[styles.categorySkeleton, { width: categoryImageSize, height: categoryImageSize, backgroundColor: theme.cardMuted }]} />
                         <View style={[styles.categoryNameSkeleton, { backgroundColor: theme.cardMuted }]} />
@@ -207,12 +214,12 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
 
     return (
         <>
-            <View style={[styles.container, { minHeight: Math.ceil((displayCategories.length || 1) / 4) * categoryRowHeight }]}>
+            <View style={[styles.container, { minHeight: Math.ceil((displayCategories.length || 1) / 5) * categoryRowHeight }]}>
                 <FlashList
                     data={displayCategories}
                     renderItem={renderCategory}
                     keyExtractor={(item) => item.id}
-                    numColumns={4}
+                    numColumns={5}
                     scrollEnabled={false}
                 />
             </View>
@@ -298,13 +305,13 @@ export default function CategoryGrid({ categories: propCategories, onCategoryPre
 
 const styles = StyleSheet.create({
     container: {
-        paddingHorizontal: HOME_HORIZONTAL_GUTTER,
+        paddingHorizontal: 4,
         paddingTop: 12,
         paddingBottom: 0,
     },
     categoryItem: {
         alignItems: 'center',
-        paddingHorizontal: 4,
+        paddingHorizontal: 1,
         paddingBottom: 10,
     },
     imageContainer: {
@@ -314,6 +321,14 @@ const styles = StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth,
         borderRadius: 22,
         marginBottom: 7,
+    },
+    moreImageContainer: {
+        borderWidth: 0,
+        borderRadius: 0,
+    },
+    moreIcon: {
+        width: '100%',
+        height: '100%',
     },
     categoryImage: {
         width: '100%',

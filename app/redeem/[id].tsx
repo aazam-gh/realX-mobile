@@ -490,26 +490,23 @@ export default function RedeemScreen() {
                     <Text style={[styles.inputLabel, { color: theme.text, textAlign: isArabic ? 'right' : 'left' }]}>
                         {t('online_discount_code_label')}
                     </Text>
-                    <TouchableOpacity
-                        style={[
-                            styles.onlineCodeBox,
-                            { backgroundColor: theme.brandSoft, borderColor: theme.brand, flexDirection: isArabic ? 'row-reverse' : 'row' },
-                        ]}
-                        activeOpacity={0.85}
-                        onPress={handleCopyOnlineCode}
-                        disabled={!onlineOffer?.discountCode}
-                        accessibilityRole="button"
-                        accessibilityLabel={onlineOffer?.discountCode ? t('online_copy_hint') : t('loading')}
-                    >
-                        {onlineOfferLoading ? (
-                            <ActivityIndicator size="small" color={theme.brand} />
-                        ) : (
+                    {isCouponOnlineOffer && onlineOffer?.discountCode ? (
+                        <TouchableOpacity
+                            style={[
+                                styles.onlineCodeBox,
+                                { backgroundColor: theme.brandSoft, borderColor: theme.brand, flexDirection: isArabic ? 'row-reverse' : 'row' },
+                            ]}
+                            activeOpacity={0.85}
+                            onPress={handleCopyOnlineCode}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('online_copy_hint')}
+                        >
                             <Text style={[styles.onlineCodeText, { color: theme.brandText }]}>
-                                {onlineOffer?.discountCode || '----'}
+                                {onlineOffer.discountCode}
                             </Text>
-                        )}
-                        <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={24} color={theme.brand} />
-                    </TouchableOpacity>
+                            <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={24} color={theme.brand} />
+                        </TouchableOpacity>
+                    ) : null}
 
                     <Text style={[styles.onlineHint, { color: onlineError ? theme.danger : theme.mutedText, textAlign: isArabic ? 'right' : 'left' }]}>
                         {onlineError || (copied ? t('online_code_copied') : t('online_copy_hint'))}

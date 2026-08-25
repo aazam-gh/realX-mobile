@@ -577,7 +577,6 @@ function LayoutContent({
               <Stack.Screen name="edit-profile-details" options={{ headerShown: false, gestureEnabled: false }} />
               <Stack.Screen name="terms" options={{ headerShown: false }} />
               <Stack.Screen name="privacy" options={{ headerShown: false }} />
-              <Stack.Screen name="x-academy" options={{ headerShown: false }} />
               <Stack.Screen name="wakti" options={{ headerShown: false, presentation: 'modal' }} />
               <Stack.Screen name="+not-found" options={{ title: 'Oops! Not Found' }} />
             </Stack>

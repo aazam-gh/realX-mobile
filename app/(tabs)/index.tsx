@@ -8,14 +8,13 @@ import { useTranslation } from 'react-i18next';
 import {
   BrandGrid,
   CategoryGrid,
-  FeaturedBanner,
+  HomeBannerCarousel,
   GreetingHeader,
   HomeBackgroundIcons,
   NewDeals,
   OpportunityHighlights,
-  PromoBanner,
+  PartnerBannerCarousel,
   TrendingOffers,
-  WaktiBanner
 } from '../../components/home';
 
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -92,12 +91,11 @@ export default function HomeScreen() {
         >
         <HomeBackgroundIcons />
         <VerificationStatusBanner />
-        <PromoBanner onBannerPress={(banner) => handleVendorPress(banner.vendorId)} />
+        <PartnerBannerCarousel onBannerPress={(banner) => handleVendorPress(banner.vendorId)} />
         <CategoryGrid />
-        <WaktiBanner />
+        <HomeBannerCarousel />
         <TrendingOffers onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
         <BrandGrid />
-        <FeaturedBanner />
         <NewDeals onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
         <OpportunityHighlights />
         </ScrollView>

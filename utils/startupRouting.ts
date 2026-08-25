@@ -22,7 +22,6 @@ const GUEST_ALLOWED_ROOT_SEGMENTS = new Set([
   'opportunity',
   'terms',
   'privacy',
-  'x-academy',
   'wakti',
 ]);
 

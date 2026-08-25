@@ -4,7 +4,7 @@ import { useIsFocused, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ImageBackground, LayoutChangeEvent, Linking, Platform, ScrollView, StatusBar as NativeStatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, LayoutChangeEvent, Linking, Platform, ScrollView, StatusBar as NativeStatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { logger } from '../../utils/logger';
@@ -122,36 +122,6 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.universityBanner}
-            onPress={() => router.push('/x-academy')}
-            activeOpacity={0.9}
-          >
-            <ImageBackground
-              source={require('../../assets/images/uni.webp')}
-              style={styles.universityBannerBg}
-              imageStyle={{ borderRadius: 20 }}
-            >
-              <View style={styles.universityBannerOverlay}>
-                <View style={[styles.onlyOnRealxBadge, isRTL && styles.badgeRTL]}>
-                  <AppText style={styles.onlyOnRealxText}>{t('only_on_realx')}</AppText>
-                </View>
-                <View style={styles.universityBannerTitleRow}>
-                  <AppText style={[styles.universityBannerTitle, isRTL && styles.universityBannerTitleRTL]}>
-                    {t('apply_to_universities')}
-                  </AppText>
-                </View>
-                <TouchableOpacity
-                  style={[styles.universityBannerButton, { backgroundColor: theme.logoTile }]}
-                  onPress={() => router.push('/x-academy')}
-                  activeOpacity={0.8}
-                >
-                  <AppText style={[styles.universityBannerButtonText, { color: theme.logoTileText }]}>{t('apply_now')}</AppText>
-                </TouchableOpacity>
-              </View>
-            </ImageBackground>
-          </TouchableOpacity>
-
           <View style={styles.menuContainer}>
             <LanguageToggle
               locale={locale}
@@ -224,38 +194,6 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
         </View>
-
-        <TouchableOpacity 
-          style={styles.universityBanner} 
-          onPress={() => router.push('/x-academy')}
-          activeOpacity={0.9}
-        >
-          <ImageBackground
-            source={require('../../assets/images/uni.webp')}
-            style={styles.universityBannerBg}
-            imageStyle={{ borderRadius: 20 }}
-          >
-            <View style={styles.universityBannerOverlay}>
-              <View style={[styles.onlyOnRealxBadge, isRTL && styles.badgeRTL]}>
-                <AppText style={styles.onlyOnRealxText}>{t('only_on_realx')}</AppText>
-              </View>
-              
-              <View style={styles.universityBannerTitleRow}>
-                <ResponsiveText style={[styles.universityBannerTitle, isRTL && styles.universityBannerTitleRTL]}>
-                  {t('apply_to_universities')}
-                </ResponsiveText>
-              </View>
-              
-              <TouchableOpacity
-                style={[styles.universityBannerButton, { backgroundColor: theme.logoTile }]}
-                onPress={() => router.push('/x-academy')}
-                activeOpacity={0.8}
-              >
-                <AppText style={[styles.universityBannerButtonText, { color: theme.logoTileText }]}>{t('apply_now')}</AppText>
-              </TouchableOpacity>
-            </View>
-          </ImageBackground>
-        </TouchableOpacity>
 
         <View style={styles.menuContainer}>
           <MenuItem
@@ -561,61 +499,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 24,
     lineHeight: 32,
-  },
-  universityBanner: {
-    marginBottom: 24,
-    borderRadius: 30,
-    overflow: 'hidden',
-    height: 160,
-  },
-  universityBannerBg: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'flex-end',
-  },
-  universityBannerOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(100, 20, 20, 0.5)',
-    padding: 16,
-    justifyContent: 'space-between',
-  },
-  onlyOnRealxBadge: {
-    backgroundColor: '#1AD04F',
-    alignSelf: 'flex-end',
-    marginTop: -18,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  badgeRTL: {
-    alignSelf: 'flex-start',
-  },
-  onlyOnRealxText: {
-    color: '#FFF',
-    fontSize: 10,
-  },
-  universityBannerTitle: {
-    color: '#FFF',
-    fontSize: 22,
-    marginTop: -16,
-    marginBottom: 8,
-    lineHeight: 24,
-  },
-  universityBannerTitleRow: {
-    width: '100%',
-    alignItems: 'flex-start',
-  },
-  universityBannerTitleRTL: {
-    writingDirection: 'rtl',
-  },
-  universityBannerButton: {
-    paddingVertical: 12,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  universityBannerButtonText: {
-    fontSize: 16,
   },
   menuContainer: {
     gap: 12,

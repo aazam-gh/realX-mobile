@@ -31,7 +31,7 @@ import {
 type FeaturedBannerItem = HomeFeaturedBannerItem;
 
 type FeaturedBannerProps = {
-    item?: FeaturedBannerItem;
+    item?: FeaturedBannerItem | null;
     style?: StyleProp<ViewStyle>;
 };
 
@@ -44,15 +44,15 @@ export default function FeaturedBanner({ item, style }: FeaturedBannerProps) {
         isLoading,
     } = useQuery({
         ...homeQueryOptions.featuredBanner(),
-        enabled: !item,
+        enabled: item === undefined,
     });
 
     useEffect(() => {
         if (error) logger.error('Error fetching featured banner:', error);
     }, [error]);
 
-    const currentItem = item ?? cmsItem;
-    const isCmsLoading = !item && isLoading;
+    const currentItem = item === undefined ? cmsItem : item;
+    const isCmsLoading = item === undefined && isLoading;
 
     const handlePress = () => {
         if (!currentItem) {

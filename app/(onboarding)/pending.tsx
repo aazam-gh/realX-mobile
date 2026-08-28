@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { getAuth, signInWithCustomToken } from '@react-native-firebase/auth';
 import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -11,7 +12,8 @@ import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { logger } from '../../utils/logger';
-import { getOnboardingErrorKey } from '../../utils/onboarding';
+import { getOnboardingErrorKey, normalizeCallableCode } from '../../utils/onboarding';
+import { trackOnboardingEvent } from '../../utils/onboardingAnalytics';
 import { clearPendingVerification } from '../../utils/verificationPending';
 
 export default function PendingVerificationScreen() {
@@ -25,8 +27,10 @@ export default function PendingVerificationScreen() {
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [checking, setChecking] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const appStateRef = useRef(AppState.currentState);
+  const approvalTrackedRef = useRef(false);
 
   useFocusEffect(useCallback(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
@@ -50,6 +54,10 @@ export default function PendingVerificationScreen() {
 
       if (data.status === 'approved') {
         setStatus('approved');
+        if (!approvalTrackedRef.current) {
+          approvalTrackedRef.current = true;
+          void trackOnboardingEvent('approval_view', { source: 'status_check' });
+        }
       } else if (data.status === 'rejected') {
         setStatus('rejected');
         setRejectionReason(data.rejectionReason || null);
@@ -64,12 +72,17 @@ export default function PendingVerificationScreen() {
       }
     } catch (error) {
       logger.error('Status check error:', error);
+      if (normalizeCallableCode(error) === 'permission-denied') {
+        await clearPendingVerification();
+        router.replace({ pathname: '/(onboarding)/email', params: { mode: 'login', prefillEmail: email, role } } as any);
+        return;
+      }
       const nextErrorKey = getOnboardingErrorKey(error);
       setErrorKey(nextErrorKey);
     } finally {
       setChecking(false);
     }
-  }, [email, isOnline, router, status, statusToken, t]);
+  }, [email, isOnline, role, router, status, statusToken, t]);
 
   useEffect(() => {
     void checkStatus();
@@ -85,8 +98,33 @@ export default function PendingVerificationScreen() {
     router.replace({ pathname: expired ? '/(onboarding)/verification-intro' : '/(onboarding)/upload-id', params: { email, role: role || 'student' } } as any);
   };
 
-  const handleFinishAccount = () => {
-    router.replace({ pathname: '/(onboarding)/email', params: { mode: 'login', prefillEmail: email, role } } as any);
+  const handleFinishAccount = async () => {
+    if (!email || !isOnline || signingIn) {
+      if (!isOnline) setErrorKey('onboarding_error_network');
+      return;
+    }
+
+    setSigningIn(true);
+    setErrorKey(null);
+    void trackOnboardingEvent('approved_login_tap', { source: 'approval' });
+    try {
+      const sendOtp = httpsCallable(getFunctions(undefined, 'me-central1'), 'sendOtp');
+      const result = await sendOtp({ email, purpose: 'login' });
+      void trackOnboardingEvent('otp_sent', { purpose: 'login', source: 'approval' });
+      const customToken = (result.data as { customToken?: string }).customToken;
+      if (customToken) {
+        await signInWithCustomToken(getAuth(), customToken);
+        await clearPendingVerification();
+        void trackOnboardingEvent('auth_success', { purpose: 'login', source: 'approval' });
+        return;
+      }
+      router.replace({ pathname: '/(onboarding)/verify', params: { email, purpose: 'login', role } } as any);
+    } catch (error) {
+      logger.error('Unable to send approved-account login code', error);
+      setErrorKey(getOnboardingErrorKey(error));
+    } finally {
+      setSigningIn(false);
+    }
   };
 
   const title = status === 'pending'
@@ -98,7 +136,7 @@ export default function PendingVerificationScreen() {
   const footer = status === 'pending'
     ? <OnboardingPrimaryButton label={t('onboarding_pending_check_status')} loadingLabel={t('onboarding_v2_checking_email')} loading={checking} onPress={() => void checkStatus()} />
     : status === 'approved'
-      ? <OnboardingPrimaryButton label={t('onboarding_pending_finish_account')} onPress={handleFinishAccount} />
+      ? <OnboardingPrimaryButton label={t('onboarding_pending_login_now')} loading={signingIn} disabled={!email} onPress={() => void handleFinishAccount()} />
       : <OnboardingPrimaryButton label={t('onboarding_pending_try_again')} onPress={handleTryAgain} />;
 
   return (
@@ -116,6 +154,7 @@ export default function PendingVerificationScreen() {
         <>
           <View style={[styles.statusIcon, { backgroundColor: theme.brandSoft }]}><Ionicons name="checkmark-circle" size={42} color={theme.brand} /></View>
           <Text style={[styles.subtitle, { color: theme.mutedText }]}>{t('onboarding_pending_approved_message')}</Text>
+          {errorKey ? <InlineNotice tone="error">{t(errorKey)}</InlineNotice> : null}
         </>
       ) : (
         <>

@@ -254,7 +254,7 @@
   ,"onboarding_join_as_student": "FOR STUDENTS"
   ,"onboarding_join_as_creator": "FOR CREATORS"
   ,"onboarding_login_prompt": "Already have an account?"
-  ,"onboarding_login_action": "Sign In"
+  ,"onboarding_login_action": "Log in"
   ,"onboarding_email_title_prefix": "YOUR"
   ,"onboarding_email_title_student": "STUDENT"
   ,"onboarding_email_title_creator": "CREATOR"
@@ -367,7 +367,7 @@
   "onboarding_pending_email_notification": "We’re reviewing your student ID. We’ll email you with an update—usually within 24–48 hours.",
   "onboarding_pending_check_status": "Check for Updates",
   "onboarding_pending_approved_title": "YOU’RE VERIFIED",
-  "onboarding_pending_approved_message": "Your student access is ready. One last step to personalize your account.",
+  "onboarding_pending_approved_message": "Your student access is approved. Log in with your approved email to continue.",
   "onboarding_pending_rejected_title": "LET’S TRY AGAIN",
   "onboarding_pending_rejected_default": "We couldn’t confirm this photo. Upload a clearer image with every detail visible.",
   "onboarding_pending_rejection_reason": "Reason: {{reason}}",
@@ -446,6 +446,7 @@
   "onboarding_otp_digit_label": "Verification code digit {{number}}",
   "onboarding_pending_browse_guest": "Explore realX While You Wait",
   "onboarding_pending_finish_account": "Finish Setup",
+  "onboarding_pending_login_now": "Log in now",
   "onboarding_pending_banner_title": "Verification in Progress",
   "onboarding_pending_banner_message": "We’re reviewing your student ID. Tap for updates.",
   "onboarding_success_title": "You’re in.",
@@ -472,7 +473,7 @@
   "onboarding_v2_benefit_1": "Student-only deals",
   "onboarding_v2_benefit_2": "XPoints and rewards",
   "onboarding_v2_benefit_3": "Events, careers, and opportunities",
-  "onboarding_v2_create_account": "Create my account",
+  "onboarding_v2_create_account": "Create account",
   "onboarding_v2_explore_first": "Explore first",
   "onboarding_v2_role_title": "How will you use realX?",
   "onboarding_v2_role_subtitle": "Choose the account experience that fits you.",
@@ -480,12 +481,14 @@
   "onboarding_or": "OR",
   "onboarding_v2_login_title": "Welcome back",
   "onboarding_v2_login_subtitle": "Enter the email linked to your realX account.",
-  "onboarding_v2_send_signin_code": "Send sign-in code",
+  "onboarding_v2_send_signin_code": "Send login code",
   "onboarding_v2_checking_email": "Checking email…",
   "onboarding_v2_student_id_fallback": "You can still join. Verify this email, then upload one student ID photo.",
-  "onboarding_v2_verify_student_id": "Verify with student ID",
-  "onboarding_v2_existing_account": "You already have an account. Send a secure code to sign in.",
-  "onboarding_v2_no_account": "No account found. Create one with this email instead.",
+  "onboarding_v2_verify_student_id": "Use student ID instead",
+  "onboarding_v2_student_id_question": "Can’t use a university email?",
+  "onboarding_v2_existing_account": "Continue with the secure code sent to your email.",
+  "onboarding_v2_no_account": "Continue with the secure code sent to your email.",
+  "onboarding_v2_no_account_verified": "This email is not connected to a realX account yet. You can create one now.",
   "onboarding_v2_legal": "By continuing, you agree to the realX Terms and Privacy Policy.",
   "onboarding_v2_code_title": "Check your email",
   "onboarding_v2_code_subtitle": "Enter the six-digit code we sent you.",

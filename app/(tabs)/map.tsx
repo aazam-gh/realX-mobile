@@ -214,6 +214,7 @@ export default function MapScreen() {
     latitudeDelta: 0.03,
     longitudeDelta: 0.03,
   });
+  const [initialLocationResolved, setInitialLocationResolved] = useState(false);
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -470,11 +471,14 @@ export default function MapScreen() {
   }, [currentRegion, spatialIndex, vendorPoints.length]);
 
   useEffect(() => {
+    if (!isFocused) return;
+
     const requestLocation = async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== Location.PermissionStatus.GRANTED) {
           setLocationEnabled(false);
+          setInitialLocationResolved(true);
           return;
         }
 
@@ -486,17 +490,24 @@ export default function MapScreen() {
         };
 
         setUserLocation(coords);
+        setCurrentRegion((previous) => ({
+          ...previous,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        }));
+        setInitialLocationResolved(true);
         mapRef.current?.animateCamera({
           center: { latitude: coords.latitude, longitude: coords.longitude },
           zoom: 15,
         });
       } catch (locationError) {
         logger.warn('Unable to read location permissions:', locationError);
+        setInitialLocationResolved(true);
       }
     };
 
     void requestLocation();
-  }, []);
+  }, [isFocused]);
 
   const fetchVendorsForVisibleRegion = useCallback(async (region: Region) => {
     setError(null);
@@ -619,7 +630,7 @@ export default function MapScreen() {
   );
 
   useEffect(() => {
-    if (!hasFetchedOnceRef.current) return;
+    if (!initialLocationResolved || !hasFetchedOnceRef.current) return;
 
     const nextFetchKey = mapFetchKey(currentRegion);
     if (nextFetchKey === lastFetchedKeyRef.current) return;
@@ -630,16 +641,16 @@ export default function MapScreen() {
     }, MAP_TILE_FETCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timeout);
-  }, [currentRegion, fetchVendorsForVisibleRegion]);
+  }, [currentRegion, fetchVendorsForVisibleRegion, initialLocationResolved]);
 
   // Initial fetch on mount.
   useEffect(() => {
-    if (hasFetchedOnceRef.current) return;
+    if (!initialLocationResolved || hasFetchedOnceRef.current) return;
 
     hasFetchedOnceRef.current = true;
     lastFetchedKeyRef.current = mapFetchKey(currentRegion);
     void fetchVendorsForVisibleRegion(currentRegion);
-  }, [currentRegion, fetchVendorsForVisibleRegion]);
+  }, [currentRegion, fetchVendorsForVisibleRegion, initialLocationResolved]);
 
   useEffect(() => {
     if (!userLocation) return;
@@ -865,15 +876,15 @@ export default function MapScreen() {
       ) : null}
 
       <View style={styles.mapContainer}>
+        {!initialLocationResolved ? (
+          <View style={[StyleSheet.absoluteFill, styles.locationLoading, { backgroundColor: theme.background }]}>
+            <ActivityIndicator size="large" color={theme.brand} />
+          </View>
+        ) : (
         <MapView
           ref={mapRef}
           style={StyleSheet.absoluteFill}
-          initialRegion={{
-            latitude: DOHA_CENTER.latitude,
-            longitude: DOHA_CENTER.longitude,
-            latitudeDelta: 0.03,
-            longitudeDelta: 0.03,
-          }}
+          initialRegion={currentRegion}
           // react-native-maps 1.27 emits an unsupported Fabric event on Android
           // when the native user-location layer is enabled. Location is already
           // managed through Expo Location below, so keep the native layer off.
@@ -943,6 +954,7 @@ export default function MapScreen() {
             />
           )}
         </MapView>
+        )}
 
         <View style={styles.floatingSearch} pointerEvents="box-none">
           <View
@@ -1397,6 +1409,10 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     flex: 1,
+  },
+  locationLoading: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   locationButton: {
     position: 'absolute',

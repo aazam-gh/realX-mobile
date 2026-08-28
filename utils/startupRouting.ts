@@ -26,6 +26,13 @@ const GUEST_ALLOWED_ROOT_SEGMENTS = new Set([
 ]);
 
 const SIGNED_OUT_PUBLIC_ROOT_SEGMENTS = new Set(['terms', 'privacy']);
+const PENDING_VERIFICATION_CONTINUATION_ROUTES = new Set([
+  'pending',
+  'email',
+  'verify',
+  'verification-intro',
+  'upload-id',
+]);
 
 export function resolveStartupDestination({
   hasUser,
@@ -51,7 +58,11 @@ export function resolveStartupDestination({
       return 'deep-link';
     }
 
-    if (hasPendingVerification) return 'pending-verification';
+    if (hasPendingVerification) {
+      const onboardingRoute = rootSegment === '(onboarding)' ? tabSegment : '';
+      if (PENDING_VERIFICATION_CONTINUATION_ROUTES.has(onboardingRoute)) return 'deep-link';
+      return 'pending-verification';
+    }
     if (SIGNED_OUT_PUBLIC_ROOT_SEGMENTS.has(rootSegment)) return 'deep-link';
     return 'onboarding';
   }

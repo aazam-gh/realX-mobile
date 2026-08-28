@@ -48,6 +48,8 @@ import {
   normalizeOnlineClickRequestId,
   shouldTrackOnlineClick,
 } from './onlineVendorSecurity';
+import { requireAcceptedEmail } from './emailDelivery';
+import { normalizeOnboardingEvent } from './onboardingAnalytics';
 
 admin.initializeApp();
 setGlobalOptions({ region: 'me-central1', maxInstances: 10 });
@@ -67,6 +69,32 @@ const {
   unregisterPushToken,
 } = createNotificationFunctions(db);
 export { registerPushToken, unregisterPushToken };
+
+export const recordOnboardingEvent = onCall(
+  { enforceAppCheck: true },
+  async (request: CallableRequest) => {
+    const event = normalizeOnboardingEvent(request.data);
+    if (!event) {
+      throw new HttpsError('invalid-argument', 'Invalid onboarding event');
+    }
+
+    await checkAccountRateLimit(`onboarding_event:${getRequestFingerprint(request)}`);
+
+    await db
+      .collection('onboarding_analytics')
+      .doc(event.sessionId)
+      .collection('events')
+      .doc(randomUUID())
+      .set({
+        eventName: event.eventName,
+        parameters: event.parameters,
+        appId: request.app?.appId || null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+    return { success: true };
+  },
+);
 const getStorageBucket = () => {
   const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'reelx-backend';
   const bucketName = process.env.FIREBASE_STORAGE_BUCKET ||
@@ -990,13 +1018,9 @@ export const checkStudentExists = onCall(
 
     await checkEmailAndClientRateLimits(request, 'check_student', email);
 
-    const snapshot = await db
-      .collection('students')
-      .where('email', '==', email)
-      .limit(1)
-      .get();
-
-    return { exists: !snapshot.empty };
+    // Kept for older app builds. A static response avoids exposing whether an
+    // email belongs to an account while allowing legacy signup to continue.
+    return { exists: false, accepted: true };
   }
 );
 
@@ -1011,13 +1035,9 @@ export const checkStudentExistsLogin = onCall(
 
     await checkEmailAndClientRateLimits(request, 'check_login', email);
 
-    const snapshot = await db
-      .collection('students')
-      .where('email', '==', email)
-      .limit(1)
-      .get();
-
-    return { exists: !snapshot.empty };
+    // Kept for older app builds. A static response avoids account enumeration
+    // while allowing legacy login to proceed to email ownership verification.
+    return { exists: true, accepted: true };
   }
 );
 
@@ -1115,29 +1135,6 @@ export const sendOtp = onCall(
         throw new HttpsError('permission-denied', 'Only approved school emails can sign up');
       }
 
-      // Check if account already exists
-      const snapshot = await db
-        .collection('students')
-        .where('email', '==', email)
-        .limit(1)
-        .get();
-
-      if (!snapshot.empty) {
-        throw new HttpsError('already-exists', 'An account with this email already exists');
-      }
-    }
-
-    // Verification: no .edu.qa restriction, just check no existing account
-    if (purpose === 'verification') {
-      const snapshot = await db
-        .collection('students')
-        .where('email', '==', email)
-        .limit(1)
-        .get();
-
-      if (!snapshot.empty) {
-        throw new HttpsError('already-exists', 'An account with this email already exists');
-      }
     }
 
     // App Store Review Bypass
@@ -1169,26 +1166,9 @@ export const sendOtp = onCall(
       return { success: true, customToken };
     }
 
-    // Login: verify account exists
-    if (purpose === 'login') {
-      const snapshot = await db
-        .collection('students')
-        .where('email', '==', email)
-        .limit(1)
-        .get();
-
-      const approvedAuthUid = snapshot.empty
-        ? await getApprovedVerificationAuthUid(email)
-        : null;
-
-      if (snapshot.empty && !approvedAuthUid) {
-        throw new HttpsError('not-found', 'No account found with this email');
-      }
-    }
-
     const now = admin.firestore.Timestamp.now();
     const otpRef = getOtpRef(email);
-    const { code } = await db.runTransaction(async (tx) => {
+    const { code, codeHash } = await db.runTransaction(async (tx) => {
       const otpDoc = await tx.get(otpRef);
 
       if (otpDoc.exists) {
@@ -1210,7 +1190,7 @@ export const sendOtp = onCall(
 
         const lastSent = data.createdAt?.toMillis() ?? 0;
         const elapsed = now.toMillis() - lastSent;
-        if (elapsed < COOLDOWN_MS) {
+        if (!data.verified && elapsed < COOLDOWN_MS) {
           const retryAfter = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
           throw new HttpsError(
             'resource-exhausted',
@@ -1221,6 +1201,7 @@ export const sendOtp = onCall(
       }
 
       const nextCode = generateOtpCode();
+      const nextCodeHash = hashOtp(email, nextCode, getOtpHmacSecret());
       let sendCount = 1;
       let windowStart = now;
 
@@ -1238,7 +1219,7 @@ export const sendOtp = onCall(
 
       tx.set(otpRef, {
         email,
-        codeHash: hashOtp(email, nextCode, getOtpHmacSecret()),
+        codeHash: nextCodeHash,
         attempts: 0,
         createdAt: now,
         expiresAt: admin.firestore.Timestamp.fromMillis(now.toMillis() + OTP_EXPIRY_MINUTES * 60 * 1000),
@@ -1248,12 +1229,12 @@ export const sendOtp = onCall(
         updatedAt: now,
       });
 
-      return { code: nextCode };
+      return { code: nextCode, codeHash: nextCodeHash };
     });
 
     // Send email via Resend
     try {
-      await getResend().emails.send({
+      const emailResponse = await getResend().emails.send({
         from: 'realX <welcome@realx.qa>',
         to: email,
         subject: 'Your realX Verification Code',
@@ -1276,7 +1257,23 @@ export const sendOtp = onCall(
         </div>
       `,
       });
+      const emailId = requireAcceptedEmail(emailResponse);
+      console.info('OTP email accepted by provider', { purpose, emailId });
     } catch (error) {
+      await db.runTransaction(async (tx) => {
+        const failedOtpDoc = await tx.get(otpRef);
+        if (failedOtpDoc.data()?.codeHash !== codeHash) return;
+
+        tx.update(otpRef, {
+          codeHash: admin.firestore.FieldValue.delete(),
+          createdAt: admin.firestore.Timestamp.fromMillis(0),
+          deliveryStatus: 'failed',
+          deliveryFailedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }).catch((cleanupError) => {
+        console.error('Failed to mark rejected OTP delivery', cleanupError);
+      });
       console.error('Failed to send OTP email:', error);
       throw new HttpsError('internal', 'Failed to send verification email. Please try again.');
     }
@@ -1374,27 +1371,51 @@ export const verifyOtp = onCall(
       throw new HttpsError('invalid-argument', verificationResult.message || 'Incorrect code');
     }
 
-    // Verification: just confirm email is verified, no auth user creation
+    // Resolve existing accounts only after the requester proves email ownership.
+    // This keeps OTP requests from exposing whether an account exists.
     if (purpose === 'verification') {
+      const snapshot = await db
+        .collection('students')
+        .where('email', '==', email)
+        .limit(1)
+        .get();
+
+      if (!snapshot.empty) {
+        const uid = snapshot.docs[0].id;
+        const customToken = await admin.auth().createCustomToken(uid);
+        return { success: true, customToken, accountState: 'existing' };
+      }
+
       return { success: true, emailVerified: true };
     }
 
     let uid: string;
+    let accountState: 'existing' | 'new' = 'existing';
 
     if (purpose === 'signup') {
-    // Create Firebase Auth user (or get existing)
-      try {
-        const userRecord = await admin.auth().getUserByEmail(email);
-        uid = userRecord.uid;
-        if (!userRecord.emailVerified) {
-          await admin.auth().updateUser(uid, { emailVerified: true });
+      const snapshot = await db
+        .collection('students')
+        .where('email', '==', email)
+        .limit(1)
+        .get();
+
+      if (!snapshot.empty) {
+        uid = snapshot.docs[0].id;
+      } else {
+        accountState = 'new';
+        try {
+          const userRecord = await admin.auth().getUserByEmail(email);
+          uid = userRecord.uid;
+          if (!userRecord.emailVerified) {
+            await admin.auth().updateUser(uid, { emailVerified: true });
+          }
+        } catch {
+          const userRecord = await admin.auth().createUser({
+            email,
+            emailVerified: true,
+          });
+          uid = userRecord.uid;
         }
-      } catch {
-        const userRecord = await admin.auth().createUser({
-          email,
-          emailVerified: true,
-        });
-        uid = userRecord.uid;
       }
     } else {
     // Login: look up UID from students collection
@@ -1418,7 +1439,7 @@ export const verifyOtp = onCall(
     // Generate custom token
     const customToken = await admin.auth().createCustomToken(uid);
 
-    return { success: true, customToken };
+    return { success: true, customToken, accountState };
   }
 );
 
@@ -1858,12 +1879,14 @@ const sendVerificationReviewEmail = async ({
       : 'We could not verify your student status. Open realX to try again with a clearer document.';
 
   try {
-    await getResend().emails.send({
+    const emailResponse = await getResend().emails.send({
       from: 'realX <welcome@realx.qa>',
       to: email,
       subject,
       text: message,
     });
+    const emailId = requireAcceptedEmail(emailResponse);
+    console.info('Verification review email accepted by provider', { action, emailId });
   } catch (error) {
     console.error('Failed to send verification review email', { action, error });
   }

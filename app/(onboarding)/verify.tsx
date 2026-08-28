@@ -10,8 +10,9 @@ import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { clearPendingVerificationForEmail } from '../../utils/verificationPending';
-import { getOnboardingErrorKey } from '../../utils/onboarding';
+import { decideVerifiedOtpDestination, getOnboardingErrorKey } from '../../utils/onboarding';
 import { logger } from '../../utils/logger';
+import { trackOnboardingEvent } from '../../utils/onboardingAnalytics';
 
 const OTP_LENGTH = 6;
 
@@ -53,6 +54,7 @@ export default function VerifyOtpScreen() {
   const [cooldown, setCooldown] = useState(60);
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const autoSubmitted = useRef('');
+  const verificationInFlight = useRef(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -61,30 +63,49 @@ export default function VerifyOtpScreen() {
   }, [cooldown]);
 
   const verify = useCallback(async () => {
-    if (code.length !== OTP_LENGTH || !email || !purpose || loading || !isOnline) {
+    if (code.length !== OTP_LENGTH || !email || !purpose || verificationInFlight.current || !isOnline) {
       if (!isOnline) setErrorKey('onboarding_error_network');
       return;
     }
+    verificationInFlight.current = true;
     setLoading(true); setErrorKey(null);
     try {
       const functions = getFunctions(undefined, 'me-central1');
       const verifyOtp = httpsCallable(functions, 'verifyOtp');
       const result = await verifyOtp({ email, code, purpose });
-      if (purpose === 'verification') {
+      const { customToken, accountState } = result.data as {
+        customToken?: string;
+        accountState?: 'existing' | 'new';
+      };
+      void trackOnboardingEvent('otp_verified', { purpose });
+
+      if (customToken) {
+        await signInWithCustomToken(getAuth(), customToken);
+        await clearPendingVerificationForEmail(email);
+        void trackOnboardingEvent('auth_success', { purpose, source: 'otp' });
+      }
+
+      const destination = decideVerifiedOtpDestination({
+        purpose,
+        accountState,
+        hasCustomToken: Boolean(customToken),
+      });
+      if (destination === 'upload-id') {
         router.replace({ pathname: '/(onboarding)/upload-id', params: { email, role: role || 'student' } });
         return;
       }
-      const { customToken } = result.data as { customToken: string };
-      await signInWithCustomToken(getAuth(), customToken);
-      await clearPendingVerificationForEmail(email);
-      if (purpose === 'signup' || role) router.replace({ pathname: '/(onboarding)/details', params: { email, role: role || 'student' } });
+      if (destination === 'details') {
+        router.replace({ pathname: '/(onboarding)/details', params: { email, role: role || 'student' } });
+      }
     } catch (error) {
       logger.error('Unable to verify onboarding code', error);
       const key = getOnboardingErrorKey(error);
       setErrorKey(key);
-      autoSubmitted.current = '';
-    } finally { setLoading(false); }
-  }, [code, email, isOnline, loading, purpose, role, router]);
+    } finally {
+      verificationInFlight.current = false;
+      setLoading(false);
+    }
+  }, [code, email, isOnline, purpose, role, router]);
 
   useEffect(() => {
     if (code.length === OTP_LENGTH && code !== autoSubmitted.current) {
@@ -118,7 +139,15 @@ export default function VerifyOtpScreen() {
   >
     {email ? <View style={styles.emailRow}><Text selectable style={[styles.email, { color: theme.text }]}>{email}</Text><TouchableOpacity accessibilityRole="button" onPress={editEmail} style={styles.textAction}><Text style={[styles.actionText, { color: theme.brandText }]}>{t('onboarding_otp_change_email')}</Text></TouchableOpacity></View> : null}
     <OtpCodeField value={code} onChange={(value) => { setCode(value); setErrorKey(null); }} disabled={loading} error={errorKey} />
-    {errorKey ? <InlineNotice tone="error">{t(errorKey)}</InlineNotice> : null}
+    {errorKey === 'onboarding_error_account_not_found' ? (
+      <InlineNotice
+        tone="info"
+        actionLabel={t('onboarding_v2_create_account')}
+        onAction={() => router.replace({ pathname: '/(onboarding)', params: { intent: 'create', prefillEmail: email } } as any)}
+      >
+        {t('onboarding_v2_no_account_verified')}
+      </InlineNotice>
+    ) : errorKey ? <InlineNotice tone="error">{t(errorKey)}</InlineNotice> : null}
     <View style={styles.resendWrap}>{cooldown > 0 ? <Text style={[styles.resendMuted, { color: theme.mutedText }]}>{t('onboarding_otp_resend_in', { seconds: cooldown })}</Text> : <TouchableOpacity accessibilityRole="button" accessibilityState={{ busy: resending }} disabled={resending} onPress={() => void resend()} style={styles.textAction}>{resending ? <ActivityIndicator color={theme.brand} /> : <Text style={[styles.actionText, { color: theme.brandText }]}>{t('onboarding_otp_resend')}</Text>}</TouchableOpacity>}</View>
     <Text style={[styles.deliveryHint, { color: theme.mutedText }]}>{t('onboarding_v2_code_delay')}</Text>
   </OnboardingScaffold>;

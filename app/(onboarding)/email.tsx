@@ -2,19 +2,20 @@ import { getFunctions, httpsCallable } from '@react-native-firebase/functions';
 import { getAuth, signInWithCustomToken } from '@react-native-firebase/auth';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { Text, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { InlineNotice, OnboardingField, OnboardingPrimaryButton, OnboardingScaffold, OnboardingSecondaryButton } from '../../components/onboarding/OnboardingUI';
+import { InlineNotice, OnboardingField, OnboardingPrimaryButton, OnboardingScaffold, OnboardingTextButton } from '../../components/onboarding/OnboardingUI';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useConnectivity } from '../../context/ConnectivityContext';
 import { logger } from '../../utils/logger';
 import { clearPendingVerificationForEmail } from '../../utils/verificationPending';
 import { getOnboardingErrorKey, isValidEmail, normalizeCallableCode, normalizeEmail } from '../../utils/onboarding';
+import { trackOnboardingEvent } from '../../utils/onboardingAnalytics';
 
 type AuthMode = 'signup' | 'login';
-type RouteResolution = 'existing_account' | 'no_account' | 'student_id' | null;
+type RouteResolution = 'student_id' | null;
 
 export default function EmailOnboarding() {
   const router = useRouter();
@@ -37,10 +38,12 @@ export default function EmailOnboarding() {
       const functions = getFunctions(undefined, 'me-central1');
       const sendOtp = httpsCallable(functions, 'sendOtp');
       const response = await sendOtp({ email: normalizedEmail, purpose });
+      void trackOnboardingEvent('otp_sent', { purpose });
       const immediateToken = (response.data as { customToken?: string }).customToken;
       if (immediateToken) {
         await signInWithCustomToken(getAuth(), immediateToken);
         await clearPendingVerificationForEmail(normalizedEmail);
+        void trackOnboardingEvent('auth_success', { purpose, source: 'email' });
         return;
       }
       router.replace({
@@ -56,10 +59,6 @@ export default function EmailOnboarding() {
       const code = normalizeCallableCode(error);
       if (mode === 'signup' && (code === 'permission-denied' || getOnboardingErrorKey(error) === 'onboarding_error_school_email_required')) {
         setResolution('student_id');
-      } else if (mode === 'login' && code === 'not-found') {
-        setResolution('no_account');
-      } else if (mode === 'signup' && code === 'already-exists') {
-        setResolution('existing_account');
       } else {
         const next = getOnboardingErrorKey(error);
         setErrorKey(next);
@@ -72,28 +71,8 @@ export default function EmailOnboarding() {
     if (!isValidEmail(normalizedEmail)) { setErrorKey('onboarding_error_email_invalid'); inputRef.current?.focus(); return; }
     if (!isOnline) { setErrorKey('onboarding_error_network'); return; }
     setResolution(null);
-
-    if (mode === 'login') { await sendCode('login'); return; }
-    setLoading(true);
-    try {
-      const functions = getFunctions(undefined, 'me-central1');
-      const checkStudent = httpsCallable(functions, 'checkStudentExists');
-      const result = await checkStudent({ email: normalizedEmail });
-      if ((result.data as { exists?: boolean }).exists) {
-        setResolution('existing_account');
-        return;
-      }
-    } catch (error) {
-      const code = normalizeCallableCode(error);
-      if (code !== 'permission-denied') {
-        const next = getOnboardingErrorKey(error);
-        setErrorKey(next);
-        setLoading(false);
-        return;
-      }
-    }
-    setLoading(false);
-    await sendCode('signup');
+    void trackOnboardingEvent('email_submit', { mode });
+    await sendCode(mode);
   };
 
   const handleStudentId = () => {
@@ -110,11 +89,7 @@ export default function EmailOnboarding() {
   const switchMode = (next: AuthMode) => { setMode(next); setResolution(null); setErrorKey(null); };
   const notice = resolution === 'student_id'
     ? <InlineNotice tone="info" actionLabel={t('onboarding_v2_verify_student_id')} onAction={handleStudentId}>{t('onboarding_v2_student_id_fallback')}</InlineNotice>
-    : resolution === 'existing_account'
-      ? <InlineNotice tone="success" actionLabel={t('onboarding_v2_send_signin_code')} onAction={() => { switchMode('login'); void sendCode('login'); }}>{t('onboarding_v2_existing_account')}</InlineNotice>
-      : resolution === 'no_account'
-        ? <InlineNotice tone="info" actionLabel={t('onboarding_v2_create_account')} onAction={() => switchMode('signup')}>{t('onboarding_v2_no_account')}</InlineNotice>
-        : null;
+    : null;
 
   return <OnboardingScaffold
     title={mode === 'login' ? t('onboarding_v2_login_title') : t('onboarding_v2_email_title')}
@@ -140,14 +115,9 @@ export default function EmailOnboarding() {
       onSubmitEditing={() => void submit()}
       style={{ writingDirection: 'ltr', textAlign: 'left' }}
     />
-    {mode === 'signup' ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
-      <Text style={{ color: theme.mutedText, ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 13, letterSpacing: 1.2 }}>{t('onboarding_or')}</Text>
-      <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
-    </View> : null}
-    {mode === 'signup' ? <OnboardingSecondaryButton label={t('onboarding_v2_verify_student_id')} disabled={loading} onPress={handleStudentId} /> : null}
+    {mode === 'signup' ? <OnboardingTextButton label={t('onboarding_v2_student_id_question')} disabled={loading} onPress={handleStudentId} /> : null}
     {notice}
     {mode === 'signup' ? <Text style={{ color: theme.mutedText, ...Typography.getTextVariantStyle('body'), fontSize: 13, lineHeight: 19 }}>{t('onboarding_v2_legal')}</Text> : null}
-    {mode === 'signup' ? <OnboardingSecondaryButton label={t('onboarding_login_action')} onPress={() => switchMode('login')} /> : null}
+    {mode === 'signup' ? <OnboardingTextButton label={t('onboarding_login_action')} onPress={() => { void trackOnboardingEvent('login_tap', { source: 'signup' }); switchMode('login'); }} /> : null}
   </OnboardingScaffold>;
 }

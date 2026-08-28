@@ -47,6 +47,20 @@ describe('startup routing', () => {
     expect(isStartupRouteReady(destination!, ['(onboarding)', 'pending'])).toBe(true);
   });
 
+  test('allows a pending user to continue through email and OTP sign-in', () => {
+    expect(resolveStartupDestination({
+      ...baseInput,
+      hasPendingVerification: true,
+      segments: ['(onboarding)', 'email'],
+    })).toBe('deep-link');
+
+    expect(resolveStartupDestination({
+      ...baseInput,
+      hasPendingVerification: true,
+      segments: ['(onboarding)', 'verify'],
+    })).toBe('deep-link');
+  });
+
   test('waits for missing-profile validation before profile completion', () => {
     expect(resolveStartupDestination({
       ...baseInput,

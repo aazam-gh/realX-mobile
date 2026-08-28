@@ -1,5 +1,6 @@
 import {
   decideOnboardingDestination,
+  decideVerifiedOtpDestination,
   getOnboardingErrorKey,
   isValidEmail,
   normalizeCallableCode,
@@ -7,6 +8,13 @@ import {
 } from '../onboarding';
 
 describe('onboarding helpers', () => {
+  it('keeps existing accounts out of new-account profile setup', () => {
+    expect(decideVerifiedOtpDestination({ purpose: 'signup', accountState: 'new', hasCustomToken: true })).toBe('details');
+    expect(decideVerifiedOtpDestination({ purpose: 'signup', accountState: 'existing', hasCustomToken: true })).toBe('authenticated');
+    expect(decideVerifiedOtpDestination({ purpose: 'verification', hasCustomToken: false })).toBe('upload-id');
+    expect(decideVerifiedOtpDestination({ purpose: 'verification', accountState: 'existing', hasCustomToken: true })).toBe('authenticated');
+  });
+
   it('normalizes email identity consistently', () => {
     expect(normalizeEmail(' Student.Name+test@googlemail.com ')).toBe('student.name+test@googlemail.com');
     expect(normalizeEmail(' Student@School.edu.qa ')).toBe('student@school.edu.qa');

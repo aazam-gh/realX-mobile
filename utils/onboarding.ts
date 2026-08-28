@@ -26,6 +26,22 @@ export type OnboardingLaunchState = {
 
 export type OnboardingDestination = 'home' | 'profile' | 'pending' | 'welcome';
 
+export type VerifiedOtpDestination = 'authenticated' | 'details' | 'upload-id';
+
+export const decideVerifiedOtpDestination = ({
+  purpose,
+  accountState,
+  hasCustomToken,
+}: {
+  purpose: 'signup' | 'login' | 'verification';
+  accountState?: 'existing' | 'new';
+  hasCustomToken: boolean;
+}): VerifiedOtpDestination => {
+  if (purpose === 'verification') return hasCustomToken ? 'authenticated' : 'upload-id';
+  if (purpose === 'signup' && accountState !== 'existing') return 'details';
+  return 'authenticated';
+};
+
 export const decideOnboardingDestination = ({ authenticated, hasProfile, guest, pendingVerification }: OnboardingLaunchState): OnboardingDestination => {
   if (authenticated) return hasProfile ? 'home' : 'profile';
   if (guest) return 'home';

@@ -31,6 +31,7 @@ import { syncExpoPushTokenForUser } from '../utils/pushNotifications';
 import {
   getPendingVerification,
   clearPendingVerification,
+  subscribePendingVerification,
   type PendingVerificationData,
 } from '../utils/verificationPending';
 import { logger } from '../utils/logger';
@@ -291,6 +292,7 @@ function LayoutContent({
   const startupCanReveal = startupRevealComplete || startupPrerequisitesReady;
 
   useEffect(() => {
+    const unsubscribe = subscribePendingVerification(setPendingVerification);
     void getPendingVerification()
       .then((data) => {
         setPendingVerification(data);
@@ -301,6 +303,7 @@ function LayoutContent({
       .finally(() => {
         setPendingCheckDone(true);
       });
+    return unsubscribe;
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,13 +15,14 @@ import {
     OnboardingPressableMotion,
     OnboardingRoleCardMotion,
 } from '../../components/onboarding/OnboardingMotion';
-import { OnboardingScaffold, OnboardingSecondaryButton } from '../../components/onboarding/OnboardingUI';
+import { OnboardingScaffold } from '../../components/onboarding/OnboardingUI';
 import StaggeredHeadingText from '../../components/onboarding/StaggeredHeadingText';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { Typography } from '../../constants/Typography';
 import { logger } from '../../utils/logger';
+import { trackOnboardingEvent } from '../../utils/onboardingAnalytics';
 
 const backgroundIcons: {
     name: keyof typeof Ionicons.glyphMap;
@@ -81,8 +82,9 @@ const backgroundIcons: {
 
 export default function OnboardingScreen() {
     const router = useRouter();
+    const params = useLocalSearchParams<{ intent?: string; prefillEmail?: string }>();
     const { width, height } = useWindowDimensions();
-    const [step, setStep] = useState(0);
+    const [step, setStep] = useState(params.intent === 'create' ? 1 : 0);
     const [isDiscoverTransitioning, setIsDiscoverTransitioning] = useState(false);
     const [selectedRole, setSelectedRole] = useState<'student' | 'creator' | null>(null);
 
@@ -122,6 +124,10 @@ export default function OnboardingScreen() {
         });
     }, [languageSliderX, locale]);
 
+    useEffect(() => {
+        if (step === 0) void trackOnboardingEvent('welcome_view');
+    }, [step]);
+
     const languageSliderStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: languageSliderX.value }],
     }));
@@ -131,11 +137,12 @@ export default function OnboardingScreen() {
         setIsDiscoverTransitioning(false);
     }, []);
 
-    const handleGetStarted = () => {
+    const handleCreateAccount = () => {
         if (isDiscoverTransitioning) {
             return;
         }
 
+        void trackOnboardingEvent('create_account_tap', { source: 'welcome' });
         setIsDiscoverTransitioning(true);
     };
 
@@ -144,20 +151,31 @@ export default function OnboardingScreen() {
             return;
         }
 
+        void trackOnboardingEvent('role_selected', { role });
         setSelectedRole(role);
         setTimeout(() => {
             router.push({
                 pathname: '/(onboarding)/email',
-                params: { role, mode: 'signup' }
+                params: {
+                    role,
+                    mode: 'signup',
+                    ...(params.prefillEmail ? { prefillEmail: params.prefillEmail } : {}),
+                }
             } as any);
         }, 180);
     };
 
     const handleLogin = () => {
+        void trackOnboardingEvent('login_tap', { source: 'welcome' });
         router.push({
             pathname: '/(onboarding)/email',
             params: { mode: 'login' },
         } as any);
+    };
+
+    const handleGuest = () => {
+        void trackOnboardingEvent('guest_tap', { source: 'welcome' });
+        void continueAsGuest();
     };
 
     if (step === 1) {
@@ -203,8 +221,6 @@ export default function OnboardingScreen() {
                     </OnboardingRoleCardMotion>
                 </View>
 
-                <OnboardingSecondaryButton label={t('onboarding_login_action')} onPress={handleLogin} />
-                <OnboardingSecondaryButton label={t('continue_as_guest')} onPress={() => void continueAsGuest()} />
                 </OnboardingScaffold>
             </>
         );
@@ -308,11 +324,12 @@ export default function OnboardingScreen() {
                                     <TouchableOpacity
                                         style={[styles.button, { backgroundColor: theme.actionSolid }]}
                                         disabled={isDiscoverTransitioning}
-                                        onPress={handleGetStarted}
+                                        onPress={handleLogin}
                                         activeOpacity={0.9}
+                                        accessibilityRole="button"
                                     >
                                         <Text style={[styles.buttonText, { color: '#FFFFFF' }, isRTL && styles.arButtonText]}>
-                                            {t('onboarding_get_started')}
+                                            {t('onboarding_login_action')}
                                         </Text>
                                         <View
                                             style={styles.arrowCircle}
@@ -323,12 +340,23 @@ export default function OnboardingScreen() {
                                 </OnboardingGlowMotion>
                             </OnboardingButtonMotion>
                             <TouchableOpacity
-                                style={[styles.guestButton, { backgroundColor: theme.actionSolid, borderColor: theme.actionSolid }]}
-                                onPress={() => void continueAsGuest()}
+                                style={[styles.createAccountButton, { borderColor: theme.actionSolid }]}
+                                onPress={handleCreateAccount}
                                 activeOpacity={0.85}
+                                accessibilityRole="button"
                             >
-                                <Text style={[styles.guestButtonText, { color: '#FFFFFF' }, isRTL && styles.subtextRTL]}>
-                                    {t('onboarding_continue_as_guest')}
+                                <Text style={[styles.createAccountButtonText, { color: theme.brandText }, isRTL && styles.subtextRTL]}>
+                                    {t('onboarding_v2_create_account')}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.guestButton}
+                                onPress={handleGuest}
+                                activeOpacity={0.75}
+                                accessibilityRole="button"
+                            >
+                                <Text style={[styles.guestButtonText, { color: theme.brandText }, isRTL && styles.subtextRTL]}>
+                                    {t('continue_as_guest')}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -407,19 +435,30 @@ const styles = StyleSheet.create({
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 56,
-        marginTop: 18,
-        borderRadius: 28,
-        borderWidth: 1.5,
-        borderColor: '#FFFFFF',
+        minHeight: 40,
+        marginTop: 2,
     },
     guestButtonText: {
+        ...Typography.getTextVariantStyle('bodyStrong'),
+        fontSize: 15,
+        textDecorationLine: 'underline',
+    },
+    createAccountButton: {
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 52,
+        marginTop: 12,
+        borderRadius: 28,
+        borderWidth: 1.5,
+    },
+    createAccountButtonText: {
         ...Typography.getTextVariantStyle('bodyStrong'),
         fontSize: 17,
     },
     button: {
         width: '100%',
-        height: 72,
+        height: 64,
         borderRadius: 40,
         flexDirection: 'row',
         alignItems: 'center',
@@ -457,9 +496,9 @@ const styles = StyleSheet.create({
         color: '#18B852',
     },
     arrowCircle: {
-        width: 54,
-        height: 54,
-        borderRadius: 27,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#FFFFFF',
@@ -468,7 +507,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 30,
+        marginBottom: 16,
         alignSelf: 'center',
         padding: 4,
         borderRadius: 26,

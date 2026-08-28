@@ -115,6 +115,7 @@ function OnboardingProgress({ current, total }: { current: number; total: number
   }));
 
   return <View style={styles.progressWrap} accessibilityRole="progressbar" accessibilityValue={{ min: 1, max: total, now: current }} accessibilityLabel={t('onboarding_step_progress', { current, total })}>
+    <Text style={[styles.progressLabel, { color: theme.mutedText }, isRTL && styles.textRTL]}>{t('onboarding_step_progress', { current, total })}</Text>
     <View style={[styles.progressTrack, { backgroundColor: theme.cardMuted }]}><Animated.View style={[styles.progressFill, { backgroundColor: theme.brand }, fillStyle]} /></View>
   </View>;
 }
@@ -165,6 +166,20 @@ export function OnboardingSecondaryButton({ label, disabled, onPress }: { label:
   </TouchableOpacity>;
 }
 
+export function OnboardingTextButton({ label, disabled, onPress }: { label: string; disabled?: boolean; onPress: () => void }) {
+  const { theme } = useAppTheme();
+  return <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityState={{ disabled: Boolean(disabled) }}
+    disabled={disabled}
+    onPress={onPress}
+    activeOpacity={0.75}
+    style={[styles.textButton, { opacity: disabled ? 0.45 : 1 }]}
+  >
+    <Text style={[styles.textButtonLabel, { color: theme.brandText }]}>{label}</Text>
+  </TouchableOpacity>;
+}
+
 export function InlineNotice({ tone = 'info', children, actionLabel, onAction }: { tone?: 'info' | 'error' | 'success' | 'warning'; children: ReactNode; actionLabel?: string; onAction?: () => void }) {
   const { theme } = useAppTheme();
   const color = tone === 'error' ? theme.danger : tone === 'warning' ? theme.warning : tone === 'success' ? theme.brand : theme.info;
@@ -182,7 +197,7 @@ const styles = StyleSheet.create({
   rowReverse: { flexDirection: 'row-reverse' }, iconButton: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   headerAction: { minWidth: 64, minHeight: 40, borderWidth: 1.5, borderRadius: 20, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
   headerActionText: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 15 },
-  progressWrap: { paddingHorizontal: 24, paddingBottom: 8 }, progressTrack: { height: 5, borderRadius: 3, overflow: 'hidden' }, progressFill: { height: '100%', borderRadius: 3 },
+  progressWrap: { paddingHorizontal: 24, paddingBottom: 8, gap: 7 }, progressLabel: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 12 }, progressTrack: { height: 5, borderRadius: 3, overflow: 'hidden' }, progressFill: { height: '100%', borderRadius: 3 },
   content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
   title: { fontSize: 30, lineHeight: 38 },
   subtitle: { ...Typography.getTextVariantStyle('body'), fontSize: 16, lineHeight: 24, paddingTop: 10 },
@@ -195,6 +210,8 @@ const styles = StyleSheet.create({
   primaryLabel: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 17 },
   secondaryButton: { minHeight: 52, borderRadius: 26, borderWidth: 1.5, paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center' },
   secondaryLabel: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 16 },
+  textButton: { minHeight: 44, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
+  textButtonLabel: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 14, textDecorationLine: 'underline' },
   notice: { borderWidth: 1, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   noticeCopy: { flex: 1, gap: 6 }, noticeText: { ...Typography.getTextVariantStyle('body'), fontSize: 14, lineHeight: 20 },
   noticeAction: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }, noticeActionText: { ...Typography.getTextVariantStyle('bodyStrong'), fontSize: 14 },

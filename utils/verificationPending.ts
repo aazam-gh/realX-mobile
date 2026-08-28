@@ -10,6 +10,20 @@ export type PendingVerificationData = {
   submittedAt: string;
 };
 
+type PendingVerificationListener = (data: PendingVerificationData | null) => void;
+const pendingVerificationListeners = new Set<PendingVerificationListener>();
+
+const notifyPendingVerificationListeners = (data: PendingVerificationData | null) => {
+  pendingVerificationListeners.forEach((listener) => listener(data));
+};
+
+export function subscribePendingVerification(listener: PendingVerificationListener) {
+  pendingVerificationListeners.add(listener);
+  return () => {
+    pendingVerificationListeners.delete(listener);
+  };
+}
+
 export async function savePendingVerification(email: string, role: string, statusToken: string): Promise<void> {
   const data: PendingVerificationData = {
     email,
@@ -18,6 +32,7 @@ export async function savePendingVerification(email: string, role: string, statu
     submittedAt: new Date().toISOString(),
   };
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  notifyPendingVerificationListeners(data);
 }
 
 export async function getPendingVerification(): Promise<PendingVerificationData | null> {
@@ -46,6 +61,7 @@ export async function getPendingVerification(): Promise<PendingVerificationData 
 
 export async function clearPendingVerification(): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEY);
+  notifyPendingVerificationListeners(null);
 }
 
 export async function clearPendingVerificationForEmail(email: string): Promise<void> {

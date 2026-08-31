@@ -539,10 +539,15 @@ export default function VendorScreen() {
                         )}
                     </View>
 
-                    <View style={styles.metaStack}>
+                    <View
+                        style={[
+                            styles.metaStack,
+                            vendor.vendorType === 'online' && !vendor.phoneNumber && styles.emptyMetaStack,
+                        ]}
+                    >
                         {vendor.vendorType === 'online' ? (
-                            <View style={[styles.onlineMetaLine, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
-                                {vendor.phoneNumber ? (
+                            vendor.phoneNumber ? (
+                                <View style={[styles.onlineMetaLine, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
                                     <TouchableOpacity
                                         style={[styles.phoneButton, { backgroundColor: theme.cardMuted }]}
                                         onPress={() => callPhoneNumber(vendor.phoneNumber)}
@@ -553,14 +558,8 @@ export default function VendorScreen() {
                                             {vendor.phoneNumber}
                                         </Text>
                                     </TouchableOpacity>
-                                ) : null}
-                                <View style={[styles.tagsRow, { justifyContent: isArabic ? 'flex-start' : 'flex-end' }]}>
-                                    <View style={[styles.tagChip, { backgroundColor: '#2563EB' }]}>
-                                        <Ionicons name="globe-outline" size={14} color="#FFF" />
-                                        <Text style={[styles.tagText, { ...Typography.getTextVariantStyle('bodyStrong') }]} numberOfLines={1}>{t('online_vendor_label')}</Text>
-                                    </View>
                                 </View>
-                            </View>
+                            ) : null
                         ) : (
                             <>
                         <View style={[styles.metaLine, styles.metaLineSpread, { flexDirection: isArabic ? 'row-reverse' : 'row' }]}>
@@ -616,12 +615,6 @@ export default function VendorScreen() {
                                     <View style={[styles.tagChip, { backgroundColor: theme.brand }]}>
                                         <Ionicons name="cash-outline" size={14} color="#FFF" />
                                         <Text style={[styles.tagText, { ...Typography.getTextVariantStyle('bodyStrong') }]} numberOfLines={1}>{t('cashback')}</Text>
-                                    </View>
-                                )}
-                                {vendor.vendorType === 'online' && (
-                                    <View style={[styles.tagChip, { backgroundColor: '#2563EB' }]}>
-                                        <Ionicons name="globe-outline" size={14} color="#FFF" />
-                                        <Text style={[styles.tagText, { ...Typography.getTextVariantStyle('bodyStrong') }]} numberOfLines={1}>{t('online_vendor_label')}</Text>
                                     </View>
                                 )}
                             </View>
@@ -997,6 +990,10 @@ const styles = StyleSheet.create({
     metaStack: {
         marginTop: 12,
         gap: 10,
+    },
+    emptyMetaStack: {
+        marginTop: 0,
+        gap: 0,
     },
     metaLine: {
         flexDirection: 'row',

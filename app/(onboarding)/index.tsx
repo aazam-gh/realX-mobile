@@ -492,10 +492,15 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         ...Typography.getTextVariantStyle('display'),
+        position: 'absolute',
+        left: 0,
+        right: 0,
         fontSize: 18,
         color: '#18B852',
+        textAlign: 'center',
     },
     arrowCircle: {
+        marginStart: 'auto',
         width: 48,
         height: 48,
         borderRadius: 24,
@@ -580,7 +585,7 @@ const styles = StyleSheet.create({
     arButtonText: {
         ...Typography.getTextVariantStyle('displayArabicBlack'),
         fontSize: 24,
-        textAlign: 'right',
+        textAlign: 'center',
         writingDirection: 'rtl',
     },
 });

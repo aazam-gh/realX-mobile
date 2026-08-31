@@ -93,8 +93,8 @@ export default function HomeScreen() {
         <VerificationStatusBanner />
         <PartnerBannerCarousel onBannerPress={(banner) => handleVendorPress(banner.vendorId)} />
         <CategoryGrid />
-        <HomeBannerCarousel />
         <NewDeals onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
+        <HomeBannerCarousel />
         <BrandGrid />
         <TrendingOffers onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
         <OpportunityHighlights />

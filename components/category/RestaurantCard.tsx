@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { useAppTheme } from '../../context/AppThemeContext';
 import { useAppLocale } from '../../context/LocaleContext';
@@ -20,6 +20,7 @@ type Props = {
   style?: any;
   xcardEnabled?: boolean;
   loading?: boolean;
+  contentStyle?: StyleProp<ViewStyle>;
 };
 
 export default function RestaurantCard({
@@ -33,6 +34,7 @@ export default function RestaurantCard({
   style,
   xcardEnabled = false,
   loading = false,
+  contentStyle,
 }: Props) {
   const { theme } = useAppTheme();
   const { locale } = useAppLocale();
@@ -113,7 +115,7 @@ export default function RestaurantCard({
 
 
       {/* Content */}
-      <View style={styles.content}>
+      <View style={[styles.content, contentStyle]}>
         <View style={styles.textRow}>
           <Text allowFontScaling style={[
             styles.name,

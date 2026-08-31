@@ -1,21 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import {
     homeQueryOptions,
     type HomeFeaturedBannerItem,
 } from '../../utils/homeQueries';
-import { HOME_COMPACT_BANNER_HEIGHT, HOME_SECTION_TOP_SPACING } from './layout';
+import { HOME_COMPACT_BANNER_HEIGHT } from './layout';
 import FeaturedBanner from './FeaturedBanner';
 
-const FADE_DURATION_MS = 500;
-const DISPLAY_DURATION_MS = 5000;
-const PAGINATION_HEIGHT = 24;
+const FEATURED_BANNER_TOP_SPACING = 16;
+const FEATURED_BANNER_INDICATOR_HEIGHT = 24;
 
 export default function HomeBannerCarousel() {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const fadeProgress = useRef(new Animated.Value(0)).current;
+    const currentIndexRef = useRef(0);
+    const scrollViewRef = useRef<ScrollView | null>(null);
+    const { width: screenWidth } = useWindowDimensions();
     const {
         data: featuredBannerData = [],
     } = useQuery({
@@ -30,40 +31,36 @@ export default function HomeBannerCarousel() {
     const slideCount = featuredBanners.length;
 
     useEffect(() => {
-        if (slideCount <= 1) {
-            setCurrentIndex(0);
-            return;
-        }
-
-        const interval = setInterval(() => {
-            setCurrentIndex((index) => (index + 1) % slideCount);
-        }, DISPLAY_DURATION_MS);
-
-        return () => clearInterval(interval);
-    }, [slideCount]);
-
-    useEffect(() => {
         if (slideCount === 0) {
+            currentIndexRef.current = 0;
             setCurrentIndex(0);
             return;
         }
 
-        setCurrentIndex((index) => Math.min(index, slideCount - 1));
+        const nextIndex = Math.min(currentIndexRef.current, slideCount - 1);
+        currentIndexRef.current = nextIndex;
+        setCurrentIndex(nextIndex);
     }, [slideCount]);
 
     useEffect(() => {
-        Animated.timing(fadeProgress, {
-            toValue: currentIndex,
-            duration: FADE_DURATION_MS,
-            useNativeDriver: true,
-        }).start();
-    }, [currentIndex, fadeProgress]);
+        if (!scrollViewRef.current || slideCount === 0) {
+            return;
+        }
 
-    const getSlideOpacity = (slideIndex: number) => fadeProgress.interpolate({
-        inputRange: [slideIndex - 1, slideIndex, slideIndex + 1],
-        outputRange: [0, 1, 0],
-        extrapolate: 'clamp',
-    });
+        scrollViewRef.current.scrollTo({
+            x: currentIndex * screenWidth,
+            animated: true,
+        });
+    }, [currentIndex, screenWidth, slideCount]);
+
+    const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const nextIndex = Math.min(
+            slideCount - 1,
+            Math.max(0, Math.round(event.nativeEvent.contentOffset.x / screenWidth)),
+        );
+
+        currentIndexRef.current = nextIndex;
+    };
 
     if (featuredBanners.length === 0) {
         return null;
@@ -71,29 +68,47 @@ export default function HomeBannerCarousel() {
 
     return (
         <View style={styles.container} accessibilityLabel="Home promotional banners">
-            <View style={styles.stage}>
-                {featuredBanners.map((featuredBanner, index) => (
-                    <Animated.View
+            <ScrollView
+                ref={scrollViewRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                nestedScrollEnabled
+                directionalLockEnabled
+                canCancelContentTouches
+                decelerationRate="normal"
+                scrollEventThrottle={16}
+                onScrollEndDrag={handleScrollEnd}
+                onMomentumScrollEnd={handleScrollEnd}
+                style={styles.stage}
+            >
+                {featuredBanners.map((featuredBanner) => (
+                    <View
                         key={featuredBanner.id}
-                        style={[styles.layer, { opacity: getSlideOpacity(index) }]}
-                        pointerEvents={currentIndex === index ? 'auto' : 'none'}
+                        style={{ width: screenWidth }}
                     >
-                        <FeaturedBanner item={featuredBanner as HomeFeaturedBannerItem} />
-                    </Animated.View>
+                        <FeaturedBanner
+                            item={featuredBanner as HomeFeaturedBannerItem}
+                            style={{ paddingTop: FEATURED_BANNER_TOP_SPACING }}
+                        />
+                    </View>
                 ))}
-            </View>
+            </ScrollView>
             {slideCount > 1 ? (
                 <View style={styles.pagination} accessibilityLabel="Featured banner navigation">
                     {featuredBanners.map((featuredBanner, index) => (
                         <Pressable
-                            key={`dot-${featuredBanner.id}`}
-                            onPress={() => setCurrentIndex(index)}
+                            key={`featured-indicator-${featuredBanner.id}`}
+                            onPress={() => {
+                                currentIndexRef.current = index;
+                                setCurrentIndex(index);
+                            }}
                             hitSlop={8}
                             accessibilityRole="button"
                             accessibilityLabel={`Show featured banner ${index + 1}`}
                             accessibilityState={{ selected: currentIndex === index }}
+                            style={styles.indicatorButton}
                         >
-                            <View style={[styles.dot, currentIndex === index && styles.activeDot]} />
+                            <View style={[styles.indicator, currentIndex === index ? styles.activeIndicator : styles.inactiveIndicator]} />
                         </Pressable>
                     ))}
                 </View>
@@ -104,30 +119,35 @@ export default function HomeBannerCarousel() {
 
 const styles = StyleSheet.create({
     container: {
-        height: HOME_SECTION_TOP_SPACING + HOME_COMPACT_BANNER_HEIGHT + PAGINATION_HEIGHT,
+        height: FEATURED_BANNER_TOP_SPACING + HOME_COMPACT_BANNER_HEIGHT + FEATURED_BANNER_INDICATOR_HEIGHT,
         position: 'relative',
     },
     stage: {
-        height: HOME_SECTION_TOP_SPACING + HOME_COMPACT_BANNER_HEIGHT,
+        height: FEATURED_BANNER_TOP_SPACING + HOME_COMPACT_BANNER_HEIGHT,
         position: 'relative',
     },
-    layer: {
-        ...StyleSheet.absoluteFill,
-    },
     pagination: {
-        height: PAGINATION_HEIGHT,
+        height: FEATURED_BANNER_INDICATOR_HEIGHT,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 7,
     },
-    dot: {
-        width: 7,
-        height: 7,
+    indicatorButton: {
+        width: 32,
+        height: FEATURED_BANNER_INDICATOR_HEIGHT,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    indicator: {
+        height: 6,
         borderRadius: 999,
+    },
+    inactiveIndicator: {
+        width: 6,
         backgroundColor: '#D6D9D7',
     },
-    activeDot: {
+    activeIndicator: {
         width: 20,
         backgroundColor: '#18B852',
     },

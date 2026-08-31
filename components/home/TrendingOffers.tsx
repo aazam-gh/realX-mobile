@@ -26,6 +26,7 @@ const OFFER_CARD_GAP = HOME_CAROUSEL_GAP;
 const OFFER_SIDE_PADDING = HOME_HORIZONTAL_GUTTER;
 const OFFER_CARD_WIDTH_RATIO = 0.60;
 const OFFER_AUTO_SCROLL_MS = 4000;
+const NEW_DEALS_TOP_SPACING = 4;
 export default function TrendingOffers({ onVendorPress, variant = 'trending' }: TrendingOffersProps) {
     const { t } = useTranslation();
     const { theme } = useAppTheme();
@@ -37,6 +38,7 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
         refetch,
     } = useQuery(homeQueryOptions.offers(variant));
     const [currentIndex, setCurrentIndex] = useState(0);
+    const currentIndexRef = useRef(0);
     const scrollViewRef = useRef<ScrollView | null>(null);
     const isUserInteractingRef = useRef(false);
     const { width: screenWidth } = useWindowDimensions();
@@ -61,7 +63,9 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
                 return;
             }
 
-            setCurrentIndex((prevIndex) => (prevIndex + 1) % displayedVendors.length);
+            const nextIndex = (currentIndexRef.current + 1) % displayedVendors.length;
+            currentIndexRef.current = nextIndex;
+            setCurrentIndex(nextIndex);
         }, OFFER_AUTO_SCROLL_MS);
 
         return () => clearInterval(interval);
@@ -93,7 +97,7 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
             Math.max(0, Math.round(event.nativeEvent.contentOffset.x / offerScrollInterval)),
         );
 
-        setCurrentIndex((prevIndex) => (prevIndex === nextIndex ? prevIndex : nextIndex));
+        currentIndexRef.current = nextIndex;
         isUserInteractingRef.current = false;
     };
 
@@ -126,7 +130,7 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, variant === 'newDeals' && styles.newDealsContainer]}>
             <HomeSectionHeading prefix={labelPrefix} highlight={labelHighlight} />
             <ScrollView
                 ref={scrollViewRef}
@@ -136,9 +140,7 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
                 directionalLockEnabled
                 canCancelContentTouches
                 keyboardShouldPersistTaps="always"
-                snapToInterval={offerScrollInterval}
-                decelerationRate="fast"
-                disableIntervalMomentum
+                decelerationRate="normal"
                 scrollEventThrottle={16}
                 onScrollBeginDrag={handleScrollBegin}
                 onMomentumScrollBegin={handleScrollBegin}
@@ -159,12 +161,16 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
                             key={vendor.id}
                             id={vendor.id}
                             name={name}
-                            cashbackText={description}
+                            cashbackText={variant === 'newDeals' ? undefined : description}
                             imageUri={vendor.bannerImage || vendor.coverImage}
                             logoUri={vendor.vendorProfilePicture || vendor.profilePicture}
                             xcardEnabled={vendor.xcard}
+                            contentStyle={variant === 'newDeals' ? styles.newDealsCardContent : undefined}
                             onPress={() => handleVendorPress(vendor)}
-                            style={{ width: offerCardWidth }}
+                            style={{
+                                width: offerCardWidth,
+                                minHeight: variant === 'newDeals' ? 0 : undefined,
+                            }}
                         />
                     );
                 })}
@@ -176,6 +182,12 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
 const styles = StyleSheet.create({
     container: {
         paddingTop: HOME_SECTION_TOP_SPACING,
+    },
+    newDealsContainer: {
+        paddingTop: NEW_DEALS_TOP_SPACING,
+    },
+    newDealsCardContent: {
+        paddingBottom: 0,
     },
     loaderContainer: {
         height: 120,

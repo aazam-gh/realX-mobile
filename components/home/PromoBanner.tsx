@@ -10,12 +10,7 @@ import {
     View,
 } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
-import Animated, {
-    interpolate,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import { useAppTheme } from '../../context/AppThemeContext';
 import { StateSurface } from '../StateSurface';
@@ -28,8 +23,6 @@ const BANNER_HEIGHT = 192;
 const BANNER_SIDE_PADDING = HOME_HORIZONTAL_GUTTER;
 const BANNER_GAP = HOME_CAROUSEL_GAP;
 const BANNER_AUTO_SCROLL_MS = 4000;
-const INDICATOR_WIDTH = 88;
-const INDICATOR_THUMB_WIDTH = 24;
 
 export type BannerItem = HomeBannerItem;
 
@@ -48,6 +41,7 @@ export default function PromoBanner({ banners: bannersOverride, onBannerPress }:
     } = useQuery({ ...homeQueryOptions.promoBanners(), enabled: !bannersOverride });
     const banners = bannersOverride ?? fetchedBanners;
     const [currentIndex, setCurrentIndex] = useState(0);
+    const currentIndexRef = useRef(0);
     const scrollViewRef = useRef<Animated.ScrollView | null>(null);
     const isUserInteractingRef = useRef(false);
     const { width: screenWidth } = useWindowDimensions();
@@ -55,24 +49,6 @@ export default function PromoBanner({ banners: bannersOverride, onBannerPress }:
     const bannerWidth = screenWidth - (BANNER_SIDE_PADDING * 2);
     const bannerScrollInterval = bannerWidth + BANNER_GAP;
     const maxIndex = Math.max(0, banners.length - 1);
-    const scrollProgress = useSharedValue(0);
-    const handleScroll = useAnimatedScrollHandler({
-        onScroll: (event) => {
-            scrollProgress.value = event.contentOffset.x / bannerScrollInterval;
-        },
-    });
-    const indicatorThumbStyle = useAnimatedStyle(() => ({
-        transform: [
-            {
-                translateX: interpolate(
-                    scrollProgress.value,
-                    [0, Math.max(1, maxIndex)],
-                    [0, INDICATOR_WIDTH - INDICATOR_THUMB_WIDTH],
-                ),
-            },
-        ],
-    }));
-
     useEffect(() => {
         if (error) logger.error('Error fetching banners:', error);
     }, [error]);
@@ -87,7 +63,9 @@ export default function PromoBanner({ banners: bannersOverride, onBannerPress }:
                 return;
             }
 
-            setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
+            const nextIndex = (currentIndexRef.current + 1) % banners.length;
+            currentIndexRef.current = nextIndex;
+            setCurrentIndex(nextIndex);
         }, BANNER_AUTO_SCROLL_MS);
 
         return () => clearInterval(interval);
@@ -126,7 +104,7 @@ export default function PromoBanner({ banners: bannersOverride, onBannerPress }:
             Math.max(0, Math.round(event.nativeEvent.contentOffset.x / bannerScrollInterval)),
         );
 
-        setCurrentIndex((prevIndex) => (prevIndex === nextIndex ? prevIndex : nextIndex));
+        currentIndexRef.current = nextIndex;
         isUserInteractingRef.current = false;
     };
 
@@ -177,10 +155,7 @@ export default function PromoBanner({ banners: bannersOverride, onBannerPress }:
                 directionalLockEnabled
                 canCancelContentTouches
                 keyboardShouldPersistTaps="always"
-                onScroll={handleScroll}
-                snapToInterval={bannerScrollInterval}
-                decelerationRate="fast"
-                disableIntervalMomentum
+                decelerationRate="normal"
                 scrollEventThrottle={16}
                 onScrollBeginDrag={handleScrollBegin}
                 onMomentumScrollBegin={handleScrollBegin}
@@ -227,34 +202,6 @@ export default function PromoBanner({ banners: bannersOverride, onBannerPress }:
                 })}
             </Animated.ScrollView>
 
-            {banners.length > 1 && (
-                <View
-                    style={styles.indicator}
-                    accessibilityRole="adjustable"
-                    accessibilityLabel={`Banner ${currentIndex + 1} of ${banners.length}`}
-                >
-                    <View style={[styles.indicatorTrack, { backgroundColor: theme.cardMuted }]}>
-                        {banners.map((banner, index) => (
-                            <Pressable
-                                key={banner.bannerId || banner.vendorId || banner.id || index}
-                                style={styles.indicatorSegment}
-                                onPress={() => setCurrentIndex(index)}
-                                accessibilityRole="button"
-                                accessibilityLabel={`Show banner ${index + 1} of ${banners.length}`}
-                                accessibilityState={{ selected: currentIndex === index }}
-                            />
-                        ))}
-                        <Animated.View
-                            pointerEvents="none"
-                            style={[
-                                styles.indicatorThumb,
-                                { backgroundColor: theme.brand },
-                                indicatorThumbStyle,
-                            ]}
-                        />
-                    </View>
-                </View>
-            )}
         </View>
     );
 }
@@ -280,30 +227,6 @@ const styles = StyleSheet.create({
     },
     bannerPressed: {
         opacity: 0.9,
-    },
-    indicator: {
-        alignItems: 'center',
-        paddingTop: 10,
-    },
-    indicatorTrack: {
-        width: INDICATOR_WIDTH,
-        height: 6,
-        borderRadius: 3,
-        flexDirection: 'row',
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    indicatorSegment: {
-        flex: 1,
-        zIndex: 1,
-    },
-    indicatorThumb: {
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        width: INDICATOR_THUMB_WIDTH,
-        height: 6,
-        borderRadius: 3,
     },
     topPill: {
         flex: 1,

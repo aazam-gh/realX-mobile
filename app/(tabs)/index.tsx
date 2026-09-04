@@ -42,7 +42,7 @@ export default function HomeScreen() {
 
   const refreshHome = useCallback(async () => {
     await queryClient.refetchQueries({
-      predicate: (query) => ['categories', 'cmsDocument', 'newDeals', 'trendingOffers', 'vendor'].includes(String(query.queryKey[0])),
+      predicate: (query) => ['categories', 'cmsDocument', 'newDeals', 'pilotCampaign', 'trendingOffers', 'vendor'].includes(String(query.queryKey[0])),
       type: 'active',
     });
   }, []);
@@ -60,6 +60,10 @@ export default function HomeScreen() {
     const trimmed = searchQuery.trim();
     if (!trimmed) return;
     triggerSubtleHaptic();
+    if (trimmed.toLocaleLowerCase() === 'badrgo') {
+      router.push('/(tabs)/wallet' as any);
+      return;
+    }
     router.push({ pathname: '/search', params: { q: trimmed } });
   }, [searchQuery, router]);
 
@@ -85,7 +89,10 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="always"
           directionalLockEnabled
-          contentContainerStyle={styles.contentContainer}
+          contentContainerStyle={[
+            styles.contentContainer,
+            Platform.OS === 'android' && { paddingBottom: 120 + insets.bottom },
+          ]}
           refreshControl={refreshControl}
           {...tabBarScrollVisibility}
         >

@@ -11,6 +11,7 @@ import {
   SpendButton,
   SpendCardDrawer,
   WalletBackgroundIcons,
+  BadrgoPilotBanner,
   XCard,
 } from '../../components/wallet';
 import { useStudent } from '../../context/StudentContext';
@@ -117,7 +118,10 @@ export default function WalletScreen() {
             </View>
           </View>
         ) : (
-          <RecentRedemptions />
+          <>
+            <BadrgoPilotBanner />
+            <RecentRedemptions />
+          </>
         )}
         </ScrollView>
         {refreshOverlay}

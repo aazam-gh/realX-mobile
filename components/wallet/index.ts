@@ -6,3 +6,4 @@ export { default as SpendButton } from './SpendButton';
 export { default as SpendCardDrawer } from './SpendCardDrawer';
 export { default as XCard } from './XCard';
 export { default as WalletBackgroundIcons } from './WalletBackgroundIcons';
+export { default as BadrgoPilotBanner } from './BadrgoPilotBanner';

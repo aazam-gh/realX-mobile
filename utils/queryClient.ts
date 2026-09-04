@@ -31,6 +31,7 @@ export const queryKeys = {
     newDeals: () => ['newDeals'] as const,
     onlineVendorOffer: (vendorId: string) => ['onlineVendorOffer', vendorId] as const,
     opportunities: () => ['opportunities'] as const,
+    pilotCampaign: (scope: string) => ['pilotCampaign', scope] as const,
     opportunity: (opportunityId: string) => ['opportunity', opportunityId] as const,
     redemptionHistory: (userId: string) => ['redemptionHistory', userId] as const,
     savedMapPlaces: (userId: string) => ['savedMapPlaces', userId] as const,

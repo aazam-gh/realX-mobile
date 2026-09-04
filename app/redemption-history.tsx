@@ -14,6 +14,7 @@ import { useAppLocale } from '../context/LocaleContext';
 import { Typography } from '../constants/Typography';
 import AppText from '../components/AppText';
 import AppHeader from '../components/navigation/AppHeader';
+import BadrgoCouponHistoryCard from '../components/BadrgoCouponHistoryCard';
 import { StateSurface } from '../components/StateSurface';
 import { triggerSubtleHaptic } from '../utils/haptics';
 import { logger } from '../utils/logger';
@@ -176,6 +177,7 @@ export default function RedemptionHistoryScreen() {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={refreshControl}
+            ListHeaderComponent={userId ? <BadrgoCouponHistoryCard userId={userId} /> : null}
             ListEmptyComponent={<StateSurface kind="empty" title={t('no_redemptions_found')} />}
           />
           {refreshOverlay}

@@ -50,6 +50,7 @@ import {
 } from './onlineVendorSecurity';
 import { requireAcceptedEmail } from './emailDelivery';
 import { normalizeOnboardingEvent } from './onboardingAnalytics';
+import { createPilotCampaignFunctions } from './pilotCampaign';
 
 admin.initializeApp();
 setGlobalOptions({ region: 'me-central1', maxInstances: 10 });
@@ -69,6 +70,24 @@ const {
   unregisterPushToken,
 } = createNotificationFunctions(db);
 export { registerPushToken, unregisterPushToken };
+const {
+  assignBadrgoReservedCoupon,
+  claimBadrgoPilotCoupon,
+  configureBadrgoPilotCampaign,
+  getBadrgoPilotAdminSummary,
+  getBadrgoPilotCampaign,
+  sendBadrgoPilotClaimedNotification,
+  setBadrgoPilotCampaignStatus,
+} = createPilotCampaignFunctions(db);
+export {
+  assignBadrgoReservedCoupon,
+  claimBadrgoPilotCoupon,
+  configureBadrgoPilotCampaign,
+  getBadrgoPilotAdminSummary,
+  getBadrgoPilotCampaign,
+  sendBadrgoPilotClaimedNotification,
+  setBadrgoPilotCampaignStatus,
+};
 
 export const recordOnboardingEvent = onCall(
   { enforceAppCheck: true },

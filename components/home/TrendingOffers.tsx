@@ -149,9 +149,6 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
                 contentContainerStyle={[styles.scrollContent, { flexDirection: 'row' }]}
             >
                 {displayedVendors.map((vendor) => {
-                    const description = isRTL
-                        ? (vendor.shortDescriptionAr || vendor.shortDescriptionAR || vendor.descriptionAr || vendor.brandDescription || '')
-                        : (vendor.shortDescription || vendor.brandDescription || vendor.descriptionEn || '');
                     const name = isRTL
                         ? (vendor.nameAr || vendor.vendorNameAr || vendor.nameEn || vendor.vendorName || 'Vendor')
                         : (vendor.nameEn || vendor.vendorName || vendor.nameAr || vendor.vendorNameAr || 'Vendor');
@@ -161,10 +158,11 @@ export default function TrendingOffers({ onVendorPress, variant = 'trending' }: 
                             key={vendor.id}
                             id={vendor.id}
                             name={name}
-                            cashbackText={variant === 'newDeals' ? undefined : description}
+                            cashbackText={undefined}
                             imageUri={vendor.bannerImage || vendor.coverImage}
                             logoUri={vendor.vendorProfilePicture || vendor.profilePicture}
                             xcardEnabled={vendor.xcard}
+                            nameStyle={styles.carouselName}
                             contentStyle={variant === 'newDeals' ? styles.newDealsCardContent : undefined}
                             onPress={() => handleVendorPress(vendor)}
                             style={{
@@ -188,6 +186,10 @@ const styles = StyleSheet.create({
     },
     newDealsCardContent: {
         paddingBottom: 0,
+    },
+    carouselName: {
+        fontSize: 16,
+        lineHeight: 20,
     },
     loaderContainer: {
         height: 120,

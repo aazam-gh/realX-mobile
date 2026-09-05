@@ -18,9 +18,6 @@
       "bundleIdentifier": "com.reelx.app",
       "googleServicesFile": "./GoogleService-Info.plist",
       "associatedDomains": [],
-      "entitlements": {
-        "com.apple.developer.devicecheck": true
-      },
       "infoPlist": {
         "EXDevMenuIsOnboardingFinished": true,
         "EXDevMenuShowFloatingActionButton": true,

@@ -12,7 +12,7 @@ import { fetchBadrgoPilotCampaign } from '../utils/pilotCampaign';
 import { queryKeys } from '../utils/queryClient';
 import ScalePressable from './ScalePressable';
 
-const BADRGO_RED = '#CF0A2C';
+const BADRGO_RED = '#CD0E2C';
 
 export default function BadrgoCouponHistoryCard({ userId }: { userId: string }) {
   const { t } = useTranslation();
@@ -37,7 +37,7 @@ export default function BadrgoCouponHistoryCard({ userId }: { userId: string }) 
     >
       <View style={styles.logoTile}>
         <Image
-          accessibilityLabel="Badrgo"
+          accessibilityLabel="badrgo"
           contentFit="contain"
           source={require('../assets/images/badrgo-logo.png')}
           style={styles.logo}

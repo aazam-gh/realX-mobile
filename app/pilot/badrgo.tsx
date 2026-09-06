@@ -31,7 +31,7 @@ import {
 } from '../../utils/pilotCampaign';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 
-const BADRGO_RED = '#CF0A2C';
+const BADRGO_RED = '#CD0E2C';
 
 export default function BadrgoPilotScreen() {
   const { t } = useTranslation();
@@ -140,7 +140,7 @@ export default function BadrgoPilotScreen() {
         <View style={[styles.hero, { backgroundColor: theme.card, borderColor: `${BADRGO_RED}29` }]}>
           <View style={styles.logoTile}>
             <Image
-              accessibilityLabel="Badrgo"
+              accessibilityLabel="badrgo"
               contentFit="contain"
               source={require('../../assets/images/badrgo-logo.png')}
               style={styles.logo}

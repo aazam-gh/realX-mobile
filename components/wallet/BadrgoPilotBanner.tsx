@@ -13,7 +13,7 @@ import { fetchBadrgoPilotCampaign } from '../../utils/pilotCampaign';
 import { queryKeys } from '../../utils/queryClient';
 import ScalePressable from '../ScalePressable';
 
-const BADRGO_RED = '#CF0A2C';
+const BADRGO_RED = '#CD0E2C';
 
 export default function BadrgoPilotBanner() {
   const { t } = useTranslation();
@@ -42,7 +42,7 @@ export default function BadrgoPilotBanner() {
         style={[styles.card, { backgroundColor: theme.card, borderColor: `${BADRGO_RED}35` }]}
       >
         <Image
-          accessibilityLabel="Badrgo car"
+          accessibilityLabel="badrgo car"
           contentFit="contain"
           source={require('../../assets/images/badrgo-car.webp')}
           style={styles.carImage}
@@ -51,7 +51,7 @@ export default function BadrgoPilotBanner() {
         <View style={[styles.content, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
           <View style={[styles.brandRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Ionicons name="car-sport-outline" size={16} color={BADRGO_RED} />
-            <Text style={styles.brandText}>BADRGO</Text>
+            <Text style={styles.brandText}>badrgo</Text>
             <Text style={[styles.voucherText, { color: theme.subtleText }]}>RIDE VOUCHER</Text>
           </View>
           <Text

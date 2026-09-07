@@ -14,6 +14,14 @@ type Props = {
   message?: string;
   onRetry?: () => void;
   compact?: boolean;
+  colors?: {
+    primary: string;
+    text: string;
+    mutedText: string;
+    surface: string;
+    danger: string;
+    onPrimary: string;
+  };
 };
 
 const details: Record<StateSurfaceKind, { icon: keyof typeof Ionicons.glyphMap; titleKey: string; messageKey: string }> = {
@@ -25,32 +33,40 @@ const details: Record<StateSurfaceKind, { icon: keyof typeof Ionicons.glyphMap; 
   'not-found': { icon: 'compass-outline', titleKey: 'state_not_found_title', messageKey: 'state_not_found_message' },
 };
 
-export function StateSurface({ kind, title, message, onRetry, compact = false }: Props) {
+export function StateSurface({ kind, title, message, onRetry, compact = false, colors: colorOverrides }: Props) {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
   const { isRTL } = useAppLocale();
   const detail = details[kind];
+  const colors = colorOverrides ?? {
+    primary: theme.brand,
+    text: theme.text,
+    mutedText: theme.mutedText,
+    surface: theme.brandSoft,
+    danger: theme.danger,
+    onPrimary: theme.onActionSolid,
+  };
 
   if (kind === 'loading') {
     return (
       <View style={[styles.container, compact && styles.compact]} accessibilityRole="progressbar" accessibilityLiveRegion="polite" accessibilityLabel={t(detail.titleKey)}>
-        <ActivityIndicator size={compact ? 'small' : 'large'} color={theme.brand} />
-        {!compact && <Text allowFontScaling style={[styles.message, { color: theme.mutedText }, isRTL && styles.rtl]}>{message || t(detail.messageKey)}</Text>}
+        <ActivityIndicator size={compact ? 'small' : 'large'} color={colors.primary} />
+        {!compact && <Text allowFontScaling style={[styles.message, { color: colors.mutedText }, isRTL && styles.rtl]}>{message || t(detail.messageKey)}</Text>}
       </View>
     );
   }
 
   return (
     <View style={[styles.container, compact && styles.compact]} accessibilityLiveRegion="polite">
-      <View style={[styles.icon, { backgroundColor: kind === 'error' ? theme.cardMuted : theme.brandSoft }]}>
-        <Ionicons name={detail.icon} size={compact ? 23 : 30} color={kind === 'error' ? theme.danger : theme.brand} />
+      <View style={[styles.icon, { backgroundColor: colors.surface }]}>
+        <Ionicons name={detail.icon} size={compact ? 23 : 30} color={kind === 'error' ? colors.danger : colors.primary} />
       </View>
-      <Text accessibilityRole="header" allowFontScaling selectable style={[styles.title, { color: theme.text }, isRTL && styles.rtl]}>{title || t(detail.titleKey)}</Text>
-      <Text allowFontScaling selectable style={[styles.message, { color: theme.mutedText }, isRTL && styles.rtl]}>{message || t(detail.messageKey)}</Text>
+      <Text accessibilityRole="header" allowFontScaling selectable style={[styles.title, { color: colors.text }, isRTL && styles.rtl]}>{title || t(detail.titleKey)}</Text>
+      <Text allowFontScaling selectable style={[styles.message, { color: colors.mutedText }, isRTL && styles.rtl]}>{message || t(detail.messageKey)}</Text>
       {onRetry && (
-        <Pressable onPress={onRetry} style={({ pressed }) => [styles.retry, { backgroundColor: theme.actionSolid, opacity: pressed ? 0.8 : 1 }]} accessibilityRole="button" accessibilityLabel={t('retry')}>
-          <Ionicons name="refresh-outline" size={17} color={theme.onActionSolid} />
-          <Text allowFontScaling style={[styles.retryText, { color: theme.onActionSolid }]}>{t('retry')}</Text>
+        <Pressable onPress={onRetry} style={[styles.retry, { backgroundColor: colors.primary }]} accessibilityRole="button" accessibilityLabel={t('retry')}>
+          <Ionicons name="refresh-outline" size={17} color={colors.onPrimary} />
+          <Text allowFontScaling style={[styles.retryText, { color: colors.onPrimary }]}>{t('retry')}</Text>
         </Pressable>
       )}
     </View>

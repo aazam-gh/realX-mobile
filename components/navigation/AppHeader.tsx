@@ -21,6 +21,8 @@ type AppHeaderProps = {
   titleStyle?: StyleProp<TextStyle>;
   titleVariant?: TextVariant;
   backAccessibilityLabel?: string;
+  backButtonStyle?: StyleProp<ViewStyle>;
+  backIconColor?: string;
 };
 
 type HeaderIconButtonProps = {
@@ -76,6 +78,8 @@ export default function AppHeader({
   titleStyle,
   titleVariant = 'bodyStrong',
   backAccessibilityLabel,
+  backButtonStyle,
+  backIconColor,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const { theme } = useAppTheme();
@@ -95,6 +99,8 @@ export default function AppHeader({
           icon={isRTL ? 'arrow-forward' : 'arrow-back'}
           onPress={onBackPress}
           accessibilityLabel={backAccessibilityLabel ?? t('back')}
+          color={backIconColor}
+          style={backButtonStyle}
         />
       ) : null}
 

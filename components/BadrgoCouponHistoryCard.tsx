@@ -6,17 +6,16 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Typography } from '../constants/Typography';
-import { useAppTheme } from '../context/AppThemeContext';
+import { BadrgoColors } from '../constants/BadrgoColors';
 import { useAppLocale } from '../context/LocaleContext';
 import { fetchBadrgoPilotCampaign } from '../utils/pilotCampaign';
 import { queryKeys } from '../utils/queryClient';
 import ScalePressable from './ScalePressable';
 
-const BADRGO_RED = '#CD0E2C';
+const { black: BADRGO_BLACK, red: BADRGO_RED, white: BADRGO_WHITE } = BadrgoColors;
 
 export default function BadrgoCouponHistoryCard({ userId }: { userId: string }) {
   const { t } = useTranslation();
-  const { theme } = useAppTheme();
   const { isRTL } = useAppLocale();
   const router = useRouter();
   const { data } = useQuery({
@@ -33,7 +32,7 @@ export default function BadrgoCouponHistoryCard({ userId }: { userId: string }) 
       accessibilityRole="button"
       accessibilityLabel={t('badrgo_pilot_view_code')}
       onPress={() => router.push('/pilot/badrgo' as any)}
-      style={[styles.card, { backgroundColor: theme.cardMuted, borderColor: theme.border }]}
+      style={[styles.card, { backgroundColor: BADRGO_WHITE, borderColor: BADRGO_BLACK }]}
     >
       <View style={styles.logoTile}>
         <Image
@@ -45,10 +44,10 @@ export default function BadrgoCouponHistoryCard({ userId }: { userId: string }) 
       </View>
       <View style={[styles.copy, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
         <Text style={[styles.label, { color: BADRGO_RED }]}>{t('badrgo_pilot_coupon_label')}</Text>
-        <Text style={[styles.title, { color: theme.text }]}>{t('badrgo_pilot_code_ready')}</Text>
-        <Text style={[styles.code, { color: theme.mutedText }]}>{data.claim.code}</Text>
+        <Text style={[styles.title, { color: BADRGO_BLACK }]}>{t('badrgo_pilot_code_ready')}</Text>
+        <Text style={[styles.code, { color: BADRGO_BLACK }]}>{data.claim.code}</Text>
       </View>
-      <Ionicons name={isRTL ? 'chevron-back' : 'chevron-forward'} size={22} color={theme.iconMuted} />
+      <Ionicons name={isRTL ? 'chevron-back' : 'chevron-forward'} size={22} color={BADRGO_BLACK} />
     </ScalePressable>
   );
 }
@@ -67,7 +66,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 54,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BADRGO_WHITE,
     padding: 7,
   },
   logo: {

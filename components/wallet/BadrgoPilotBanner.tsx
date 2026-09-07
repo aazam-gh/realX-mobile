@@ -6,18 +6,17 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Typography } from '../../constants/Typography';
-import { useAppTheme } from '../../context/AppThemeContext';
+import { BadrgoColors } from '../../constants/BadrgoColors';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { fetchBadrgoPilotCampaign } from '../../utils/pilotCampaign';
 import { queryKeys } from '../../utils/queryClient';
 import ScalePressable from '../ScalePressable';
 
-const BADRGO_RED = '#CD0E2C';
+const { black: BADRGO_BLACK, red: BADRGO_RED, white: BADRGO_WHITE } = BadrgoColors;
 
 export default function BadrgoPilotBanner() {
   const { t } = useTranslation();
-  const { theme } = useAppTheme();
   const { isAuthenticated } = useAuthAccess();
   const { isRTL } = useAppLocale();
   const router = useRouter();
@@ -39,7 +38,7 @@ export default function BadrgoPilotBanner() {
         accessibilityRole="button"
         accessibilityLabel={hasClaim ? t('badrgo_pilot_view_code') : t('badrgo_pilot_claim_cta')}
         onPress={() => router.push('/pilot/badrgo' as any)}
-        style={[styles.card, { backgroundColor: theme.card, borderColor: `${BADRGO_RED}35` }]}
+        style={[styles.card, { backgroundColor: BADRGO_WHITE, borderColor: BADRGO_RED }]}
       >
         <Image
           accessibilityLabel="badrgo car"
@@ -52,17 +51,17 @@ export default function BadrgoPilotBanner() {
           <View style={[styles.brandRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Ionicons name="car-sport-outline" size={16} color={BADRGO_RED} />
             <Text style={styles.brandText}>badrgo</Text>
-            <Text style={[styles.voucherText, { color: theme.subtleText }]}>RIDE VOUCHER</Text>
+            <Text style={[styles.voucherText, { color: BADRGO_BLACK }]}>RIDE VOUCHER</Text>
           </View>
           <Text
             numberOfLines={2}
-            style={[styles.title, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}
+            style={[styles.title, { color: BADRGO_BLACK, textAlign: isRTL ? 'right' : 'left' }]}
           >
             {hasClaim ? t('badrgo_pilot_code_ready') : t('badrgo_pilot_banner_title')}
           </Text>
           <Text
             numberOfLines={2}
-            style={[styles.subtitle, { color: theme.mutedText, textAlign: isRTL ? 'right' : 'left' }]}
+            style={[styles.subtitle, { color: BADRGO_BLACK, textAlign: isRTL ? 'right' : 'left' }]}
           >
             {soldOut
               ? t('badrgo_pilot_sold_out_short')
@@ -71,14 +70,14 @@ export default function BadrgoPilotBanner() {
               : t('badrgo_pilot_first_come')}
           </Text>
           <View style={[styles.actionRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.ticketStub, { borderColor: `${BADRGO_RED}30` }]}>
+            <View style={[styles.ticketStub, { borderColor: BADRGO_RED }]}>
               <Text style={styles.stubText}>{hasClaim ? 'CODE READY' : 'LIMITED'}</Text>
             </View>
-            <View style={[styles.claimButton, { opacity: soldOut ? 0.5 : 1 }]}>
+            <View style={styles.claimButton}>
               <Text style={styles.claimText}>
                 {hasClaim ? t('badrgo_pilot_view_code') : t('badrgo_pilot_claim_cta')}
               </Text>
-              <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={17} color="#FFFFFF" />
+              <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={17} color={BADRGO_WHITE} />
             </View>
           </View>
         </View>
@@ -96,17 +95,16 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     overflow: 'hidden',
-    boxShadow: '0 10px 24px rgba(207, 10, 44, 0.10)',
   },
   carImage: {
     width: '100%',
     height: 102,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BADRGO_WHITE,
   },
   perforation: {
     borderTopWidth: 1,
     borderStyle: 'dashed',
-    borderColor: `${BADRGO_RED}35`,
+    borderColor: BADRGO_RED,
     marginHorizontal: 18,
   },
   content: {
@@ -168,7 +166,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   claimText: {
-    color: '#FFFFFF',
+    color: BADRGO_WHITE,
     fontSize: 13,
     ...Typography.getTextVariantStyle('bodyStrong'),
   },

@@ -18,8 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../../components/navigation/AppHeader';
 import ScalePressable from '../../components/ScalePressable';
 import { StateSurface } from '../../components/StateSurface';
+import { BadrgoColors } from '../../constants/BadrgoColors';
 import { Typography } from '../../constants/Typography';
-import { useAppTheme } from '../../context/AppThemeContext';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
@@ -31,11 +31,10 @@ import {
 } from '../../utils/pilotCampaign';
 import { queryClient, queryKeys } from '../../utils/queryClient';
 
-const BADRGO_RED = '#CD0E2C';
+const { black: BADRGO_BLACK, red: BADRGO_RED, white: BADRGO_WHITE } = BadrgoColors;
 
 export default function BadrgoPilotScreen() {
   const { t } = useTranslation();
-  const { theme } = useAppTheme();
   const { locale, isRTL } = useAppLocale();
   const isArabic = locale === 'ar';
   const { isAuthenticated, requireAuth } = useAuthAccess();
@@ -108,36 +107,37 @@ export default function BadrgoPilotScreen() {
 
   if (!previewMode && campaignQuery.isLoading) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
-        <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} />
-        <StateSurface kind="loading" />
+      <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_WHITE }]}>
+        <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} titleStyle={{ color: BADRGO_BLACK }} backButtonStyle={{ backgroundColor: BADRGO_WHITE, borderColor: BADRGO_BLACK }} backIconColor={BADRGO_BLACK} />
+        <StateSurface kind="loading" colors={{ primary: BADRGO_RED, text: BADRGO_BLACK, mutedText: BADRGO_BLACK, surface: BADRGO_WHITE, danger: BADRGO_RED, onPrimary: BADRGO_WHITE }} />
       </SafeAreaView>
     );
   }
 
   if (!previewMode && (campaignQuery.error || campaign.status === 'unavailable')) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]}>
-        <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} />
+      <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_WHITE }]}>
+        <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} titleStyle={{ color: BADRGO_BLACK }} backButtonStyle={{ backgroundColor: BADRGO_WHITE, borderColor: BADRGO_BLACK }} backIconColor={BADRGO_BLACK} />
         <StateSurface
           kind={campaignQuery.error ? 'error' : 'empty'}
           title={t('badrgo_pilot_unavailable_title')}
           message={t('badrgo_pilot_unavailable_body')}
           onRetry={campaignQuery.error ? campaignQuery.refetch : undefined}
+          colors={{ primary: BADRGO_RED, text: BADRGO_BLACK, mutedText: BADRGO_BLACK, surface: BADRGO_WHITE, danger: BADRGO_RED, onPrimary: BADRGO_WHITE }}
         />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
-      <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} />
+    <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_WHITE }]} edges={['top', 'bottom']}>
+      <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} titleStyle={{ color: BADRGO_BLACK }} backButtonStyle={{ backgroundColor: BADRGO_WHITE, borderColor: BADRGO_BLACK }} backIconColor={BADRGO_BLACK} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.hero, { backgroundColor: theme.card, borderColor: `${BADRGO_RED}29` }]}>
+        <View style={[styles.hero, { backgroundColor: BADRGO_WHITE, borderColor: BADRGO_RED }]}>
           <View style={styles.logoTile}>
             <Image
               accessibilityLabel="badrgo"
@@ -148,14 +148,14 @@ export default function BadrgoPilotScreen() {
           </View>
           <Text
             selectable
-            style={[styles.heroTitle, { color: theme.text, textAlign: 'center' }]}
+            style={[styles.heroTitle, { color: BADRGO_BLACK, textAlign: 'center' }]}
           >
             {claim ? t('badrgo_pilot_code_ready') : title || t('badrgo_pilot_banner_title')}
           </Text>
           {!claim && description ? (
             <Text
               selectable
-              style={[styles.heroBody, { color: theme.mutedText, textAlign: 'center' }]}
+              style={[styles.heroBody, { color: BADRGO_BLACK, textAlign: 'center' }]}
             >
               {description}
             </Text>
@@ -166,14 +166,14 @@ export default function BadrgoPilotScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('badrgo_pilot_copy_code')}
               onPress={() => void handleCopy()}
-              style={[styles.codeCard, { borderColor: `${BADRGO_RED}66` }]}
+              style={[styles.codeCard, { borderColor: BADRGO_RED }]}
             >
               <View style={styles.codeCopy}>
                 <Text style={styles.codeLabel}>{t('badrgo_pilot_coupon_label')}</Text>
                 <Text selectable style={styles.codeText}>{claim.code}</Text>
               </View>
               <View style={styles.copyIcon}>
-                <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={22} color="#FFFFFF" />
+                <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={22} color={BADRGO_WHITE} />
               </View>
             </ScalePressable>
           ) : (
@@ -184,7 +184,7 @@ export default function BadrgoPilotScreen() {
               style={styles.claimButton}
             >
               {claimMutation.isPending ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={BADRGO_WHITE} />
               ) : (
                 <>
                   <Text style={styles.claimButtonText}>
@@ -194,40 +194,40 @@ export default function BadrgoPilotScreen() {
                       ? t('badrgo_pilot_coming_soon')
                       : t('badrgo_pilot_claim_cta')}
                   </Text>
-                  <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={20} color="#FFFFFF" />
+                  <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={20} color={BADRGO_WHITE} />
                 </>
               )}
             </ScalePressable>
           )}
 
           {claimMutation.error ? (
-            <Text selectable style={[styles.errorText, { color: theme.danger }]}>
+            <Text selectable style={[styles.errorText, { color: BADRGO_RED }]}>
               {(claimMutation.error as Error).message || t('badrgo_pilot_claim_failed')}
             </Text>
           ) : null}
 
           {!claim && campaign.status === 'active' ? (
-            <Text style={[styles.availability, { color: theme.mutedText }]}>
+            <Text style={[styles.availability, { color: BADRGO_BLACK }]}>
               {t('badrgo_pilot_first_come')}
             </Text>
           ) : null}
         </View>
 
-        <View style={[styles.detailsCard, { backgroundColor: theme.cardMuted }]}>
+        <View style={[styles.detailsCard, { backgroundColor: BADRGO_WHITE, borderColor: BADRGO_BLACK }]}>
           <DetailRow
             icon="person-outline"
             text={t('badrgo_pilot_one_per_user')}
-            color={theme.text}
+            color={BADRGO_BLACK}
             isRTL={isRTL}
           />
           <DetailRow
             icon="shield-checkmark-outline"
             text={t('badrgo_pilot_secure_assignment')}
-            color={theme.text}
+            color={BADRGO_BLACK}
             isRTL={isRTL}
           />
           {instructions ? (
-            <DetailRow icon="information-circle-outline" text={instructions} color={theme.text} isRTL={isRTL} />
+            <DetailRow icon="information-circle-outline" text={instructions} color={BADRGO_BLACK} isRTL={isRTL} />
           ) : null}
         </View>
 
@@ -235,12 +235,12 @@ export default function BadrgoPilotScreen() {
           <ScalePressable
             accessibilityRole="link"
             onPress={() => void Linking.openURL(campaign.destinationUrl!)}
-            style={[styles.secondaryButton, { borderColor: theme.borderStrong }]}
+            style={[styles.secondaryButton, { borderColor: BADRGO_BLACK }]}
           >
-            <Text style={[styles.secondaryButtonText, { color: theme.text }]}>
+            <Text style={[styles.secondaryButtonText, { color: BADRGO_BLACK }]}>
               {t('badrgo_pilot_open_badrgo')}
             </Text>
-            <Ionicons name="open-outline" size={19} color={theme.icon} />
+            <Ionicons name="open-outline" size={19} color={BADRGO_BLACK} />
           </ScalePressable>
         ) : null}
 
@@ -288,13 +288,12 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     gap: 14,
-    boxShadow: '0 16px 42px rgba(207, 10, 44, 0.11)',
   },
   logoTile: {
     width: '100%',
     maxWidth: 260,
     height: 118,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BADRGO_WHITE,
     borderRadius: 24,
     padding: 18,
     alignItems: 'center',
@@ -326,7 +325,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   claimButtonText: {
-    color: '#FFFFFF',
+    color: BADRGO_WHITE,
     fontSize: 16,
     ...Typography.getTextVariantStyle('bodyStrong'),
   },
@@ -345,7 +344,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 20,
     borderWidth: 1,
-    backgroundColor: '#FFF8F9',
+    backgroundColor: BADRGO_WHITE,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -361,7 +360,7 @@ const styles = StyleSheet.create({
     ...Typography.getTextVariantStyle('bodyStrong'),
   },
   codeText: {
-    color: '#151515',
+    color: BADRGO_BLACK,
     fontSize: 23,
     letterSpacing: 2,
     fontVariant: ['tabular-nums'],
@@ -377,6 +376,7 @@ const styles = StyleSheet.create({
   },
   detailsCard: {
     borderRadius: 24,
+    borderWidth: 1,
     padding: 18,
     gap: 16,
   },
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: '#FFF0F3',
+    backgroundColor: BADRGO_RED,
     alignItems: 'center',
     justifyContent: 'center',
   },

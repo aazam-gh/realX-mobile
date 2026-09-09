@@ -241,6 +241,7 @@ function LayoutContent({
   const [homePreloadReady, setHomePreloadReady] = useState(false);
   const [startupRevealComplete, setStartupRevealComplete] = useState(false);
   const [rootLaidOut, setRootLaidOut] = useState(false);
+  const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
   const splashHiddenRef = useRef(false);
   const splashHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileNavigationStartedRef = useRef(false);
@@ -334,11 +335,7 @@ function LayoutContent({
   }, [startupCanReveal]);
 
   useEffect(() => {
-    if (startupDestination !== 'home') {
-      setHomePreloadReady(true);
-      return;
-    }
-
+    if (!i18nReady || !appCheckReady) return;
     if (preloadedHomeLocaleRef.current === locale) {
       setHomePreloadReady(true);
       return;
@@ -346,17 +343,17 @@ function LayoutContent({
 
     let cancelled = false;
     preloadedHomeLocaleRef.current = locale;
-    if (!startupRevealComplete) setHomePreloadReady(false);
+    setHomePreloadReady(false);
     const preload = preloadHomeData(locale);
 
-    void preload.criticalReady.finally(() => {
+    void preload.completion.finally(() => {
       if (!cancelled) setHomePreloadReady(true);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [locale, startupDestination, startupRevealComplete]);
+  }, [appCheckReady, i18nReady, locale]);
 
   // Set up local notification channels when user is authenticated with a profile
   useEffect(() => {
@@ -519,7 +516,6 @@ function LayoutContent({
 
   useEffect(() => {
     if (!rootLaidOut || splashHiddenRef.current) return;
-    if (!startupTimedOut && !startupCanReveal) return;
 
     const remainingVisibleMs = Math.max(
       0,
@@ -531,10 +527,12 @@ function LayoutContent({
       if (splashHiddenRef.current) return;
 
       splashHiddenRef.current = true;
-      void SplashScreen.hideAsync().catch((error) => {
-        splashHiddenRef.current = false;
-        logger.warn('Unable to hide the native splash screen:', error);
-      });
+      void SplashScreen.hideAsync()
+        .then(() => setNativeSplashHidden(true))
+        .catch((error) => {
+          splashHiddenRef.current = false;
+          logger.warn('Unable to hide the native splash screen:', error);
+        });
     }, remainingVisibleMs);
 
     return () => {
@@ -590,7 +588,8 @@ function LayoutContent({
           <View style={{ flex: 1, backgroundColor: theme.background }}>
             <StateSurface kind={isOnline ? 'error' : 'offline'} onRetry={refreshProfile} />
           </View>
-        ) : !startupTimedOut ? (
+        ) : null}
+        {!startupTimedOut && !profileError && (!startupCanReveal || !nativeSplashHidden) ? (
           <View style={[startupStyles.splash, { backgroundColor: theme.background }]}>
             <Image
               accessibilityLabel="realX"

@@ -11,11 +11,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import AppHeader from '../../components/navigation/AppHeader';
 import ScalePressable from '../../components/ScalePressable';
 import { StateSurface } from '../../components/StateSurface';
 import { BadrgoColors } from '../../constants/BadrgoColors';
@@ -33,6 +33,8 @@ import {
 import { queryClient, queryKeys } from '../../utils/queryClient';
 
 const { black: BADRGO_BLACK, red: BADRGO_RED, white: BADRGO_WHITE } = BadrgoColors;
+const BADRGO_HEADLINE = 'Get 10% off your next Badrgo ride.';
+const BADRGO_HEADLINE_AR = 'احصل على خصم ١٠٪ على رحلتك القادمة مع بدر جو.';
 
 export default function BadrgoPilotScreen() {
   const { t } = useTranslation();
@@ -91,7 +93,7 @@ export default function BadrgoPilotScreen() {
     },
   });
 
-  const title = isArabic ? campaign.titleAr || campaign.title : campaign.title;
+  const title = isArabic ? BADRGO_HEADLINE_AR : BADRGO_HEADLINE;
   const description = isArabic
     ? campaign.descriptionAr || campaign.description
     : campaign.description;
@@ -120,8 +122,8 @@ export default function BadrgoPilotScreen() {
 
   if (!previewMode && campaignQuery.isLoading) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_RED }]}>
-        <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} style={styles.header} titleStyle={styles.headerTitle} backButtonStyle={styles.headerButton} backIconColor={BADRGO_WHITE} />
+      <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_WHITE }]}>
+        <BadrgoHeader onBackPress={() => router.back()} />
         <StateSurface kind="loading" colors={{ primary: BADRGO_WHITE, text: BADRGO_WHITE, mutedText: BADRGO_WHITE, surface: BADRGO_RED, danger: BADRGO_WHITE, onPrimary: BADRGO_RED }} />
       </SafeAreaView>
     );
@@ -129,8 +131,8 @@ export default function BadrgoPilotScreen() {
 
   if (!previewMode && (campaignQuery.error || campaign.status === 'unavailable')) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_RED }]}>
-        <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} style={styles.header} titleStyle={styles.headerTitle} backButtonStyle={styles.headerButton} backIconColor={BADRGO_WHITE} />
+      <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_WHITE }]}>
+        <BadrgoHeader onBackPress={() => router.back()} />
         <StateSurface
           kind={campaignQuery.error ? 'error' : 'empty'}
           title={t('badrgo_pilot_unavailable_title')}
@@ -143,32 +145,25 @@ export default function BadrgoPilotScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_RED }]} edges={['top', 'bottom']}>
-      <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} style={styles.header} titleStyle={styles.headerTitle} backButtonStyle={styles.headerButton} backIconColor={BADRGO_WHITE} />
+    <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_WHITE }]} edges={['top']}>
+      <BadrgoHeader onBackPress={() => router.back()} />
       <ScrollView
+        style={styles.body}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
-          <View style={styles.logoTile}>
-            <Image
-              accessibilityLabel="badrgo"
-              contentFit="contain"
-              source={require('../../assets/images/badrgo-logo.png')}
-              style={styles.logo}
-            />
-          </View>
           <Text
             selectable
-            style={[styles.heroTitle, { textAlign: 'center' }]}
+            style={[styles.heroTitle, { textAlign: 'center', writingDirection: isRTL ? 'rtl' : 'ltr' }]}
           >
             {claim ? t('badrgo_pilot_code_ready') : title || t('badrgo_pilot_banner_title')}
           </Text>
           {!claim && description ? (
             <Text
               selectable
-              style={[styles.heroBody, { textAlign: 'center' }]}
+              style={[styles.heroBody, { textAlign: 'center', writingDirection: isRTL ? 'rtl' : 'ltr' }]}
             >
               {description}
             </Text>
@@ -194,7 +189,7 @@ export default function BadrgoPilotScreen() {
               accessibilityRole="button"
               disabled={!isClaimable || claimMutation.isPending}
               onPress={handleClaim}
-              style={styles.claimButton}
+              style={[styles.claimButton, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
             >
               {claimMutation.isPending ? (
                 <ActivityIndicator color={BADRGO_WHITE} />
@@ -252,7 +247,7 @@ export default function BadrgoPilotScreen() {
           <View style={styles.historySection}>
             <Text style={styles.historyTitle}>{t('badrgo_voucher_history')}</Text>
             {campaign.recentClaims.map((historyClaim) => (
-              <View key={historyClaim.id || [historyClaim.periodKey, historyClaim.claimedAt].join('-')} style={styles.historyRow}>
+              <View key={historyClaim.id || [historyClaim.periodKey, historyClaim.claimedAt].join('-')} style={[styles.historyRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Text style={styles.historyPeriod}>{historyClaim.periodKey}</Text>
                 <Text style={styles.historyStatus}>
                   {historyClaim.status === 'redeemed'
@@ -268,7 +263,7 @@ export default function BadrgoPilotScreen() {
           <ScalePressable
             accessibilityRole="link"
             onPress={() => void Linking.openURL(campaign.destinationUrl || BADRGO_INVITE_URL)}
-            style={styles.secondaryButton}
+            style={[styles.secondaryButton, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
           >
             <Text style={styles.secondaryButtonText}>
               {t('badrgo_pilot_open_badrgo')}
@@ -305,23 +300,99 @@ function DetailRow({
   );
 }
 
+function BadrgoHeader({ onBackPress }: { onBackPress: () => void }) {
+  const { isRTL } = useAppLocale();
+  const { t } = useTranslation();
+
+  return (
+    <View style={styles.headerShell}>
+      <View style={styles.headerContainer}>
+        <View style={styles.headerLogoContent}>
+          <Image
+            accessibilityLabel="badrgo"
+            contentFit="contain"
+            source={require('../../assets/images/badrgo-logo.png')}
+            style={styles.headerLogoImage}
+          />
+        </View>
+        <View style={styles.headerOverlay}>
+          <View style={styles.headerButtonsRow}>
+            <TouchableOpacity
+              accessibilityLabel={t('back')}
+              accessibilityRole="button"
+              activeOpacity={0.8}
+              onPress={() => {
+                triggerSubtleHaptic();
+                onBackPress();
+              }}
+              style={styles.headerButton}
+            >
+              <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={24} color={BADRGO_WHITE} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
-  header: {
+  headerShell: {
+    width: '100%',
+    height: 180,
     backgroundColor: BADRGO_RED,
   },
-  headerTitle: {
-    color: BADRGO_WHITE,
+  headerContainer: {
+    width: '100%',
+    height: 180,
+    backgroundColor: BADRGO_WHITE,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    overflow: 'hidden',
+  },
+  headerLogoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  headerLogoContent: {
+    flex: 1,
+    width: '100%',
+    padding: 18,
+    paddingHorizontal: 86,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerButtonsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 0,
   },
   headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: BADRGO_RED,
-    borderColor: BADRGO_WHITE,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: BADRGO_RED,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     paddingTop: 0,
     paddingBottom: 36,
+  },
+  body: {
+    backgroundColor: BADRGO_RED,
   },
   hero: {
     backgroundColor: BADRGO_RED,
@@ -330,20 +401,6 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     alignItems: 'center',
     gap: 14,
-  },
-  logoTile: {
-    width: '100%',
-    maxWidth: 260,
-    height: 118,
-    backgroundColor: BADRGO_WHITE,
-    borderRadius: 24,
-    padding: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    width: '100%',
-    height: '100%',
   },
   heroTitle: {
     color: BADRGO_WHITE,

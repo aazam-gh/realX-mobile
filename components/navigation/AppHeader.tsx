@@ -105,22 +105,24 @@ export default function AppHeader({
       ) : null}
 
       <View style={styles.titleContainer}>
-        <ResponsiveText
-          accessibilityRole="header"
-          variant={isRoot ? 'display' : titleVariant}
-          minimumFontScale={0.78}
-          style={[
-            isRoot ? styles.rootTitle : styles.navigationTitle,
-            {
-              color: theme.text,
-              textAlign: isRTL ? 'right' : 'left',
-              writingDirection: isRTL ? 'rtl' : 'ltr',
-            },
-            titleStyle,
-          ]}
-        >
-          {title}
-        </ResponsiveText>
+        {title ? (
+          <ResponsiveText
+            accessibilityRole="header"
+            variant={isRoot ? 'display' : titleVariant}
+            minimumFontScale={0.78}
+            style={[
+              isRoot ? styles.rootTitle : styles.navigationTitle,
+              {
+                color: theme.text,
+                textAlign: isRTL ? 'right' : 'left',
+                writingDirection: isRTL ? 'rtl' : 'ltr',
+              },
+              titleStyle,
+            ]}
+          >
+            {title}
+          </ResponsiveText>
+        ) : null}
       </View>
 
       {trailing ? <View style={styles.trailing}>{trailing}</View> : null}

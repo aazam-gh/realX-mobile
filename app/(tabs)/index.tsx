@@ -8,14 +8,15 @@ import { useTranslation } from 'react-i18next';
 import {
   BrandGrid,
   CategoryGrid,
-  HomeBannerCarousel,
   GreetingHeader,
   HomeBackgroundIcons,
+  HomeBannerCarousel,
   NewDeals,
   OpportunityHighlights,
   PartnerBannerCarousel,
   TrendingOffers,
 } from '../../components/home';
+import { BadrgoPilotBanner } from '../../components/wallet';
 
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import { useStudent } from '../../context/StudentContext';
@@ -102,8 +103,9 @@ export default function HomeScreen() {
         <CategoryGrid />
         <NewDeals onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
         <HomeBannerCarousel />
-        <BrandGrid />
         <TrendingOffers onVendorPress={(vendor) => handleVendorPress(vendor.vendorId || vendor.id)} />
+        <BadrgoPilotBanner showPreviewWhenUnavailable />
+        <BrandGrid />
         <OpportunityHighlights />
         </ScrollView>
         <View

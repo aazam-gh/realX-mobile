@@ -2,43 +2,48 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Typography } from '../../constants/Typography';
 import { BadrgoColors } from '../../constants/BadrgoColors';
 import { useAuthAccess } from '../../context/AuthAccessContext';
 import { useAppLocale } from '../../context/LocaleContext';
-import { fetchBadrgoPilotCampaign } from '../../utils/pilotCampaign';
+import { badrgoPilotPreview, fetchBadrgoPilotCampaign } from '../../utils/pilotCampaign';
 import { queryKeys } from '../../utils/queryClient';
-import ScalePressable from '../ScalePressable';
 
-const { black: BADRGO_BLACK, red: BADRGO_RED, white: BADRGO_WHITE } = BadrgoColors;
+const { red: BADRGO_RED, white: BADRGO_WHITE } = BadrgoColors;
 
-export default function BadrgoPilotBanner() {
+export default function BadrgoPilotBanner({ showPreviewWhenUnavailable = false }: { showPreviewWhenUnavailable?: boolean }) {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuthAccess();
+  const { firebaseUser } = useAuthAccess();
   const { isRTL } = useAppLocale();
   const router = useRouter();
   const { data } = useQuery({
-    queryKey: queryKeys.pilotCampaign(isAuthenticated ? 'authenticated' : 'guest'),
+    queryKey: queryKeys.pilotCampaign(firebaseUser?.uid || 'guest'),
     queryFn: fetchBadrgoPilotCampaign,
     retry: false,
     staleTime: 60_000,
   });
 
-  if (!data || data.status === 'unavailable') return null;
+  const campaign = data && data.status !== 'unavailable'
+    ? data
+    : showPreviewWhenUnavailable
+      ? badrgoPilotPreview
+      : null;
 
-  const hasClaim = !!data.claim;
-  const soldOut = data.status === 'sold_out' && !hasClaim;
+  if (!campaign) return null;
+
+  const currentClaim = campaign.currentClaim || campaign.claim;
+  const hasClaim = !!currentClaim && currentClaim.status !== 'redeemed';
 
   return (
     <View style={styles.section}>
-      <ScalePressable
+      <Pressable
         accessibilityRole="button"
         accessibilityLabel={hasClaim ? t('badrgo_pilot_view_code') : t('badrgo_pilot_claim_cta')}
         onPress={() => router.push('/pilot/badrgo' as any)}
-        style={[styles.card, { backgroundColor: BADRGO_WHITE, borderColor: BADRGO_RED }]}
+        style={[styles.banner, { backgroundColor: BADRGO_WHITE }]}
       >
         <Image
           accessibilityLabel="badrgo car"
@@ -46,128 +51,74 @@ export default function BadrgoPilotBanner() {
           source={require('../../assets/images/badrgo-car.webp')}
           style={styles.carImage}
         />
-        <View style={styles.perforation} />
-        <View style={[styles.content, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+        <View
+          style={[
+            styles.content,
+            { alignItems: isRTL ? 'flex-end' : 'flex-start', backgroundColor: BADRGO_RED },
+          ]}
+        >
           <View style={[styles.brandRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Ionicons name="car-sport-outline" size={16} color={BADRGO_RED} />
+            <Ionicons name="car-sport-outline" size={16} color={BADRGO_WHITE} />
             <Text style={styles.brandText}>badrgo</Text>
-            <Text style={[styles.voucherText, { color: BADRGO_BLACK }]}>RIDE VOUCHER</Text>
+            <Text style={styles.voucherText}>RIDE VOUCHER</Text>
           </View>
-          <Text
-            numberOfLines={2}
-            style={[styles.title, { color: BADRGO_BLACK, textAlign: isRTL ? 'right' : 'left' }]}
-          >
-            {hasClaim ? t('badrgo_pilot_code_ready') : t('badrgo_pilot_banner_title')}
-          </Text>
-          <Text
-            numberOfLines={2}
-            style={[styles.subtitle, { color: BADRGO_BLACK, textAlign: isRTL ? 'right' : 'left' }]}
-          >
-            {soldOut
-              ? t('badrgo_pilot_sold_out_short')
-              : hasClaim
-              ? t('badrgo_pilot_view_code')
-              : t('badrgo_pilot_first_come')}
-          </Text>
-          <View style={[styles.actionRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.ticketStub, { borderColor: BADRGO_RED }]}>
-              <Text style={styles.stubText}>{hasClaim ? 'CODE READY' : 'LIMITED'}</Text>
-            </View>
-            <View style={styles.claimButton}>
-              <Text style={styles.claimText}>
-                {hasClaim ? t('badrgo_pilot_view_code') : t('badrgo_pilot_claim_cta')}
-              </Text>
-              <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={17} color={BADRGO_WHITE} />
-            </View>
+          <View style={[styles.titleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Text numberOfLines={2} style={styles.title}>
+              {t('badrgo_pilot_code_ready')}
+            </Text>
+            <Ionicons
+              name={isRTL ? 'arrow-back' : 'arrow-forward'}
+              size={18}
+              color={BADRGO_WHITE}
+            />
           </View>
         </View>
-      </ScalePressable>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: 20,
     paddingBottom: 22,
   },
-  card: {
-    borderRadius: 24,
-    borderWidth: 1,
+  banner: {
+    borderRadius: 30,
     overflow: 'hidden',
   },
   carImage: {
     width: '100%',
-    height: 102,
+    height: 116,
     backgroundColor: BADRGO_WHITE,
   },
-  perforation: {
-    borderTopWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: BADRGO_RED,
-    marginHorizontal: 18,
-  },
   content: {
-    padding: 16,
-    gap: 7,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    gap: 5,
   },
   brandRow: {
     alignItems: 'center',
     gap: 6,
   },
   brandText: {
-    color: BADRGO_RED,
+    color: BADRGO_WHITE,
     fontSize: 13,
     ...Typography.getTextVariantStyle('bodyStrong'),
   },
   voucherText: {
+    color: BADRGO_WHITE,
     fontSize: 10,
     letterSpacing: 1.1,
     ...Typography.getTextVariantStyle('bodyStrong'),
   },
+  titleRow: {
+    alignItems: 'center',
+    gap: 8,
+  },
   title: {
-    fontSize: 20,
-    lineHeight: 25,
-    ...Typography.getTextVariantStyle('bodyStrong'),
-  },
-  subtitle: {
-    fontSize: 12,
-    lineHeight: 17,
-    ...Typography.getTextVariantStyle('body'),
-  },
-  actionRow: {
-    alignItems: 'center',
-    gap: 8,
-    paddingTop: 3,
-  },
-  ticketStub: {
-    minHeight: 38,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stubText: {
-    color: BADRGO_RED,
-    fontSize: 9,
-    letterSpacing: 0.8,
-    ...Typography.getTextVariantStyle('bodyStrong'),
-  },
-  claimButton: {
-    flex: 1,
-    minHeight: 42,
-    borderRadius: 21,
-    backgroundColor: BADRGO_RED,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  claimText: {
     color: BADRGO_WHITE,
-    fontSize: 13,
+    fontSize: 17,
+    lineHeight: 22,
     ...Typography.getTextVariantStyle('bodyStrong'),
   },
 });

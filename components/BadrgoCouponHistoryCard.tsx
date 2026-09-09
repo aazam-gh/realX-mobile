@@ -25,7 +25,8 @@ export default function BadrgoCouponHistoryCard({ userId }: { userId: string }) 
     retry: false,
   });
 
-  if (!data?.claim) return null;
+  const claim = data?.currentClaim || data?.claim;
+  if (!claim || claim.status === 'redeemed') return null;
 
   return (
     <ScalePressable
@@ -45,7 +46,7 @@ export default function BadrgoCouponHistoryCard({ userId }: { userId: string }) 
       <View style={[styles.copy, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
         <Text style={[styles.label, { color: BADRGO_RED }]}>{t('badrgo_pilot_coupon_label')}</Text>
         <Text style={[styles.title, { color: BADRGO_BLACK }]}>{t('badrgo_pilot_code_ready')}</Text>
-        <Text style={[styles.code, { color: BADRGO_BLACK }]}>{data.claim.code}</Text>
+        <Text style={[styles.code, { color: BADRGO_BLACK }]}>{claim.code}</Text>
       </View>
       <Ionicons name={isRTL ? 'chevron-back' : 'chevron-forward'} size={22} color={BADRGO_BLACK} />
     </ScalePressable>

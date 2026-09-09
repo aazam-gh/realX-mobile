@@ -42,6 +42,7 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
       const previousUserId = activeUserIdRef.current;
       if (previousUserId && previousUserId !== user?.uid) {
         queryClient.removeQueries({ queryKey: queryKeys.studentProfile(previousUserId), exact: true });
+        queryClient.removeQueries({ queryKey: queryKeys.pilotCampaign(previousUserId), exact: true });
       }
       activeUserIdRef.current = user?.uid ?? null;
       // Clean up previous snapshot listener

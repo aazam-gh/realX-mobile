@@ -25,6 +25,7 @@ import { useAppLocale } from '../../context/LocaleContext';
 import { triggerSubtleHaptic } from '../../utils/haptics';
 import {
   badrgoPilotPreview,
+  BADRGO_INVITE_URL,
   claimBadrgoPilotCoupon,
   fetchBadrgoPilotCampaign,
   PilotCampaign,
@@ -37,7 +38,7 @@ export default function BadrgoPilotScreen() {
   const { t } = useTranslation();
   const { locale, isRTL } = useAppLocale();
   const isArabic = locale === 'ar';
-  const { isAuthenticated, requireAuth } = useAuthAccess();
+  const { firebaseUser, isAuthenticated, requireAuth } = useAuthAccess();
   const router = useRouter();
   const params = useLocalSearchParams<{ preview?: string }>();
   const previewMode = __DEV__ && params.preview === '1';
@@ -45,7 +46,7 @@ export default function BadrgoPilotScreen() {
   const [copied, setCopied] = useState(false);
 
   const campaignQuery = useQuery({
-    queryKey: queryKeys.pilotCampaign(isAuthenticated ? 'authenticated' : 'guest'),
+    queryKey: queryKeys.pilotCampaign(firebaseUser?.uid || 'guest'),
     queryFn: fetchBadrgoPilotCampaign,
     enabled: !previewMode,
     retry: false,
@@ -54,7 +55,9 @@ export default function BadrgoPilotScreen() {
     if (!previewMode) return campaignQuery.data || { exists: false, status: 'unavailable' };
     return {
       ...badrgoPilotPreview,
-      claim: previewClaim ? { code: previewClaim, pool: 'public', claimedAt: new Date().toISOString() } : null,
+      claim: previewClaim
+        ? { code: previewClaim, status: 'assigned', claimedAt: new Date().toISOString() }
+        : null,
     };
   }, [campaignQuery.data, previewClaim, previewMode]);
 
@@ -72,8 +75,17 @@ export default function BadrgoPilotScreen() {
         return;
       }
       queryClient.setQueryData(
-        queryKeys.pilotCampaign('authenticated'),
-        (current: PilotCampaign | undefined) => current ? { ...current, claim } : current
+        queryKeys.pilotCampaign(firebaseUser?.uid || 'authenticated'),
+        (current: PilotCampaign | undefined) => current
+          ? {
+              ...current,
+              claim,
+              currentClaim: claim,
+              eligibility: current.eligibility
+                ? { ...current.eligibility, canClaim: false, reason: 'already_claimed_this_week' }
+                : undefined,
+            }
+          : current
       );
       void campaignQuery.refetch();
     },
@@ -86,8 +98,9 @@ export default function BadrgoPilotScreen() {
   const instructions = isArabic
     ? campaign.instructionsAr || campaign.instructions
     : campaign.instructions;
-  const claim = campaign.claim;
-  const isClaimable = campaign.status === 'active' && !claim;
+  const fetchedClaim = campaign.currentClaim || campaign.claim;
+  const claim = fetchedClaim?.status === 'redeemed' ? null : fetchedClaim;
+  const isClaimable = campaign.eligibility?.canClaim ?? (campaign.status === 'active' && !claim);
 
   const handleClaim = () => {
     if (!isAuthenticated && !previewMode) {
@@ -107,37 +120,37 @@ export default function BadrgoPilotScreen() {
 
   if (!previewMode && campaignQuery.isLoading) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_WHITE }]}>
-        <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} titleStyle={{ color: BADRGO_BLACK }} backButtonStyle={{ backgroundColor: BADRGO_WHITE, borderColor: BADRGO_BLACK }} backIconColor={BADRGO_BLACK} />
-        <StateSurface kind="loading" colors={{ primary: BADRGO_RED, text: BADRGO_BLACK, mutedText: BADRGO_BLACK, surface: BADRGO_WHITE, danger: BADRGO_RED, onPrimary: BADRGO_WHITE }} />
+      <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_RED }]}>
+        <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} style={styles.header} titleStyle={styles.headerTitle} backButtonStyle={styles.headerButton} backIconColor={BADRGO_WHITE} />
+        <StateSurface kind="loading" colors={{ primary: BADRGO_WHITE, text: BADRGO_WHITE, mutedText: BADRGO_WHITE, surface: BADRGO_RED, danger: BADRGO_WHITE, onPrimary: BADRGO_RED }} />
       </SafeAreaView>
     );
   }
 
   if (!previewMode && (campaignQuery.error || campaign.status === 'unavailable')) {
     return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_WHITE }]}>
-        <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} titleStyle={{ color: BADRGO_BLACK }} backButtonStyle={{ backgroundColor: BADRGO_WHITE, borderColor: BADRGO_BLACK }} backIconColor={BADRGO_BLACK} />
+      <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_RED }]}>
+        <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} style={styles.header} titleStyle={styles.headerTitle} backButtonStyle={styles.headerButton} backIconColor={BADRGO_WHITE} />
         <StateSurface
           kind={campaignQuery.error ? 'error' : 'empty'}
           title={t('badrgo_pilot_unavailable_title')}
           message={t('badrgo_pilot_unavailable_body')}
           onRetry={campaignQuery.error ? campaignQuery.refetch : undefined}
-          colors={{ primary: BADRGO_RED, text: BADRGO_BLACK, mutedText: BADRGO_BLACK, surface: BADRGO_WHITE, danger: BADRGO_RED, onPrimary: BADRGO_WHITE }}
+          colors={{ primary: BADRGO_WHITE, text: BADRGO_WHITE, mutedText: BADRGO_WHITE, surface: BADRGO_RED, danger: BADRGO_WHITE, onPrimary: BADRGO_RED }}
         />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_WHITE }]} edges={['top', 'bottom']}>
-      <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} titleStyle={{ color: BADRGO_BLACK }} backButtonStyle={{ backgroundColor: BADRGO_WHITE, borderColor: BADRGO_BLACK }} backIconColor={BADRGO_BLACK} />
+    <SafeAreaView style={[styles.screen, { backgroundColor: BADRGO_RED }]} edges={['top', 'bottom']}>
+      <AppHeader title={t('badrgo_pilot_screen_title')} onBackPress={() => router.back()} style={styles.header} titleStyle={styles.headerTitle} backButtonStyle={styles.headerButton} backIconColor={BADRGO_WHITE} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.hero, { backgroundColor: BADRGO_WHITE, borderColor: BADRGO_RED }]}>
+        <View style={styles.hero}>
           <View style={styles.logoTile}>
             <Image
               accessibilityLabel="badrgo"
@@ -148,14 +161,14 @@ export default function BadrgoPilotScreen() {
           </View>
           <Text
             selectable
-            style={[styles.heroTitle, { color: BADRGO_BLACK, textAlign: 'center' }]}
+            style={[styles.heroTitle, { textAlign: 'center' }]}
           >
             {claim ? t('badrgo_pilot_code_ready') : title || t('badrgo_pilot_banner_title')}
           </Text>
           {!claim && description ? (
             <Text
               selectable
-              style={[styles.heroBody, { color: BADRGO_BLACK, textAlign: 'center' }]}
+              style={[styles.heroBody, { textAlign: 'center' }]}
             >
               {description}
             </Text>
@@ -166,7 +179,7 @@ export default function BadrgoPilotScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('badrgo_pilot_copy_code')}
               onPress={() => void handleCopy()}
-              style={[styles.codeCard, { borderColor: BADRGO_RED }]}
+              style={styles.codeCard}
             >
               <View style={styles.codeCopy}>
                 <Text style={styles.codeLabel}>{t('badrgo_pilot_coupon_label')}</Text>
@@ -188,59 +201,79 @@ export default function BadrgoPilotScreen() {
               ) : (
                 <>
                   <Text style={styles.claimButtonText}>
-                    {campaign.status === 'sold_out'
+                    {campaign.status === 'out_of_stock'
                       ? t('badrgo_pilot_sold_out')
-                      : campaign.status === 'scheduled'
-                      ? t('badrgo_pilot_coming_soon')
+                      : campaign.status === 'paused'
+                      ? t('badrgo_voucher_paused')
                       : t('badrgo_pilot_claim_cta')}
                   </Text>
-                  <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={20} color={BADRGO_WHITE} />
+                  <Ionicons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={20} color={BADRGO_RED} />
                 </>
               )}
             </ScalePressable>
           )}
 
           {claimMutation.error ? (
-            <Text selectable style={[styles.errorText, { color: BADRGO_RED }]}>
+            <Text selectable style={styles.errorText}>
               {(claimMutation.error as Error).message || t('badrgo_pilot_claim_failed')}
             </Text>
           ) : null}
 
-          {!claim && campaign.status === 'active' ? (
-            <Text style={[styles.availability, { color: BADRGO_BLACK }]}>
-              {t('badrgo_pilot_first_come')}
+          {!claim ? (
+            <Text style={styles.availability}>
+              {campaign.eligibility?.reason === 'previous_code_not_redeemed'
+                ? t('badrgo_voucher_use_current_first')
+                : campaign.eligibility?.reason === 'already_claimed_this_week'
+                  ? t('badrgo_voucher_claimed_this_week')
+                  : t('badrgo_pilot_first_come')}
             </Text>
           ) : null}
         </View>
 
-        <View style={[styles.detailsCard, { backgroundColor: BADRGO_WHITE, borderColor: BADRGO_BLACK }]}>
+        <View style={styles.detailsCard}>
           <DetailRow
             icon="person-outline"
             text={t('badrgo_pilot_one_per_user')}
-            color={BADRGO_BLACK}
+            color={BADRGO_WHITE}
             isRTL={isRTL}
           />
           <DetailRow
             icon="shield-checkmark-outline"
             text={t('badrgo_pilot_secure_assignment')}
-            color={BADRGO_BLACK}
+            color={BADRGO_WHITE}
             isRTL={isRTL}
           />
           {instructions ? (
-            <DetailRow icon="information-circle-outline" text={instructions} color={BADRGO_BLACK} isRTL={isRTL} />
+            <DetailRow icon="information-circle-outline" text={instructions} color={BADRGO_WHITE} isRTL={isRTL} />
           ) : null}
         </View>
 
-        {claim && campaign.destinationUrl ? (
+        {campaign.recentClaims?.length ? (
+          <View style={styles.historySection}>
+            <Text style={styles.historyTitle}>{t('badrgo_voucher_history')}</Text>
+            {campaign.recentClaims.map((historyClaim) => (
+              <View key={historyClaim.id || [historyClaim.periodKey, historyClaim.claimedAt].join('-')} style={styles.historyRow}>
+                <Text style={styles.historyPeriod}>{historyClaim.periodKey}</Text>
+                <Text style={styles.historyStatus}>
+                  {historyClaim.status === 'redeemed'
+                    ? t('badrgo_voucher_redeemed')
+                    : t('badrgo_voucher_assigned')}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {claim ? (
           <ScalePressable
             accessibilityRole="link"
-            onPress={() => void Linking.openURL(campaign.destinationUrl!)}
-            style={[styles.secondaryButton, { borderColor: BADRGO_BLACK }]}
+            onPress={() => void Linking.openURL(campaign.destinationUrl || BADRGO_INVITE_URL)}
+            style={styles.secondaryButton}
           >
-            <Text style={[styles.secondaryButtonText, { color: BADRGO_BLACK }]}>
+            <Text style={styles.secondaryButtonText}>
               {t('badrgo_pilot_open_badrgo')}
             </Text>
-            <Ionicons name="open-outline" size={19} color={BADRGO_BLACK} />
+            <Ionicons name="open-outline" size={19} color={BADRGO_RED} />
           </ScalePressable>
         ) : null}
 
@@ -276,16 +309,25 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
+  header: {
+    backgroundColor: BADRGO_RED,
+  },
+  headerTitle: {
+    color: BADRGO_WHITE,
+  },
+  headerButton: {
+    backgroundColor: BADRGO_RED,
+    borderColor: BADRGO_WHITE,
+  },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 0,
     paddingBottom: 36,
-    gap: 16,
   },
   hero: {
-    borderRadius: 30,
-    borderWidth: 1,
-    padding: 24,
+    backgroundColor: BADRGO_RED,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 28,
     alignItems: 'center',
     gap: 14,
   },
@@ -304,11 +346,13 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   heroTitle: {
+    color: BADRGO_WHITE,
     fontSize: 28,
     lineHeight: 34,
     ...Typography.getTextVariantStyle('bodyStrong'),
   },
   heroBody: {
+    color: BADRGO_WHITE,
     fontSize: 15,
     lineHeight: 23,
     ...Typography.getTextVariantStyle('body'),
@@ -317,7 +361,7 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: 56,
     borderRadius: 18,
-    backgroundColor: BADRGO_RED,
+    backgroundColor: BADRGO_WHITE,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -325,16 +369,18 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   claimButtonText: {
-    color: BADRGO_WHITE,
+    color: BADRGO_RED,
     fontSize: 16,
     ...Typography.getTextVariantStyle('bodyStrong'),
   },
   availability: {
+    color: BADRGO_WHITE,
     fontSize: 12,
     textAlign: 'center',
     ...Typography.getTextVariantStyle('body'),
   },
   errorText: {
+    color: BADRGO_WHITE,
     fontSize: 13,
     lineHeight: 19,
     textAlign: 'center',
@@ -343,7 +389,7 @@ const styles = StyleSheet.create({
   codeCard: {
     width: '100%',
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 0,
     backgroundColor: BADRGO_WHITE,
     padding: 16,
     flexDirection: 'row',
@@ -375,20 +421,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   detailsCard: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 18,
+    backgroundColor: BADRGO_RED,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     gap: 16,
   },
   detailRow: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 12,
   },
   detailIcon: {
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: BADRGO_RED,
+    backgroundColor: BADRGO_WHITE,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -398,17 +444,49 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     ...Typography.getTextVariantStyle('body'),
   },
+  historySection: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    gap: 10,
+  },
+  historyTitle: {
+    color: BADRGO_WHITE,
+    fontSize: 16,
+    ...Typography.getTextVariantStyle('bodyStrong'),
+  },
+  historyRow: {
+    minHeight: 42,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  historyPeriod: {
+    color: BADRGO_WHITE,
+    fontSize: 14,
+    ...Typography.getTextVariantStyle('bodyStrong'),
+  },
+  historyStatus: {
+    color: BADRGO_WHITE,
+    fontSize: 13,
+    ...Typography.getTextVariantStyle('body'),
+  },
   secondaryButton: {
-    minHeight: 54,
+    alignSelf: 'center',
+    minHeight: 48,
     borderRadius: 18,
-    borderWidth: 1,
-    paddingHorizontal: 18,
+    backgroundColor: BADRGO_WHITE,
+    paddingHorizontal: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 9,
   },
   secondaryButtonText: {
+    color: BADRGO_RED,
     fontSize: 15,
     ...Typography.getTextVariantStyle('bodyStrong'),
   },

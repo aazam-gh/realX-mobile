@@ -217,19 +217,6 @@ export function isValidHomeFeaturedBanner(item: unknown): item is HomeFeaturedBa
   );
 }
 
-function featuredBannerPriority(item: HomeFeaturedBannerItem) {
-  const searchableText = [item.id, item.title, item.titleAr, item.ctaText]
-    .filter(Boolean)
-    .join(' ')
-    .toLocaleLowerCase();
-
-  if (searchableText.includes('gih')) return 0;
-  if (searchableText.includes('omara')) return 1;
-  // Keep unnamed approved creatives ahead of the standby Wakti campaign.
-  if (searchableText.includes('wakti')) return 3;
-  return 2;
-}
-
 export const homeQueryOptions = {
   categories: (locale: HomeLocale) => queryOptions<HomeCategoryItem[]>({
     queryKey: queryKeys.categories(locale),
@@ -252,10 +239,7 @@ export const homeQueryOptions = {
       const data = await fetchCmsDocument<{ items?: HomeFeaturedBannerItem[] }>('featuredBrandShowcase');
       return (data?.items || [])
         .filter(isValidHomeFeaturedBanner)
-        .sort((a, b) => (
-          featuredBannerPriority(a) - featuredBannerPriority(b)
-          || (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER)
-        ));
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     },
   }),
   brands: () => queryOptions<HomeBrandItem[]>({

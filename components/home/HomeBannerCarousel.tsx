@@ -11,9 +11,11 @@ import FeaturedBanner from './FeaturedBanner';
 
 const FEATURED_BANNER_TOP_SPACING = 16;
 const FEATURED_BANNER_INDICATOR_HEIGHT = 24;
+const DISPLAY_DURATION_MS = 4000;
 
 export default function HomeBannerCarousel() {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [autoplayResetKey, setAutoplayResetKey] = useState(0);
     const currentIndexRef = useRef(0);
     const scrollViewRef = useRef<ScrollView | null>(null);
     const { width: screenWidth } = useWindowDimensions();
@@ -29,6 +31,21 @@ export default function HomeBannerCarousel() {
             : [];
 
     const slideCount = featuredBanners.length;
+
+    useEffect(() => {
+        if (slideCount <= 1) {
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            const nextIndex = (currentIndexRef.current + 1) % slideCount;
+            currentIndexRef.current = nextIndex;
+            setCurrentIndex(nextIndex);
+            setAutoplayResetKey((key) => key + 1);
+        }, DISPLAY_DURATION_MS);
+
+        return () => clearTimeout(timeout);
+    }, [autoplayResetKey, slideCount]);
 
     useEffect(() => {
         if (slideCount === 0) {
@@ -60,6 +77,8 @@ export default function HomeBannerCarousel() {
         );
 
         currentIndexRef.current = nextIndex;
+        setCurrentIndex(nextIndex);
+        setAutoplayResetKey((key) => key + 1);
     };
 
     if (featuredBanners.length === 0) {
@@ -71,6 +90,7 @@ export default function HomeBannerCarousel() {
             <ScrollView
                 ref={scrollViewRef}
                 horizontal
+                pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 nestedScrollEnabled
                 directionalLockEnabled
@@ -101,6 +121,7 @@ export default function HomeBannerCarousel() {
                             onPress={() => {
                                 currentIndexRef.current = index;
                                 setCurrentIndex(index);
+                                setAutoplayResetKey((key) => key + 1);
                             }}
                             hitSlop={8}
                             accessibilityRole="button"

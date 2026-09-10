@@ -70,14 +70,32 @@ describe('Home preloading', () => {
           };
         case 'featuredBrandShowcase':
           return {
-            items: [{
-              id: 'featured-1',
-              title: 'Featured',
-              vendorId: 'vendor-1',
-              isActive: true,
-              imageUrl: 'https://img/featured.png',
-              ctaText: 'Shop now',
-            }],
+            items: [
+              {
+                id: 'featured-wakti',
+                title: 'Wakti',
+                vendorId: 'vendor-1',
+                isActive: true,
+                imageUrl: 'https://img/wakti.png',
+                order: 2,
+              },
+              {
+                id: 'featured-gih',
+                title: 'GIH',
+                vendorId: 'vendor-1',
+                isActive: true,
+                imageUrl: 'https://img/gih.png',
+                order: 0,
+              },
+              {
+                id: 'featured-omara',
+                title: 'Omara',
+                vendorId: 'vendor-1',
+                isActive: true,
+                imageUrl: 'https://img/omara.png',
+                order: 1,
+              },
+            ],
           };
         case 'brand':
           return {
@@ -115,7 +133,11 @@ describe('Home preloading', () => {
     expect(client.getQueryData(queryKeys.cmsDocument('banner'))).toHaveLength(1);
     expect(client.getQueryData(queryKeys.trendingOffers())).toHaveLength(1);
     expect(client.getQueryData(queryKeys.newDeals())).toHaveLength(1);
-    expect(client.getQueryData(queryKeys.cmsDocument('featuredBrandShowcase'))).toBeTruthy();
+    expect(client.getQueryData(queryKeys.cmsDocument('featuredBrandShowcase'))).toMatchObject([
+      { id: 'featured-gih', order: 0 },
+      { id: 'featured-omara', order: 1 },
+      { id: 'featured-wakti', order: 2 },
+    ]);
     expect(client.getQueryData(queryKeys.cmsDocument('brand'))).toHaveLength(1);
     expect(client.getQueryData(queryKeys.opportunities())).toHaveLength(1);
     expect(imagePrefetch).toHaveBeenCalledWith(expect.arrayContaining([
